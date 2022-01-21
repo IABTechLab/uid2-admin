@@ -1,0 +1,57 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Salt Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="minAges">Min ages (seconds):</label>
+<input type="text" id="minAges" name="minAges">
+<label for="fraction">Fraction:</label>
+<input type="text" id="fraction" name="fraction">
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-sem" style="display: none"><a href="#" id="doSnapshots">List Salt Snapshots</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotate">Rotate second level salts</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doSnapshots').on('click', function () {
+            doApiCall('GET', '/api/salt/snapshots', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRotate').on('click', function () {
+            var minAges = encodeURIComponent($('#minAges').val());
+            var fraction = encodeURIComponent($('#fraction').val());
+            var url = '/api/salt/rotate?min_ages_in_seconds=' + minAges + '&fraction=' + fraction;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>

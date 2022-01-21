@@ -1,0 +1,102 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Operator Key Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="operatorName">Name:</label>
+<input type="text" id="operatorName" name="operatorName">
+<label for="protocol">Protocol:</label>
+<input type="text" id="protocol" name="protocol">
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-opm" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
+    <li class="ro-opm" style="display: none"><a href="#" id="doList">List Operator Keys</a></li>
+    <li class="ro-opm" style="display: none"><a href="#" id="doReveal">Reveal Operator Key</a></li>
+    <li class="ro-opm" style="display: none"><a href="#" id="doAdd">Add Operator Key</a></li>
+    <li class="ro-opm" style="display: none"><a href="#" id="doDisable">Disable Operator Key</a></li>
+    <li class="ro-opm" style="display: none"><a href="#" id="doEnable">Enable Operator Key</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Operator Key</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doMeta').on('click', function () {
+            doApiCall('GET', '/api/operator/metadata', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doList').on('click', function () {
+            doApiCall('GET', '/api/operator/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doReveal').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var url = '/api/operator/reveal?name=' + operatorName;
+
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doAdd').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var protocol = encodeURIComponent($('#protocol').val());
+            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doDel').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var url = '/api/operator/del?name=' + operatorName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRekey').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var url = '/api/operator/rekey?name=' + operatorName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doDisable').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var url = '/api/operator/disable?name=' + operatorName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doEnable').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var url = '/api/operator/enable?name=' + operatorName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>

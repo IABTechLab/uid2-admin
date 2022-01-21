@@ -1,0 +1,72 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Site Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="siteName">Name:</label>
+<input type="text" id="siteName" name="siteName">
+<label for="siteId">Site Id:</label>
+<input type="text" id="siteId" name="siteId">
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doList">List Sites</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doList').on('click', function () {
+            doApiCall('GET', '/api/site/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doAdd').on('click', function () {
+            var siteName = encodeURIComponent($('#siteName').val());
+            var url = '/api/site/add?name=' + siteName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doDisable').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/site/enable?enabled=false&id=' + siteId;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doEnable').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/site/enable?enabled=true&id=' + siteId;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>

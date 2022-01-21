@@ -1,0 +1,34 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin Site</h1>
+
+<div class="notauthed" style="display: none">
+<a href="/login">Login</a>
+<br>
+</div>
+
+<div class="authed" style="display: none">
+Logged in as <span id="loginEmail"></span>
+<br>
+<a href="/logout">Logout</a>
+<br>
+</div>
+
+<ul>
+    <li class="ro-cki ro-adm" style="display: none"><a href="/adm/site.html">Site Management</a></li>
+    <li class="ro-cki ro-adm" style="display: none"><a href="/adm/client-key.html">Client Key Management</a></li>
+    <li class="ro-cki ro-adm" style="display: none"><a href="/adm/key-acl.html">Encryption Key ACL Management</a></li>
+    <li class="ro-sem" style="display: none"><a href="/adm/encryption-key.html">Encryption Key Management</a></li>
+    <li class="ro-sem" style="display: none"><a href="/adm/salt.html">Salts Management</a></li>
+    <li class="ro-opm ro-adm" style="display: none"><a href="/adm/operator-key.html">Operator Key Management</a></li>
+    <li class="ro-opm ro-adm" style="display: none"><a href="/adm/enclave-id.html">Enclave ID Management</a></li>
+    <li class="ro-adm" style="display: none"><a href="/adm/administrators.html">Administrator Management</a></li>
+    <li class="ro-nil" style="display: none">No Admin Permissions</li>
+</ul>
+
+</body>
+</html>

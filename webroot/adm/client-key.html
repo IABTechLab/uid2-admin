@@ -1,0 +1,123 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Client Key Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="clientName">Name:</label>
+<input type="text" id="clientName" name="clientName">
+<label for="roles">Roles:</label>
+<input type="text" id="roles" name="roles">
+<label for="siteId">Site Id:</label>
+<input type="text" id="siteId" name="siteId" value="1">
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doReveal">Reveal Client Key</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Client Key</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doMeta').on('click', function () {
+            doApiCall('GET', '/api/client/metadata', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doList').on('click', function () {
+            doApiCall('GET', '/api/client/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doReveal').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/reveal?name=' + clientName;
+
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doAdd').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var roles = encodeURIComponent($('#roles').val());
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/client/add?name=' + clientName + '&roles=' + roles + '&site_id=' + siteId;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doDel').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/del?name=' + clientName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doSetRoles').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var roles = encodeURIComponent($('#roles').val());
+            var url = '/api/client/roles?name=' + clientName + '&roles=' + roles;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doSetSite').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/client/update?name=' + clientName + '&site_id=' + siteId;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRekey').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/rekey?name=' + clientName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doDisable').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/disable?name=' + clientName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doEnable').on('click', function () {
+            var clientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/enable?name=' + clientName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>

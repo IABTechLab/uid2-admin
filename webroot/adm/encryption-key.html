@@ -1,0 +1,78 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Encryption Key Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="siteId">Site id:</label>
+<input type="text" id="siteId" name="siteId">
+<label for="minAge">Min age (seconds):</label>
+<input type="text" id="minAge" name="minAge">
+<label for="force">Force:</label>
+<input type="checkbox" id="force" name="force" value="true">
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-sem" style="display: none"><a href="#" id="doList">List Keys</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotateMaster">Rotate Master Key</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotateSite">Rotate Site Key</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotateAllSites">Rotate All Site Keys</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doList').on('click', function () {
+            doApiCall('GET', '/api/key/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRotateMaster').on('click', function () {
+            var minAge = encodeURIComponent($('#minAge').val());
+            var url = '/api/key/rotate_master?min_age_seconds=' + minAge;
+            if ($('#force').is(':checked')) url = url + '&force=true';
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRotateSite').on('click', function () {
+            var minAge = encodeURIComponent($('#minAge').val());
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/key/rotate_site?min_age_seconds=' + minAge + '&site_id=' + siteId;
+            if ($('#force').is(':checked')) url = url + '&force=true';
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRotateAllSites').on('click', function () {
+            var minAge = encodeURIComponent($('#minAge').val());
+            var url = '/api/key/rotate_all_sites?min_age_seconds=' + minAge;
+            if ($('#force').is(':checked')) url = url + '&force=true';
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>

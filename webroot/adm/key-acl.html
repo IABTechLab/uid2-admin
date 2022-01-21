@@ -1,0 +1,74 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Key ACL Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="siteId">Site Id:</label>
+<input type="text" id="siteId" name="siteId">
+<label for="addSiteIds">Add Site Ids:</label>
+<input type="text" id="addSiteIds" name="addSiteIds">
+<label for="removeSiteIds">Remove Site Ids:</label>
+<input type="text" id="removeSiteIds" name="removeSiteIds">
+<label for="aclType">ACL type:</label>
+<select id="aclType">
+    <option value="whitelist">whitelist</option>
+    <option value="blacklist">blacklist</option>
+</select>
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doList">List ACLs</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doReset">Reset ACL</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update ACL</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doList').on('click', function () {
+            doApiCall('GET', '/api/keys_acl/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doReset').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var type = encodeURIComponent($('#aclType').val());
+            var url = '/api/keys_acl/reset?site_id=' + siteId + "&type=" + type;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doUpdate').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var added = encodeURIComponent($('#addSiteIds').val());
+            var removed = encodeURIComponent($('#removeSiteIds').val());
+            var url = '/api/keys_acl/update?site_id=' + siteId + "&add=" + added + "&remove=" + removed;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>
