@@ -110,13 +110,13 @@ public class AdminKeyService implements IService {
             synchronized (writeLock) {
                 this.handleAdminRekey(ctx);
             }
-        }));
+        }, Role.ADMINISTRATOR));
 
         router.post("/api/admin/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleAdminRoles(ctx);
             }
-        }));
+        }, Role.ADMINISTRATOR));
     }
 
     private void handleAdminMetadata(RoutingContext rc) {
