@@ -23,10 +23,9 @@
 
 package com.uid2.admin.auth;
 
-import com.sendgrid.Client;
-import com.uid2.shared.auth.ClientKey;
-import com.uid2.shared.auth.IAuthorizable;
+import com.uid2.shared.auth.IRoleAuthorizable;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.auth.Roles;
 import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
@@ -34,7 +33,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-public class AdminUser implements IAuthorizable {
+public class AdminUser implements IRoleAuthorizable<Role> {
     private String key;
     private final String name;
     private final String contact;
@@ -85,7 +84,6 @@ public class AdminUser implements IAuthorizable {
         return disabled;
     }
 
-    @Override
     public void setDisabled(boolean disabled) {
         this.disabled = disabled;
     }
@@ -96,7 +94,7 @@ public class AdminUser implements IAuthorizable {
                 json.getString("name"),
                 json.getString("contact"),
                 json.getLong("created"),
-                ClientKey.getRoles(json),
+                Roles.getRoles(Role.class, json.getString("roles")),
                 json.getBoolean("disabled", false)
         );
     }
