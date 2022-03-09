@@ -139,7 +139,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private void handleRotateMasterKey(RoutingContext rc) {
         try {
-            final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, s -> s == Const.Data.MasterKeySiteId);
+            final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
+                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));

@@ -155,6 +155,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(10011), Instant.ofEpochMilli(20011), Instant.ofEpochMilli(30011), -1),
                 new EncryptionKey(12, null, Instant.ofEpochMilli(10012), Instant.ofEpochMilli(20012), Instant.ofEpochMilli(30012), 5),
+                new EncryptionKey(13, null, Instant.ofEpochMilli(10013), Instant.ofEpochMilli(20012), Instant.ofEpochMilli(30012), -2),
         };
         setEncryptionKeys(777, keys);
 
@@ -162,11 +163,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(777+1, new int[] { -1 },
+            checkRotatedKeyResponse(777+1, new int[] { -1, -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+1), eq(777+1));
+                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+2), eq(777+2));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -181,6 +182,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(10011), Instant.ofEpochMilli(20011), Instant.ofEpochMilli(30011), -1),
                 new EncryptionKey(12, null, Instant.ofEpochMilli(10012), Instant.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + 1000), Instant.MAX, -1),
+                new EncryptionKey(13, null, Instant.ofEpochMilli(10011), Instant.ofEpochMilli(20011), Instant.ofEpochMilli(30011), -2),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(10012), Instant.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + 1000), Instant.MAX, -2),
         };
         setEncryptionKeys(777, keys);
 
@@ -205,6 +208,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(10011), Instant.ofEpochMilli(20011), Instant.ofEpochMilli(30011), -1),
                 new EncryptionKey(12, null, Instant.ofEpochMilli(10012), Instant.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + 1000), Instant.MAX, -1),
+                new EncryptionKey(13, null, Instant.ofEpochMilli(10011), Instant.ofEpochMilli(20011), Instant.ofEpochMilli(30011), -2),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(10012), Instant.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + 1000), Instant.MAX, -2),
         };
         setEncryptionKeys(777, keys);
 
@@ -212,11 +217,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(777+1, new int[] { -1 },
+            checkRotatedKeyResponse(777+1, new int[] { -1, -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+1), eq(777+1));
+                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+2), eq(777+2));
             } catch (Exception ex) {
                 fail(ex);
             }
