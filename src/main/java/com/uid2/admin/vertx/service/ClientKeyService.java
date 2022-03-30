@@ -208,13 +208,15 @@ public class ClientKeyService implements IService {
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
-            // create a random key
+            // create random key and secret
             String key = keyGenerator.generateRandomKeyString(32);
             if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + key;
 
+            String secret = keyGenerator.generateRandomKeyString(32);
+
             // add new client to array
             Instant created = Instant.now();
-            ClientKey newClient = new ClientKey(key, created)
+            ClientKey newClient = new ClientKey(key, secret, created)
                     .withNameAndContact(name)
                     .withSiteId(site.getId())
                     .withRoles(roles);
@@ -374,6 +376,8 @@ public class ClientKeyService implements IService {
             if (this.clientKeyPrefix != null) newKey = this.clientKeyPrefix + newKey;
 
             c.setKey(newKey);
+
+            c.setSecret(keyGenerator.generateRandomKeyString(32));
 
             // upload to storage
             storageManager.uploadClientKeys(clientKeyProvider, clients);

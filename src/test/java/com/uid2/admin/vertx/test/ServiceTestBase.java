@@ -35,6 +35,7 @@ import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.shared.Const;
+import com.uid2.shared.Utils;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
@@ -114,7 +115,7 @@ public abstract class ServiceTestBase {
     protected abstract IService createService();
 
     private String getUrlForEndpoint(String endpoint) {
-        return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForAdmin, endpoint);
+        return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForAdmin + Utils.getPortOffset(), endpoint);
     }
 
     protected void fakeAuth(Role... roles) {
