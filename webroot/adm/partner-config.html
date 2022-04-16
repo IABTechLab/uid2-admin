@@ -1,0 +1,99 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Partner Config</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-adm" style="display: none"><a href="#" id="doGet">Get Partner Config</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update Partner Config</a></li>
+</ul>
+
+<br>
+
+<h3>Partner Config</h3>
+
+<textarea id="json" name="json" rows="40" cols="120">
+</textarea>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="standardOutput"></pre>
+    <pre id="errorOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    function getConfig(outputText, errorDiv) {
+        $(outputText).val('');
+        $(errorDiv).html('');
+
+        authHeader = "Bearer " + window.__uid2_admin_token;
+
+        $.ajax({
+            type: 'GET',
+            url: '/api/partner_config/get',
+            dataType: 'text',
+            headers: {
+                "Authorization": authHeader
+            },
+            success: function (text) {
+                var pretty = JSON.stringify(JSON.parse(text),null,2);
+                $(outputText).val(pretty);
+            },
+            error: function (err) {
+                $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText);
+            }
+        });
+    }
+
+    function updateConfig(jsonStr, outputDiv, errorDiv) {
+        $(outputDiv).html('');
+        $(errorDiv).html('');
+
+        authHeader = "Bearer " + window.__uid2_admin_token;
+
+        $.ajax({
+            type: 'POST',
+            url: '/api/partner_config/update',
+            dataType: 'text',
+            headers: {
+                "Authorization": authHeader
+            },
+            contentType: 'application/json',
+            data: jsonStr,
+            success: function (text) {
+                var pretty = JSON.stringify(JSON.parse(text),null,2);
+                $(outputDiv).html(pretty);
+            },
+            error: function (err) {
+                $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        $('#doGet').on('click', function () {
+            getConfig('#json', '#errorOutput');
+        });
+
+        $('#doUpdate').on('click', function () {
+            var jsonStr = $('#json').val();
+            updateConfig(jsonStr, '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>

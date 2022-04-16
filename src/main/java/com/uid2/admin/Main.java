@@ -30,6 +30,7 @@ import com.uid2.admin.secret.SaltRotation;
 import com.uid2.admin.secret.SecureKeyGenerator;
 import com.uid2.admin.store.CloudStorageManager;
 import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.RotatingPartnerStore;
 import com.uid2.admin.store.RotatingSiteStore;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.service.*;
@@ -116,6 +117,10 @@ public class Main {
             RotatingSaltProvider saltProvider = new RotatingSaltProvider(cloudStorage, saltMetadataPath);
             saltProvider.loadContent();
 
+            String partnerMetadataPath = config.getString(RotatingPartnerStore.PARTNERS_METADATA_PATH);
+            RotatingPartnerStore partnerConfigProvider = new RotatingPartnerStore(cloudStorage, partnerMetadataPath);
+            partnerConfigProvider.loadContent();
+
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
@@ -132,7 +137,8 @@ public class Main {
                     new KeyAclService(auth, writeLock, storageManager, keyAclProvider, siteProvider, encryptionKeyService),
                     new OperatorKeyService(config, auth, writeLock, storageManager, operatorKeyProvider, keyGenerator),
                     new SaltService(auth, writeLock, storageManager, saltProvider, saltRotation),
-                    new SiteService(auth, writeLock, storageManager, siteProvider, clientKeyProvider));
+                    new SiteService(auth, writeLock, storageManager, siteProvider, clientKeyProvider),
+                    new PartnerConfigService(auth, writeLock, storageManager, partnerConfigProvider));
 
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
                     "admins", 10000, adminUserProvider);

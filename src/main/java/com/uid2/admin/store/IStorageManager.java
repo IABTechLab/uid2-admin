@@ -31,6 +31,7 @@ import com.uid2.shared.model.EnclaveIdentifier;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.store.RotatingKeyStore;
 import com.uid2.shared.store.RotatingSaltProvider;
+import io.vertx.core.json.JsonArray;
 
 import java.util.Collection;
 import java.util.Map;
@@ -44,4 +45,5 @@ public interface IStorageManager {
     void uploadOperatorKeys(RotatingOperatorKeyProvider provider, Collection<OperatorKey> operators) throws Exception;
     void uploadEnclaveIds(EnclaveIdentifierProvider provider, Collection<EnclaveIdentifier> identifiers) throws Exception;
     void uploadAdminUsers(AdminUserProvider provider, Collection<AdminUser> admins) throws Exception;
+    void uploadPartners(RotatingPartnerStore partnerConfigProvider, JsonArray partners) throws Exception;
 }

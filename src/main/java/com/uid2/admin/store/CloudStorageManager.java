@@ -343,6 +343,33 @@ public class CloudStorageManager implements IStorageManager {
         provider.loadContent(provider.getMetadata());
     }
 
+    @Override
+    public void uploadPartners(RotatingPartnerStore provider, JsonArray partners) throws Exception {
+        long generated = Instant.now().getEpochSecond();
+
+        JsonObject metadata = provider.getMetadata();
+        // bump up metadata version
+        metadata.put("version", metadata.getLong("version") + 1);
+        metadata.put("generated", generated);
+
+        // get location to upload
+        String location = metadata.getJsonObject("partners").getString("location");
+
+        backupFile(location, "partners-old", ".json", generated);
+
+        // generate new partners
+        Path newPartnersFile = Files.createTempFile("partners", ".json");
+        byte[] contentBytes = partners.encodePrettily().getBytes(StandardCharsets.UTF_8);
+        Files.write(newPartnersFile, contentBytes, StandardOpenOption.CREATE);
+
+        // upload new admins
+        cloudStorage.upload(newPartnersFile.toString(), location);
+        uploadMetadata(metadata, "partners", provider.getMetadataPath());
+
+        // refresh manually
+        provider.loadContent(provider.getMetadata());
+    }
+
     private void backupFile(String path, String name, String suffix, long timestamp) throws Exception {
         final Path localTemp = Files.createTempFile(name, suffix);
         Files.copy(cloudStorage.download(path), localTemp, StandardCopyOption.REPLACE_EXISTING);
