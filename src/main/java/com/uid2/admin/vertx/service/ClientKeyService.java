@@ -36,6 +36,7 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingClientKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.optout.OptOutUtils;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -212,7 +213,7 @@ public class ClientKeyService implements IService {
             String key = keyGenerator.generateRandomKeyString(32);
             if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + key;
 
-            String secret = keyGenerator.generateRandomKeyString(32);
+            String secret = OptOutUtils.byteArrayToHex(keyGenerator.generateRandomKey(32));
 
             // add new client to array
             Instant created = Instant.now();
