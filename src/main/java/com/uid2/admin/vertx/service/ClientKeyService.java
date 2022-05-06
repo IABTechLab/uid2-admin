@@ -213,7 +213,7 @@ public class ClientKeyService implements IService {
             String key = keyGenerator.generateRandomKeyString(32);
             if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + key;
 
-            String secret = OptOutUtils.byteArrayToHex(keyGenerator.generateRandomKey(32));
+            String secret = keyGenerator.generateRandomKeyString(32);
 
             // add new client to array
             Instant created = Instant.now();
