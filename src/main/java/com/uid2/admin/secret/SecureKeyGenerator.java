@@ -23,6 +23,8 @@
 
 package com.uid2.admin.secret;
 
+import com.uid2.shared.Utils;
+
 import java.security.SecureRandom;
 
 public class SecureKeyGenerator implements IKeyGenerator {
@@ -34,5 +36,10 @@ public class SecureKeyGenerator implements IKeyGenerator {
         final byte[] bytes = new byte[keyLen];
         random.nextBytes(bytes);
         return bytes;
+    }
+
+    @Override
+    public String generateRandomKeyString(int keyLen) throws Exception {
+        return Utils.toBase64String(generateRandomKey(keyLen));
     }
 }

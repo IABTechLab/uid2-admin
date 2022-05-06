@@ -101,6 +101,7 @@ public abstract class ServiceTestBase {
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
+        when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
 
         auth = new AuthMiddleware(this.adminUserProvider);
         AdminVerticle verticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider, createService());

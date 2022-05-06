@@ -28,7 +28,5 @@ import com.uid2.shared.Utils;
 public interface IKeyGenerator {
     byte[] generateRandomKey(int keyLen) throws Exception;
 
-    default String generateRandomKeyString(int keyLen) throws Exception {
-        return Utils.toBase64String(generateRandomKey(keyLen));
-    }
+    String generateRandomKeyString(int keyLen) throws Exception;
 }
