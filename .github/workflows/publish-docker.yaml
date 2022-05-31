@@ -5,6 +5,11 @@ on:
       tag:
         description: 'The tag to apply to the Docker file'
         type: string
+      cloud_provider:
+        description: 'Must be one of [aws, gcp, azure, default]'
+        required: false
+        default: 'default'
+        type: string
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -18,12 +23,18 @@ jobs:
     outputs:
       jar_version: ${{ steps.package.outputs.jar_version }}
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout Full history
+        uses: actions/checkout@v2
+        with:
+          # git-restore-mtime requires full git history. The default fetch-depth value (1) creates a shallow checkout.
+          fetch-depth: 0
+      - name: Restore Timestamps
+        uses: thetradedesk/git-restore-mtime-action@v1
       # Build and Run Unit Tests
       - name: Package Jar 
         id: package
         run: |
-          mvn -B package
+          mvn -B package -P ${{ github.event.inputs.cloud_provider }} 
           echo "::set-output name=jar_version::$(mvn help:evaluate -Dexpression=project.version | grep -e '^[1-9][^\[]')"
           echo "::set-output name=git_commit::$(git show --format="%h" --no-patch)"
       - name: Log in to the Container registry
@@ -38,7 +49,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,prefix=${{ steps.package.outputs.jar_version }}-,format=short
+            type=sha,prefix=${{ steps.package.outputs.jar_version }}-,suffix=-${{ github.event.inputs.cloud_provider }},format=short
             type=raw,value=${{ github.event.inputs.tag }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
