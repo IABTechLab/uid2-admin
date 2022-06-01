@@ -54,6 +54,13 @@ function init() {
             $('.notauthed').show();
         }
     });
+
+    $(document).ready(function () {
+        if (window.location.origin.endsWith('.eu')) {
+            let header = $("h1").first();
+            header.text(header.text().replace("UID2", "EUID"));
+        }
+    });
 }
 
 init();
