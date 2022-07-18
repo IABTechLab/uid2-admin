@@ -1,19 +1,21 @@
 package com.uid2.admin.audit;
 
+/**
+ * Store the type of data, action that occurred, and any extra information necessary to know about the operation
+ * also store the key representing the operation. The key should be designed such that all operations affecting the same
+ * row(s) in the same table share the same key.
+ */
 public class OperationModel {
 
-    //Store the type of data, action that occurred, and any extra information necessary to know about the operation
-    // also store the key representing the operation
+    public final Tables tableActioned;
+    public final Actions actionTaken;
+    public final AdminAuditModel.SummaryModel additionalInfo;
+    public final String actionKey;
 
-    public final String tableActioned;
-    public final Actions action;
-    public final AdminAuditModel.AdditionalInfoModel additionalInfo;
-    public final String key;
-
-    public OperationModel(String tableActioned, Actions action, AdminAuditModel.AdditionalInfoModel additionalInfo, String key){
+    public OperationModel(Tables tableActioned, Actions actionTaken, AdminAuditModel.SummaryModel additionalInfo, String actionKey){
         this.tableActioned = tableActioned;
-        this.action = action;
+        this.actionTaken = actionTaken;
         this.additionalInfo = additionalInfo;
-        this.key = key;
+        this.actionKey = actionKey;
     }
 }
