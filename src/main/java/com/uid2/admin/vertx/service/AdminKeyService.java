@@ -65,8 +65,8 @@ public class AdminKeyService implements IService {
                            IStorageManager storageManager,
                            AdminUserProvider adminUserProvider,
                            IKeyGenerator keyGenerator) {
-        this.auth = auth;
         this.audit = audit;
+        this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
         this.adminUserProvider = adminUserProvider;
@@ -172,8 +172,8 @@ public class AdminKeyService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(a));
-            return new OperationModel(Type.ADMIN, a.getContact(), Actions.GET,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getContact());
+            return new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName());
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -220,8 +220,8 @@ public class AdminKeyService implements IService {
 
             // respond with new admin created
             rc.response().end(jsonWriter.writeValueAsString(newAdmin));
-            return new OperationModel(Type.ADMIN, newAdmin.getContact(), Actions.CREATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + newAdmin.getContact());
+            return new OperationModel(Type.ADMIN, name, Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + name);
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -251,8 +251,8 @@ public class AdminKeyService implements IService {
 
             // respond with admin deleted
             rc.response().end(jsonWriter.writeValueAsString(a));
-            return new OperationModel(Type.ADMIN, a.getContact(), Actions.DELETE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getContact());
+            return new OperationModel(Type.ADMIN, a.getName(), Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getName());
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -296,9 +296,9 @@ public class AdminKeyService implements IService {
 
             // respond with admin disabled/enabled
             rc.response().end(response.encode());
-            return new OperationModel(Type.ADMIN, a.getContact(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
+            return new OperationModel(Type.ADMIN, a.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)),
-                    (disableFlag ? "disabled " : "enabled ") + a.getContact());
+                    (disableFlag ? "disabled " : "enabled ") + a.getName());
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -329,8 +329,8 @@ public class AdminKeyService implements IService {
 
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
-            return new OperationModel(Type.ADMIN, a.getContact(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getContact());
+            return new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getName());
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -369,7 +369,7 @@ public class AdminKeyService implements IService {
             for (Role role : roles) {
                 stringRoleList.add(role.toString());
             }
-            return new OperationModel(Type.ADMIN, a.getContact(), Actions.UPDATE,
+            return new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
                     DigestUtils.sha256Hex(adminToJson(a).toString()), "set roles of " + a.getName() +
                     " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}");
         } catch (Exception e) {

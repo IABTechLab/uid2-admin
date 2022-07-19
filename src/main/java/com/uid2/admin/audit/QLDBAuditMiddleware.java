@@ -5,6 +5,7 @@ import com.amazon.ion.IonSystem;
 import com.amazon.ion.IonValue;
 import com.amazon.ion.system.IonSystemBuilder;
 import com.uid2.admin.auth.AdminUserProvider;
+import com.uid2.shared.auth.IAuthorizable;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -29,7 +30,6 @@ public class QLDBAuditMiddleware implements AuditMiddleware{
             .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
             .sessionClientBuilder(QldbSessionClient.builder())
             .build();
-    private AdminUserProvider adminUserProvider;
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditMiddleware.class);
 
     protected QLDBAuditMiddleware(){
@@ -38,7 +38,7 @@ public class QLDBAuditMiddleware implements AuditMiddleware{
 
     @Override
     public Handler<RoutingContext> handle(AuditHandler<RoutingContext> handler) {
-        InnerAuditHandler auditHandler = new InnerAuditHandler(handler, this, adminUserProvider);
+        InnerAuditHandler auditHandler = new InnerAuditHandler(handler, this);
         return auditHandler::handle;
     }
 
@@ -85,21 +85,14 @@ public class QLDBAuditMiddleware implements AuditMiddleware{
         logger.info(model.writeToString());
     }
 
-    public QLDBAuditMiddleware setAdminUserProvider(AdminUserProvider adminUserProvider){
-        this.adminUserProvider = adminUserProvider;
-        return this;
-    }
-
     private static class InnerAuditHandler{
 
         private final AuditHandler<RoutingContext> innerHandler;
         private final AuditMiddleware auditWriter;
-        private final AdminUserProvider adminUserProvider;
 
-        private InnerAuditHandler(AuditHandler<RoutingContext> handler, AuditMiddleware auditWriter, AdminUserProvider adminUserProvider){
+        private InnerAuditHandler(AuditHandler<RoutingContext> handler, AuditMiddleware auditWriter){
             this.innerHandler = handler;
             this.auditWriter = auditWriter;
-            this.adminUserProvider = adminUserProvider;
         }
 
         public void handle(RoutingContext rc){
@@ -107,7 +100,7 @@ public class QLDBAuditMiddleware implements AuditMiddleware{
             if(rc.statusCode() < 300){
                 AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken,
                         getIPAddress(rc),
-                        adminUserProvider.getAdminUser(extractBearerToken(rc.request().getHeader("Authorization"))).getName(),
+                        ((IAuthorizable)rc.data().get("api-client")).getContact(),
                         System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary);
                 auditWriter.writeLog(auditModel);
             }
