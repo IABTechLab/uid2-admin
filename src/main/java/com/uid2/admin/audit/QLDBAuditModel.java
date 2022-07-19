@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.vertx.core.json.JsonObject;
 
-public class AdminAuditModel implements AuditModel{
+public class QLDBAuditModel implements AuditModel{
 
     public final Type tableActioned;
     public final String itemActioned; //null value represents all items in table
@@ -17,8 +17,8 @@ public class AdminAuditModel implements AuditModel{
     public final String itemHash; //null value for operations affecting more than one row
     public final String summary;
 
-    public AdminAuditModel(Type tableActioned, String itemActioned, Actions actionTaken, String itemKey, String clientIP,
-                           String adminUser, String hostNode, long timeEpochSecond, String itemHash, String summary){
+    public QLDBAuditModel(Type tableActioned, String itemActioned, Actions actionTaken, String itemKey, String clientIP,
+                          String adminUser, String hostNode, long timeEpochSecond, String itemHash, String summary){
         this.tableActioned = tableActioned;
         this.itemActioned = itemActioned;
         this.actionTaken = actionTaken;
