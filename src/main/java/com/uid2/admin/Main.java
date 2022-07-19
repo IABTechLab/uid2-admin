@@ -23,6 +23,9 @@
 
 package com.uid2.admin;
 
+import com.uid2.admin.audit.AuditFactory;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.QLDBAuditMiddleware;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
@@ -121,6 +124,8 @@ public class Main {
             RotatingPartnerStore partnerConfigProvider = new RotatingPartnerStore(cloudStorage, partnerMetadataPath);
             partnerConfigProvider.loadContent();
 
+            AuditMiddleware audit = ((QLDBAuditMiddleware)AuditFactory.getAuditMiddleware(Main.class))
+                    .setAdminUserProvider(adminUserProvider);
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
@@ -130,7 +135,7 @@ public class Main {
                     config, auth, writeLock, storageManager, keyProvider, keyGenerator);
 
             AdminVerticle adminVerticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider,
-                    new AdminKeyService(config, auth, writeLock, storageManager, adminUserProvider, keyGenerator),
+                    new AdminKeyService(config, audit, auth, writeLock, storageManager, adminUserProvider, keyGenerator),
                     new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator),
                     new EnclaveIdService(auth, writeLock, storageManager, enclaveIdProvider),
                     encryptionKeyService,
