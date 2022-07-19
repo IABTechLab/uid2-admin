@@ -8,19 +8,17 @@ package com.uid2.admin.audit;
  */
 public class OperationModel {
 
-    public final Type tableActioned;
-    public final String itemActioned;
-    public final Actions actionTaken;
+    public final Type itemType;
     public final String itemKey;
+    public final Actions actionTaken;
     public final String itemHash;
     public final String summary;
 
-    public OperationModel(Type tableActioned, String itemActioned, Actions actionTaken, String itemKey,
+    public OperationModel(Type itemType, String itemKey, Actions actionTaken,
                           String itemHash, String summary){
-        this.tableActioned = tableActioned;
-        this.itemActioned = itemActioned;
-        this.actionTaken = actionTaken;
+        this.itemType = itemType;
         this.itemKey = itemKey;
+        this.actionTaken = actionTaken;
         this.itemHash = itemHash;
         this.summary = summary;
     }

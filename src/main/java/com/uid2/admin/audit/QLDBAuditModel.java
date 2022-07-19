@@ -6,25 +6,52 @@ import io.vertx.core.json.JsonObject;
 
 public class QLDBAuditModel implements AuditModel{
 
-    public final Type tableActioned;
-    public final String itemActioned; //null value represents all items in table
+    /**
+     * The table that the user accesses.
+     */
+    public final Type itemType;
+    /**
+     * An identifier for the row in the table that is accessed. Is null if more than one row is accessed at the same
+     * time, e.g. listing all values in a table. If itemKey should be secret, hash before putting it into the model.
+     */
+    public final String itemKey;
+    /**
+     * Describes the action the user performed on the table (e.g. read ("GET"), write ("CREATE"/"DELETE")...)
+     */
     public final Actions actionTaken;
-    public final String itemKey; // =/= itemHash; itemKey hashes a row identifier and operation; itemHash hashes the entire item
+    /**
+     * The IP of the user making the HTTP request.
+     */
     public final String clientIP;
-    public final String adminUser;
+    /**
+     * The email of the user making the HTTP request.
+     */
+    public final String userEmail;
+    /**
+     * The server that processed the HTTP request.
+     */
     public final String hostNode;
+    /**
+     * The time that the HTTP request was received by the server.
+     */
     public final long timeEpochSecond;
-    public final String itemHash; //null value for operations affecting more than one row
+    /**
+     * The hash of the entire item being accessed/modified by the user. Is null if more than one
+     * row is accessed at the same time (which should only be get/list queries).
+     */
+    public final String itemHash;
+    /**
+     * Names the exact operation done to the item (e.g. rekeyed, revealed, disabled, etc.)
+     */
     public final String summary;
 
-    public QLDBAuditModel(Type tableActioned, String itemActioned, Actions actionTaken, String itemKey, String clientIP,
-                          String adminUser, String hostNode, long timeEpochSecond, String itemHash, String summary){
-        this.tableActioned = tableActioned;
-        this.itemActioned = itemActioned;
+    public QLDBAuditModel(Type itemType, String itemActioned, Actions actionTaken, String clientIP,
+                          String userEmail, String hostNode, long timeEpochSecond, String itemHash, String summary){
+        this.itemType = itemType;
+        this.itemKey = itemActioned;
         this.actionTaken = actionTaken;
-        this.itemKey = itemKey;
         this.clientIP = clientIP;
-        this.adminUser = adminUser;
+        this.userEmail = userEmail;
         this.hostNode = hostNode;
         this.timeEpochSecond = timeEpochSecond;
         this.itemHash = itemHash;
