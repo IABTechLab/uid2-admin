@@ -11,7 +11,6 @@ public interface AuditMiddleware {
 
     /**
      * Handle to attach to any route whose actions require logging.
-     * Dev: method signature may need to be modified
      *
      * @param handler the method that performs the action that requires logging,
      *                converted into {@literal Handler<RoutingContext>} via SAM

@@ -6,25 +6,29 @@ import io.vertx.core.json.JsonObject;
 
 public class AdminAuditModel implements AuditModel{
 
-    public final Tables tableActioned;
+    public final Type tableActioned;
+    public final String itemActioned; //null value represents all items in table
     public final Actions actionTaken;
-    public final String actionKey;
+    public final String itemKey; // =/= itemHash; itemKey hashes a row identifier and operation; itemHash hashes the entire item
     public final String clientIP;
     public final String adminUser;
     public final String hostNode;
     public final long timeEpochSecond;
-    public final SummaryModel additionalInfo;
+    public final String itemHash; //null value for operations affecting more than one row
+    public final String summary;
 
-    public AdminAuditModel(Tables tableActioned, Actions actionTaken, String actionKey, String clientIP, String adminUser,
-                           String hostNode, long timeEpochSecond, SummaryModel additionalInfo){
+    public AdminAuditModel(Type tableActioned, String itemActioned, Actions actionTaken, String itemKey, String clientIP,
+                           String adminUser, String hostNode, long timeEpochSecond, String itemHash, String summary){
         this.tableActioned = tableActioned;
+        this.itemActioned = itemActioned;
         this.actionTaken = actionTaken;
-        this.actionKey = actionKey;
+        this.itemKey = itemKey;
         this.clientIP = clientIP;
         this.adminUser = adminUser;
         this.hostNode = hostNode;
         this.timeEpochSecond = timeEpochSecond;
-        this.additionalInfo = additionalInfo;
+        this.itemHash = itemHash;
+        this.summary = summary;
     }
 
     @Override
@@ -35,20 +39,6 @@ public class AdminAuditModel implements AuditModel{
 
     @Override
     public String writeToString() {
-        return "-audit " + adminUser + "/" + clientIP + " performed a(n) " + actionTaken.toString() + " action on " + tableActioned
-                + " with action key " + this.actionKey + " at time " + timeEpochSecond + " handled by " + hostNode + "; additional info: "
-                + this.additionalInfo.summary;
-    }
-
-    public static class SummaryModel {
-        public final String summary;
-        public final String entityName;
-        public final String entityHash;
-
-        public SummaryModel(String summary, String entityName, String entityHash){
-            this.summary = summary;
-            this.entityName = entityName;
-            this.entityHash = entityHash;
-        }
+        return writeToJson().toString();
     }
 }

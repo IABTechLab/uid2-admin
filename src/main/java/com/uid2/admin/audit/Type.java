@@ -4,13 +4,13 @@ package com.uid2.admin.audit;
  * An enum of all table entities that uid2-admin handles.
  */
 
-public enum Tables {
-    SITES,
-    CLIENTS,
+public enum Type {
+    SITE,
+    CLIENT,
     KEYACL,
-    KEYS,
-    OPERATORS,
-    ENCLAVES,
-    OPTOUT,
-    ADMINS
+    KEY,
+    OPERATOR,
+    ENCLAVE,
+    PARTNER,
+    ADMIN
 }
