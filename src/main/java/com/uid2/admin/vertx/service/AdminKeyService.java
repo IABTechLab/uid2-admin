@@ -42,15 +42,14 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.bouncycastle.crypto.Digest;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
-    private final AuthMiddleware auth;
     private final AuditMiddleware audit;
+    private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final AdminUserProvider adminUserProvider;
@@ -128,13 +127,13 @@ public class AdminKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
-    private OperationModel handleAdminMetadata(RoutingContext rc) {
+    private List<OperationModel> handleAdminMetadata(RoutingContext rc) {
         try {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
-            return new OperationModel(Type.ADMIN, null, Actions.LIST,
-                    null, "list metadata");
+            return Collections.singletonList(new OperationModel(Type.ADMIN, null, Actions.LIST,
+                    null, "list metadata"));
         } catch (Exception e) {
             e.printStackTrace();
             rc.fail(500, e);
@@ -142,7 +141,7 @@ public class AdminKeyService implements IService {
         }
     }
 
-    private OperationModel handleAdminList(RoutingContext rc) {
+    private List<OperationModel> handleAdminList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Collection<AdminUser> collection = this.adminUserProvider.getAll();
@@ -153,15 +152,15 @@ public class AdminKeyService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return new OperationModel(Type.ADMIN, null, Actions.LIST,
-                    null, "list admins");
+            return Collections.singletonList(new OperationModel(Type.ADMIN, null, Actions.LIST,
+                    null, "list admins"));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
         }
     }
     // consider constructing AuditModel here and return it, therefore AuditModel can access additional context
-    private OperationModel handleAdminReveal(RoutingContext rc) {
+    private List<OperationModel> handleAdminReveal(RoutingContext rc) {
         try {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
@@ -172,15 +171,15 @@ public class AdminKeyService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(a));
-            return new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName());
+            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
         }
     }
 
-    private OperationModel handleAdminAdd(RoutingContext rc) {
+    private List<OperationModel> handleAdminAdd(RoutingContext rc) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -220,15 +219,15 @@ public class AdminKeyService implements IService {
 
             // respond with new admin created
             rc.response().end(jsonWriter.writeValueAsString(newAdmin));
-            return new OperationModel(Type.ADMIN, name, Actions.CREATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + name);
+            return Collections.singletonList(new OperationModel(Type.ADMIN, name, Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + name));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
         }
     }
 
-    private OperationModel handleAdminDel(RoutingContext rc) {
+    private List<OperationModel> handleAdminDel(RoutingContext rc) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -251,23 +250,23 @@ public class AdminKeyService implements IService {
 
             // respond with admin deleted
             rc.response().end(jsonWriter.writeValueAsString(a));
-            return new OperationModel(Type.ADMIN, a.getName(), Actions.DELETE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getName());
+            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
         }
     }
 
-    private OperationModel handleAdminDisable(RoutingContext rc) {
+    private List<OperationModel> handleAdminDisable(RoutingContext rc) {
         return handleAdminDisable(rc, true);
     }
 
-    private OperationModel handleAdminEnable(RoutingContext rc) {
+    private List<OperationModel> handleAdminEnable(RoutingContext rc) {
         return handleAdminDisable(rc, false);
     }
 
-    private OperationModel handleAdminDisable(RoutingContext rc, boolean disableFlag) {
+    private List<OperationModel> handleAdminDisable(RoutingContext rc, boolean disableFlag) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -296,16 +295,15 @@ public class AdminKeyService implements IService {
 
             // respond with admin disabled/enabled
             rc.response().end(response.encode());
-            return new OperationModel(Type.ADMIN, a.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)),
-                    (disableFlag ? "disabled " : "enabled ") + a.getName());
+            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), (disableFlag ? "disabled " : "enabled ") + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
         }
     }
 
-    private OperationModel handleAdminRekey(RoutingContext rc) {
+    private List<OperationModel> handleAdminRekey(RoutingContext rc) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -329,15 +327,15 @@ public class AdminKeyService implements IService {
 
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
-            return new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getName());
+            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
         }
     }
 
-    private OperationModel handleAdminRoles(RoutingContext rc) {
+    private List<OperationModel> handleAdminRoles(RoutingContext rc) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -369,9 +367,9 @@ public class AdminKeyService implements IService {
             for (Role role : roles) {
                 stringRoleList.add(role.toString());
             }
-            return new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
+            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
                     DigestUtils.sha256Hex(adminToJson(a).toString()), "set roles of " + a.getName() +
-                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}");
+                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
