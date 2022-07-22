@@ -8,8 +8,9 @@ package com.uid2.admin.audit;
  * exhibit some other behavior.
  */
 public class AuditFactory {
+    private static final AuditWriter auditWriter = new QLDBAuditWriter();
 
-    public static final AuditMiddleware auditMiddleware = new QLDBAuditMiddleware();
+    public static final AuditMiddleware auditMiddleware = new QLDBAuditMiddleware(auditWriter);
 
     /**
      * Returns an AuditMiddleware object for the designated class to use.
@@ -20,5 +21,4 @@ public class AuditFactory {
     public static AuditMiddleware getAuditMiddleware(Class<?> clazz){
         return auditMiddleware;
     }
-
 }
