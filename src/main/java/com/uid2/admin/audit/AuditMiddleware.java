@@ -5,7 +5,7 @@ import io.vertx.ext.web.RoutingContext;
 
 /**
  * AuditMiddleware objects are intended to be attached to any endpoint that the system
- * wants to keep track of via logging to an external source.
+ * wants to keep track of via logging to an external source, and pass logging data to an AuditWriter object.
  */
 public interface AuditMiddleware {
 
@@ -18,12 +18,4 @@ public interface AuditMiddleware {
      * specified in handler.
      */
     Handler<RoutingContext> handle(AuditHandler<RoutingContext> handler);
-
-    /**
-     * Logs the information in the AuditModel to an external database(s).
-     * Does not log any information if model == null.
-     *
-     * @param model the AuditModel to write out.
-     */
-    void writeLog(AuditModel model);
 }

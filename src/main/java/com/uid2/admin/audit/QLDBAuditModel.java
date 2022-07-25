@@ -37,7 +37,8 @@ public class QLDBAuditModel implements AuditModel{
     public final long timeEpochSecond;
     /**
      * The hash of the entire item being accessed/modified by the user. Is null if more than one
-     * row is accessed at the same time (which should only be get/list queries).
+     * row is accessed at the same time (which should only be get/list queries; otherwise make multiple
+     * queries).
      */
     public final String itemHash;
     /**
@@ -45,10 +46,10 @@ public class QLDBAuditModel implements AuditModel{
      */
     public final String summary;
 
-    public QLDBAuditModel(Type itemType, String itemActioned, Actions actionTaken, String clientIP,
+    public QLDBAuditModel(Type itemType, String itemKey, Actions actionTaken, String clientIP,
                           String userEmail, String hostNode, long timeEpochSecond, String itemHash, String summary){
         this.itemType = itemType;
-        this.itemKey = itemActioned;
+        this.itemKey = itemKey;
         this.actionTaken = actionTaken;
         this.clientIP = clientIP;
         this.userEmail = userEmail;
