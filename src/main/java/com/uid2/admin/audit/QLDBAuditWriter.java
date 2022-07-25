@@ -1,5 +1,6 @@
 package com.uid2.admin.audit;
 
+import com.amazon.ion.IonStruct;
 import com.amazon.ion.IonSystem;
 import com.amazon.ion.IonValue;
 import com.amazon.ion.system.IonSystemBuilder;
@@ -9,6 +10,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import software.amazon.awssdk.services.qldbsession.QldbSessionClient;
 import software.amazon.qldb.QldbDriver;
+import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ public class QLDBAuditWriter implements AuditWriter{
             .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
             .sessionClientBuilder(QldbSessionClient.builder())
             .build();
-    private static final Logger logger = LoggerFactory.getLogger(QLDBAuditMiddleware.class);
+    private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
     @Override
     public void writeLog(AuditModel model) {
         if(model == null){ //should never be true, but check exists in case
@@ -51,18 +53,44 @@ public class QLDBAuditWriter implements AuditWriter{
                     query.append(", ");
                 }
             }
-            txn.execute(query.toString(), sanitizedInputs);
+            query.append(" WHERE t.itemType = ? AND t.itemKey = ?");
+            sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
+            if(jsonObject.getValue("itemKey") == null){
+                sanitizedInputs.add(ionSys.newNull());
+            }
+            else{
+                sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
+            }
+            Result r = txn.execute(query.toString(), sanitizedInputs);
+            if(!r.iterator().hasNext()){
+                logger.warn("Malformed audit log input: no log written to QLDB");
+            }
         });
-
-        // old code; performs two queries which the QLDB treats as two history entries
-//        qldbDriver.execute(txn -> {
-//            txn.execute("DELETE FROM " + TABLE_NAME);
-//            JsonObject jsonObject = model.writeToJson();
-//            txn.execute("INSERT INTO " + TABLE_NAME + " VALUE ?",
-//                    ionSys.newLoader().load(jsonObject.toString()).get(0));
-//        });
 
         // write to Loki
         logger.info(model.writeToString());
+    }
+
+    public boolean isSetup(){
+        try {
+            final IonStruct[] count = new IonStruct[1];
+            qldbDriver.execute(txn -> {
+                Result result = txn.execute("SELECT COUNT(*) AS \"count\" FROM " + Constants.QLDB_TABLE_NAME);
+                count[0] = (IonStruct) result.iterator().next();
+            });
+            return !count[0].get("count").equals(ionSys.newInt(0));
+        }
+        catch (Exception e){
+            throw new RuntimeException("AWS configuration not set up");
+        }
+    }
+
+    public void setup(OperationModel model){
+        QLDBAuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, null,
+                null, null, -1, model.itemHash, model.summary);
+        qldbDriver.execute(txn -> {
+            txn.execute("INSERT INTO " + Constants.QLDB_TABLE_NAME + " VALUE ?",
+                    ionSys.newLoader().load(auditModel.writeToJson().toString()).get(0));
+        });
     }
 }

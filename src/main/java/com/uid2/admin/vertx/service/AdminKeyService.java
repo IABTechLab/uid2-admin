@@ -25,6 +25,7 @@ package com.uid2.admin.vertx.service;
 
 import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.Constants;
 import com.uid2.admin.audit.*;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
@@ -77,12 +78,8 @@ public class AdminKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
 
-        // Old command
-        // router.get("/api/admin/metadata").handler(
-        //        auth.handle(this::handleAdminMetadata, Role.ADMINISTRATOR));
-
         router.get("/api/admin/metadata").handler(
-                auth.handle(audit.handle(this::handleAdminMetadata), Role.ADMINISTRATOR));
+                auth.handle(this::handleAdminMetadata, Role.ADMINISTRATOR));
 
         router.get("/api/admin/list").handler(
                 auth.handle(audit.handle(this::handleAdminList), Role.ADMINISTRATOR));
@@ -127,17 +124,31 @@ public class AdminKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
-    private List<OperationModel> handleAdminMetadata(RoutingContext rc) {
+    @Override
+    public Collection<OperationModel> backfill(){
+        try {
+            Collection<AdminUser> adminUsers = adminUserProvider.getAll();
+            Collection<OperationModel> returnList = new HashSet<>();
+            for (AdminUser a : adminUsers) {
+                returnList.add(new OperationModel(Type.ADMIN, a.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), null));
+            }
+            return returnList;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    private void handleAdminMetadata(RoutingContext rc) {
         try {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
-            return Collections.singletonList(new OperationModel(Type.ADMIN, null, Actions.LIST,
-                    null, "list metadata"));
         } catch (Exception e) {
             e.printStackTrace();
             rc.fail(500, e);
-            return null;
         }
     }
 
@@ -152,7 +163,7 @@ public class AdminKeyService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.ADMIN, null, Actions.LIST,
+            return Collections.singletonList(new OperationModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST,
                     null, "list admins"));
         } catch (Exception e) {
             rc.fail(500, e);
