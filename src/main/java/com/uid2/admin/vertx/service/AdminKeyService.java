@@ -124,23 +124,6 @@ public class AdminKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
-    @Override
-    public Collection<OperationModel> backfill(){
-        try {
-            Collection<AdminUser> adminUsers = adminUserProvider.getAll();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for (AdminUser a : adminUsers) {
-                returnList.add(new OperationModel(Type.ADMIN, a.getName(), null,
-                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private void handleAdminMetadata(RoutingContext rc) {
         try {
             rc.response()
