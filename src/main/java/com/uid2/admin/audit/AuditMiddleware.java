@@ -1,7 +1,10 @@
 package com.uid2.admin.audit;
 
+import com.uid2.admin.vertx.service.IService;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
+
+import java.util.List;
 
 /**
  * AuditMiddleware objects are intended to be attached to any endpoint that the system
@@ -18,4 +21,11 @@ public interface AuditMiddleware {
      * specified in handler.
      */
     Handler<RoutingContext> handle(AuditHandler<RoutingContext> handler);
+
+    /**
+     * Executes any necessary initialization of the AuditMiddleware and/or the database
+     * it logs to.
+     * @param services A list of all services that can be called by the client.
+     */
+    void startup(List<IService> services);
 }

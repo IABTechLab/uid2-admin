@@ -25,6 +25,9 @@ public class QLDBAuditWriter implements AuditWriter{
             .sessionClientBuilder(QldbSessionClient.builder())
             .build();
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
+    public QLDBAuditWriter(){
+
+    }
     @Override
     public void writeLog(AuditModel model) {
         if(model == null){ //should never be true, but check exists in case
@@ -33,7 +36,7 @@ public class QLDBAuditWriter implements AuditWriter{
         // write to QLDB; update this to UPDATE in one command instead of two
         qldbDriver.execute(txn -> {
             List<IonValue> sanitizedInputs = new ArrayList<>();
-            StringBuilder query = new StringBuilder("UPDATE " + Constants.QLDB_TABLE_NAME + " AS t SET ");
+            StringBuilder query = new StringBuilder("UPDATE " + Constants.QLDB_TABLE_NAME + " AS t SET "); // make jsonobject as a field duh
             JsonObject jsonObject = model.writeToJson();
             Iterator<String> iterator = jsonObject.fieldNames().iterator();
             while(iterator.hasNext()){

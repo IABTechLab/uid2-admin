@@ -56,7 +56,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         this.config.put("site_key_activates_in_seconds", SITE_KEY_ACTIVATES_IN_SECONDS);
         this.config.put("site_key_expires_after_seconds", SITE_KEY_EXPIRES_AFTER_SECONDS);
 
-        keyService = new EncryptionKeyService(config, auth, writeLock, storageManager, keyProvider, keyGenerator);
+        keyService = new EncryptionKeyService(config, audit, auth, writeLock, storageManager, keyProvider, keyGenerator);
         return keyService;
     }
 

@@ -50,7 +50,7 @@ public class SaltServiceTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        return new SaltService(auth, writeLock, storageManager, saltProvider, saltRotation);
+        return new SaltService(audit, auth, writeLock, storageManager, saltProvider, saltRotation);
     }
 
     private void checkSnapshotsResponse(RotatingSaltProvider.SaltSnapshot[] expectedSnapshots, Object[] actualSnapshots) {

@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
 public class ClientKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator);
+        return new ClientKeyService(config, audit, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator);
     }
 
     private void checkClientKeyResponse(ClientKey[] expectedClients, Object[] actualClients) {

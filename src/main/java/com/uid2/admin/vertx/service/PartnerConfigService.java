@@ -23,40 +23,37 @@
 
 package com.uid2.admin.vertx.service;
 
-import com.uid2.admin.model.Site;
-import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.store.ISiteStore;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.store.IStorageManager;
 import com.uid2.admin.store.RotatingPartnerStore;
-import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.shared.Const;
-import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.RotatingKeyAclProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.model.SiteUtil;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class PartnerConfigService implements IService {
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final RotatingPartnerStore partnerConfigProvider;
 
-    public PartnerConfigService(AuthMiddleware auth,
+    public PartnerConfigService(AuditMiddleware audit,
+                                AuthMiddleware auth,
                                 WriteLock writeLock,
                                 IStorageManager storageManager,
                                 RotatingPartnerStore partnerConfigProvider) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -66,33 +63,49 @@ public class PartnerConfigService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/partner_config/get").handler(
-                auth.handle(this::handlePartnerConfigGet, Role.ADMINISTRATOR));
-        router.post("/api/partner_config/update").blockingHandler(auth.handle((ctx) -> {
+                auth.handle(audit.handle(this::handlePartnerConfigGet), Role.ADMINISTRATOR));
+        router.post("/api/partner_config/update").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handlePartnerConfigUpdate(ctx);
+                return this.handlePartnerConfigUpdate(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }), Role.ADMINISTRATOR));
     }
 
-    private void handlePartnerConfigGet(RoutingContext rc) {
+    @Override
+    public Collection<OperationModel> backfill(){
+        try{
+            String config = this.partnerConfigProvider.getConfig();
+            return Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", null,
+                    DigestUtils.sha256Hex(config), null));
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    private List<OperationModel> handlePartnerConfigGet(RoutingContext rc) {
         try {
             String config = this.partnerConfigProvider.getConfig();
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(config);
+            return Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", Actions.GET,
+                    DigestUtils.sha256Hex(config), "get partner config"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handlePartnerConfigUpdate(RoutingContext rc) {
+    private List<OperationModel> handlePartnerConfigUpdate(RoutingContext rc) {
         try {
             // refresh manually
             this.partnerConfigProvider.loadContent();
             JsonArray partners = rc.getBodyAsJsonArray();
             if (partners == null) {
                 ResponseUtil.error(rc, 400, "Body must be none empty");
-                return;
+                return null;
             }
 
             storageManager.uploadPartners(this.partnerConfigProvider, partners);
@@ -100,8 +113,11 @@ public class PartnerConfigService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end("\"success\"");
+            return Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", Actions.UPDATE,
+                    DigestUtils.sha256Hex(partnerConfigProvider.getConfig()), "updated partner config"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 }

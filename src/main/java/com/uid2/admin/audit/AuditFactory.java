@@ -8,7 +8,7 @@ package com.uid2.admin.audit;
  * exhibit some other behavior.
  */
 public class AuditFactory {
-    private static final AuditWriter auditWriter = new QLDBAuditWriter();
+    public static final AuditWriter auditWriter = new QLDBAuditWriter();
 
     public static final AuditMiddleware auditMiddleware = new QLDBAuditMiddleware(auditWriter);
 

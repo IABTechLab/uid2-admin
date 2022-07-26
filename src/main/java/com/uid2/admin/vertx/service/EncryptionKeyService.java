@@ -23,9 +23,16 @@
 
 package com.uid2.admin.vertx.service;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.Constants;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -40,6 +47,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,6 +64,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static final String SITE_KEY_ACTIVATES_IN_SECONDS = "site_key_activates_in_seconds";
     private static final String SITE_KEY_EXPIRES_AFTER_SECONDS = "site_key_expires_after_seconds";
 
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -66,13 +75,16 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration masterKeyExpiresAfter;
     private final Duration siteKeyActivatesIn;
     private final Duration siteKeyExpiresAfter;
+    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     public EncryptionKeyService(JsonObject config,
+                                AuditMiddleware audit,
                                 AuthMiddleware auth,
                                 WriteLock writeLock,
                                 IStorageManager storageManager,
                                 RotatingKeyStore keyProvider,
                                 IKeyGenerator keyGenerator) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -95,23 +107,39 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/key/list").handler(
-                auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
+                auth.handle(audit.handle(this::handleKeyList), Role.SECRET_MANAGER));
 
-        router.post("/api/key/rotate_master").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/rotate_master").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleRotateMasterKey(ctx);
+                return this.handleRotateMasterKey(ctx);
             }
-        }, Role.SECRET_MANAGER));
-        router.post("/api/key/rotate_site").blockingHandler(auth.handle((ctx) -> {
+        }), Role.SECRET_MANAGER));
+        router.post("/api/key/rotate_site").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleRotateSiteKey(ctx);
+                return this.handleRotateSiteKey(ctx);
             }
-        }, Role.SECRET_MANAGER));
-        router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
+        }), Role.SECRET_MANAGER));
+        router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleRotateAllSiteKeys(ctx);
+                return this.handleRotateAllSiteKeys(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }), Role.SECRET_MANAGER));
+    }
+
+    public Collection<OperationModel> backfill(){
+        try{
+            Collection<EncryptionKey> keys = keyProvider.getSnapshot().getActiveKeySet();
+            Collection<OperationModel> returnList = new HashSet<>();
+            for(EncryptionKey k : keys){
+                returnList.add(new OperationModel(Type.KEY, String.valueOf(k.getId()), null,
+                        hashedToJsonWithKey(k), null));
+            }
+            return returnList;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return new HashSet<>();
+        }
     }
 
     @Override
@@ -122,7 +150,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return addSiteKeys(Arrays.asList(siteId), siteKeyActivatesIn, siteKeyExpiresAfter).get(0);
     }
 
-    private void handleKeyList(RoutingContext rc) {
+    private List<OperationModel> handleKeyList(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();
             this.keyProvider.getSnapshot().getActiveKeySet().stream()
@@ -132,12 +160,14 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            return Collections.singletonList(new OperationModel(Type.KEY, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list keys"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleRotateMasterKey(RoutingContext rc) {
+    private List<OperationModel> handleRotateMasterKey(RoutingContext rc) {
         try {
             final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
                 s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
@@ -147,28 +177,35 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            List<OperationModel> modelList = new ArrayList<>();
+            for(EncryptionKey k : result.rotatedKeys){
+                modelList.add(new OperationModel(Type.KEY, String.valueOf(k.getId()), Actions.UPDATE,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(k)), "rotate master key"));
+            }
+            return modelList;
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleRotateSiteKey(RoutingContext rc) {
+    private List<OperationModel> handleRotateSiteKey(RoutingContext rc) {
         try {
             final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
-            if (!siteIdOpt.isPresent()) return;
+            if (!siteIdOpt.isPresent()) return null;
             final int siteId = siteIdOpt.get();
 
             if (siteId != Const.Data.AdvertisingTokenSiteId && !SiteUtil.isValidSiteId(siteId)) {
                 ResponseUtil.error(rc, 400, "must specify a valid site id");
-                return;
+                return null;
             }
 
             final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> s == siteId);
             if (result == null) {
-                return;
+                return null;
             } else if (!result.siteIds.contains(siteId)) {
                 ResponseUtil.error(rc, 404, "No keys found for the specified site id: " + siteId);
-                return;
+                return null;
             }
 
             final JsonArray ja = new JsonArray();
@@ -176,16 +213,23 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            List<OperationModel> modelList = new ArrayList<>();
+            for(EncryptionKey k : result.rotatedKeys){
+                modelList.add(new OperationModel(Type.KEY, String.valueOf(k.getId()), Actions.UPDATE,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(k)), "rotate site key " + k.getSiteId()));
+            }
+            return modelList;
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleRotateAllSiteKeys(RoutingContext rc) {
+    private List<OperationModel> handleRotateAllSiteKeys(RoutingContext rc) {
         try {
             final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> SiteUtil.isValidSiteId(s) || s == Const.Data.AdvertisingTokenSiteId);
             if (result == null) {
-                return;
+                return null;
             }
 
             final JsonArray ja = new JsonArray();
@@ -193,8 +237,15 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            List<OperationModel> modelList = new ArrayList<>();
+            for(EncryptionKey k : result.rotatedKeys){
+                modelList.add(new OperationModel(Type.KEY, String.valueOf(k.getId()), Actions.UPDATE,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(k)), "rotate site key " + k.getSiteId()));
+            }
+            return modelList;
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
@@ -301,6 +352,17 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         jo.put("activates", key.getActivates().toEpochMilli());
         jo.put("expires", key.getExpires().toEpochMilli());
         return jo;
+    }
+
+    private String hashedToJsonWithKey(EncryptionKey key) {
+        JsonObject jo = new JsonObject();
+        jo.put("id", key.getId());
+        jo.put("key_bytes", new String(key.getKeyBytes()));
+        jo.put("site_id", key.getSiteId());
+        jo.put("created", key.getCreated().toEpochMilli());
+        jo.put("activates", key.getActivates().toEpochMilli());
+        jo.put("expires", key.getExpires().toEpochMilli());
+        return DigestUtils.sha256Hex(jo.toString());
     }
 
     private class RotationResult

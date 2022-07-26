@@ -13,7 +13,7 @@ import java.util.List;
 public class QLDBAuditMiddleware implements AuditMiddleware{
     private final AuditWriter auditWriter;
 
-    protected QLDBAuditMiddleware(AuditWriter writer){
+    public QLDBAuditMiddleware(AuditWriter writer){
         this.auditWriter = writer;
     }
 

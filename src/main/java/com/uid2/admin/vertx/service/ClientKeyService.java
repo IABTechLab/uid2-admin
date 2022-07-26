@@ -23,7 +23,14 @@
 
 package com.uid2.admin.vertx.service;
 
+import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.Constants;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
+import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.ISiteStore;
@@ -36,21 +43,19 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingClientKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.optout.OptOutUtils;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -61,12 +66,14 @@ public class ClientKeyService implements IService {
     private final String clientKeyPrefix;
 
     public ClientKeyService(JsonObject config,
+                            AuditMiddleware audit,
                             AuthMiddleware auth,
                             WriteLock writeLock,
                             IStorageManager storageManager,
                             RotatingClientKeyProvider clientKeyProvider,
                             ISiteStore siteProvider,
                             IKeyGenerator keyGenerator) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -82,51 +89,68 @@ public class ClientKeyService implements IService {
         router.get("/api/client/metadata").handler(
                 auth.handle(this::handleClientMetadata, Role.CLIENTKEY_ISSUER));
         router.get("/api/client/list").handler(
-                auth.handle(this::handleClientList, Role.CLIENTKEY_ISSUER));
+                auth.handle(audit.handle(this::handleClientList), Role.CLIENTKEY_ISSUER));
         router.get("/api/client/reveal").handler(
-                auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
+                auth.handle(audit.handle(this::handleClientReveal), Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/add").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientAdd(ctx);
+                return this.handleClientAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/del").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/del").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientDel(ctx);
+                return this.handleClientDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }), Role.ADMINISTRATOR));
 
-        router.post("/api/client/update").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/update").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientUpdate(ctx);
+                return this.handleClientUpdate(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/disable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/disable").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientDisable(ctx);
+                return this.handleClientDisable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/enable").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientEnable(ctx);
+                return this.handleClientEnable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/rekey").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/rekey").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientRekey(ctx);
+                return this.handleClientRekey(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }), Role.ADMINISTRATOR));
 
-        router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/roles").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleClientRoles(ctx);
+                return this.handleClientRoles(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
+    }
+
+    @Override
+    public Collection<OperationModel> backfill(){
+        try {
+            Collection<ClientKey> clients = clientKeyProvider.getAll();
+            Collection<OperationModel> returnList = new HashSet<>();
+            for (ClientKey c : clients) {
+                returnList.add(new OperationModel(Type.CLIENT, c.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), null));
+            }
+            return returnList;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return new HashSet<>();
+        }
     }
 
     private void handleClientMetadata(RoutingContext rc) {
@@ -139,7 +163,7 @@ public class ClientKeyService implements IService {
         }
     }
 
-    private void handleClientList(RoutingContext rc) {
+    private List<OperationModel> handleClientList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Collection<ClientKey> collection = this.clientKeyProvider.getAll();
@@ -158,12 +182,14 @@ public class ClientKeyService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            return Collections.singletonList(new OperationModel(Type.CLIENT, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list clients"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientReveal(RoutingContext rc) {
+    private List<OperationModel> handleClientReveal(RoutingContext rc) {
         try {
             final String name = rc.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
@@ -171,18 +197,22 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client not found");
-                return;
+                return null;
             }
+            ClientKey c = existingClient.get();
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(jsonWriter.writeValueAsString(existingClient.get()));
+                    .end(jsonWriter.writeValueAsString(c));
+            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.GET,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "revealed " + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientAdd(RoutingContext rc) {
+    private List<OperationModel> handleClientAdd(RoutingContext rc) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -193,17 +223,17 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (existingClient.isPresent()) {
                 ResponseUtil.error(rc, 400, "key existed");
-                return;
+                return null;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
-                return;
+                return null;
             }
 
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) return;
+            if (site == null) return null;
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
@@ -223,7 +253,7 @@ public class ClientKeyService implements IService {
                     .withRoles(roles);
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
-                return;
+                return null;
             }
 
             // add client to the array
@@ -234,12 +264,15 @@ public class ClientKeyService implements IService {
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newClient));
+            return Collections.singletonList(new OperationModel(Type.CLIENT, newClient.getName(), Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newClient)), "created " + newClient.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientDel(RoutingContext rc) {
+    private List<OperationModel> handleClientDel(RoutingContext rc) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -250,7 +283,7 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client key not found");
-                return;
+                return null;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -266,12 +299,15 @@ public class ClientKeyService implements IService {
 
             // respond with client deleted
             rc.response().end(jsonWriter.writeValueAsString(c));
+            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "deleted " + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientUpdate(RoutingContext rc) {
+    private List<OperationModel> handleClientUpdate(RoutingContext rc) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -282,11 +318,11 @@ public class ClientKeyService implements IService {
                     .findFirst().orElse(null);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
-                return;
+                return null;
             }
 
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) return;
+            if (site == null) return null;
 
             existingClient.withSiteId(site.getId());
 
@@ -299,20 +335,23 @@ public class ClientKeyService implements IService {
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
+            return Collections.singletonList(new OperationModel(Type.CLIENT, existingClient.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingClient)), "updated " + existingClient.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientDisable(RoutingContext rc) {
-        handleClientDisable(rc, true);
+    private List<OperationModel> handleClientDisable(RoutingContext rc) {
+        return handleClientDisable(rc, true);
     }
 
-    private void handleClientEnable(RoutingContext rc) {
-        handleClientDisable(rc, false);
+    private List<OperationModel> handleClientEnable(RoutingContext rc) {
+        return handleClientDisable(rc, false);
     }
 
-    private void handleClientDisable(RoutingContext rc, boolean disableFlag) {
+    private List<OperationModel> handleClientDisable(RoutingContext rc, boolean disableFlag) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -323,7 +362,7 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client key not found");
-                return;
+                return null;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -333,7 +372,7 @@ public class ClientKeyService implements IService {
             ClientKey c = existingClient.get();
             if (c.isDisabled() == disableFlag) {
                 ResponseUtil.error(rc, 400, "no change needed");
-                return;
+                return null;
             }
 
             c.setDisabled(disableFlag);
@@ -349,12 +388,15 @@ public class ClientKeyService implements IService {
 
             // respond with client disabled/enabled
             rc.response().end(response.encode());
+            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), (disableFlag ? "disabled " : "enabled ") + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientRekey(RoutingContext rc) {
+    private List<OperationModel> handleClientRekey(RoutingContext rc) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -365,7 +407,7 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client key not found");
-                return;
+                return null;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -385,12 +427,15 @@ public class ClientKeyService implements IService {
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
+            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "rekeyed " + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleClientRoles(RoutingContext rc) {
+    private List<OperationModel> handleClientRoles(RoutingContext rc) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -401,13 +446,13 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client not found");
-                return;
+                return null;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
-                return;
+                return null;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -422,8 +467,16 @@ public class ClientKeyService implements IService {
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
+            List<String> stringRoleList = new ArrayList<>();
+            for (Role role : roles) {
+                stringRoleList.add(role.toString());
+            }
+            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "set roles of " + c.getName() +
+                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 }

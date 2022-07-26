@@ -24,6 +24,11 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.Constants;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.IStorageManager;
 import com.uid2.admin.store.RotatingSiteStore;
@@ -41,11 +46,13 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class SiteService implements IService {
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -53,11 +60,13 @@ public class SiteService implements IService {
     private final IClientKeyProvider clientKeyProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public SiteService(AuthMiddleware auth,
+    public SiteService(AuditMiddleware audit,
+                       AuthMiddleware auth,
                        WriteLock writeLock,
                        IStorageManager storageManager,
                        RotatingSiteStore siteProvider,
                        IClientKeyProvider clientKeyProvider) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -68,20 +77,37 @@ public class SiteService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/site/list").handler(
-                auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER));
-        router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
+                auth.handle(audit.handle(this::handleSiteList), Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/add").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleSiteAdd(ctx);
+                return this.handleSiteAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
-        router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
+        }), Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/enable").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleSiteEnable(ctx);
+                return this.handleSiteEnable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
     }
 
-    private void handleSiteList(RoutingContext rc) {
+    @Override
+    public Collection<OperationModel> backfill(){
+        try{
+            Collection<Site> sites = this.siteProvider.getAllSites();
+            Collection<OperationModel> returnList = new HashSet<>();
+            for(Site s : sites){
+                returnList.add(new OperationModel(Type.SITE, s.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(s)), null));
+            }
+            return returnList;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    private List<OperationModel> handleSiteList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             final Collection<Site> sites = this.siteProvider.getAllSites().stream()
@@ -111,12 +137,14 @@ public class SiteService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            return Collections.singletonList(new OperationModel(Type.SITE, Constants.DEFAULT_ITEM_KEY, Actions.GET, null, "list sites"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleSiteAdd(RoutingContext rc) {
+    private List<OperationModel> handleSiteAdd(RoutingContext rc) {
         try {
             // refresh manually
             siteProvider.loadContent();
@@ -124,7 +152,7 @@ public class SiteService implements IService {
             final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
             if (name == null || name.isEmpty()) {
                 ResponseUtil.error(rc, 400, "must specify a valid site name");
-                return;
+                return null;
             }
 
             Optional<Site> existingSite = this.siteProvider.getAllSites()
@@ -132,7 +160,7 @@ public class SiteService implements IService {
                     .findFirst();
             if (existingSite.isPresent()) {
                 ResponseUtil.error(rc, 400, "site existed");
-                return;
+                return null;
             }
 
             boolean enabled = false;
@@ -142,7 +170,7 @@ public class SiteService implements IService {
                     enabled = Boolean.valueOf(enabledFlags.get(0));
                 } catch (Exception ex) {
                     ResponseUtil.error(rc, 400, "unable to parse enabled " + ex.getMessage());
-                    return;
+                    return null;
                 }
             }
 
@@ -160,19 +188,22 @@ public class SiteService implements IService {
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newSite));
+            return Collections.singletonList(new OperationModel(Type.SITE, newSite.getName(), Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newSite)), "created " + newSite.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleSiteEnable(RoutingContext rc) {
+    private List<OperationModel> handleSiteEnable(RoutingContext rc) {
         try {
             // refresh manually
             siteProvider.loadContent();
 
             final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
             if (existingSite == null) {
-                return;
+                return null;
             }
 
             Boolean enabled = false;
@@ -182,7 +213,7 @@ public class SiteService implements IService {
                     enabled = Boolean.valueOf(enabledFlags.get(0));
                 } catch (Exception ex) {
                     ResponseUtil.error(rc, 400, "unable to parse enabled " + ex.getMessage());
-                    return;
+                    return null;
                 }
             }
 
@@ -196,8 +227,11 @@ public class SiteService implements IService {
             }
 
             rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            return Collections.singletonList(new OperationModel(Type.ADMIN, existingSite.getName(), enabled ? Actions.ENABLE : Actions.DISABLE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingSite)), (enabled ? "enabled " : "disabled ") + existingSite.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 }

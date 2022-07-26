@@ -42,6 +42,8 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
+import java.util.List;
+
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
 
@@ -59,6 +61,16 @@ public class AdminVerticle extends AbstractVerticle {
         this.auth = auth;
         this.adminUserProvider = adminUserProvider;
         this.services = services;
+    }
+
+    public AdminVerticle(IAuthHandlerFactory authHandlerFactory,
+                         AuthMiddleware auth,
+                         IAdminUserProvider adminUserProvider,
+                         List<IService> services) {
+        this.authHandlerFactory = authHandlerFactory;
+        this.auth = auth;
+        this.adminUserProvider = adminUserProvider;
+        this.services = services.toArray(new IService[1]);
     }
 
     @Override
