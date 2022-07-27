@@ -81,19 +81,6 @@ public class SaltService implements IService {
         }), Role.SECRET_MANAGER));
     }
 
-    public Collection<OperationModel> backfill(){
-        try{
-            List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
-            RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
-            return Collections.singletonList(new OperationModel(Type.SALT, "singleton", null,
-                    DigestUtils.sha256Hex(toJson(lastSnapshot).toString()), null));
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private List<OperationModel> handleSaltSnapshots(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();

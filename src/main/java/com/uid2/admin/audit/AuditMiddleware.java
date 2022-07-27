@@ -22,10 +22,4 @@ public interface AuditMiddleware {
      */
     Handler<RoutingContext> handle(AuditHandler<RoutingContext> handler);
 
-    /**
-     * Executes any necessary initialization of the AuditMiddleware and/or the database
-     * it logs to.
-     * @param services A list of all services that can be called by the client.
-     */
-    void startup(List<IService> services);
 }

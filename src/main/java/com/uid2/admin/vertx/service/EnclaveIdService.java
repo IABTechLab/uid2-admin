@@ -88,23 +88,6 @@ public class EnclaveIdService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
-    @Override
-    public Collection<OperationModel> backfill(){
-        try{
-            Collection<EnclaveIdentifier> enclaves = this.enclaveIdProvider.getAll();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for(EnclaveIdentifier e : enclaves){
-                returnList.add(new OperationModel(Type.ENCLAVE, e.getName(), null,
-                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(e)), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private void handleEnclaveMetadata(RoutingContext rc) {
         try {
             rc.response()

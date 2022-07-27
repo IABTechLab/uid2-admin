@@ -36,34 +36,13 @@ public class QLDBAuditWriter implements AuditWriter{
         // write to QLDB; update this to UPDATE in one command instead of two
         qldbDriver.execute(txn -> {
             List<IonValue> sanitizedInputs = new ArrayList<>();
-            StringBuilder query = new StringBuilder("UPDATE " + Constants.QLDB_TABLE_NAME + " AS t SET "); // make jsonobject as a field duh
             JsonObject jsonObject = model.writeToJson();
-            Iterator<String> iterator = jsonObject.fieldNames().iterator();
-            while(iterator.hasNext()){
-                String key = iterator.next();
-                query.append("t.").append(key).append(" = ?");
-                if(jsonObject.getValue(key) == null){
-                    sanitizedInputs.add(ionSys.newNull());
-                }
-                else {
-                    try {
-                        sanitizedInputs.add(ionSys.newInt(jsonObject.getInteger(key)));
-                    } catch (ClassCastException e1) {
-                        sanitizedInputs.add(ionSys.newString(jsonObject.getString(key)));
-                    }
-                }
-                if(iterator.hasNext()){
-                    query.append(", ");
-                }
-            }
-            query.append(" WHERE t.itemType = ? AND t.itemKey = ?");
+            StringBuilder query = new StringBuilder("UPDATE " + Constants.QLDB_TABLE_NAME + " AS t SET data = ?");
+            sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
+            query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
             sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
-            if(jsonObject.getValue("itemKey") == null){
-                sanitizedInputs.add(ionSys.newNull());
-            }
-            else{
-                sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
-            }
+            sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
+
             Result r = txn.execute(query.toString(), sanitizedInputs);
             if(!r.iterator().hasNext()){
                 logger.warn("Malformed audit log input: no log written to QLDB");
@@ -72,28 +51,5 @@ public class QLDBAuditWriter implements AuditWriter{
 
         // write to Loki
         logger.info(model.writeToString());
-    }
-
-    public boolean isSetup(){
-        try {
-            final IonStruct[] count = new IonStruct[1];
-            qldbDriver.execute(txn -> {
-                Result result = txn.execute("SELECT COUNT(*) AS \"count\" FROM " + Constants.QLDB_TABLE_NAME);
-                count[0] = (IonStruct) result.iterator().next();
-            });
-            return !count[0].get("count").equals(ionSys.newInt(0));
-        }
-        catch (Exception e){
-            throw new RuntimeException("AWS configuration not set up");
-        }
-    }
-
-    public void setup(OperationModel model){
-        QLDBAuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, null,
-                null, null, -1, model.itemHash, model.summary);
-        qldbDriver.execute(txn -> {
-            txn.execute("INSERT INTO " + Constants.QLDB_TABLE_NAME + " VALUE ?",
-                    ionSys.newLoader().load(auditModel.writeToJson().toString()).get(0));
-        });
     }
 }

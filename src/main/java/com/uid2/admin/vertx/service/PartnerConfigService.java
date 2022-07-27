@@ -71,19 +71,6 @@ public class PartnerConfigService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
-    @Override
-    public Collection<OperationModel> backfill(){
-        try{
-            String config = this.partnerConfigProvider.getConfig();
-            return Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", null,
-                    DigestUtils.sha256Hex(config), null));
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private List<OperationModel> handlePartnerConfigGet(RoutingContext rc) {
         try {
             String config = this.partnerConfigProvider.getConfig();

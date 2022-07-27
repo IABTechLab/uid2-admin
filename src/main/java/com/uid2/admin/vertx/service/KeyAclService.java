@@ -92,22 +92,6 @@ public class KeyAclService implements IService {
         }), Role.CLIENTKEY_ISSUER));
     }
 
-    public Collection<OperationModel> backfill(){
-        try{
-            Map<Integer, EncryptionKeyAcl> mapAcl = this.keyAclProvider.getSnapshot().getAllAcls();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for(int i : mapAcl.keySet()){
-                returnList.add(new OperationModel(Type.KEYACL, String.valueOf(i), null,
-                        DigestUtils.sha256Hex(toJson(i, mapAcl.get(i)).toString()), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private List<OperationModel> handleKeyAclList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();

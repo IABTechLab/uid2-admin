@@ -23,24 +23,6 @@ public class QLDBAuditMiddleware implements AuditMiddleware{
         return auditHandler::writeLog;
     }
 
-    @Override
-    public void startup(List<IService> services){
-        if(!((QLDBAuditWriter)auditWriter).isSetup()){
-            for(IService service : services){
-                Collection<OperationModel> models = service.backfill();
-                boolean createdAllItems = false;
-                for(OperationModel model : models){
-                    if(!createdAllItems){
-                        createdAllItems = true;
-                        ((QLDBAuditWriter) auditWriter).setup(new OperationModel(model.itemType, Constants.DEFAULT_ITEM_KEY,
-                                null, null, null));
-                    }
-                    ((QLDBAuditWriter) auditWriter).setup(model);
-                }
-            }
-        }
-    }
-
     private static class InnerAuditHandler{
         private final AuditHandler<RoutingContext> innerHandler;
         private final AuditWriter auditWriter;
@@ -51,7 +33,7 @@ public class QLDBAuditMiddleware implements AuditMiddleware{
 
         public void writeLog(RoutingContext rc){
             List<OperationModel> modelList = innerHandler.handle(rc);
-            if(modelList != null && rc.statusCode() < 300){
+            if(Constants.ENABLE_ADMIN_LOGGING && modelList != null && rc.statusCode() < 300){
                 for(OperationModel model : modelList) {
                     AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken,
                             getIPAddress(rc),

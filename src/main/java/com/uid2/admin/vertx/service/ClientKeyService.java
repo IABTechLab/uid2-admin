@@ -136,23 +136,6 @@ public class ClientKeyService implements IService {
         }), Role.CLIENTKEY_ISSUER));
     }
 
-    @Override
-    public Collection<OperationModel> backfill(){
-        try {
-            Collection<ClientKey> clients = clientKeyProvider.getAll();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for (ClientKey c : clients) {
-                returnList.add(new OperationModel(Type.CLIENT, c.getName(), null,
-                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private void handleClientMetadata(RoutingContext rc) {
         try {
             rc.response()

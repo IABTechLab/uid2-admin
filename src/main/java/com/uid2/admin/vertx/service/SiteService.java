@@ -90,23 +90,6 @@ public class SiteService implements IService {
         }), Role.CLIENTKEY_ISSUER));
     }
 
-    @Override
-    public Collection<OperationModel> backfill(){
-        try{
-            Collection<Site> sites = this.siteProvider.getAllSites();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for(Site s : sites){
-                returnList.add(new OperationModel(Type.SITE, s.getName(), null,
-                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(s)), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private List<OperationModel> handleSiteList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();

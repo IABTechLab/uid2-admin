@@ -126,22 +126,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         }), Role.SECRET_MANAGER));
     }
 
-    public Collection<OperationModel> backfill(){
-        try{
-            Collection<EncryptionKey> keys = keyProvider.getSnapshot().getActiveKeySet();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for(EncryptionKey k : keys){
-                returnList.add(new OperationModel(Type.KEY, String.valueOf(k.getId()), null,
-                        hashedToJsonWithKey(k), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     @Override
     public EncryptionKey addSiteKey(int siteId) throws Exception {
         // force refresh manually
@@ -344,7 +328,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return maxKeyId;
     }
 
-    private JsonObject toJson(EncryptionKey key) {
+    private static JsonObject toJson(EncryptionKey key) {
         JsonObject jo = new JsonObject();
         jo.put("id", key.getId());
         jo.put("site_id", key.getSiteId());
@@ -354,7 +338,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return jo;
     }
 
-    private String hashedToJsonWithKey(EncryptionKey key) {
+    public static String hashedToJsonWithKey(EncryptionKey key) {
         JsonObject jo = new JsonObject();
         jo.put("id", key.getId());
         jo.put("key_bytes", new String(key.getKeyBytes()));
@@ -365,7 +349,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return DigestUtils.sha256Hex(jo.toString());
     }
 
-    private class RotationResult
+    private static class RotationResult
     {
         public Set<Integer> siteIds = null;
         public List<EncryptionKey> rotatedKeys = new ArrayList<>();

@@ -117,22 +117,6 @@ public class OperatorKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
-    public Collection<OperationModel> backfill(){
-        try{
-            Collection<OperatorKey> operatorCollection = operatorKeyProvider.getAll();
-            Collection<OperationModel> returnList = new HashSet<>();
-            for(OperatorKey o : operatorCollection){
-                returnList.add(new OperationModel(Type.OPERATOR, o.getName(), null,
-                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), null));
-            }
-            return returnList;
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            return new HashSet<>();
-        }
-    }
-
     private void handleOperatorMetadata(RoutingContext rc) {
         try {
             rc.response()

@@ -30,5 +30,5 @@ import java.util.Collection;
 
 public interface IService {
     void setupRoutes(Router router);
-    Collection<OperationModel> backfill();
+
 }
