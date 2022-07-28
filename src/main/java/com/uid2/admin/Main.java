@@ -124,6 +124,7 @@ public class Main {
             RotatingPartnerStore partnerConfigProvider = new RotatingPartnerStore(cloudStorage, partnerMetadataPath);
             partnerConfigProvider.loadContent();
 
+            AuditFactory.setConfig(config);
             AuditMiddleware audit = AuditFactory.getAuditMiddleware(Main.class);
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();

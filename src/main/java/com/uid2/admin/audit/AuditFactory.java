@@ -1,5 +1,9 @@
 package com.uid2.admin.audit;
 
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 /**
  * AuditFactory controls the instantiation/creation of AuditMiddleware objects.
  * Depending on the needs of the specific implementation, the AuditFactory
@@ -8,9 +12,9 @@ package com.uid2.admin.audit;
  * exhibit some other behavior.
  */
 public class AuditFactory {
-    private static final AuditWriter auditWriter = new QLDBAuditWriter();
-
-    public static final AuditMiddleware auditMiddleware = new QLDBAuditMiddleware(auditWriter);
+    public static AuditWriter auditWriter;
+    private static AuditMiddleware auditMiddleware;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuditFactory.class);
 
     /**
      * Returns an AuditMiddleware object for the designated class to use.
@@ -19,6 +23,15 @@ public class AuditFactory {
      * @return the designated AuditMiddleware object for the passed class.
      */
     public static AuditMiddleware getAuditMiddleware(Class<?> clazz){
+        if(auditMiddleware == null){
+            LOGGER.fatal("setConfig not called before getAuditMiddleware in class AuditFactory");
+            throw new IllegalStateException("setConfig not called before getAuditMiddleware in class AuditFactory");
+        }
         return auditMiddleware;
+    }
+
+    public static void setConfig(JsonObject config){
+        auditWriter = new QLDBAuditWriter(config);
+        auditMiddleware = new QLDBAuditMiddleware(auditWriter);
     }
 }

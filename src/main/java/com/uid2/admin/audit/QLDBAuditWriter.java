@@ -18,14 +18,16 @@ import java.util.List;
 
 public class QLDBAuditWriter implements AuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
-    private static final QldbDriver qldbDriver = QldbDriver.builder()
-            .ledger(Constants.QLDB_LEDGER_NAME)
-            .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
-            .sessionClientBuilder(QldbSessionClient.builder())
-            .build();
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
-    public QLDBAuditWriter(){
-
+    private final QldbDriver qldbDriver;
+    private final String logTable;
+    public QLDBAuditWriter(JsonObject config){
+        qldbDriver = QldbDriver.builder()
+                .ledger(config.getString("qldb_ledger_name"))
+                .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
+                .sessionClientBuilder(QldbSessionClient.builder())
+                .build();
+        logTable = config.getString("qldb_table_name");
     }
     @Override
     public void writeLog(AuditModel model) {
@@ -36,7 +38,7 @@ public class QLDBAuditWriter implements AuditWriter{
         qldbDriver.execute(txn -> {
             List<IonValue> sanitizedInputs = new ArrayList<>();
             JsonObject jsonObject = model.writeToJson();
-            StringBuilder query = new StringBuilder("UPDATE " + Constants.QLDB_TABLE_NAME + " AS t SET data = ?");
+            StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
             sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
             query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
             sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
@@ -49,6 +51,6 @@ public class QLDBAuditWriter implements AuditWriter{
         });
 
         // write to Loki
-        logger.info(model.writeToString());
+        // logger.info(model.writeToString());
     }
 }
