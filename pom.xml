@@ -89,6 +89,11 @@
             <version>${vertx.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.qldb</groupId>
+            <artifactId>amazon-qldb-driver-java</artifactId>
+            <version>2.3.1</version>
+        </dependency>
     </dependencies>
 
     <build>

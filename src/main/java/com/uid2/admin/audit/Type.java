@@ -9,6 +9,7 @@ public enum Type {
     CLIENT,
     KEYACL,
     KEY,
+    SALT,
     OPERATOR,
     ENCLAVE,
     PARTNER,
