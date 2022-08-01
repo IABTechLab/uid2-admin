@@ -25,7 +25,6 @@ package com.uid2.admin;
 
 import com.uid2.admin.audit.AuditFactory;
 import com.uid2.admin.audit.AuditMiddleware;
-import com.uid2.admin.audit.QLDBAuditMiddleware;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
@@ -124,8 +123,7 @@ public class Main {
             RotatingPartnerStore partnerConfigProvider = new RotatingPartnerStore(cloudStorage, partnerMetadataPath);
             partnerConfigProvider.loadContent();
 
-            AuditFactory.setConfig(config);
-            AuditMiddleware audit = AuditFactory.getAuditMiddleware(Main.class);
+            AuditMiddleware audit = AuditFactory.getAuditMiddleware(config);
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();

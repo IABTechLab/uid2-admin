@@ -4,6 +4,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * AuditFactory controls the instantiation/creation of AuditMiddleware objects.
  * Depending on the needs of the specific implementation, the AuditFactory
@@ -12,26 +15,19 @@ import io.vertx.core.logging.LoggerFactory;
  * exhibit some other behavior.
  */
 public class AuditFactory {
-    public static AuditWriter auditWriter;
-    private static AuditMiddleware auditMiddleware;
+    private static final Map<JsonObject, AuditMiddleware> middlewareMap = new HashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(AuditFactory.class);
 
     /**
      * Returns an AuditMiddleware object for the designated class to use.
      *
-     * @param clazz the class that requires an AuditMiddleware object.
      * @return the designated AuditMiddleware object for the passed class.
      */
-    public static AuditMiddleware getAuditMiddleware(Class<?> clazz){
-        if(auditMiddleware == null){
-            LOGGER.fatal("setConfig not called before getAuditMiddleware in class AuditFactory");
-            throw new IllegalStateException("setConfig not called before getAuditMiddleware in class AuditFactory");
+    public static AuditMiddleware getAuditMiddleware(JsonObject config){
+        if(!middlewareMap.containsKey(config)){
+            middlewareMap.put(config, new AuditMiddlewareImpl(new QLDBAuditWriter(config), config));
         }
-        return auditMiddleware;
+        return middlewareMap.get(config);
     }
 
-    public static void setConfig(JsonObject config){
-        auditWriter = new QLDBAuditWriter(config);
-        auditMiddleware = new QLDBAuditMiddleware(auditWriter);
-    }
 }

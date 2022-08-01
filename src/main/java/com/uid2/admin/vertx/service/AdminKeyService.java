@@ -130,7 +130,6 @@ public class AdminKeyService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
         } catch (Exception e) {
-            e.printStackTrace();
             rc.fail(500, e);
         }
     }
@@ -153,7 +152,7 @@ public class AdminKeyService implements IService {
             return null;
         }
     }
-    // consider constructing AuditModel here and return it, therefore AuditModel can access additional context
+
     private List<OperationModel> handleAdminReveal(RoutingContext rc) {
         try {
             AdminUser a = getAdminUser(rc.queryParam("name"));
