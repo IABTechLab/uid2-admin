@@ -39,11 +39,7 @@ import static org.mockito.Mockito.*;
 
 public class AdminLogTest extends ServiceTestBase {
 
-    private QldbDriver qldbDriver = QldbDriver.builder()
-            .ledger(config.getString("qldb_ledger_name"))
-            .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
-            .sessionClientBuilder(QldbSessionClient.builder())
-            .build();
+    private QldbDriver qldbDriver;
 
     private IonSystem ionSys = IonSystemBuilder.standard().build();
 
@@ -95,6 +91,11 @@ public class AdminLogTest extends ServiceTestBase {
 
     @BeforeEach
     void setupAdminProvider() throws Exception {
+        qldbDriver = QldbDriver.builder()
+                .ledger(config.getString("qldb_ledger_name"))
+                .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
+                .sessionClientBuilder(QldbSessionClient.builder())
+                .build();
         setAdminLoad(1);
         JsonObject jo = new JsonObject().put("version", 256).put("generated", 1645574695)
                 .put("admins", new JsonObject().put("location", "uid2/admins/admins.json"));
