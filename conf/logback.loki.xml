@@ -19,10 +19,10 @@
         </http>
         <format>
             <label>
-                <pattern>app=uid2-admin,host=${HOSTNAME},portoffset=${port_offset:-0},level=%level</pattern>
+                <pattern>app=uid2-admin,host=${HOSTNAME},portoffset=${port_offset:-0}</pattern>
             </label>
             <message>
-                <pattern>l=%level h=${HOSTNAME} po=${port_offset:-0} c=%logger{20} t=%thread | %msg %ex</pattern>
+                <pattern>%d{HH:mm:ss.SSS} | %msg</pattern>
             </message>
             <sortByTime>true</sortByTime>
         </format>
@@ -35,9 +35,12 @@
         </encoder>
     </appender>
 
+    <logger name="com.uid2.admin.audit" additivity="false">
+        <appender-ref ref="AUDIT"/>
+    </logger>
+
     <root level="DEBUG">
         <appender-ref ref="LOKI"   />
-        <appender-ref ref="AUDIT"  />
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
