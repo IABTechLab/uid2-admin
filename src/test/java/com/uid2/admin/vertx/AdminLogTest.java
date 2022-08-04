@@ -91,15 +91,19 @@ public class AdminLogTest extends ServiceTestBase {
 
     @BeforeEach
     void setupAdminProvider() throws Exception {
-        qldbDriver = QldbDriver.builder()
-                .ledger(config.getString("qldb_ledger_name"))
-                .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
-                .sessionClientBuilder(QldbSessionClient.builder())
-                .build();
-        setAdminLoad(1);
-        JsonObject jo = new JsonObject().put("version", 256).put("generated", 1645574695)
-                .put("admins", new JsonObject().put("location", "uid2/admins/admins.json"));
-        setAdminMetaData(jo);
+        if(qldbConnection) {
+            qldbDriver = QldbDriver.builder()
+                    .ledger(config.getString("qldb_ledger_name"))
+                    .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
+                    .sessionClientBuilder(QldbSessionClient.builder())
+                    .build();
+        }
+        else{
+            setAdminLoad(1);
+            JsonObject jo = new JsonObject().put("version", 256).put("generated", 1645574695)
+                    .put("admins", new JsonObject().put("location", "uid2/admins/admins.json"));
+            setAdminMetaData(jo);
+        }
     }
 
     @Test
