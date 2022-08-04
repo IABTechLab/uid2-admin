@@ -13,7 +13,7 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
     private final AuditWriter auditWriter;
     private final JsonObject config;
 
-    protected AuditMiddlewareImpl(AuditWriter writer, JsonObject config){
+    public AuditMiddlewareImpl(AuditWriter writer, JsonObject config){
         this.auditWriter = writer;
         this.config = config;
     }

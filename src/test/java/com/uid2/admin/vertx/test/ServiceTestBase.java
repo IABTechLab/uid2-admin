@@ -104,10 +104,10 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
         auth = new AuthMiddleware(this.adminUserProvider);
         if(qldbConnection){
-            audit = AuditFactory.getAuditMiddleware(this.getClass());
+            audit = AuditFactory.getAuditMiddleware(config);
         }
         else {
-            audit = new QLDBAuditMiddleware(mockedAuditWriter);
+            audit = new AuditMiddlewareImpl(mockedAuditWriter, config);
         }
         AdminVerticle verticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider, createService());
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
