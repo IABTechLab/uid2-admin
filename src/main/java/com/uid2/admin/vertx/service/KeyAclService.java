@@ -23,10 +23,17 @@
 
 package com.uid2.admin.vertx.service;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.Constants;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.ISiteStore;
 import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -40,10 +47,12 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.*;
 
 public class KeyAclService implements IService {
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -51,12 +60,14 @@ public class KeyAclService implements IService {
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
 
-    public KeyAclService(AuthMiddleware auth,
+    public KeyAclService(AuditMiddleware audit,
+                         AuthMiddleware auth,
                          WriteLock writeLock,
                          IStorageManager storageManager,
                          RotatingKeyAclProvider keyAclProvider,
                          ISiteStore siteProvider,
                          IEncryptionKeyManager keyManager) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -68,20 +79,20 @@ public class KeyAclService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/keys_acl/list").handler(
-                auth.handle(this::handleKeyAclList, Role.CLIENTKEY_ISSUER));
-        router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
+                auth.handle(audit.handle(this::handleKeyAclList), Role.CLIENTKEY_ISSUER));
+        router.post("/api/keys_acl/reset").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleKeyAclReset(ctx);
+                return this.handleKeyAclReset(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
-        router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
+        }), Role.CLIENTKEY_ISSUER));
+        router.post("/api/keys_acl/update").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleKeyAclUpdate(ctx);
+                return this.handleKeyAclUpdate(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }), Role.CLIENTKEY_ISSUER));
     }
 
-    private void handleKeyAclList(RoutingContext rc) {
+    private List<OperationModel> handleKeyAclList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
@@ -92,21 +103,23 @@ public class KeyAclService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            return Collections.singletonList(new OperationModel(Type.KEYACL, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list keyacl"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleKeyAclReset(RoutingContext rc) {
+    private List<OperationModel> handleKeyAclReset(RoutingContext rc) {
         try {
             // refresh manually
             keyAclProvider.loadContent();
 
             final Site existingSite = RequestUtil.getSite(rc, "site_id", siteProvider);
-            if (existingSite == null) return;
+            if (existingSite == null) return null;
 
             Boolean isWhitelist = RequestUtil.getKeyAclType(rc);
-            if (isWhitelist == null) return;
+            if (isWhitelist == null) return null;
 
             this.keyManager.addSiteKey(existingSite.getId());
 
@@ -119,36 +132,39 @@ public class KeyAclService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(existingSite.getId(), newAcl).encode());
+            return Collections.singletonList(new OperationModel(Type.KEYACL, String.valueOf(existingSite.getId()),
+                    Actions.UPDATE, DigestUtils.sha256Hex(toJson(existingSite.getId(), newAcl).toString()), "reset acl of " + existingSite.getId()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleKeyAclUpdate(RoutingContext rc) {
+    private List<OperationModel> handleKeyAclUpdate(RoutingContext rc) {
         try {
             // refresh manually
             keyAclProvider.loadContent();
 
             final Site site = RequestUtil.getSite(rc, "site_id", siteProvider);
-            if (site == null) return;
+            if (site == null) return null;
 
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
             final EncryptionKeyAcl acl = collection.get(site.getId());
             if (acl == null) {
                 ResponseUtil.error(rc, 404, "ACL not found");
-                return;
+                return null;
             }
 
             final Set<Integer> addedSites = RequestUtil.getIds(rc.queryParam("add"));
             if (addedSites == null) {
                 ResponseUtil.error(rc, 400, "invalid added sites");
-                return;
+                return null;
             }
 
             final Set<Integer> removedSites = RequestUtil.getIds(rc.queryParam("remove"));
             if (removedSites == null) {
                 ResponseUtil.error(rc, 400, "invalid removed sites");
-                return;
+                return null;
             }
 
             boolean added = false;
@@ -158,10 +174,10 @@ public class KeyAclService implements IService {
                     continue;
                 } else if (!SiteUtil.isValidSiteId(addedSiteId)) {
                     ResponseUtil.error(rc, 400, "invalid added site id: " + addedSiteId);
-                    return;
+                    return null;
                 } else if (this.siteProvider.getSite(addedSiteId) == null) {
                     ResponseUtil.error(rc, 404, "unknown added site id: " + addedSiteId);
-                    return;
+                    return null;
                 } else if (acl.getAccessList().add(addedSiteId)) {
                     added = true;
                 }
@@ -185,8 +201,11 @@ public class KeyAclService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(site.getId(), acl).encode());
+            return Collections.singletonList(new OperationModel(Type.KEYACL, String.valueOf(site.getId()),
+                    Actions.UPDATE, DigestUtils.sha256Hex(toJson(site.getId(), acl).toString()), "reset acl of " + site.getId()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 

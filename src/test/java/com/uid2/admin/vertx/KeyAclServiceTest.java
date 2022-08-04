@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
 public class KeyAclServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new KeyAclService(auth, writeLock, storageManager, keyAclProvider, siteProvider, keyManager);
+        return new KeyAclService(audit, auth, writeLock, storageManager, keyAclProvider, siteProvider, keyManager);
     }
 
     private void checkEncryptionKeyAclsResponse(Map<Integer, EncryptionKeyAcl> expectedAcls, Object[] actualAcls) {

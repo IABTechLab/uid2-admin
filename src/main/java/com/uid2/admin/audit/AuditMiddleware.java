@@ -1,5 +1,6 @@
 package com.uid2.admin.audit;
 
+import com.uid2.admin.vertx.service.IService;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 

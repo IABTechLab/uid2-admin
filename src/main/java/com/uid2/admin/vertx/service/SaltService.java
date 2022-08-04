@@ -23,6 +23,10 @@
 
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.store.IStorageManager;
 import com.uid2.admin.vertx.RequestUtil;
@@ -37,24 +41,27 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class SaltService implements IService {
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final RotatingSaltProvider saltProvider;
     private final ISaltRotation saltRotation;
 
-    public SaltService(AuthMiddleware auth,
+    public SaltService(AuditMiddleware audit,
+                       AuthMiddleware auth,
                        WriteLock writeLock,
                        IStorageManager storageManager,
                        RotatingSaltProvider saltProvider,
                        ISaltRotation saltRotation) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -65,16 +72,16 @@ public class SaltService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/salt/snapshots").handler(
-                auth.handle(this::handleSaltSnapshots, Role.SECRET_MANAGER));
+                auth.handle(audit.handle(this::handleSaltSnapshots), Role.SECRET_MANAGER));
 
-        router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/salt/rotate").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleSaltRotate(ctx);
+                return this.handleSaltRotate(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }), Role.SECRET_MANAGER));
     }
 
-    private void handleSaltSnapshots(RoutingContext rc) {
+    private List<OperationModel> handleSaltSnapshots(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();
             this.saltProvider.getSnapshots().stream()
@@ -83,17 +90,19 @@ public class SaltService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
+            return Collections.singletonList(new OperationModel(Type.SALT, null, Actions.LIST, null, "listed salt snapshots"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleSaltRotate(RoutingContext rc) {
+    private List<OperationModel> handleSaltRotate(RoutingContext rc) {
         try {
             final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
-            if (!fraction.isPresent()) return;
+            if (!fraction.isPresent()) return null;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
-            if (minAges == null) return;
+            if (minAges == null) return null;
 
             // force refresh
             this.saltProvider.loadContent();
@@ -104,7 +113,7 @@ public class SaltService implements IService {
                     lastSnapshot, minAges, fraction.get());
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
-                return;
+                return null;
             }
 
             storageManager.uploadSalts(this.saltProvider, result.getSnapshot());
@@ -112,8 +121,12 @@ public class SaltService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(result.getSnapshot()).encode());
+            return Collections.singletonList(new OperationModel(Type.SALT, "singleton", Actions.UPDATE,
+                    DigestUtils.sha256Hex(toJson(result.getSnapshot()).toString()), "rotated indices " +
+                    result.getRotationIndices().stream().map(String::valueOf).collect(Collectors.joining(","))));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
