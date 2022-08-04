@@ -33,7 +33,6 @@ public class QLDBAuditWriter implements AuditWriter{
         if(model == null){ //should never be true, but check exists in case
             return;
         }
-        // write to QLDB; update this to UPDATE in one command instead of two
         qldbDriver.execute(txn -> {
             List<IonValue> sanitizedInputs = new ArrayList<>();
             JsonObject jsonObject = model.writeToJson();

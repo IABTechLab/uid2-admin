@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
 public class AdminLogTest extends ServiceTestBase {
 
     private QldbDriver qldbDriver = QldbDriver.builder()
-            .ledger(Constants.QLDB_LEDGER_NAME)
+            .ledger(config.getString("qldb_ledger_name"))
             .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
             .sessionClientBuilder(QldbSessionClient.builder())
             .build();
@@ -67,7 +67,7 @@ public class AdminLogTest extends ServiceTestBase {
         }
         qldbDriver.execute(txn -> {
             Result r = txn.execute("SELECT * FROM information_schema.user_tables AS i WHERE i.name = ?",
-                    ionSys.newString(Constants.QLDB_TABLE_NAME));
+                    ionSys.newString(config.getString("qldb_table_name")));
             assertTrue(r.iterator().hasNext());
         });
     }
@@ -111,7 +111,7 @@ public class AdminLogTest extends ServiceTestBase {
         get(vertx, "api/admin/list", expectHttpError(testContext, 401));
         if(qldbConnection) {
             qldbDriver.execute(txn -> {
-                Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                         " AS t WHERE t.timeEpochSecond >= ?", ionSys.newInt((int) currentEpochSecond));
                 assertFalse(r.iterator().hasNext());
             });
@@ -131,7 +131,7 @@ public class AdminLogTest extends ServiceTestBase {
             successResponse(ar);
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'LIST'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(Constants.DEFAULT_ITEM_KEY));
@@ -155,7 +155,7 @@ public class AdminLogTest extends ServiceTestBase {
             successResponse(ar);
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'LIST'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(Constants.DEFAULT_ITEM_KEY));
@@ -181,7 +181,7 @@ public class AdminLogTest extends ServiceTestBase {
             successResponse(ar);
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'GET'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
@@ -212,7 +212,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'CREATE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(fakeAdmin));
@@ -243,7 +243,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'DELETE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
@@ -274,7 +274,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'DISABLE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
@@ -298,7 +298,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'ENABLE'",
                             ionSys.newInt((int) nextCurrentEpochSecond),
                             ionSys.newString(realAdmin));
@@ -329,7 +329,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? " +
                                     "AND t.itemActioned = ? AND t.actionTaken = 'UPDATE'",
                             ionSys.newInt((int) currentEpochSecond),
@@ -361,7 +361,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + Constants.QLDB_TABLE_NAME +
+                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.timeEpochSecond >= ? " +
                                     "AND t.itemActioned = ? AND t.actionTaken = 'UPDATE'",
                             ionSys.newInt((int) currentEpochSecond),
