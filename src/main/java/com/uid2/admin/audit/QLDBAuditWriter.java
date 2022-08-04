@@ -1,6 +1,5 @@
 package com.uid2.admin.audit;
 
-import com.amazon.ion.IonStruct;
 import com.amazon.ion.IonSystem;
 import com.amazon.ion.IonValue;
 import com.amazon.ion.system.IonSystemBuilder;
@@ -18,6 +17,7 @@ import java.util.List;
 public class QLDBAuditWriter implements AuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
+    private static final Logger auditLogger = LoggerFactory.getLogger("com.uid2.admin.audit");
     private final QldbDriver qldbDriver;
     private final String logTable;
     public QLDBAuditWriter(JsonObject config){
@@ -40,9 +40,6 @@ public class QLDBAuditWriter implements AuditWriter{
             StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
             sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
             query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
-            StringBuilder query = new StringBuilder("UPDATE " + Constants.QLDB_TABLE_NAME + " AS t SET data = ?");
-            sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
-            query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
             sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
             sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
 
@@ -52,7 +49,6 @@ public class QLDBAuditWriter implements AuditWriter{
             }
         });
 
-        // write to Loki
-        logger.info(model.writeToString());
+        auditLogger.info(model.writeToString());
     }
 }
