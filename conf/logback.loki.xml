@@ -15,7 +15,7 @@
     </appender>
     <appender name="AUDIT" class="com.github.loki4j.logback.Loki4jAppender">
         <http>
-            <url>http://localhost:3200/loki/api/v1/push</url>
+            <url>http://loki:3200/loki/api/v1/push</url>
         </http>
         <format>
             <label>
@@ -40,7 +40,7 @@
     </logger>
 
     <root level="DEBUG">
-        <appender-ref ref="LOKI"   />
+        <appender-ref ref="LOKI" />
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
