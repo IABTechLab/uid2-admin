@@ -11,32 +11,28 @@ import java.util.function.Function;
 
 public class AuditMiddlewareImpl implements AuditMiddleware{
     private final AuditWriter auditWriter;
-    private final JsonObject config;
 
-    public AuditMiddlewareImpl(AuditWriter writer, JsonObject config){
+    public AuditMiddlewareImpl(AuditWriter writer){
         this.auditWriter = writer;
-        this.config = config;
     }
 
     @Override
     public Handler<RoutingContext> handle(Function<RoutingContext, List<OperationModel>> handler) {
-        InnerAuditHandler auditHandler = new InnerAuditHandler(handler, auditWriter, config.getBoolean("enable_admin_logging"));
+        InnerAuditHandler auditHandler = new InnerAuditHandler(handler, auditWriter);
         return auditHandler::writeLog;
     }
 
     private static class InnerAuditHandler{
         private final Function<RoutingContext, List<OperationModel>> innerHandler;
         private final AuditWriter auditWriter;
-        private final boolean auditingEnabled;
-        private InnerAuditHandler(Function<RoutingContext, List<OperationModel>> handler, AuditWriter auditWriter, boolean auditingEnabled) {
+        private InnerAuditHandler(Function<RoutingContext, List<OperationModel>> handler, AuditWriter auditWriter) {
             this.innerHandler = handler;
             this.auditWriter = auditWriter;
-            this.auditingEnabled = auditingEnabled;
         }
 
         public void writeLog(RoutingContext rc){
             List<OperationModel> modelList = innerHandler.apply(rc);
-            if(auditingEnabled && modelList != null){
+            if(modelList != null){
                 String ipAddress = getIPAddress(rc);
                 for(OperationModel model : modelList) {
                     AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,

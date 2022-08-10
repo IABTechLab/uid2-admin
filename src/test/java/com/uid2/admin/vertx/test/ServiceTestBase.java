@@ -110,7 +110,7 @@ public abstract class ServiceTestBase {
             audit = AuditFactory.getAuditMiddleware(config);
         }
         else {
-            audit = new AuditMiddlewareImpl(mockedAuditWriter, config);
+            audit = new AuditMiddlewareImpl(mockedAuditWriter);
         }
         AdminVerticle verticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider, createService());
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));

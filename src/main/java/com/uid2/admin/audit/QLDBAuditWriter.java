@@ -20,6 +20,7 @@ public class QLDBAuditWriter implements AuditWriter{
     private static final Logger auditLogger = LoggerFactory.getLogger("com.uid2.admin.audit");
     private final QldbDriver qldbDriver;
     private final String logTable;
+    private final boolean qldbLogging;
     public QLDBAuditWriter(JsonObject config){
         qldbDriver = QldbDriver.builder()
                 .ledger(config.getString("qldb_ledger_name"))
@@ -27,26 +28,29 @@ public class QLDBAuditWriter implements AuditWriter{
                 .sessionClientBuilder(QldbSessionClient.builder())
                 .build();
         logTable = config.getString("qldb_table_name");
+        qldbLogging = config.getBoolean("enable_admin_logging");
     }
     @Override
     public void writeLog(AuditModel model) {
         if(model == null){ //should never be true, but check exists in case
             return;
         }
-        qldbDriver.execute(txn -> {
-            List<IonValue> sanitizedInputs = new ArrayList<>();
-            JsonObject jsonObject = model.writeToJson();
-            StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
-            sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
-            query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
-            sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
-            sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
+        if(qldbLogging) {
+            qldbDriver.execute(txn -> {
+                List<IonValue> sanitizedInputs = new ArrayList<>();
+                JsonObject jsonObject = model.writeToJson();
+                StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
+                sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
+                query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
+                sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
+                sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
 
-            Result r = txn.execute(query.toString(), sanitizedInputs);
-            if(!r.iterator().hasNext()){
-                logger.warn("Malformed audit log input: no log written to QLDB");
-            }
-        });
+                Result r = txn.execute(query.toString(), sanitizedInputs);
+                if (!r.iterator().hasNext()) {
+                    logger.warn("Malformed audit log input: no log written to QLDB");
+                }
+            });
+        }
 
         auditLogger.info(model.writeToString());
     }
