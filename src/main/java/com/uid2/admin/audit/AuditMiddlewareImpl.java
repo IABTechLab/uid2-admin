@@ -5,7 +5,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -43,13 +48,26 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
             }
         }
 
-        private static String getIPAddress(RoutingContext rc){
+        private static String getIPAddress(RoutingContext rc) {
             List<String> listIP = rc.request().headers().getAll("X-Forwarded-For");
-            if(listIP == null || listIP.isEmpty()){
+            List<InetAddress> publicIPs = new ArrayList<>();
+            for(String str : listIP){
+                try {
+                    InetAddress address = InetAddress.getByName(str);
+                    if(!address.isSiteLocalAddress()){
+                        publicIPs.add(address);
+                    }
+                }
+                catch(UnknownHostException ignored){
+
+                }
+
+            }
+            if(publicIPs.isEmpty()){
                 return rc.request().remoteAddress().toString();
             }
             else{
-                return listIP.get(0); //arbitrary if multiple
+                return publicIPs.get(0).getHostAddress(); //arbitrary if multiple
             }
         }
     }

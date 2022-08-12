@@ -35,6 +35,9 @@ import static org.mockito.Mockito.*;
 /**
  * These tests do not establish the validity of the AdminKeyService itself; rather, this test ensures that the logs to
  * AWS' QLDB are correct.
+ *
+ * NOTE: If AdminLogTests are failing, ensure that either you have access to the QLDB logs or QLDB logging is disabled
+ * in the config.
  */
 
 public class AdminLogTest extends ServiceTestBase {

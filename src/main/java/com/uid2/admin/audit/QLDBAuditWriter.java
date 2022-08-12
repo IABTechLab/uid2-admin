@@ -28,7 +28,7 @@ public class QLDBAuditWriter implements AuditWriter{
                 .sessionClientBuilder(QldbSessionClient.builder())
                 .build();
         logTable = config.getString("qldb_table_name");
-        qldbLogging = config.getBoolean("enable_admin_logging");
+        qldbLogging = config.getBoolean("enable_qldb_admin_logging");
     }
     @Override
     public void writeLog(AuditModel model) {
