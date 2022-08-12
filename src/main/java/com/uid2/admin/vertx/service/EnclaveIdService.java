@@ -24,6 +24,11 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.Constants;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.store.IStorageManager;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -38,24 +43,26 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class EnclaveIdService implements IService {
+    private final AuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final EnclaveIdentifierProvider enclaveIdProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public EnclaveIdService(AuthMiddleware auth,
+    public EnclaveIdService(AuditMiddleware audit,
+                            AuthMiddleware auth,
                             WriteLock writeLock,
                             IStorageManager storageManager,
                             EnclaveIdentifierProvider enclaveIdProvider) {
+        this.audit = audit;
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -67,18 +74,18 @@ public class EnclaveIdService implements IService {
         router.get("/api/enclave/metadata").handler(
                 auth.handle(this::handleEnclaveMetadata, Role.OPERATOR_MANAGER));
         router.get("/api/enclave/list").handler(
-                auth.handle(this::handleEnclaveList, Role.OPERATOR_MANAGER));
+                auth.handle(audit.handle(this::handleEnclaveList), Role.OPERATOR_MANAGER));
 
-        router.post("/api/enclave/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/enclave/add").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleEnclaveAdd(ctx);
+                return this.handleEnclaveAdd(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
-        router.post("/api/enclave/del").blockingHandler(auth.handle((ctx) -> {
+        }), Role.OPERATOR_MANAGER));
+        router.post("/api/enclave/del").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleEnclaveDel(ctx);
+                return this.handleEnclaveDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }), Role.ADMINISTRATOR));
     }
 
     private void handleEnclaveMetadata(RoutingContext rc) {
@@ -91,7 +98,7 @@ public class EnclaveIdService implements IService {
         }
     }
 
-    private void handleEnclaveList(RoutingContext rc) {
+    private List<OperationModel> handleEnclaveList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Collection<EnclaveIdentifier> collection = this.enclaveIdProvider.getAll();
@@ -108,12 +115,14 @@ public class EnclaveIdService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(collection));
+            return Collections.singletonList(new OperationModel(Type.ENCLAVE, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list enclaves"));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleEnclaveAdd(RoutingContext rc) {
+    private List<OperationModel> handleEnclaveAdd(RoutingContext rc) {
         try {
             // refresh manually
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
@@ -124,19 +133,19 @@ public class EnclaveIdService implements IService {
                     .findFirst();
             if (existingEnclaveId.isPresent()) {
                 ResponseUtil.error(rc, 400, "enclave existed");
-                return;
+                return null;
             }
 
             String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
             if (protocol == null) {
                 ResponseUtil.error(rc, 400, "no protocol specified");
-                return;
+                return null;
             }
 
             final String enclaveId = rc.queryParam("enclave_id").get(0);
             if (enclaveId == null) {
                 ResponseUtil.error(rc, 400, "enclave_id not specified");
-                return;
+                return null;
             }
 
             List<EnclaveIdentifier> enclaveIds = this.enclaveIdProvider.getAll()
@@ -155,12 +164,15 @@ public class EnclaveIdService implements IService {
 
             // respond with new enclave id
             rc.response().end(jsonWriter.writeValueAsString(newEnclaveId));
+            return Collections.singletonList(new OperationModel(Type.ENCLAVE, name, Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newEnclaveId)), "created " + name));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 
-    private void handleEnclaveDel(RoutingContext rc) {
+    private List<OperationModel> handleEnclaveDel(RoutingContext rc) {
         try {
             // refresh manually
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
@@ -171,7 +183,7 @@ public class EnclaveIdService implements IService {
                     .findFirst();
             if (!existingEnclaveId.isPresent()) {
                 ResponseUtil.error(rc, 404, "enclave id not found");
-                return;
+                return null;
             }
 
             List<EnclaveIdentifier> enclaveIds = this.enclaveIdProvider.getAll()
@@ -187,8 +199,11 @@ public class EnclaveIdService implements IService {
 
             // respond with the deleted enclave id
             rc.response().end(jsonWriter.writeValueAsString(e));
+            return Collections.singletonList(new OperationModel(Type.ENCLAVE, e.getName(), Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(e)), "deleted " + e.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
+            return null;
         }
     }
 }

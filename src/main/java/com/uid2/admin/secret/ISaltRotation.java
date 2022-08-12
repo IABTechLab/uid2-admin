@@ -26,6 +26,7 @@ package com.uid2.admin.secret;
 import com.uid2.shared.store.RotatingSaltProvider;
 
 import java.time.Duration;
+import java.util.List;
 
 public interface ISaltRotation {
     Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
@@ -34,22 +35,28 @@ public interface ISaltRotation {
 
     class Result {
         private RotatingSaltProvider.SaltSnapshot snapshot; // can be null if new snapshot is not needed
+        private List<Integer> rotationIndices; // the indices whose salts were rotated
         private String reason; // why you are not getting a new snapshot
 
-        private Result(RotatingSaltProvider.SaltSnapshot snapshot, String reason) {
+        private Result(RotatingSaltProvider.SaltSnapshot snapshot, List<Integer> rotationIndices, String reason) {
             this.snapshot = snapshot;
+            this.rotationIndices = rotationIndices;
             this.reason = reason;
         }
 
         public boolean hasSnapshot() { return snapshot != null; }
         public RotatingSaltProvider.SaltSnapshot getSnapshot() { return snapshot; }
+        public List<Integer> getRotationIndices() { return rotationIndices; }
         public String getReason() { return reason; }
 
         public static Result fromSnapshot(RotatingSaltProvider.SaltSnapshot snapshot) {
-            return new Result(snapshot, null);
+            return new Result(snapshot, null, null);
+        }
+        public static Result fromSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, List<Integer> rotationIndices) {
+            return new Result(snapshot, rotationIndices, null);
         }
         public static Result noSnapshot(String reason) {
-            return new Result(null, reason);
+            return new Result(null, null, reason);
         }
     }
 }

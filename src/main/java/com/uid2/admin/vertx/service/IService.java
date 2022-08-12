@@ -23,8 +23,12 @@
 
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.audit.OperationModel;
 import io.vertx.ext.web.Router;
+
+import java.util.Collection;
 
 public interface IService {
     void setupRoutes(Router router);
+
 }

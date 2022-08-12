@@ -17,6 +17,7 @@
         <micrometer.version>1.1.0</micrometer.version>
         <junit-jupiter.version>5.7.0</junit-jupiter.version>
         <uid2-shared.version>1.2.1</uid2-shared.version>
+        <exec.mainClass>com.uid2.admin.Main</exec.mainClass>
         <image.version>${project.version}</image.version>
     </properties>
     <dependencies>
@@ -199,7 +200,7 @@
                     <!-- MainClass in manifest make a executable jar -->
                     <archive>
                         <manifest>
-                            <mainClass>com.uid2.admin.Main</mainClass>
+                            <mainClass>${exec.mainClass}</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -226,7 +227,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.uid2.admin.Main</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                 </configuration>
             </plugin>
         </plugins>

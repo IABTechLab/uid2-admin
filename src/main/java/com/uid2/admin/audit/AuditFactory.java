@@ -25,7 +25,7 @@ public class AuditFactory {
      */
     public static AuditMiddleware getAuditMiddleware(JsonObject config){
         if(!middlewareMap.containsKey(config)){
-            middlewareMap.put(config, new AuditMiddlewareImpl(new QLDBAuditWriter(config), config));
+            middlewareMap.put(config, new AuditMiddlewareImpl(new QLDBAuditWriter(config)));
         }
         return middlewareMap.get(config);
     }
