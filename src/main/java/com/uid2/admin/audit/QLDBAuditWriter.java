@@ -17,6 +17,7 @@ import java.util.List;
 public class QLDBAuditWriter implements AuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
+    private static final Logger auditLogger = LoggerFactory.getLogger("com.uid2.admin.audit");
     private final QldbDriver qldbDriver;
     private final String logTable;
     public QLDBAuditWriter(JsonObject config){
@@ -48,7 +49,6 @@ public class QLDBAuditWriter implements AuditWriter{
             }
         });
 
-        // write to Loki
-        // logger.info(model.writeToString());
+        auditLogger.info(model.writeToString());
     }
 }
