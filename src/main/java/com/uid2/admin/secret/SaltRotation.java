@@ -89,7 +89,7 @@ public class SaltRotation implements ISaltRotation {
 
         if (entryIndexes.isEmpty()) return Result.noSnapshot("all salts are below min rotation age");
 
-        return Result.fromSnapshot(createRotatedSnapshot(lastSnapshot, nextEffective, nextExpires, entryIndexes));
+        return Result.fromSnapshot(createRotatedSnapshot(lastSnapshot, nextEffective, nextExpires, entryIndexes), entryIndexes);
     }
 
     private void addIndexesToRotate(List<Integer> entryIndexes,

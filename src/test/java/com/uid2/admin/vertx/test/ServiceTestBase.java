@@ -23,6 +23,7 @@
 
 package com.uid2.admin.vertx.test;
 
+import com.uid2.admin.audit.*;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.IAuthHandlerFactory;
@@ -58,10 +59,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,11 +70,13 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public abstract class ServiceTestBase {
+    public final static boolean qldbConnection = false; // if computer has QLDB credentials, this variable can be true, otherwise leave false
     protected AutoCloseable mocks;
     protected final JsonObject config = new JsonObject();
     protected final WriteLock writeLock = new WriteLock();
     protected AuthMiddleware auth;
-
+    protected AuditMiddleware audit;
+    @Mock protected AuditWriter mockedAuditWriter;
     @Mock protected AuthHandler authHandler;
     @Mock protected IAuthHandlerFactory authHandlerFactory;
     @Mock protected IStorageManager storageManager;
@@ -94,6 +94,9 @@ public abstract class ServiceTestBase {
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
+        config.put("qldb_ledger_name", "audit-logs");
+        config.put("qldb_table_name", "logs");
+        config.put("enable_qldb_admin_logging", true);
         mocks = MockitoAnnotations.openMocks(this);
         when(authHandlerFactory.createAuthHandler(any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
@@ -102,8 +105,13 @@ public abstract class ServiceTestBase {
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
-
         auth = new AuthMiddleware(this.adminUserProvider);
+        if(qldbConnection){
+            audit = AuditFactory.getAuditMiddleware(config);
+        }
+        else {
+            audit = new AuditMiddlewareImpl(mockedAuditWriter);
+        }
         AdminVerticle verticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider, createService());
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
@@ -120,8 +128,18 @@ public abstract class ServiceTestBase {
     }
 
     protected void fakeAuth(Role... roles) {
-        AdminUser adminUser = new AdminUser(null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false);
-        when(adminUserProvider.get(any())).thenReturn(adminUser);
+        AdminUser fakeAdmin = new AdminUser(null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false);
+        AdminUser realAdmin = new AdminUser("test_rotation", "uid2-secret-rotation", "uid2-secret-rotation",
+                1633578212, new HashSet<>(Collections.singletonList(Role.SECRET_MANAGER)), false);
+        when(adminUserProvider.getAdminUser("test_rotation")).thenReturn(realAdmin);
+        when(adminUserProvider.get("test_rotation")).thenReturn(realAdmin);
+        when(adminUserProvider.getAdminUser(null)).thenReturn(fakeAdmin);
+        when(adminUserProvider.get(null)).thenReturn(fakeAdmin);
+        List<AdminUser> adminList = new ArrayList<>();
+        adminList.add(fakeAdmin);
+        adminList.add(realAdmin);
+        when(adminUserProvider.getAll()).thenReturn(adminList);
+
     }
 
     protected void get(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
@@ -151,6 +169,14 @@ public abstract class ServiceTestBase {
 
     protected void setEncryptionKeyAcls(Map<Integer, EncryptionKeyAcl> acls) {
         when(keyAclProviderSnapshot.getAllAcls()).thenReturn(acls);
+    }
+
+    protected void setAdminMetaData(JsonObject jo) throws Exception {
+        when(adminUserProvider.getMetadata()).thenReturn(jo);
+    }
+
+    protected void setAdminLoad(long number) throws Exception {
+        when(adminUserProvider.loadContent(any())).thenReturn(number);
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {

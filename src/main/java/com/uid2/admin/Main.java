@@ -129,19 +129,29 @@ public class Main {
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
+            final AdminKeyService adminKeyService = new AdminKeyService(
+                    config, audit, auth, writeLock, storageManager, adminUserProvider, keyGenerator);
+            final ClientKeyService clientKeyService = new ClientKeyService(
+                    config, audit, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator);
+            final EnclaveIdService enclaveIdService = new EnclaveIdService(
+                    audit, auth, writeLock, storageManager, enclaveIdProvider);
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, storageManager, keyProvider, keyGenerator);
+                    config, audit, auth, writeLock, storageManager, keyProvider, keyGenerator);
+            final KeyAclService keyAclService = new KeyAclService(
+                    audit, auth, writeLock, storageManager, keyAclProvider, siteProvider, encryptionKeyService);
+            final OperatorKeyService operatorKeyService = new OperatorKeyService(
+                    config, audit, auth, writeLock, storageManager, operatorKeyProvider, keyGenerator);
+            final SaltService saltService = new SaltService(
+                    audit, auth, writeLock, storageManager, saltProvider, saltRotation);
+            final SiteService siteService = new SiteService(
+                    audit, auth, writeLock, storageManager, siteProvider, clientKeyProvider);
+            final PartnerConfigService partnerConfigService = new PartnerConfigService(
+                    audit, auth, writeLock, storageManager, partnerConfigProvider);
+            List<IService> services = Arrays.asList(adminKeyService, clientKeyService, enclaveIdService, encryptionKeyService,
+                    keyAclService, operatorKeyService, saltService, siteService, partnerConfigService);
 
             AdminVerticle adminVerticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider,
-                    new AdminKeyService(config, audit, auth, writeLock, storageManager, adminUserProvider, keyGenerator),
-                    new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator),
-                    new EnclaveIdService(auth, writeLock, storageManager, enclaveIdProvider),
-                    encryptionKeyService,
-                    new KeyAclService(auth, writeLock, storageManager, keyAclProvider, siteProvider, encryptionKeyService),
-                    new OperatorKeyService(config, auth, writeLock, storageManager, operatorKeyProvider, keyGenerator),
-                    new SaltService(auth, writeLock, storageManager, saltProvider, saltRotation),
-                    new SiteService(auth, writeLock, storageManager, siteProvider, clientKeyProvider),
-                    new PartnerConfigService(auth, writeLock, storageManager, partnerConfigProvider));
+                    services);
 
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
                     "admins", 10000, adminUserProvider);
