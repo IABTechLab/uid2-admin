@@ -54,8 +54,8 @@ public class QLDBAuditWriter implements AuditWriter{
             }
         }
         catch(Exception e){
-            logger.warn("QLDB log failed");
-            auditLogger.warn("QLDB log failed");
+            logger.warn("QLDB log failed: " + e.getClass().getSimpleName());
+            auditLogger.warn("QLDB log failed" + e.getClass().getSimpleName());
         }
         auditLogger.info(model.writeToString());
     }
