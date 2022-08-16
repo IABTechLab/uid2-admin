@@ -36,7 +36,7 @@ public class QLDBAuditWriter implements AuditWriter{
             return;
         }
         try {
-            if(qldbLogging) {
+            if (qldbLogging) {
                 qldbDriver.execute(txn -> {
                     List<IonValue> sanitizedInputs = new ArrayList<>();
                     JsonObject jsonObject = model.writeToJson();
@@ -52,6 +52,7 @@ public class QLDBAuditWriter implements AuditWriter{
                     }
                 });
             }
+        }
         catch(Exception e){
             logger.warn("QLDB log failed");
             auditLogger.warn("QLDB log failed");
