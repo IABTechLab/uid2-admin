@@ -88,6 +88,27 @@ public class EnclaveIdService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<EnclaveIdentifier> enclaves = enclaveIdProvider.getAll();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (EnclaveIdentifier e : enclaves) {
+                newModels.add(new OperationModel(Type.ENCLAVE, e.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(e)), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.ENCLAVE;
+    }
+
     private void handleEnclaveMetadata(RoutingContext rc) {
         try {
             rc.response()

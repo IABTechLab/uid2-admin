@@ -24,11 +24,13 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import io.vertx.ext.web.Router;
 
 import java.util.Collection;
 
 public interface IService {
     void setupRoutes(Router router);
-
+    Collection<OperationModel> qldbSetup();
+    Type tableType();
 }

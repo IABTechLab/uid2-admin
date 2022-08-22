@@ -127,6 +127,27 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     }
 
     @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<EncryptionKey> keys = keyProvider.getSnapshot().getActiveKeySet();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (EncryptionKey k : keys) {
+                newModels.add(new OperationModel(Type.KEY, String.valueOf(k.getId()), null,
+                        EncryptionKeyService.hashedToJsonWithKey(k), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.KEY;
+    }
+
+    @Override
     public EncryptionKey addSiteKey(int siteId) throws Exception {
         // force refresh manually
         this.keyProvider.loadContent();

@@ -117,6 +117,27 @@ public class OperatorKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<OperatorKey> operatorCollection = operatorKeyProvider.getAll();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (OperatorKey o : operatorCollection) {
+                newModels.add(new OperationModel(Type.OPERATOR, o.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.OPERATOR;
+    }
+
     private void handleOperatorMetadata(RoutingContext rc) {
         try {
             rc.response()

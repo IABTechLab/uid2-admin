@@ -124,12 +124,34 @@ public class AdminKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<AdminUser> adminUsers = adminUserProvider.getAll();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (AdminUser a : adminUsers) {
+                newModels.add(new OperationModel(Type.ADMIN, a.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.ADMIN;
+    }
+
     private void handleAdminMetadata(RoutingContext rc) {
         try {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
         } catch (Exception e) {
+            e.printStackTrace();
             rc.fail(500, e);
         }
     }
@@ -374,7 +396,7 @@ public class AdminKeyService implements IService {
      * @param a the AdminUser to write
      * @return a JsonObject representing a, without the key field.
      */
-    public JsonObject adminToJson(AdminUser a){
+    public JsonObject adminToJson(AdminUser a){ // should hash key
         JsonObject jo = new JsonObject();
 
         jo.put("name", a.getName());

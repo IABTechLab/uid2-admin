@@ -27,7 +27,9 @@ import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -45,6 +47,7 @@ public class AdminLogTest extends ServiceTestBase {
     private QldbDriver qldbDriver;
 
     private IonSystem ionSys = IonSystemBuilder.standard().build();
+    private AdminKeyService adminKeyService;
 
     private final String realAdmin = "uid2-secret-rotation";
     private final String fakeAdmin = "some-fake-admin";
@@ -54,7 +57,8 @@ public class AdminLogTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        return new AdminKeyService(config, audit, auth, writeLock, storageManager, adminUserProvider, keyGenerator);
+        adminKeyService = new AdminKeyService(config, audit, auth, writeLock, storageManager, adminUserProvider, keyGenerator);
+        return adminKeyService;
     }
 
     /**
@@ -75,7 +79,8 @@ public class AdminLogTest extends ServiceTestBase {
         boolean match = false;
         while(iterator.hasNext()){
             IonStruct output = (IonStruct) iterator.next();
-            if(output.get("adminUser").isNullValue()){
+            System.out.println(output.toPrettyString());
+            if(((IonStruct)output.get("data")).get("userEmail").isNullValue()){
                 match = true;
             }
             if(match){
@@ -100,6 +105,7 @@ public class AdminLogTest extends ServiceTestBase {
                     .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
                     .sessionClientBuilder(QldbSessionClient.builder())
                     .build();
+            QLDBInit.init(Collections.singletonList(adminKeyService), config);
         }
         else{
             setAdminLoad(1);
@@ -130,30 +136,6 @@ public class AdminLogTest extends ServiceTestBase {
     }
 
     @Test
-    void noLogOnGetMetadata(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
-        Thread.sleep(2000);
-        checkLogServer();
-        long currentEpochSecond = Instant.now().getEpochSecond();
-        fakeAuth(Role.ADMINISTRATOR);
-        get(vertx, "api/admin/metadata", ar -> {
-            successResponse(ar);
-            if(qldbConnection) {
-                qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'LIST'",
-                            ionSys.newInt((int) currentEpochSecond),
-                            ionSys.newString(Constants.DEFAULT_ITEM_KEY));
-                    assertFalse(r.iterator().hasNext());
-                });
-            }
-            else{
-                Mockito.verify(mockedAuditWriter, never()).writeLog(any());
-            }
-            testContext.completeNow();
-        });
-    }
-
-    @Test
     void logOnListAdmin(Vertx vertx, VertxTestContext testContext) throws InterruptedException{
         Thread.sleep(2000);
         checkLogServer();
@@ -164,7 +146,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'LIST'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'LIST'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(Constants.DEFAULT_ITEM_KEY));
                     assertTrue(hasNullUser(r.iterator()));
@@ -190,7 +172,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'GET'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'GET'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -207,11 +189,13 @@ public class AdminLogTest extends ServiceTestBase {
 
     @Test
     void logOnAdminAdd(Vertx vertx, VertxTestContext testContext) throws InterruptedException{
+        Random r = new Random();
+        String newFakeAdmin = fakeAdmin + r.nextInt(Integer.MAX_VALUE);
         Thread.sleep(2000);
         checkLogServer();
         long currentEpochSecond = Instant.now().getEpochSecond();
         fakeAuth(Role.ADMINISTRATOR);
-        post(vertx, "api/admin/add?name=" + fakeAdmin + "&roles=ADMINISTRATOR", "", ar -> {
+        post(vertx, "api/admin/add?name=" + newFakeAdmin + "&roles=ADMINISTRATOR", "", ar -> {
             successResponse(ar);
             try {
                 Thread.sleep(1000);
@@ -220,15 +204,15 @@ public class AdminLogTest extends ServiceTestBase {
             }
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
-                    Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'CREATE'",
+                    Result result = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'CREATE'",
                             ionSys.newInt((int) currentEpochSecond),
-                            ionSys.newString(fakeAdmin));
-                    assertTrue(hasNullUser(r.iterator()));
+                            ionSys.newString(newFakeAdmin));
+                    assertTrue(hasNullUser(result.iterator()));
                 });
             }
             else{
-                ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, fakeAdmin, Actions.CREATE, null, null);
+                ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, newFakeAdmin, Actions.CREATE, null, null);
                 Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
@@ -252,7 +236,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'DELETE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'DELETE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -283,7 +267,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'DISABLE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'DISABLE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -307,7 +291,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? AND t.itemActioned = ? AND t.actionTaken = 'ENABLE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'ENABLE'",
                             ionSys.newInt((int) nextCurrentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -338,8 +322,8 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? " +
-                                    "AND t.itemActioned = ? AND t.actionTaken = 'UPDATE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? " +
+                                    "AND t.data.itemKey = ? AND t.data.actionTaken = 'UPDATE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -370,8 +354,8 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.timeEpochSecond >= ? " +
-                                    "AND t.itemActioned = ? AND t.actionTaken = 'UPDATE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? " +
+                                    "AND t.data.itemKey = ? AND t.data.actionTaken = 'UPDATE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));

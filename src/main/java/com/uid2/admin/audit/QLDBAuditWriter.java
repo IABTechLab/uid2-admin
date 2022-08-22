@@ -11,8 +11,7 @@ import software.amazon.qldb.QldbDriver;
 import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class QLDBAuditWriter implements AuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
@@ -37,20 +36,35 @@ public class QLDBAuditWriter implements AuditWriter{
         }
         try {
             if (qldbLogging) {
-                qldbDriver.execute(txn -> {
-                    List<IonValue> sanitizedInputs = new ArrayList<>();
-                    JsonObject jsonObject = model.writeToJson();
-                    StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
-                    sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
-                    query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
-                    sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
-                    sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
+                JsonObject jsonObject = model.writeToJson();
+                if(jsonObject.getString("actionTaken").equals("CREATE")){
+                    qldbDriver.execute(txn -> {
+                        List<IonValue> sanitizedInputs = new ArrayList<>();
+                        String query = "INSERT INTO " + logTable + " VALUE ?";
+                        JsonObject wrapped = new JsonObject().put("data", jsonObject);
+                        sanitizedInputs.add(ionSys.newLoader().load(wrapped.toString()).get(0));
 
-                    Result r = txn.execute(query.toString(), sanitizedInputs);
-                    if (!r.iterator().hasNext()) {
-                        logger.warn("Malformed audit log input: no log written to QLDB");
-                    }
-                });
+                        Result r = txn.execute(query, sanitizedInputs);
+                        if (!r.iterator().hasNext()) {
+                            logger.warn("Malformed audit log input: no log written to QLDB");
+                        }
+                    });
+                }
+                else {
+                    qldbDriver.execute(txn -> {
+                        List<IonValue> sanitizedInputs = new ArrayList<>();
+                        StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
+                        sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
+                        query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
+                        sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
+                        sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
+
+                        Result r = txn.execute(query.toString(), sanitizedInputs);
+                        if (!r.iterator().hasNext()) {
+                            logger.warn("Malformed audit log input: no log written to QLDB");
+                        }
+                    });
+                }
             }
         }
         catch(Exception e){
