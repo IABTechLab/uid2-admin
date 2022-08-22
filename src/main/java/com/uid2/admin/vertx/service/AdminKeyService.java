@@ -407,7 +407,7 @@ public class AdminKeyService implements IService {
         jo.put("roles", RequestUtil.getRolesSpec(a.getRoles()));
         jo.put("created", a.getCreated());
         jo.put("disabled", a.isDisabled());
-        jo.put("key", DigestUtils.sha256Hex(a.getKey()));
+        jo.put("key", DigestUtils.sha256Hex(a.getKey() == null ? "" : a.getKey()));
 
         return jo;
     }
