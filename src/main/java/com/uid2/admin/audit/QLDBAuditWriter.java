@@ -31,13 +31,14 @@ public class QLDBAuditWriter implements AuditWriter{
     }
     @Override
     public void writeLog(AuditModel model) {
-        if(model == null){ //should never be true, but check exists in case
-            return;
-        }
         try {
+            if(!(model instanceof QLDBAuditModel)){ //should never be true, but check in case
+                throw new IllegalArgumentException("Only QLDBAuditModel should be passed into QLDBAuditWriter");
+            }
+            QLDBAuditModel qldbModel = (QLDBAuditModel) model;
             if (qldbLogging) {
-                JsonObject jsonObject = model.writeToJson();
-                if(jsonObject.getString("actionTaken").equals("CREATE")){
+                JsonObject jsonObject = qldbModel.writeToJson();
+                if(qldbModel.actionTaken == Actions.CREATE){
                     qldbDriver.execute(txn -> {
                         List<IonValue> sanitizedInputs = new ArrayList<>();
                         String query = "INSERT INTO " + logTable + " VALUE ?";
@@ -56,8 +57,8 @@ public class QLDBAuditWriter implements AuditWriter{
                         StringBuilder query = new StringBuilder("UPDATE " + logTable + " AS t SET data = ?");
                         sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
                         query.append(" WHERE t.data.itemType = ? AND t.data.itemKey = ?");
-                        sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemType")));
-                        sanitizedInputs.add(ionSys.newString(jsonObject.getString("itemKey")));
+                        sanitizedInputs.add(ionSys.newString(qldbModel.itemType.toString()));
+                        sanitizedInputs.add(ionSys.newString(qldbModel.itemKey));
 
                         Result r = txn.execute(query.toString(), sanitizedInputs);
                         if (!r.iterator().hasNext()) {

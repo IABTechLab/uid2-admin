@@ -25,7 +25,6 @@ package com.uid2.admin;
 
 import com.uid2.admin.audit.AuditFactory;
 import com.uid2.admin.audit.AuditMiddleware;
-import com.uid2.admin.audit.AuditMiddlewareImpl;
 import com.uid2.admin.audit.QLDBInit;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.secret.IKeyGenerator;

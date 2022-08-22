@@ -26,7 +26,10 @@ package com.uid2.admin.vertx.service;
 import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.Constants;
-import com.uid2.admin.audit.*;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.secret.IKeyGenerator;
@@ -392,11 +395,11 @@ public class AdminKeyService implements IService {
     }
 
     /**
-     * Writes an AdminUser to Json format, leaving out the sensitive key field.
+     * Writes an AdminUser to Json format, hashing the sensitive key field.
      * @param a the AdminUser to write
-     * @return a JsonObject representing a, without the key field.
+     * @return a JsonObject representing a, without a hashed key field.
      */
-    public JsonObject adminToJson(AdminUser a){ // should hash key
+    public JsonObject adminToJson(AdminUser a){
         JsonObject jo = new JsonObject();
 
         jo.put("name", a.getName());
@@ -404,6 +407,7 @@ public class AdminKeyService implements IService {
         jo.put("roles", RequestUtil.getRolesSpec(a.getRoles()));
         jo.put("created", a.getCreated());
         jo.put("disabled", a.isDisabled());
+        jo.put("key", DigestUtils.sha256Hex(a.getKey()));
 
         return jo;
     }
