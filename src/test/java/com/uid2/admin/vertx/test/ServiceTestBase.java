@@ -70,7 +70,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public abstract class ServiceTestBase {
-    public final static boolean qldbConnection = true; // if computer has QLDB credentials, this variable can be true, otherwise leave false
+    public final static boolean qldbConnection = false; // if computer has QLDB credentials, this variable can be true, otherwise leave false
     protected AutoCloseable mocks;
     protected final JsonObject config = new JsonObject();
     protected final WriteLock writeLock = new WriteLock();
