@@ -1,5 +1,5 @@
 {
   "enable_qldb_admin_logging": true,
   "qldb_ledger_name": "uid2-audit-logs",
-  "qldb_table_name": "logs"
+  "qldb_table_name": "admin_logs"
 }

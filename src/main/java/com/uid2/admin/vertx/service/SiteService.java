@@ -90,6 +90,27 @@ public class SiteService implements IService {
         }), Role.CLIENTKEY_ISSUER));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<Site> sites = siteProvider.getAllSites();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (Site s : sites) {
+                newModels.add(new OperationModel(Type.SITE, s.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(s)), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.SITE;
+    }
+
     private List<OperationModel> handleSiteList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();

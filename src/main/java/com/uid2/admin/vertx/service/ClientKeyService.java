@@ -136,6 +136,27 @@ public class ClientKeyService implements IService {
         }), Role.CLIENTKEY_ISSUER));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<ClientKey> clients = clientKeyProvider.getAll();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (ClientKey c : clients) {
+                newModels.add(new OperationModel(Type.CLIENT, c.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.CLIENT;
+    }
+
     private void handleClientMetadata(RoutingContext rc) {
         try {
             rc.response()

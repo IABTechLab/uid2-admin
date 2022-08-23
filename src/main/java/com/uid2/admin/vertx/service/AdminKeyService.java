@@ -26,7 +26,10 @@ package com.uid2.admin.vertx.service;
 import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.Constants;
-import com.uid2.admin.audit.*;
+import com.uid2.admin.audit.Actions;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.OperationModel;
+import com.uid2.admin.audit.Type;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.secret.IKeyGenerator;
@@ -124,12 +127,34 @@ public class AdminKeyService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Collection<AdminUser> adminUsers = adminUserProvider.getAll();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (AdminUser a : adminUsers) {
+                newModels.add(new OperationModel(Type.ADMIN, a.getName(), null,
+                        DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.ADMIN;
+    }
+
     private void handleAdminMetadata(RoutingContext rc) {
         try {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
         } catch (Exception e) {
+            e.printStackTrace();
             rc.fail(500, e);
         }
     }
@@ -321,7 +346,7 @@ public class AdminKeyService implements IService {
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
             return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getName()));
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "rekeyed " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -361,7 +386,7 @@ public class AdminKeyService implements IService {
                 stringRoleList.add(role.toString());
             }
             return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "set roles of " + a.getName() +
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "set roles of " + a.getName() +
                     " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
         } catch (Exception e) {
             rc.fail(500, e);
@@ -370,9 +395,9 @@ public class AdminKeyService implements IService {
     }
 
     /**
-     * Writes an AdminUser to Json format, leaving out the sensitive key field.
+     * Writes an AdminUser to Json format, without the sensitive key field.
      * @param a the AdminUser to write
-     * @return a JsonObject representing a, without the key field.
+     * @return a JsonObject representing a, without a hashed key field.
      */
     public JsonObject adminToJson(AdminUser a){
         JsonObject jo = new JsonObject();

@@ -92,6 +92,28 @@ public class KeyAclService implements IService {
         }), Role.CLIENTKEY_ISSUER));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            Map<Integer, EncryptionKeyAcl> mapAcl = keyAclProvider.getSnapshot().getAllAcls();
+            Collection<OperationModel> newModels = new HashSet<>();
+            for (int i : mapAcl.keySet()) {
+                JsonObject jo = toJson(i, mapAcl.get(i));
+                newModels.add(new OperationModel(Type.KEYACL, String.valueOf(i), null,
+                        DigestUtils.sha256Hex(jo.toString()), null));
+            }
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.KEYACL;
+    }
+
     private List<OperationModel> handleKeyAclList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();

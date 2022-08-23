@@ -81,6 +81,29 @@ public class SaltService implements IService {
         }), Role.SECRET_MANAGER));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            List<RotatingSaltProvider.SaltSnapshot> snapshots = saltProvider.getSnapshots();
+            RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
+
+            JsonObject jo = toJson(lastSnapshot);
+
+            Collection<OperationModel> newModels = new HashSet<>();
+            newModels.add(new OperationModel(Type.SALT, "singleton", null,
+                    DigestUtils.sha256Hex(jo.toString()), null));
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.SALT;
+    }
+
     private List<OperationModel> handleSaltSnapshots(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();

@@ -71,6 +71,25 @@ public class PartnerConfigService implements IService {
         }), Role.ADMINISTRATOR));
     }
 
+    @Override
+    public Collection<OperationModel> qldbSetup(){
+        try {
+            String config = partnerConfigProvider.getConfig();
+            Collection<OperationModel> newModels = new HashSet<>();
+            newModels.add(new OperationModel(Type.PARTNER, "singleton", null,
+                    DigestUtils.sha256Hex(config), null));
+            return newModels;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Type tableType(){
+        return Type.PARTNER;
+    }
+
     private List<OperationModel> handlePartnerConfigGet(RoutingContext rc) {
         try {
             String config = this.partnerConfigProvider.getConfig();

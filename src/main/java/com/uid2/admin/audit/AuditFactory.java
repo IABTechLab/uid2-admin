@@ -1,8 +1,6 @@
 package com.uid2.admin.audit;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,10 +14,10 @@ import java.util.Map;
  */
 public class AuditFactory {
     private static final Map<JsonObject, AuditMiddleware> middlewareMap = new HashMap<>();
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuditFactory.class);
 
     /**
-     * Returns an AuditMiddleware object for the designated class to use.
+     * Returns an AuditMiddleware object with the designated configuration. If one does
+     * not already exist, creates a new AuditMiddleware object using the configuration.
      *
      * @return the designated AuditMiddleware object for the passed class.
      */

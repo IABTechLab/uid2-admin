@@ -25,6 +25,7 @@ package com.uid2.admin;
 
 import com.uid2.admin.audit.AuditFactory;
 import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.QLDBInit;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
@@ -152,6 +153,8 @@ public class Main {
 
             AdminVerticle adminVerticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider,
                     services);
+
+            QLDBInit.init(services, config);
 
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
                     "admins", 10000, adminUserProvider);
