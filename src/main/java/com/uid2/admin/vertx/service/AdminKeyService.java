@@ -346,7 +346,7 @@ public class AdminKeyService implements IService {
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
             return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getName()));
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "rekeyed " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
             return null;
@@ -386,7 +386,7 @@ public class AdminKeyService implements IService {
                 stringRoleList.add(role.toString());
             }
             return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "set roles of " + a.getName() +
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "set roles of " + a.getName() +
                     " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
         } catch (Exception e) {
             rc.fail(500, e);
@@ -395,7 +395,7 @@ public class AdminKeyService implements IService {
     }
 
     /**
-     * Writes an AdminUser to Json format, hashing the sensitive key field.
+     * Writes an AdminUser to Json format, without the sensitive key field.
      * @param a the AdminUser to write
      * @return a JsonObject representing a, without a hashed key field.
      */
@@ -407,7 +407,6 @@ public class AdminKeyService implements IService {
         jo.put("roles", RequestUtil.getRolesSpec(a.getRoles()));
         jo.put("created", a.getCreated());
         jo.put("disabled", a.isDisabled());
-        jo.put("key", DigestUtils.sha256Hex(a.getKey() == null ? "" : a.getKey()));
 
         return jo;
     }
