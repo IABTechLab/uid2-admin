@@ -12,6 +12,7 @@ import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class QLDBAuditWriter implements AuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
@@ -30,10 +31,12 @@ public class QLDBAuditWriter implements AuditWriter{
         qldbLogging = config.getBoolean("enable_qldb_admin_logging");
     }
     @Override
-    public void writeLog(AuditModel model) {
+    public boolean writeLog(AuditModel model) {
+        AtomicBoolean successfulLog = new AtomicBoolean(true);
         try {
             if(!(model instanceof QLDBAuditModel)){ //should never be true, but check in case
-                throw new IllegalArgumentException("Only QLDBAuditModel should be passed into QLDBAuditWriter");
+                successfulLog.set(false);
+                logger.error("Only QLDBAuditModel should be passed into QLDBAuditWriter");
             }
             QLDBAuditModel qldbModel = (QLDBAuditModel) model;
             if (qldbLogging) {
@@ -47,7 +50,8 @@ public class QLDBAuditWriter implements AuditWriter{
 
                         Result r = txn.execute(query, sanitizedInputs);
                         if (!r.iterator().hasNext()) {
-                            logger.warn("Malformed audit log input: no log written to QLDB");
+                            logger.error("Malformed audit log input: no log written to QLDB");
+                            successfulLog.set(false);
                         }
                     });
                 }
@@ -62,16 +66,19 @@ public class QLDBAuditWriter implements AuditWriter{
 
                         Result r = txn.execute(query.toString(), sanitizedInputs);
                         if (!r.iterator().hasNext()) {
-                            logger.warn("Malformed audit log input: no log written to QLDB");
+                            logger.error("Malformed audit log input: no log written to QLDB");
+                            successfulLog.set(false);
                         }
                     });
                 }
             }
         }
         catch(Exception e){
-            logger.warn("QLDB log failed: " + e.getClass().getSimpleName());
-            auditLogger.warn("QLDB log failed" + e.getClass().getSimpleName());
+            logger.error("QLDB log failed: " + e.getClass().getSimpleName());
+            auditLogger.error("QLDB log failed" + e.getClass().getSimpleName());
+            successfulLog.set(false);
         }
         auditLogger.info(model.writeToString());
+        return successfulLog.get();
     }
 }

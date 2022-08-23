@@ -4,6 +4,7 @@ import com.uid2.shared.auth.IAuthorizable;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import jdk.dynalink.Operation;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -12,6 +13,7 @@ import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class AuditMiddlewareImpl implements AuditMiddleware{
@@ -22,30 +24,32 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
     }
 
     @Override
-    public Handler<RoutingContext> handle(Function<RoutingContext, List<OperationModel>> handler) {
-        InnerAuditHandler auditHandler = new InnerAuditHandler(handler, auditWriter);
+    public Function<List<OperationModel>, Boolean> handle(RoutingContext rc) {
+        InnerAuditHandler auditHandler = new InnerAuditHandler(rc, auditWriter);
         return auditHandler::writeLog;
     }
 
     private static class InnerAuditHandler{
-        private final Function<RoutingContext, List<OperationModel>> innerHandler;
+        private final RoutingContext rc;
         private final AuditWriter auditWriter;
-        private InnerAuditHandler(Function<RoutingContext, List<OperationModel>> handler, AuditWriter auditWriter) {
-            this.innerHandler = handler;
+        private InnerAuditHandler(RoutingContext rc, AuditWriter auditWriter) {
+            this.rc = rc;
             this.auditWriter = auditWriter;
         }
 
-        public void writeLog(RoutingContext rc){
-            List<OperationModel> modelList = innerHandler.apply(rc);
-            if(modelList != null){
-                String ipAddress = getIPAddress(rc);
-                for(OperationModel model : modelList) {
-                    AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
-                            ((IAuthorizable) rc.data().get("api-client")).getContact(),
-                            System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary);
-                    auditWriter.writeLog(auditModel);
+        public Boolean writeLog(List<OperationModel> modelList){
+            String ipAddress = getIPAddress(rc);
+            boolean logSuccessful = true;
+            for(OperationModel model : modelList) {
+                AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
+                        ((IAuthorizable) rc.data().get("api-client")).getContact(),
+                        System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary);
+                logSuccessful = auditWriter.writeLog(auditModel);
+                if(!logSuccessful){
+                    break;
                 }
             }
+            return logSuccessful;
         }
 
         private static String getIPAddress(RoutingContext rc) {

@@ -49,6 +49,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
@@ -85,46 +86,46 @@ public class AdminKeyService implements IService {
                 auth.handle(this::handleAdminMetadata, Role.ADMINISTRATOR));
 
         router.get("/api/admin/list").handler(
-                auth.handle(audit.handle(this::handleAdminList), Role.ADMINISTRATOR));
+                auth.handle(ctx -> this.handleAdminList(ctx, audit.handle(ctx)), Role.ADMINISTRATOR));
 
         router.get("/api/admin/reveal").handler(
-                auth.handle(audit.handle(this::handleAdminReveal), Role.ADMINISTRATOR));
+                auth.handle(ctx -> this.handleAdminReveal(ctx, audit.handle(ctx)), Role.ADMINISTRATOR));
 
-        router.post("/api/admin/add").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/admin/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleAdminAdd(ctx);
+                this.handleAdminAdd(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/del").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/admin/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleAdminDel(ctx);
+                this.handleAdminDel(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/disable").blockingHandler(auth.handle(audit.handle(ctx -> {
+        router.post("/api/admin/disable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleAdminDisable(ctx);
+                this.handleAdminDisable(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/enable").blockingHandler(auth.handle(audit.handle(ctx -> {
+        router.post("/api/admin/enable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleAdminEnable(ctx);
+                this.handleAdminEnable(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/rekey").blockingHandler(auth.handle(audit.handle(ctx -> {
+        router.post("/api/admin/rekey").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleAdminRekey(ctx);
+                this.handleAdminRekey(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/roles").blockingHandler(auth.handle(audit.handle(ctx -> {
+        router.post("/api/admin/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleAdminRoles(ctx);
+                this.handleAdminRoles(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
     }
 
     @Override
@@ -159,8 +160,13 @@ public class AdminKeyService implements IService {
         }
     }
 
-    private List<OperationModel> handleAdminList(RoutingContext rc) {
+    private void handleAdminList(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST,
+                    null, "list admins"));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
             JsonArray ja = new JsonArray();
             Collection<AdminUser> collection = this.adminUserProvider.getAll();
             for (AdminUser a : collection) {
@@ -170,34 +176,32 @@ public class AdminKeyService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST,
-                    null, "list admins"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleAdminReveal(RoutingContext rc) {
+    private void handleAdminReveal(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
-                return null;
             }
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName()));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(a));
-            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleAdminAdd(RoutingContext rc) {
+    private void handleAdminAdd(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -208,13 +212,11 @@ public class AdminKeyService implements IService {
                     .findFirst();
             if (existingAdmin.isPresent()) {
                 ResponseUtil.error(rc, 400, "admin existed");
-                return null;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
-                return null;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -232,20 +234,23 @@ public class AdminKeyService implements IService {
             // add admin to the array
             admins.add(newAdmin);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, name, Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + name));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
+
             // upload to storage
             storageManager.uploadAdminUsers(adminUserProvider, admins);
 
             // respond with new admin created
             rc.response().end(jsonWriter.writeValueAsString(newAdmin));
-            return Collections.singletonList(new OperationModel(Type.ADMIN, name, Actions.CREATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + name));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleAdminDel(RoutingContext rc) {
+    private void handleAdminDel(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -253,7 +258,6 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
-                return null;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -263,28 +267,31 @@ public class AdminKeyService implements IService {
             // delete admin from the array
             admins.remove(a);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getName()));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
+
             // upload to storage
             storageManager.uploadAdminUsers(adminUserProvider, admins);
 
             // respond with admin deleted
             rc.response().end(jsonWriter.writeValueAsString(a));
-            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.DELETE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleAdminDisable(RoutingContext rc) {
-        return handleAdminDisable(rc, true);
+    private void handleAdminDisable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
+        handleAdminDisable(rc,  fxn, true);
     }
 
-    private List<OperationModel> handleAdminEnable(RoutingContext rc) {
-        return handleAdminDisable(rc, false);
+    private void handleAdminEnable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
+        handleAdminDisable(rc, fxn, false);
     }
 
-    private List<OperationModel> handleAdminDisable(RoutingContext rc, boolean disableFlag) {
+    private void handleAdminDisable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn, boolean disableFlag) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -292,7 +299,6 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
-                return null;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -301,27 +307,29 @@ public class AdminKeyService implements IService {
 
             if (a.isDisabled() == disableFlag) {
                 rc.fail(400, new Exception("no change needed"));
-                return null;
             }
 
             a.setDisabled(disableFlag);
 
             JsonObject response = adminToJson(a);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), (disableFlag ? "disabled " : "enabled ") + a.getName()));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
+
             // upload to storage
             storageManager.uploadAdminUsers(adminUserProvider, admins);
 
             // respond with admin disabled/enabled
             rc.response().end(response.encode());
-            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), (disableFlag ? "disabled " : "enabled ") + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleAdminRekey(RoutingContext rc) {
+    private void handleAdminRekey(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -329,7 +337,6 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
-                return null;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -340,20 +347,23 @@ public class AdminKeyService implements IService {
             if (this.adminKeyPrefix != null) newKey = this.adminKeyPrefix + newKey;
             a.setKey(newKey);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "rekeyed " + a.getName()));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
+
             // upload to storage
             storageManager.uploadAdminUsers(adminUserProvider, admins);
 
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
-            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "rekeyed " + a.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleAdminRoles(RoutingContext rc) {
+    private void handleAdminRoles(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
@@ -361,13 +371,11 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
-                return null;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
-                return null;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -376,28 +384,31 @@ public class AdminKeyService implements IService {
 
             a.setRoles(roles);
 
+            List<String> stringRoleList = new ArrayList<>();
+            for (Role role : roles) {
+                stringRoleList.add(role.toString());
+            }
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "set roles of " + a.getName() +
+                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
+            if(!fxn.apply(modelList)){
+                throw new IllegalStateException();
+            }
+
             // upload to storage
             storageManager.uploadAdminUsers(adminUserProvider, admins);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
-            List<String> stringRoleList = new ArrayList<>();
-            for (Role role : roles) {
-                stringRoleList.add(role.toString());
-            }
-            return Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(adminToJson(a).toString()), "set roles of " + a.getName() +
-                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
     /**
-     * Writes an AdminUser to Json format, hashing the sensitive key field.
+     * Writes an AdminUser to Json format, without the sensitive key field.
      * @param a the AdminUser to write
-     * @return a JsonObject representing a, without a hashed key field.
+     * @return a JsonObject representing a, without a key field.
      */
     public JsonObject adminToJson(AdminUser a){
         JsonObject jo = new JsonObject();
@@ -407,7 +418,6 @@ public class AdminKeyService implements IService {
         jo.put("roles", RequestUtil.getRolesSpec(a.getRoles()));
         jo.put("created", a.getCreated());
         jo.put("disabled", a.isDisabled());
-        jo.put("key", DigestUtils.sha256Hex(a.getKey() == null ? "" : a.getKey()));
 
         return jo;
     }

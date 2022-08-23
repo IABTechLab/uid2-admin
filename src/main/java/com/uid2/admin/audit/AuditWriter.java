@@ -10,5 +10,5 @@ public interface AuditWriter {
      *
      * @param model the AuditModel to write out.
      */
-    void writeLog(AuditModel model);
+    boolean writeLog(AuditModel model);
 }
