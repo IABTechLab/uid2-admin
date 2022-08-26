@@ -17,15 +17,20 @@ public class QLDBAuditWriter implements AuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
     private static final Logger auditLogger = LoggerFactory.getLogger("com.uid2.admin.audit");
-    private final QldbDriver qldbDriver;
+    private QldbDriver qldbDriver;
     private final String logTable;
     private final boolean qldbLogging;
     public QLDBAuditWriter(JsonObject config){
-        qldbDriver = QldbDriver.builder()
-                .ledger(config.getString("qldb_ledger_name"))
-                .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
-                .sessionClientBuilder(QldbSessionClient.builder())
-                .build();
+        try {
+            qldbDriver = QldbDriver.builder()
+                    .ledger(config.getString("qldb_ledger_name"))
+                    .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
+                    .sessionClientBuilder(QldbSessionClient.builder())
+                    .build();
+        }
+        catch (Exception e){
+            logger.error("failed to establish connection with qldb");
+        }
         logTable = config.getString("qldb_table_name");
         qldbLogging = config.getBoolean("enable_qldb_admin_logging");
     }
