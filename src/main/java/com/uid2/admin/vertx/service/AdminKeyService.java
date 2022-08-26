@@ -155,22 +155,23 @@ public class AdminKeyService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
         } catch (Exception e) {
-            e.printStackTrace();
             rc.fail(500, e);
         }
     }
 
     private void handleAdminList(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
-            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST,
-                    null, "list admins"));
-            if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
-            }
             JsonArray ja = new JsonArray();
             Collection<AdminUser> collection = this.adminUserProvider.getAll();
             for (AdminUser a : collection) {
                 ja.add(adminToJson(a));
+            }
+
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST,
+                    null, "list admins"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             rc.response()
@@ -186,12 +187,14 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
+                return;
             }
 
             List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName()));
             if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -212,11 +215,13 @@ public class AdminKeyService implements IService {
                     .findFirst();
             if (existingAdmin.isPresent()) {
                 ResponseUtil.error(rc, 400, "admin existed");
+                return;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                return;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -237,7 +242,8 @@ public class AdminKeyService implements IService {
             List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, name, Actions.CREATE,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newAdmin)), "created " + name));
             if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             // upload to storage
@@ -258,6 +264,7 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
+                return;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -270,7 +277,8 @@ public class AdminKeyService implements IService {
             List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.DELETE,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "deleted " + a.getName()));
             if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             // upload to storage
@@ -299,6 +307,7 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
+                return;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -307,6 +316,7 @@ public class AdminKeyService implements IService {
 
             if (a.isDisabled() == disableFlag) {
                 rc.fail(400, new Exception("no change needed"));
+                return;
             }
 
             a.setDisabled(disableFlag);
@@ -316,7 +326,8 @@ public class AdminKeyService implements IService {
             List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), (disableFlag ? "disabled " : "enabled ") + a.getName()));
             if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             // upload to storage
@@ -337,6 +348,7 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
+                return;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -350,7 +362,8 @@ public class AdminKeyService implements IService {
             List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.UPDATE,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "rekeyed " + a.getName()));
             if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             // upload to storage
@@ -371,11 +384,13 @@ public class AdminKeyService implements IService {
             AdminUser a = getAdminUser(rc.queryParam("name"));
             if (a == null) {
                 ResponseUtil.error(rc, 404, "admin not found");
+                return;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                return;
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
@@ -392,7 +407,8 @@ public class AdminKeyService implements IService {
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "set roles of " + a.getName() +
                     " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
             if(!fxn.apply(modelList)){
-                throw new IllegalStateException();
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             // upload to storage

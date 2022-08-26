@@ -52,6 +52,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -107,18 +108,18 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/key/list").handler(
-                auth.handle(audit.handle(this::handleKeyList), Role.SECRET_MANAGER));
+                auth.handle(ctx -> this.handleKeyList(ctx, audit.handle(ctx)), Role.SECRET_MANAGER));
 
-        router.post("/api/key/rotate_master").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/key/rotate_master").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleRotateMasterKey(ctx);
+                this.handleRotateMasterKey(ctx, audit.handle(ctx));
             }
-        }), Role.SECRET_MANAGER));
-        router.post("/api/key/rotate_site").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        }, Role.SECRET_MANAGER));
+        router.post("/api/key/rotate_site").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleRotateSiteKey(ctx);
+                this.handleRotateSiteKey(ctx, audit.handle(ctx));
             }
-        }), Role.SECRET_MANAGER));
+        }, Role.SECRET_MANAGER));
         router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle(audit.handle((ctx) -> {
             synchronized (writeLock) {
                 return this.handleRotateAllSiteKeys(ctx);
@@ -155,24 +156,29 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return addSiteKeys(Arrays.asList(siteId), siteKeyActivatesIn, siteKeyExpiresAfter).get(0);
     }
 
-    private List<OperationModel> handleKeyList(RoutingContext rc) {
+    private void handleKeyList(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final JsonArray ja = new JsonArray();
             this.keyProvider.getSnapshot().getActiveKeySet().stream()
                     .sorted(Comparator.comparingInt(EncryptionKey::getSiteId).thenComparing(EncryptionKey::getActivates))
                     .forEachOrdered(k -> ja.add(toJson(k)));
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.KEY, Constants.DEFAULT_ITEM_KEY,
+                    Actions.LIST, null, "list keys"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.KEY, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list keys"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleRotateMasterKey(RoutingContext rc) {
+    private void handleRotateMasterKey(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
                 s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
@@ -190,27 +196,26 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             return modelList;
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleRotateSiteKey(RoutingContext rc) {
+    private void handleRotateSiteKey(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
-            if (!siteIdOpt.isPresent()) return null;
+            if (!siteIdOpt.isPresent()) return;
             final int siteId = siteIdOpt.get();
 
             if (siteId != Const.Data.AdvertisingTokenSiteId && !SiteUtil.isValidSiteId(siteId)) {
                 ResponseUtil.error(rc, 400, "must specify a valid site id");
-                return null;
+                return;
             }
 
             final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> s == siteId);
             if (result == null) {
-                return null;
+                return;
             } else if (!result.siteIds.contains(siteId)) {
                 ResponseUtil.error(rc, 404, "No keys found for the specified site id: " + siteId);
-                return null;
+                return;
             }
 
             final JsonArray ja = new JsonArray();
@@ -226,15 +231,14 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             return modelList;
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleRotateAllSiteKeys(RoutingContext rc) {
+    private void handleRotateAllSiteKeys(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> SiteUtil.isValidSiteId(s) || s == Const.Data.AdvertisingTokenSiteId);
             if (result == null) {
-                return null;
+                return;
             }
 
             final JsonArray ja = new JsonArray();
@@ -250,7 +254,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             return modelList;
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 

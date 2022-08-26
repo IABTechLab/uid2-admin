@@ -24,26 +24,31 @@ public class QLDBInit {
     private static final Logger LOGGER = LoggerFactory.getLogger(QLDBInit.class);
 
     public static void init(List<IService> services, JsonObject config) {
-        qldbDriver = QldbDriver.builder()
-                .ledger(config.getString("qldb_ledger_name"))
-                .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
-                .sessionClientBuilder(QldbSessionClient.builder())
-                .build();
-        qldbTableName = config.getString("qldb_table_name");
-        if (!hasTableBeenCreated()) {
-            createTable();
-        }
-        for (IService service : services) {
-            if (!isServiceSetup(service)) {
-                Collection<OperationModel> modelList = service.qldbSetup();
-                insertIntoQLDB(new OperationModel(service.tableType(), Constants.DEFAULT_ITEM_KEY,
-                        null, null, null));
-                for (OperationModel model : modelList) {
-                    insertIntoQLDB(model);
+        try {
+            qldbDriver = QldbDriver.builder()
+                    .ledger(config.getString("qldb_ledger_name"))
+                    .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
+                    .sessionClientBuilder(QldbSessionClient.builder())
+                    .build();
+            qldbTableName = config.getString("qldb_table_name");
+            if (!hasTableBeenCreated()) {
+                createTable();
+            }
+            for (IService service : services) {
+                if (!isServiceSetup(service)) {
+                    Collection<OperationModel> modelList = service.qldbSetup();
+                    insertIntoQLDB(new OperationModel(service.tableType(), Constants.DEFAULT_ITEM_KEY,
+                            null, null, null));
+                    for (OperationModel model : modelList) {
+                        insertIntoQLDB(model);
+                    }
                 }
             }
+            LOGGER.info("initialized qldb");
         }
-        LOGGER.info("initialized qldb");
+        catch(Exception e){
+            LOGGER.warn("qldb not initialized");
+        }
     }
 
     private static boolean hasTableBeenCreated() {

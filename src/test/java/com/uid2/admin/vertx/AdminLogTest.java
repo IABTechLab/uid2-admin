@@ -16,7 +16,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -27,6 +26,7 @@ import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Random;
@@ -53,7 +53,7 @@ public class AdminLogTest extends ServiceTestBase {
     private final String fakeAdmin = "some-fake-admin";
 
     @Captor
-    private ArgumentCaptor<AuditModel> auditModelCaptor;
+    private ArgumentCaptor<Collection<AuditModel>> auditModelCaptor;
 
     @Override
     protected IService createService() {
@@ -131,7 +131,7 @@ public class AdminLogTest extends ServiceTestBase {
             });
         }
         else{
-            Mockito.verify(mockedAuditWriter, never()).writeLog(any());
+            Mockito.verify(mockedAuditWriter, never()).writeLogs(any());
         }
     }
 
@@ -154,7 +154,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();
@@ -180,7 +180,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.GET, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();
@@ -213,7 +213,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, newFakeAdmin, Actions.CREATE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();
@@ -244,7 +244,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.DELETE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();
@@ -275,7 +275,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.DISABLE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
         });
@@ -299,7 +299,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.ENABLE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();
@@ -331,7 +331,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.UPDATE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();
@@ -363,7 +363,7 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.UPDATE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
                 assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
             }
             testContext.completeNow();

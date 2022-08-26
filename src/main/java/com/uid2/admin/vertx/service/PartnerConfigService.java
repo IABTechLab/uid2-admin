@@ -40,6 +40,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class PartnerConfigService implements IService {
     private final AuditMiddleware audit;
@@ -63,12 +64,12 @@ public class PartnerConfigService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/partner_config/get").handler(
-                auth.handle(audit.handle(this::handlePartnerConfigGet), Role.ADMINISTRATOR));
-        router.post("/api/partner_config/update").blockingHandler(auth.handle(audit.handle((ctx) -> {
+                auth.handle(ctx -> this.handlePartnerConfigGet(ctx, audit.handle(ctx)), Role.ADMINISTRATOR));
+        router.post("/api/partner_config/update").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handlePartnerConfigUpdate(ctx);
+                this.handlePartnerConfigUpdate(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
     }
 
     @Override
@@ -90,28 +91,39 @@ public class PartnerConfigService implements IService {
         return Type.PARTNER;
     }
 
-    private List<OperationModel> handlePartnerConfigGet(RoutingContext rc) {
+    private void handlePartnerConfigGet(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             String config = this.partnerConfigProvider.getConfig();
+
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", Actions.GET,
+                    DigestUtils.sha256Hex(config), "get partner config"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(config);
-            return Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", Actions.GET,
-                    DigestUtils.sha256Hex(config), "get partner config"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handlePartnerConfigUpdate(RoutingContext rc) {
+    private void handlePartnerConfigUpdate(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             this.partnerConfigProvider.loadContent();
             JsonArray partners = rc.getBodyAsJsonArray();
             if (partners == null) {
                 ResponseUtil.error(rc, 400, "Body must be none empty");
-                return null;
+                return;
+            }
+
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", Actions.UPDATE,
+                    DigestUtils.sha256Hex(partnerConfigProvider.getConfig()), "updated partner config"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             storageManager.uploadPartners(this.partnerConfigProvider, partners);
@@ -119,11 +131,8 @@ public class PartnerConfigService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end("\"success\"");
-            return Collections.singletonList(new OperationModel(Type.PARTNER, "singleton", Actions.UPDATE,
-                    DigestUtils.sha256Hex(partnerConfigProvider.getConfig()), "updated partner config"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 }

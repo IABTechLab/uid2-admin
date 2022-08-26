@@ -1,19 +1,13 @@
 package com.uid2.admin.audit;
 
 import com.uid2.shared.auth.IAuthorizable;
-import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import jdk.dynalink.Operation;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 public class AuditMiddlewareImpl implements AuditMiddleware{
@@ -26,7 +20,7 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
     @Override
     public Function<List<OperationModel>, Boolean> handle(RoutingContext rc) {
         InnerAuditHandler auditHandler = new InnerAuditHandler(rc, auditWriter);
-        return auditHandler::writeLog;
+        return auditHandler::writeLogs;
     }
 
     private static class InnerAuditHandler{
@@ -37,19 +31,15 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
             this.auditWriter = auditWriter;
         }
 
-        public Boolean writeLog(List<OperationModel> modelList){
+        public boolean writeLogs(List<OperationModel> modelList){
             String ipAddress = getIPAddress(rc);
-            boolean logSuccessful = true;
+            List<AuditModel> auditModelList = new ArrayList<>();
             for(OperationModel model : modelList) {
-                AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
+                auditModelList.add(new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
                         ((IAuthorizable) rc.data().get("api-client")).getContact(),
-                        System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary);
-                logSuccessful = auditWriter.writeLog(auditModel);
-                if(!logSuccessful){
-                    break;
-                }
+                        System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary));
             }
-            return logSuccessful;
+            return auditWriter.writeLogs(auditModelList);
         }
 
         private static String getIPAddress(RoutingContext rc) {

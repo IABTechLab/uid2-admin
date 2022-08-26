@@ -1,5 +1,7 @@
 package com.uid2.admin.audit;
 
+import java.util.Collection;
+
 /**
  * AuditWriter is responsible for the logic to write out to designated logging databases.
  */
@@ -10,5 +12,5 @@ public interface AuditWriter {
      *
      * @param model the AuditModel to write out.
      */
-    boolean writeLog(AuditModel model);
+    boolean writeLogs(Collection<AuditModel> model);
 }
