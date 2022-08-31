@@ -210,7 +210,7 @@ public class ClientKeyService implements IService {
             }
             ClientKey c = existingClient.get();
 
-            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.GET,
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.REVEAL,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "revealed " + c.getName()));
             if(!fxn.apply(modelList)){
                 ResponseUtil.error(rc, 500, "failed");

@@ -190,7 +190,7 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            List<OperationModel> modelList =  Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.GET,
+            List<OperationModel> modelList =  Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.REVEAL,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingOperator.get())), "revealed " + name));
             if(!fxn.apply(modelList)){
                 ResponseUtil.error(rc, 500, "failed");

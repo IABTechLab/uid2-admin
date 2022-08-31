@@ -1,5 +1,5 @@
 {
   "enable_qldb_admin_logging": false,
   "qldb_ledger_name": "audit-logs",
-  "qldb_table_name": "logs"
+  "qldb_table_name": "admin_logs"
 }

@@ -190,7 +190,7 @@ public class AdminKeyService implements IService {
                 return;
             }
 
-            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.GET,
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.ADMIN, a.getName(), Actions.REVEAL,
                     DigestUtils.sha256Hex(jsonWriter.writeValueAsString(a)), "revealed " + a.getName()));
             if(!fxn.apply(modelList)){
                 ResponseUtil.error(rc, 500, "failed");

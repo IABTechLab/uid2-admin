@@ -62,7 +62,14 @@ public class QLDBAuditModel implements AuditModel{
     @Override
     public JsonObject writeToJson() {
         Gson gson = new GsonBuilder().serializeNulls().create();
-        return new JsonObject(gson.toJson(this));
+        JsonObject jo = new JsonObject(gson.toJson(this));
+        jo.remove("itemType");
+        jo.remove("itemKey");
+        JsonObject outerJo = new JsonObject();
+        outerJo.put("itemType", itemType);
+        outerJo.put("itemKey", itemKey);
+        outerJo.put("data", jo);
+        return outerJo;
     }
 
     @Override

@@ -36,13 +36,16 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
             List<AuditModel> auditModelList = new ArrayList<>();
             for(OperationModel model : modelList) {
                 auditModelList.add(new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
-                        ((IAuthorizable) rc.data().get("api-client")).getContact(),
+                        rc != null ? ((IAuthorizable) rc.data().get("api-client")).getContact() : null,
                         System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary));
             }
             return auditWriter.writeLogs(auditModelList);
         }
 
         private static String getIPAddress(RoutingContext rc) {
+            if(rc == null){
+                return null;
+            }
             List<String> listIP = rc.request().headers().getAll("X-Forwarded-For");
             List<InetAddress> publicIPs = new ArrayList<>();
             for(String str : listIP){
