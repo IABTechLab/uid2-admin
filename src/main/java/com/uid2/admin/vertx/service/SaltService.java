@@ -45,6 +45,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SaltService implements IService {
@@ -72,13 +73,13 @@ public class SaltService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/salt/snapshots").handler(
-                auth.handle(audit.handle(this::handleSaltSnapshots), Role.SECRET_MANAGER));
+                auth.handle(ctx -> this.handleSaltSnapshots(ctx, audit.handle(ctx)), Role.SECRET_MANAGER));
 
-        router.post("/api/salt/rotate").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/salt/rotate").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleSaltRotate(ctx);
+                this.handleSaltRotate(ctx, audit.handle(ctx));
             }
-        }), Role.SECRET_MANAGER));
+        }, Role.SECRET_MANAGER));
     }
 
     @Override
@@ -104,28 +105,33 @@ public class SaltService implements IService {
         return Type.SALT;
     }
 
-    private List<OperationModel> handleSaltSnapshots(RoutingContext rc) {
+    private void handleSaltSnapshots(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final JsonArray ja = new JsonArray();
             this.saltProvider.getSnapshots().stream()
                     .forEachOrdered(s -> ja.add(toJson(s)));
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.SALT, null,
+                    Actions.LIST, null, "listed salt snapshots"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.SALT, null, Actions.LIST, null, "listed salt snapshots"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleSaltRotate(RoutingContext rc) {
+    private void handleSaltRotate(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
-            if (!fraction.isPresent()) return null;
+            if (!fraction.isPresent()) return;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
-            if (minAges == null) return null;
+            if (minAges == null) return;
 
             // force refresh
             this.saltProvider.loadContent();
@@ -136,7 +142,15 @@ public class SaltService implements IService {
                     lastSnapshot, minAges, fraction.get());
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
-                return null;
+                return;
+            }
+
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.SALT, "singleton", Actions.UPDATE,
+                    DigestUtils.sha256Hex(toJson(result.getSnapshot()).toString()), "rotated indices " +
+                    result.getRotationIndices().stream().map(String::valueOf).collect(Collectors.joining(","))));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             storageManager.uploadSalts(this.saltProvider, result.getSnapshot());
@@ -144,12 +158,8 @@ public class SaltService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(result.getSnapshot()).encode());
-            return Collections.singletonList(new OperationModel(Type.SALT, "singleton", Actions.UPDATE,
-                    DigestUtils.sha256Hex(toJson(result.getSnapshot()).toString()), "rotated indices " +
-                    result.getRotationIndices().stream().map(String::valueOf).collect(Collectors.joining(","))));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 

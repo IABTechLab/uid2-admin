@@ -52,6 +52,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
@@ -89,51 +90,51 @@ public class ClientKeyService implements IService {
         router.get("/api/client/metadata").handler(
                 auth.handle(this::handleClientMetadata, Role.CLIENTKEY_ISSUER));
         router.get("/api/client/list").handler(
-                auth.handle(audit.handle(this::handleClientList), Role.CLIENTKEY_ISSUER));
+                auth.handle(ctx -> this.handleClientList(ctx, audit.handle(ctx)), Role.CLIENTKEY_ISSUER));
         router.get("/api/client/reveal").handler(
-                auth.handle(audit.handle(this::handleClientReveal), Role.CLIENTKEY_ISSUER));
+                auth.handle(ctx -> this.handleClientReveal(ctx, audit.handle(ctx)), Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/add").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientAdd(ctx);
+                this.handleClientAdd(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/del").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientDel(ctx);
+                this.handleClientDel(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/client/update").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/update").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientUpdate(ctx);
+                this.handleClientUpdate(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/disable").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/disable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientDisable(ctx);
+                this.handleClientDisable(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/enable").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/enable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientEnable(ctx);
+                this.handleClientEnable(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/rekey").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/rekey").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientRekey(ctx);
+                this.handleClientRekey(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/client/roles").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/client/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleClientRoles(ctx);
+                this.handleClientRoles(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     @Override
@@ -167,7 +168,7 @@ public class ClientKeyService implements IService {
         }
     }
 
-    private List<OperationModel> handleClientList(RoutingContext rc) {
+    private void handleClientList(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             JsonArray ja = new JsonArray();
             Collection<ClientKey> collection = this.clientKeyProvider.getAll();
@@ -183,17 +184,21 @@ public class ClientKeyService implements IService {
                 jo.put("disabled", c.isDisabled());
             }
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT,
+                    Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list clients"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.CLIENT, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list clients"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientReveal(RoutingContext rc) {
+    private void handleClientReveal(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final String name = rc.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
@@ -201,22 +206,25 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client not found");
-                return null;
+                return;
             }
             ClientKey c = existingClient.get();
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.REVEAL,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "revealed " + c.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(c));
-            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.GET,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "revealed " + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientAdd(RoutingContext rc) {
+    private void handleClientAdd(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -227,17 +235,20 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (existingClient.isPresent()) {
                 ResponseUtil.error(rc, 400, "key existed");
-                return null;
+                return;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
-                return null;
+                return;
             }
 
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) return null;
+            if (site == null) {
+                ResponseUtil.error(rc, 404, "site not found");
+                return;
+            }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
@@ -257,7 +268,14 @@ public class ClientKeyService implements IService {
                     .withRoles(roles);
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
-                return null;
+                return;
+            }
+
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, newClient.getName(), Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newClient)), "created " + newClient.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             // add client to the array
@@ -268,15 +286,12 @@ public class ClientKeyService implements IService {
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newClient));
-            return Collections.singletonList(new OperationModel(Type.CLIENT, newClient.getName(), Actions.CREATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newClient)), "created " + newClient.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientDel(RoutingContext rc) {
+    private void handleClientDel(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -287,7 +302,7 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client key not found");
-                return null;
+                return;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -298,20 +313,24 @@ public class ClientKeyService implements IService {
             ClientKey c = existingClient.get();
             clients.remove(c);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "deleted " + c.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadClientKeys(clientKeyProvider, clients);
 
             // respond with client deleted
             rc.response().end(jsonWriter.writeValueAsString(c));
-            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.DELETE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "deleted " + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientUpdate(RoutingContext rc) {
+    private void handleClientUpdate(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -322,11 +341,14 @@ public class ClientKeyService implements IService {
                     .findFirst().orElse(null);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
-                return null;
+                return;
             }
 
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) return null;
+            if (site == null) {
+                ResponseUtil.error(rc, 404, "site not found");
+                return;
+            }
 
             existingClient.withSiteId(site.getId());
 
@@ -334,28 +356,32 @@ public class ClientKeyService implements IService {
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, existingClient.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingClient)), "updated " + existingClient.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadClientKeys(clientKeyProvider, clients);
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
-            return Collections.singletonList(new OperationModel(Type.CLIENT, existingClient.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingClient)), "updated " + existingClient.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientDisable(RoutingContext rc) {
-        return handleClientDisable(rc, true);
+    private void handleClientDisable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
+        handleClientDisable(rc, fxn, true);
     }
 
-    private List<OperationModel> handleClientEnable(RoutingContext rc) {
-        return handleClientDisable(rc, false);
+    private void handleClientEnable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
+        handleClientDisable(rc, fxn, false);
     }
 
-    private List<OperationModel> handleClientDisable(RoutingContext rc, boolean disableFlag) {
+    private void handleClientDisable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn, boolean disableFlag) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -366,7 +392,7 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client key not found");
-                return null;
+                return;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -376,7 +402,7 @@ public class ClientKeyService implements IService {
             ClientKey c = existingClient.get();
             if (c.isDisabled() == disableFlag) {
                 ResponseUtil.error(rc, 400, "no change needed");
-                return null;
+                return;
             }
 
             c.setDisabled(disableFlag);
@@ -387,20 +413,24 @@ public class ClientKeyService implements IService {
             response.put("created", c.getCreated());
             response.put("disabled", c.isDisabled());
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), (disableFlag ? "disabled " : "enabled ") + c.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadClientKeys(clientKeyProvider, clients);
 
             // respond with client disabled/enabled
             rc.response().end(response.encode());
-            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), (disableFlag ? "disabled " : "enabled ") + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientRekey(RoutingContext rc) {
+    private void handleClientRekey(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -411,7 +441,7 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client key not found");
-                return null;
+                return;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -426,20 +456,24 @@ public class ClientKeyService implements IService {
 
             c.setSecret(keyGenerator.generateRandomKeyString(32));
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "rekeyed " + c.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadClientKeys(clientKeyProvider, clients);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
-            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "rekeyed " + c.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleClientRoles(RoutingContext rc) {
+    private void handleClientRoles(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
@@ -450,13 +484,13 @@ public class ClientKeyService implements IService {
                     .findFirst();
             if (!existingClient.isPresent()) {
                 ResponseUtil.error(rc, 404, "client not found");
-                return null;
+                return;
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "incorrect or none roles specified");
-                return null;
+                return;
             }
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -466,21 +500,25 @@ public class ClientKeyService implements IService {
             ClientKey c = existingClient.get();
             c.withRoles(roles);
 
+            List<String> stringRoleList = new ArrayList<>();
+            for (Role role : roles) {
+                stringRoleList.add(role.toString());
+            }
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "set roles of " + c.getName() +
+                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadClientKeys(clientKeyProvider, clients);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
-            List<String> stringRoleList = new ArrayList<>();
-            for (Role role : roles) {
-                stringRoleList.add(role.toString());
-            }
-            return Collections.singletonList(new OperationModel(Type.CLIENT, c.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(c)), "set roles of " + c.getName() +
-                    " to {" + StringUtils.join(",", stringRoleList.toArray(new String[0])) + "}"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 }

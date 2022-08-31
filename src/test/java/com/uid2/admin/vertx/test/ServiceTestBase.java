@@ -23,13 +23,16 @@
 
 package com.uid2.admin.vertx.test;
 
-import com.uid2.admin.audit.*;
+import com.uid2.admin.audit.AuditFactory;
+import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.AuditMiddlewareImpl;
+import com.uid2.admin.audit.AuditWriter;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.IAuthHandlerFactory;
+import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.IStorageManager;
 import com.uid2.admin.store.RotatingSiteStore;
 import com.uid2.admin.vertx.AdminVerticle;
@@ -65,7 +68,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -96,7 +98,7 @@ public abstract class ServiceTestBase {
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         config.put("qldb_ledger_name", "audit-logs");
         config.put("qldb_table_name", "logs");
-        config.put("enable_qldb_admin_logging", true);
+        config.put("enable_qldb_admin_logging", qldbConnection);
         mocks = MockitoAnnotations.openMocks(this);
         when(authHandlerFactory.createAuthHandler(any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
@@ -105,6 +107,7 @@ public abstract class ServiceTestBase {
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
+        when(mockedAuditWriter.writeLogs(any())).thenReturn(true);
         auth = new AuthMiddleware(this.adminUserProvider);
         if(qldbConnection){
             audit = AuditFactory.getAuditMiddleware(config);

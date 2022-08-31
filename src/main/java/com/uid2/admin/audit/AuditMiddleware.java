@@ -21,5 +21,5 @@ public interface AuditMiddleware {
      * @return a new method that logs in addition to executing the method
      * specified in handler.
      */
-    Handler<RoutingContext> handle(Function<RoutingContext, List<OperationModel>> handler);
+    Function<List<OperationModel>, Boolean> handle(RoutingContext rc);
 }

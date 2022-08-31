@@ -1,8 +1,8 @@
 package com.uid2.admin.audit;
 
+import com.amazon.ion.IonList;
 import com.amazon.ion.IonStruct;
 import com.amazon.ion.IonSystem;
-import com.amazon.ion.IonValue;
 import com.amazon.ion.system.IonSystemBuilder;
 import com.uid2.admin.Constants;
 import com.uid2.admin.vertx.service.*;
@@ -15,6 +15,7 @@ import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class QLDBInit {
 
@@ -34,10 +35,15 @@ public class QLDBInit {
             if (!hasTableBeenCreated()) {
                 createTable();
             }
+            if(!haveIndicesBeenCreated()){
+                createIndices();
+            }
             for (IService service : services) {
                 if (!isServiceSetup(service)) {
                     Collection<OperationModel> modelList = service.qldbSetup();
                     insertIntoQLDB(new OperationModel(service.tableType(), Constants.DEFAULT_ITEM_KEY,
+                            null, null, null));
+                    insertIntoQLDB(new OperationModel(service.tableType(), Constants.NULL_ITEM_KEY,
                             null, null, null));
                     for (OperationModel model : modelList) {
                         insertIntoQLDB(model);
@@ -47,24 +53,35 @@ public class QLDBInit {
             LOGGER.info("initialized qldb");
         }
         catch(Exception e){
-            LOGGER.warn("failed to initialize qldb");
+            LOGGER.warn("qldb not initialized");
         }
     }
 
     private static boolean hasTableBeenCreated() {
         try {
-            final IonStruct[] table = new IonStruct[1];
+            AtomicBoolean hasTableBeenCreated = new AtomicBoolean(false);
             qldbDriver.execute(txn -> {
-                Result result = txn.execute("SELECT * FROM information_schema.user_tables");
-                for (Iterator<IonValue> it = result.iterator(); it.hasNext(); ) {
-                    IonStruct struct = (IonStruct) it.next();
-                    if (struct.get("name").toString().equals(qldbTableName)) {
-                        table[0] = (IonStruct) result.iterator().next();
-                    }
-                }
+                Result result = txn.execute("SELECT * FROM information_schema.user_tables WHERE name = ?",
+                        ionSys.newString(qldbTableName));
+                hasTableBeenCreated.set(!result.isEmpty());
             });
-            return table[0] != null;
+            return hasTableBeenCreated.get();
         } catch (Exception e) {
+            throw new RuntimeException("AWS configuration not set up");
+        }
+    }
+
+    private static boolean haveIndicesBeenCreated(){ //Assumes table exists
+        try {
+            AtomicBoolean hasTableBeenCreated = new AtomicBoolean(false);
+            qldbDriver.execute(txn -> {
+                Result result = txn.execute("SELECT indexes FROM information_schema.user_tables WHERE name = ?",
+                        ionSys.newString(qldbTableName));
+                hasTableBeenCreated.set(((IonList)(((IonStruct)(result.iterator().next())).iterator().next())).size() != 0);
+            });
+            return hasTableBeenCreated.get();
+        }
+        catch (Exception e) {
             throw new RuntimeException("AWS configuration not set up");
         }
     }
@@ -83,10 +100,21 @@ public class QLDBInit {
         }
     }
 
-    private static void createTable() { //creates the logs table, assuming it doesn't already exist
+    private static void createTable() { //creates the logs table. Assumes it doesn't already exist
         try {
             qldbDriver.execute(txn -> {
                 txn.execute("CREATE TABLE " + qldbTableName);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createIndices() { //creates indices on itemType and itemKey. Assumes they don't already exist.
+        try {
+            qldbDriver.execute(txn -> {
+                txn.execute("CREATE INDEX ON " + qldbTableName + "(itemType)");
+                txn.execute("CREATE INDEX ON " + qldbTableName + "(itemKey)");
             });
         } catch (Exception e) {
             e.printStackTrace();
@@ -100,7 +128,7 @@ public class QLDBInit {
             JsonObject jsonObject = new JsonObject();
             jsonObject.put("data", auditModel.writeToJson());
             txn.execute("INSERT INTO " + qldbTableName + " VALUE ?",
-                    ionSys.newLoader().load(jsonObject.toString()).get(0));
+                    ionSys.newLoader().load(auditModel.writeToJson().toString()).get(0));
         });
     }
 }

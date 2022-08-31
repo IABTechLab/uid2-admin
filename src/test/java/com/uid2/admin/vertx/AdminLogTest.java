@@ -16,7 +16,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -27,6 +26,7 @@ import software.amazon.qldb.Result;
 import software.amazon.qldb.RetryPolicy;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Random;
@@ -53,7 +53,7 @@ public class AdminLogTest extends ServiceTestBase {
     private final String fakeAdmin = "some-fake-admin";
 
     @Captor
-    private ArgumentCaptor<AuditModel> auditModelCaptor;
+    private ArgumentCaptor<Collection<AuditModel>> auditModelCaptor;
 
     @Override
     protected IService createService() {
@@ -131,7 +131,7 @@ public class AdminLogTest extends ServiceTestBase {
             });
         }
         else{
-            Mockito.verify(mockedAuditWriter, never()).writeLog(any());
+            Mockito.verify(mockedAuditWriter, never()).writeLogs(any());
         }
     }
 
@@ -146,7 +146,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'LIST'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.itemKey = ? AND t.data.actionTaken = 'LIST'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(Constants.DEFAULT_ITEM_KEY));
                     assertTrue(hasNullUser(r.iterator()));
@@ -154,8 +154,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -172,16 +172,16 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'GET'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.itemKey = ? AND t.data.actionTaken = 'REVEAL'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
                 });
             }
             else{
-                ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.GET, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.REVEAL, null, null);
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -205,7 +205,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result result = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'CREATE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.itemKey = ? AND t.data.actionTaken = 'CREATE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(newFakeAdmin));
                     assertTrue(hasNullUser(result.iterator()));
@@ -213,8 +213,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, newFakeAdmin, Actions.CREATE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -236,7 +236,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'DELETE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.itemKey = ? AND t.data.actionTaken = 'DELETE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -244,8 +244,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.DELETE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -267,7 +267,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'DISABLE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.itemKey = ? AND t.data.actionTaken = 'DISABLE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -275,8 +275,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.DISABLE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
         });
         Thread.sleep(2000);
@@ -291,7 +291,7 @@ public class AdminLogTest extends ServiceTestBase {
             if(qldbConnection) {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
-                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.data.itemKey = ? AND t.data.actionTaken = 'ENABLE'",
+                                    " AS t WHERE t.data.timeEpochSecond >= ? AND t.itemKey = ? AND t.data.actionTaken = 'ENABLE'",
                             ionSys.newInt((int) nextCurrentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -299,8 +299,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.ENABLE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -323,7 +323,7 @@ public class AdminLogTest extends ServiceTestBase {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.data.timeEpochSecond >= ? " +
-                                    "AND t.data.itemKey = ? AND t.data.actionTaken = 'UPDATE'",
+                                    "AND t.itemKey = ? AND t.data.actionTaken = 'UPDATE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -331,8 +331,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.UPDATE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -355,7 +355,7 @@ public class AdminLogTest extends ServiceTestBase {
                 qldbDriver.execute(txn -> {
                     Result r = txn.execute("SELECT * FROM " + config.getString("qldb_table_name") +
                                     " AS t WHERE t.data.timeEpochSecond >= ? " +
-                                    "AND t.data.itemKey = ? AND t.data.actionTaken = 'UPDATE'",
+                                    "AND t.itemKey = ? AND t.data.actionTaken = 'UPDATE'",
                             ionSys.newInt((int) currentEpochSecond),
                             ionSys.newString(realAdmin));
                     assertTrue(hasNullUser(r.iterator()));
@@ -363,8 +363,8 @@ public class AdminLogTest extends ServiceTestBase {
             }
             else{
                 ExpectedAuditModel expected = new ExpectedAuditModel(Type.ADMIN, realAdmin, Actions.UPDATE, null, null);
-                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLog(auditModelCaptor.capture());
-                assertTrue(expected.matches((QLDBAuditModel) auditModelCaptor.getValue()));
+                Mockito.verify(mockedAuditWriter, atLeastOnce()).writeLogs(auditModelCaptor.capture());
+                assertTrue(expected.matches(auditModelCaptor.getValue()));
             }
             testContext.completeNow();
         });
@@ -386,12 +386,15 @@ public class AdminLogTest extends ServiceTestBase {
             this.summary = summary;
         }
 
-        public boolean matches(QLDBAuditModel model){
-            if(itemType != null && !itemType.equals(model.itemType)) return false;
-            if(itemKey != null && !itemKey.equals(model.itemKey)) return false;
-            if(actionTaken != null && !actionTaken.equals(model.actionTaken)) return false;
-            if(itemHash != null && !itemHash.equals(model.itemHash)) return false;
-            if(summary != null && !summary.equals(model.summary)) return false;
+        public boolean matches(Collection<AuditModel> modelList){
+            AuditModel model = modelList.iterator().next();
+            if(!(model instanceof QLDBAuditModel)) return false;
+            QLDBAuditModel qldbModel = (QLDBAuditModel) model;
+            if(itemType != null && !itemType.equals(qldbModel.itemType)) return false;
+            if(itemKey != null && !itemKey.equals(qldbModel.itemKey)) return false;
+            if(actionTaken != null && !actionTaken.equals(qldbModel.actionTaken)) return false;
+            if(itemHash != null && !itemHash.equals(qldbModel.itemHash)) return false;
+            if(summary != null && !summary.equals(qldbModel.summary)) return false;
             return true;
         }
     }

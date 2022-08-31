@@ -48,6 +48,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
@@ -82,39 +83,39 @@ public class OperatorKeyService implements IService {
         router.get("/api/operator/metadata").handler(
                 auth.handle(this::handleOperatorMetadata, Role.OPERATOR_MANAGER));
         router.get("/api/operator/list").handler(
-                auth.handle(audit.handle(this::handleOperatorList), Role.OPERATOR_MANAGER));
+                auth.handle(ctx -> this.handleOperatorList(ctx, audit.handle(ctx)), Role.OPERATOR_MANAGER));
         router.get("/api/operator/reveal").handler(
-                auth.handle(audit.handle(this::handleOperatorReveal), Role.OPERATOR_MANAGER));
+                auth.handle(ctx -> this.handleOperatorReveal(ctx, audit.handle(ctx)), Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/add").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/operator/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleOperatorAdd(ctx);
+                this.handleOperatorAdd(ctx, audit.handle(ctx));
             }
-        }), Role.OPERATOR_MANAGER));
+        }, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/del").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/operator/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleOperatorDel(ctx);
+                this.handleOperatorDel(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
 
-        router.post("/api/operator/disable").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/operator/disable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleOperatorDisable(ctx);
+                this.handleOperatorDisable(ctx, audit.handle(ctx));
             }
-        }), Role.OPERATOR_MANAGER));
+        }, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/enable").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/operator/enable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleOperatorEnable(ctx);
+                this.handleOperatorEnable(ctx, audit.handle(ctx));
             }
-        }), Role.OPERATOR_MANAGER));
+        }, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/rekey").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        router.post("/api/operator/rekey").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleOperatorRekey(ctx);
+                this.handleOperatorRekey(ctx, audit.handle(ctx));
             }
-        }), Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR));
     }
 
     @Override
@@ -148,7 +149,7 @@ public class OperatorKeyService implements IService {
         }
     }
 
-    private List<OperationModel> handleOperatorList(RoutingContext rc) {
+    private void handleOperatorList(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             JsonArray ja = new JsonArray();
             Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
@@ -163,17 +164,22 @@ public class OperatorKeyService implements IService {
                 jo.put("disabled", o.isDisabled());
             }
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.OPERATOR,
+                    Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list operators"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.OPERATOR, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list operators"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleOperatorReveal(RoutingContext rc) {
+    private void handleOperatorReveal(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             final String name = rc.queryParam("name").get(0);
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
@@ -181,21 +187,25 @@ public class OperatorKeyService implements IService {
                     .findFirst();
             if (!existingOperator.isPresent()) {
                 ResponseUtil.error(rc, 404, "operator not exist");
-                return null;
+                return;
+            }
+
+            List<OperationModel> modelList =  Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.REVEAL,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingOperator.get())), "revealed " + name));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
             }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(existingOperator.get()));
-            return Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.GET,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(existingOperator.get())), "revealed " + name));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleOperatorAdd(RoutingContext rc) {
+    private void handleOperatorAdd(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
@@ -206,13 +216,13 @@ public class OperatorKeyService implements IService {
                     .findFirst();
             if (existingOperator.isPresent()) {
                 ResponseUtil.error(rc, 400, "key existed");
-                return null;
+                return;
             }
 
             String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
             if (protocol == null) {
                 ResponseUtil.error(rc, 400, "no protocol specified");
-                return null;
+                return;
             }
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
@@ -230,20 +240,24 @@ public class OperatorKeyService implements IService {
             // add client to the array
             operators.add(newOperator);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.CREATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newOperator)), "created " + name));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
 
             // respond with new key
             rc.response().end(jsonWriter.writeValueAsString(newOperator));
-            return Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.CREATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(newOperator)), "created " + name));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleOperatorDel(RoutingContext rc) {
+    private void handleOperatorDel(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
@@ -254,7 +268,7 @@ public class OperatorKeyService implements IService {
                     .findFirst();
             if (!existingOperator.isPresent()) {
                 ResponseUtil.error(rc, 404, "operator name not found");
-                return null;
+                return;
             }
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
@@ -265,28 +279,32 @@ public class OperatorKeyService implements IService {
             OperatorKey o = existingOperator.get();
             operators.remove(o);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.DELETE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), "deleted " + name));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
 
             // respond with client deleted
             rc.response().end(jsonWriter.writeValueAsString(o));
-            return Collections.singletonList(new OperationModel(Type.OPERATOR, name, Actions.DELETE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), "deleted " + name));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleOperatorDisable(RoutingContext rc) {
-        return handleOperatorDisable(rc, true);
+    private void handleOperatorDisable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
+        handleOperatorDisable(rc, fxn, true);
     }
 
-    private List<OperationModel> handleOperatorEnable(RoutingContext rc) {
-        return handleOperatorDisable(rc, false);
+    private void handleOperatorEnable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
+        handleOperatorDisable(rc, fxn, false);
     }
 
-    private List<OperationModel> handleOperatorDisable(RoutingContext rc, boolean disableFlag) {
+    private void handleOperatorDisable(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn, boolean disableFlag) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
@@ -297,7 +315,7 @@ public class OperatorKeyService implements IService {
                     .findFirst();
             if (!existingOperator.isPresent()) {
                 ResponseUtil.error(rc, 404, "operator name not found");
-                return null;
+                return;
             }
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
@@ -307,7 +325,7 @@ public class OperatorKeyService implements IService {
             OperatorKey o = existingOperator.get();
             if (o.isDisabled() == disableFlag) {
                 ResponseUtil.error(rc, 400, "no change needed");
-                return null;
+                return;
             }
 
             o.setDisabled(disableFlag);
@@ -318,20 +336,24 @@ public class OperatorKeyService implements IService {
             response.put("created", o.getCreated());
             response.put("disabled", o.isDisabled());
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.OPERATOR, o.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), (disableFlag ? "disabled " : "enabled ") + o.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
 
             // respond with operator disabled/enabled
             rc.response().end(response.encode());
-            return Collections.singletonList(new OperationModel(Type.OPERATOR, o.getName(), disableFlag ? Actions.DISABLE : Actions.ENABLE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), (disableFlag ? "disabled " : "enabled ") + o.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleOperatorRekey(RoutingContext rc) {
+    private void handleOperatorRekey(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
@@ -342,7 +364,7 @@ public class OperatorKeyService implements IService {
                     .findFirst();
             if (!existingOperator.isPresent()) {
                 ResponseUtil.error(rc, 404, "operator key not found");
-                return null;
+                return;
             }
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
@@ -354,16 +376,20 @@ public class OperatorKeyService implements IService {
             if (this.operatorKeyPrefix != null) newKey = this.operatorKeyPrefix + newKey;
             o.setKey(newKey);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.OPERATOR, o.getName(), Actions.UPDATE,
+                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), "rekeyed " + o.getName()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(o));
-            return Collections.singletonList(new OperationModel(Type.OPERATOR, o.getName(), Actions.UPDATE,
-                    DigestUtils.sha256Hex(jsonWriter.writeValueAsString(o)), "rekeyed " + o.getName()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 }
