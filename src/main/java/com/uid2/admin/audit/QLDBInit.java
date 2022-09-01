@@ -99,8 +99,6 @@ public abstract class QLDBInit implements IAuditInit{
         QLDBAuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, null,
                 null, null, -1, model.itemHash, model.summary);
         qldbDriver.execute(txn -> {
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.put("data", auditModel.writeToJson());
             txn.execute("INSERT INTO " + qldbTableName + " VALUE ?",
                     ionSys.newLoader().load(auditModel.writeToJson().toString()).get(0));
         });

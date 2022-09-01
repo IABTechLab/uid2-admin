@@ -38,11 +38,11 @@ public class QLDBAuditWriter implements IAuditWriter{
     @Override
     public boolean writeLogs(Collection<IAuditModel> models) {
         AtomicBoolean successfulLog = new AtomicBoolean(true);
-        try {
-            if (qldbLogging) {
+        if (qldbLogging) {
+            try {
                 qldbDriver.execute(txn -> {
-                    for(IAuditModel model : models){
-                        if(!(model instanceof QLDBAuditModel)){ //should never be true, but check in case
+                    for (IAuditModel model : models) {
+                        if (!(model instanceof QLDBAuditModel)) { //should never be true, but check in case
                             successfulLog.set(false);
                             logger.error("Only QLDBAuditModel should be passed into QLDBAuditWriter");
                             txn.abort();
@@ -52,12 +52,10 @@ public class QLDBAuditWriter implements IAuditWriter{
                         JsonObject jsonObject = qldbModel.writeToJson();
                         String query;
                         List<IonValue> sanitizedInputs = new ArrayList<>();
-                        if(qldbModel.actionTaken == Actions.CREATE){
+                        if (qldbModel.actionTaken == Actions.CREATE) {
                             query = "INSERT INTO " + logTable + " VALUE ?";
-                            JsonObject wrapped = new JsonObject().put("data", jsonObject);
-                            sanitizedInputs.add(ionSys.newLoader().load(wrapped.toString()).get(0));
-                        }
-                        else{
+                            sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
+                        } else {
                             query = "UPDATE " + logTable + " AS t SET data = ? WHERE t.data.itemType = ? AND t.data.itemKey = ?";
                             sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
                             sanitizedInputs.add(ionSys.newString(qldbModel.itemType.toString()));
@@ -72,18 +70,18 @@ public class QLDBAuditWriter implements IAuditWriter{
                         }
                     }
                 });
+
+            } catch (Exception e) {
+                logger.error("QLDB log failed: " + e.getClass().getSimpleName());
+                auditLogger.error("QLDB log failed" + e.getClass().getSimpleName());
+                return false;
             }
-            if(successfulLog.get()) {
-                for (IAuditModel model : models) {
-                    auditLogger.info(model.writeToString());
-                }
+        }
+        if (successfulLog.get()) {
+            for (IAuditModel model : models) {
+                auditLogger.info(model.writeToString());
             }
-            return successfulLog.get();
         }
-        catch(Exception e){
-            logger.error("QLDB log failed: " + e.getClass().getSimpleName());
-            auditLogger.error("QLDB log failed" + e.getClass().getSimpleName());
-            return false;
-        }
+        return successfulLog.get();
     }
 }
