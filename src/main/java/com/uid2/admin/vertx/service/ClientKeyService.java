@@ -27,10 +27,9 @@ import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.Constants;
 import com.uid2.admin.audit.Actions;
-import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.IAuditMiddleware;
 import com.uid2.admin.audit.OperationModel;
 import com.uid2.admin.audit.Type;
-import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.ISiteStore;
@@ -56,7 +55,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
-    private final AuditMiddleware audit;
+    private final IAuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -67,7 +66,7 @@ public class ClientKeyService implements IService {
     private final String clientKeyPrefix;
 
     public ClientKeyService(JsonObject config,
-                            AuditMiddleware audit,
+                            IAuditMiddleware audit,
                             AuthMiddleware auth,
                             WriteLock writeLock,
                             IStorageManager storageManager,

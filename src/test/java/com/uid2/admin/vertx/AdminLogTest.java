@@ -53,7 +53,7 @@ public class AdminLogTest extends ServiceTestBase {
     private final String fakeAdmin = "some-fake-admin";
 
     @Captor
-    private ArgumentCaptor<Collection<AuditModel>> auditModelCaptor;
+    private ArgumentCaptor<Collection<IAuditModel>> auditModelCaptor;
 
     @Override
     protected IService createService() {
@@ -105,7 +105,8 @@ public class AdminLogTest extends ServiceTestBase {
                     .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
                     .sessionClientBuilder(QldbSessionClient.builder())
                     .build();
-            QLDBInit.init(Collections.singletonList(adminKeyService), config);
+            AdminQLDBInit init = new AdminQLDBInit(config);
+            init.init(Collections.singletonList(adminKeyService));
         }
         else{
             setAdminLoad(1);
@@ -386,8 +387,8 @@ public class AdminLogTest extends ServiceTestBase {
             this.summary = summary;
         }
 
-        public boolean matches(Collection<AuditModel> modelList){
-            AuditModel model = modelList.iterator().next();
+        public boolean matches(Collection<IAuditModel> modelList){
+            IAuditModel model = modelList.iterator().next();
             if(!(model instanceof QLDBAuditModel)) return false;
             QLDBAuditModel qldbModel = (QLDBAuditModel) model;
             if(itemType != null && !itemType.equals(qldbModel.itemType)) return false;

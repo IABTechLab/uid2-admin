@@ -14,7 +14,7 @@ import software.amazon.qldb.RetryPolicy;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class QLDBAuditWriter implements AuditWriter{
+public class QLDBAuditWriter implements IAuditWriter{
     private static final IonSystem ionSys = IonSystemBuilder.standard().build();
     private static final Logger logger = LoggerFactory.getLogger(QLDBAuditWriter.class);
     private static final Logger auditLogger = LoggerFactory.getLogger("com.uid2.admin.audit");
@@ -36,12 +36,12 @@ public class QLDBAuditWriter implements AuditWriter{
         qldbLogging = config.getBoolean("enable_qldb_admin_logging");
     }
     @Override
-    public boolean writeLogs(Collection<AuditModel> models) {
+    public boolean writeLogs(Collection<IAuditModel> models) {
         AtomicBoolean successfulLog = new AtomicBoolean(true);
         try {
             if (qldbLogging) {
                 qldbDriver.execute(txn -> {
-                    for(AuditModel model : models){
+                    for(IAuditModel model : models){
                         if(!(model instanceof QLDBAuditModel)){ //should never be true, but check in case
                             successfulLog.set(false);
                             logger.error("Only QLDBAuditModel should be passed into QLDBAuditWriter");
@@ -74,7 +74,7 @@ public class QLDBAuditWriter implements AuditWriter{
                 });
             }
             if(successfulLog.get()) {
-                for (AuditModel model : models) {
+                for (IAuditModel model : models) {
                     auditLogger.info(model.writeToString());
                 }
             }

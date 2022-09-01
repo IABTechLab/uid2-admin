@@ -10,10 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-public class AuditMiddlewareImpl implements AuditMiddleware{
-    private final AuditWriter auditWriter;
+public class AuditMiddlewareImpl implements IAuditMiddleware{
+    private final IAuditWriter auditWriter;
 
-    public AuditMiddlewareImpl(AuditWriter writer){
+    public AuditMiddlewareImpl(IAuditWriter writer){
         this.auditWriter = writer;
     }
 
@@ -25,15 +25,15 @@ public class AuditMiddlewareImpl implements AuditMiddleware{
 
     private static class InnerAuditHandler{
         private final RoutingContext rc;
-        private final AuditWriter auditWriter;
-        private InnerAuditHandler(RoutingContext rc, AuditWriter auditWriter) {
+        private final IAuditWriter auditWriter;
+        private InnerAuditHandler(RoutingContext rc, IAuditWriter auditWriter) {
             this.rc = rc;
             this.auditWriter = auditWriter;
         }
 
         public boolean writeLogs(List<OperationModel> modelList){
             String ipAddress = getIPAddress(rc);
-            List<AuditModel> auditModelList = new ArrayList<>();
+            List<IAuditModel> auditModelList = new ArrayList<>();
             for(OperationModel model : modelList) {
                 auditModelList.add(new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
                         rc != null ? ((IAuthorizable) rc.data().get("api-client")).getContact() : null,

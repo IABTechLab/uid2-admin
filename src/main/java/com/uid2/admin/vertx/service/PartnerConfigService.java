@@ -24,7 +24,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.audit.Actions;
-import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.IAuditMiddleware;
 import com.uid2.admin.audit.OperationModel;
 import com.uid2.admin.audit.Type;
 import com.uid2.admin.store.IStorageManager;
@@ -43,13 +43,13 @@ import java.util.*;
 import java.util.function.Function;
 
 public class PartnerConfigService implements IService {
-    private final AuditMiddleware audit;
+    private final IAuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final RotatingPartnerStore partnerConfigProvider;
 
-    public PartnerConfigService(AuditMiddleware audit,
+    public PartnerConfigService(IAuditMiddleware audit,
                                 AuthMiddleware auth,
                                 WriteLock writeLock,
                                 IStorageManager storageManager,

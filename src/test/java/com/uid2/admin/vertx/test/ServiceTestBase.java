@@ -24,9 +24,9 @@
 package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.audit.AuditFactory;
-import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.IAuditMiddleware;
 import com.uid2.admin.audit.AuditMiddlewareImpl;
-import com.uid2.admin.audit.AuditWriter;
+import com.uid2.admin.audit.IAuditWriter;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.IAuthHandlerFactory;
@@ -77,8 +77,8 @@ public abstract class ServiceTestBase {
     protected final JsonObject config = new JsonObject();
     protected final WriteLock writeLock = new WriteLock();
     protected AuthMiddleware auth;
-    protected AuditMiddleware audit;
-    @Mock protected AuditWriter mockedAuditWriter;
+    protected IAuditMiddleware audit;
+    @Mock protected IAuditWriter mockedAuditWriter;
     @Mock protected AuthHandler authHandler;
     @Mock protected IAuthHandlerFactory authHandlerFactory;
     @Mock protected IStorageManager storageManager;

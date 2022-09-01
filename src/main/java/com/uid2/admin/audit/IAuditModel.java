@@ -15,7 +15,7 @@ import io.vertx.core.json.JsonObject;
  * • from where was it initiated?
  * • to where was it going?
  */
-public interface AuditModel {
+public interface IAuditModel {
 
     /**
      * Converts the AuditModel to JSON format to be used in document-store databases.

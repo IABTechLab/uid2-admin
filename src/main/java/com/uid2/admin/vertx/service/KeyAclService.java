@@ -25,7 +25,7 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.Constants;
 import com.uid2.admin.audit.Actions;
-import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.IAuditMiddleware;
 import com.uid2.admin.audit.OperationModel;
 import com.uid2.admin.audit.Type;
 import com.uid2.admin.secret.IEncryptionKeyManager;
@@ -51,7 +51,7 @@ import java.util.*;
 import java.util.function.Function;
 
 public class KeyAclService implements IService {
-    private final AuditMiddleware audit;
+    private final IAuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -59,7 +59,7 @@ public class KeyAclService implements IService {
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
 
-    public KeyAclService(AuditMiddleware audit,
+    public KeyAclService(IAuditMiddleware audit,
                          AuthMiddleware auth,
                          WriteLock writeLock,
                          IStorageManager storageManager,

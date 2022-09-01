@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.vertx.core.json.JsonObject;
 
-public class QLDBAuditModel implements AuditModel{
+public class QLDBAuditModel implements IAuditModel{
 
     /**
      * The table that the user accesses.

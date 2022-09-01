@@ -26,7 +26,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.Constants;
 import com.uid2.admin.audit.Actions;
-import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.IAuditMiddleware;
 import com.uid2.admin.audit.OperationModel;
 import com.uid2.admin.audit.Type;
 import com.uid2.admin.secret.IEncryptionKeyManager;
@@ -68,7 +68,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static final String SITE_KEY_EXPIRES_AFTER_SECONDS = "site_key_expires_after_seconds";
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionKeyService.class);
 
-    private final AuditMiddleware audit;
+    private final IAuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -83,7 +83,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private List<EncryptionKey> allKeys;
 
     public EncryptionKeyService(JsonObject config,
-                                AuditMiddleware audit,
+                                IAuditMiddleware audit,
                                 AuthMiddleware auth,
                                 WriteLock writeLock,
                                 IStorageManager storageManager,
