@@ -56,8 +56,8 @@ public class QLDBAuditWriter implements IAuditWriter{
                             query = "INSERT INTO " + logTable + " VALUE ?";
                             sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
                         } else {
-                            query = "UPDATE " + logTable + " AS t SET data = ? WHERE t.data.itemType = ? AND t.data.itemKey = ?";
-                            sanitizedInputs.add(ionSys.newLoader().load(jsonObject.toString()).get(0));
+                            query = "UPDATE " + logTable + " AS t SET data = ? WHERE t.itemType = ? AND t.itemKey = ?";
+                            sanitizedInputs.add(ionSys.newLoader().load(jsonObject.getJsonObject("data").toString()).get(0));
                             sanitizedInputs.add(ionSys.newString(qldbModel.itemType.toString()));
                             sanitizedInputs.add(ionSys.newString(qldbModel.itemKey));
                         }

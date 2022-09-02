@@ -96,8 +96,8 @@ public abstract class ServiceTestBase {
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
-        config.put("qldb_ledger_name", "audit-logs");
-        config.put("qldb_table_name", "logs");
+        config.put("qldb_ledger_name", "uid2-audit-logs");
+        config.put("qldb_table_name", "admin_logs");
         config.put("enable_qldb_admin_logging", qldbConnection);
         mocks = MockitoAnnotations.openMocks(this);
         when(authHandlerFactory.createAuthHandler(any(), any())).thenReturn(authHandler);

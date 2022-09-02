@@ -1,9 +1,12 @@
 package com.uid2.admin.audit;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.vertx.core.json.JsonObject;
+
+import java.io.IOException;
 
 public class QLDBAuditModel implements IAuditModel{
 
@@ -64,8 +67,15 @@ public class QLDBAuditModel implements IAuditModel{
 
     @Override
     public JsonObject writeToJson() {
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        JsonObject jo = new JsonObject(gson.toJson(this));
+        ObjectMapper mapper = new ObjectMapper();
+        JsonObject jo;
+        try {
+            jo = new JsonObject(mapper.writeValueAsString(this));
+        }
+        catch(IOException e){
+            e.printStackTrace();
+            jo = new JsonObject();
+        }
         JsonObject outerJo = new JsonObject();
         outerJo.put("itemType", itemType);
         outerJo.put("itemKey", itemKey);

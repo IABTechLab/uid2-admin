@@ -105,8 +105,6 @@ public class AdminLogTest extends ServiceTestBase {
                     .transactionRetryPolicy(RetryPolicy.builder().maxRetries(3).build())
                     .sessionClientBuilder(QldbSessionClient.builder())
                     .build();
-            AdminQLDBInit init = new AdminQLDBInit(config);
-            init.init(Collections.singletonList(adminKeyService));
         }
         else{
             setAdminLoad(1);

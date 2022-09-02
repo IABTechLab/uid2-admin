@@ -37,9 +37,9 @@ public class AdminQLDBInit extends QLDBInit{
                         null, null, null));
                 totalModelList.add(new OperationModel(service.tableType(), Constants.NULL_ITEM_KEY,
                         null, null, null));
-                init(totalModelList);
             }
         }
+        init(totalModelList);
     }
 
     private boolean isServiceSetup(IService service) {
@@ -47,7 +47,7 @@ public class AdminQLDBInit extends QLDBInit{
             final IonStruct[] count = new IonStruct[1];
             qldbDriver.execute(txn -> {
                 Result result = txn.execute("SELECT COUNT(*) AS \"count\" FROM " + qldbTableName
-                        + " AS t WHERE t.data.itemType = ?", ionSys.newString(service.tableType().toString()));
+                        + " AS t WHERE t.itemType = ?", ionSys.newString(service.tableType().toString()));
                 count[0] = (IonStruct) result.iterator().next();
             });
             return !count[0].get("count").equals(ionSys.newInt(0));
