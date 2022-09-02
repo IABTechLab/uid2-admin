@@ -7,5 +7,6 @@ public enum Actions {
     CREATE,
     DELETE,
     DISABLE,
-    ENABLE
+    ENABLE,
+    REVEAL
 }

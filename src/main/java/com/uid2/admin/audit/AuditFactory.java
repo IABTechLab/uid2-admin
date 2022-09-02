@@ -13,7 +13,7 @@ import java.util.Map;
  * exhibit some other behavior.
  */
 public class AuditFactory {
-    private static final Map<JsonObject, AuditMiddleware> middlewareMap = new HashMap<>();
+    private static final Map<JsonObject, IAuditMiddleware> middlewareMap = new HashMap<>();
 
     /**
      * Returns an AuditMiddleware object with the designated configuration. If one does
@@ -21,7 +21,7 @@ public class AuditFactory {
      *
      * @return the designated AuditMiddleware object for the passed class.
      */
-    public static AuditMiddleware getAuditMiddleware(JsonObject config){
+    public static IAuditMiddleware getAuditMiddleware(JsonObject config){
         if(!middlewareMap.containsKey(config)){
             middlewareMap.put(config, new AuditMiddlewareImpl(new QLDBAuditWriter(config)));
         }

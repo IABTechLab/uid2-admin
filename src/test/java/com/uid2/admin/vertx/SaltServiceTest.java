@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,7 +124,7 @@ public class SaltServiceTest extends ServiceTestBase {
         final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
                 makeSnapshot(Instant.ofEpochMilli(10004), Instant.ofEpochMilli(20004), 10),
         };
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
+        when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0], new ArrayList<>()));
 
         post(vertx, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
             assertTrue(ar.succeeded());

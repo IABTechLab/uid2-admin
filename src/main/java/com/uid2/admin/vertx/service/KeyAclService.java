@@ -23,17 +23,15 @@
 
 package com.uid2.admin.vertx.service;
 
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.Constants;
 import com.uid2.admin.audit.Actions;
-import com.uid2.admin.audit.AuditMiddleware;
+import com.uid2.admin.audit.IAuditMiddleware;
 import com.uid2.admin.audit.OperationModel;
 import com.uid2.admin.audit.Type;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.ISiteStore;
 import com.uid2.admin.store.IStorageManager;
-import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -50,9 +48,10 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class KeyAclService implements IService {
-    private final AuditMiddleware audit;
+    private final IAuditMiddleware audit;
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -60,7 +59,7 @@ public class KeyAclService implements IService {
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
 
-    public KeyAclService(AuditMiddleware audit,
+    public KeyAclService(IAuditMiddleware audit,
                          AuthMiddleware auth,
                          WriteLock writeLock,
                          IStorageManager storageManager,
@@ -79,17 +78,17 @@ public class KeyAclService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/keys_acl/list").handler(
-                auth.handle(audit.handle(this::handleKeyAclList), Role.CLIENTKEY_ISSUER));
-        router.post("/api/keys_acl/reset").blockingHandler(auth.handle(audit.handle((ctx) -> {
+                auth.handle(ctx -> this.handleKeyAclList(ctx, audit.handle(ctx)), Role.CLIENTKEY_ISSUER));
+        router.post("/api/keys_acl/reset").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleKeyAclReset(ctx);
+                this.handleKeyAclReset(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
-        router.post("/api/keys_acl/update").blockingHandler(auth.handle(audit.handle((ctx) -> {
+        }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/keys_acl/update").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
-                return this.handleKeyAclUpdate(ctx);
+                this.handleKeyAclUpdate(ctx, audit.handle(ctx));
             }
-        }), Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     @Override
@@ -114,7 +113,7 @@ public class KeyAclService implements IService {
         return Type.KEYACL;
     }
 
-    private List<OperationModel> handleKeyAclList(RoutingContext rc) {
+    private void handleKeyAclList(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
@@ -122,26 +121,31 @@ public class KeyAclService implements IService {
                 ja.add(toJson(acl.getKey(), acl.getValue()));
             }
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.KEYACL,
+                    Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list keyacl"));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
-            return Collections.singletonList(new OperationModel(Type.KEYACL, Constants.DEFAULT_ITEM_KEY, Actions.LIST, null, "list keyacl"));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleKeyAclReset(RoutingContext rc) {
+    private void handleKeyAclReset(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             keyAclProvider.loadContent();
 
             final Site existingSite = RequestUtil.getSite(rc, "site_id", siteProvider);
-            if (existingSite == null) return null;
+            if (existingSite == null) return;
 
             Boolean isWhitelist = RequestUtil.getKeyAclType(rc);
-            if (isWhitelist == null) return null;
+            if (isWhitelist == null) return;
 
             this.keyManager.addSiteKey(existingSite.getId());
 
@@ -149,44 +153,48 @@ public class KeyAclService implements IService {
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
             collection.put(existingSite.getId(), newAcl);
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.KEYACL, String.valueOf(existingSite.getId()),
+                    Actions.UPDATE, DigestUtils.sha256Hex(toJson(existingSite.getId(), newAcl).toString()), "reset acl of " + existingSite.getId()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             storageManager.uploadKeyAcls(keyAclProvider, collection);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(existingSite.getId(), newAcl).encode());
-            return Collections.singletonList(new OperationModel(Type.KEYACL, String.valueOf(existingSite.getId()),
-                    Actions.UPDATE, DigestUtils.sha256Hex(toJson(existingSite.getId(), newAcl).toString()), "reset acl of " + existingSite.getId()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 
-    private List<OperationModel> handleKeyAclUpdate(RoutingContext rc) {
+    private void handleKeyAclUpdate(RoutingContext rc, Function<List<OperationModel>, Boolean> fxn) {
         try {
             // refresh manually
             keyAclProvider.loadContent();
 
             final Site site = RequestUtil.getSite(rc, "site_id", siteProvider);
-            if (site == null) return null;
+            if (site == null) return;
 
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
             final EncryptionKeyAcl acl = collection.get(site.getId());
             if (acl == null) {
                 ResponseUtil.error(rc, 404, "ACL not found");
-                return null;
+                return;
             }
 
             final Set<Integer> addedSites = RequestUtil.getIds(rc.queryParam("add"));
             if (addedSites == null) {
                 ResponseUtil.error(rc, 400, "invalid added sites");
-                return null;
+                return;
             }
 
             final Set<Integer> removedSites = RequestUtil.getIds(rc.queryParam("remove"));
             if (removedSites == null) {
                 ResponseUtil.error(rc, 400, "invalid removed sites");
-                return null;
+                return;
             }
 
             boolean added = false;
@@ -196,10 +204,10 @@ public class KeyAclService implements IService {
                     continue;
                 } else if (!SiteUtil.isValidSiteId(addedSiteId)) {
                     ResponseUtil.error(rc, 400, "invalid added site id: " + addedSiteId);
-                    return null;
+                    return;
                 } else if (this.siteProvider.getSite(addedSiteId) == null) {
                     ResponseUtil.error(rc, 404, "unknown added site id: " + addedSiteId);
-                    return null;
+                    return;
                 } else if (acl.getAccessList().add(addedSiteId)) {
                     added = true;
                 }
@@ -216,6 +224,13 @@ public class KeyAclService implements IService {
                 this.keyManager.addSiteKey(site.getId());
             }
 
+            List<OperationModel> modelList = Collections.singletonList(new OperationModel(Type.KEYACL, String.valueOf(site.getId()),
+                    Actions.UPDATE, DigestUtils.sha256Hex(toJson(site.getId(), acl).toString()), "updated acl of " + site.getId()));
+            if(!fxn.apply(modelList)){
+                ResponseUtil.error(rc, 500, "failed");
+                return;
+            }
+
             if (added || removed) {
                 storageManager.uploadKeyAcls(keyAclProvider, collection);
             }
@@ -223,11 +238,8 @@ public class KeyAclService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(site.getId(), acl).encode());
-            return Collections.singletonList(new OperationModel(Type.KEYACL, String.valueOf(site.getId()),
-                    Actions.UPDATE, DigestUtils.sha256Hex(toJson(site.getId(), acl).toString()), "reset acl of " + site.getId()));
         } catch (Exception e) {
             rc.fail(500, e);
-            return null;
         }
     }
 

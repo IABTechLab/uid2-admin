@@ -1,19 +1,25 @@
 package com.uid2.admin.audit;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.vertx.core.json.JsonObject;
 
-public class QLDBAuditModel implements AuditModel{
+import java.io.IOException;
+
+public class QLDBAuditModel implements IAuditModel{
 
     /**
      * The table that the user accesses.
      */
+    @JsonIgnore
     public final Type itemType;
     /**
      * An identifier for the row in the table that is accessed. Is null if more than one row is accessed at the same
      * time, e.g. listing all values in a table. If itemKey should be secret, hash before putting it into the model.
      */
+    @JsonIgnore
     public final String itemKey;
     /**
      * Describes the action the user performed on the table (e.g. read ("GET"), write ("CREATE"/"DELETE")...)
@@ -61,8 +67,20 @@ public class QLDBAuditModel implements AuditModel{
 
     @Override
     public JsonObject writeToJson() {
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        return new JsonObject(gson.toJson(this));
+        ObjectMapper mapper = new ObjectMapper();
+        JsonObject jo;
+        try {
+            jo = new JsonObject(mapper.writeValueAsString(this));
+        }
+        catch(IOException e){
+            e.printStackTrace();
+            jo = new JsonObject();
+        }
+        JsonObject outerJo = new JsonObject();
+        outerJo.put("itemType", itemType);
+        outerJo.put("itemKey", itemKey);
+        outerJo.put("data", jo);
+        return outerJo;
     }
 
     @Override

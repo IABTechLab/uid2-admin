@@ -1,54 +1,51 @@
 package com.uid2.admin.audit;
 
 import com.uid2.shared.auth.IAuthorizable;
-import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-public class AuditMiddlewareImpl implements AuditMiddleware{
-    private final AuditWriter auditWriter;
+public class AuditMiddlewareImpl implements IAuditMiddleware{
+    private final IAuditWriter auditWriter;
 
-    public AuditMiddlewareImpl(AuditWriter writer){
+    public AuditMiddlewareImpl(IAuditWriter writer){
         this.auditWriter = writer;
     }
 
     @Override
-    public Handler<RoutingContext> handle(Function<RoutingContext, List<OperationModel>> handler) {
-        InnerAuditHandler auditHandler = new InnerAuditHandler(handler, auditWriter);
-        return auditHandler::writeLog;
+    public Function<List<OperationModel>, Boolean> handle(RoutingContext rc) {
+        InnerAuditHandler auditHandler = new InnerAuditHandler(rc, auditWriter);
+        return auditHandler::writeLogs;
     }
 
     private static class InnerAuditHandler{
-        private final Function<RoutingContext, List<OperationModel>> innerHandler;
-        private final AuditWriter auditWriter;
-        private InnerAuditHandler(Function<RoutingContext, List<OperationModel>> handler, AuditWriter auditWriter) {
-            this.innerHandler = handler;
+        private final RoutingContext rc;
+        private final IAuditWriter auditWriter;
+        private InnerAuditHandler(RoutingContext rc, IAuditWriter auditWriter) {
+            this.rc = rc;
             this.auditWriter = auditWriter;
         }
 
-        public void writeLog(RoutingContext rc){
-            List<OperationModel> modelList = innerHandler.apply(rc);
-            if(modelList != null){
-                String ipAddress = getIPAddress(rc);
-                for(OperationModel model : modelList) {
-                    AuditModel auditModel = new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
-                            ((IAuthorizable) rc.data().get("api-client")).getContact(),
-                            System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary);
-                    auditWriter.writeLog(auditModel);
-                }
+        public boolean writeLogs(List<OperationModel> modelList){
+            String ipAddress = getIPAddress(rc);
+            List<IAuditModel> auditModelList = new ArrayList<>();
+            for(OperationModel model : modelList) {
+                auditModelList.add(new QLDBAuditModel(model.itemType, model.itemKey, model.actionTaken, ipAddress,
+                        rc != null ? ((IAuthorizable) rc.data().get("api-client")).getContact() : null,
+                        System.getenv("HOSTNAME"), Instant.now().getEpochSecond(), model.itemHash, model.summary));
             }
+            return auditWriter.writeLogs(auditModelList);
         }
 
         private static String getIPAddress(RoutingContext rc) {
+            if(rc == null){
+                return null;
+            }
             List<String> listIP = rc.request().headers().getAll("X-Forwarded-For");
             List<InetAddress> publicIPs = new ArrayList<>();
             for(String str : listIP){
