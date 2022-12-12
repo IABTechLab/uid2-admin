@@ -1,0 +1,15 @@
+[
+  {
+    "key": "ZW5jb2RlZCBrZXk=",
+    "name": "test.user@thetradedesk.com",
+    "contact": "test.user@thetradedesk.com",
+    "created": 1628834719,
+    "roles": [
+      "ADMINISTRATOR",
+      "CLIENTKEY_ISSUER",
+      "SECRET_MANAGER",
+      "OPERATOR_MANAGER"
+    ],
+    "disabled": false
+  }
+]
