@@ -19,19 +19,24 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
+import static com.uid2.admin.auth.AuthUtils.isAuthDisabled;
+
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
 
+    private final JsonObject config;
     private final IAuthHandlerFactory authHandlerFactory;
     private final AuthMiddleware auth;
     private final IAdminUserProvider adminUserProvider;
     private final IService[] services;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public AdminVerticle(IAuthHandlerFactory authHandlerFactory,
+    public AdminVerticle(JsonObject config,
+                         IAuthHandlerFactory authHandlerFactory,
                          AuthMiddleware auth,
                          IAdminUserProvider adminUserProvider,
                          IService... services) {
+        this.config = config;
         this.authHandlerFactory = authHandlerFactory;
         this.auth = auth;
         this.adminUserProvider = adminUserProvider;
@@ -116,6 +121,15 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void handleTokenGet(RoutingContext rc) {
+        if (isAuthDisabled(config)) {
+            respondWithTestAdminUser(rc);
+        }
+        else {
+            respondWithRealUser(rc);
+        }
+    }
+
+    private void respondWithRealUser(RoutingContext rc) {
         AccessToken user = (AccessToken) rc.user();
         // retrieve the user profile, this is a common feature but not from the official OAuth2 spec
         user.userInfo(res -> {
@@ -145,6 +159,11 @@ public class AdminVerticle extends AbstractVerticle {
                 }
             }
         });
+    }
+
+    private void respondWithTestAdminUser(RoutingContext rc) {
+        // This test user is set up in src/main/resources/localstack/s3/admins/admins.json
+        handleEmailContactInfo("test.user@uidapi.com", rc);
     }
 
     private void handleEmailContactInfo(String contact, RoutingContext rc) {
