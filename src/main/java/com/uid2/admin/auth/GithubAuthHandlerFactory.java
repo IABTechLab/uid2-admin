@@ -8,8 +8,10 @@ import io.vertx.ext.web.Route;
 import io.vertx.ext.web.handler.AuthHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 
+import static com.uid2.admin.auth.AuthUtils.isAuthDisabled;
+
 public class GithubAuthHandlerFactory implements IAuthHandlerFactory {
-    private JsonObject config;
+    private final JsonObject config;
 
     public GithubAuthHandlerFactory(JsonObject config) {
         this.config = config;
@@ -17,12 +19,15 @@ public class GithubAuthHandlerFactory implements IAuthHandlerFactory {
 
     @Override
     public AuthHandler createAuthHandler(Vertx vertx, Route callbackRoute) {
+        if (isAuthDisabled(config)) {
+            return new NoopAuthHandler();
+        }
+
         final String clientId = config.getString("github_client_id");
         final String clientSecret = config.getString("github_client_secret");
         OAuth2Auth oauth2Provider = GithubAuth.create(vertx, clientId, clientSecret);
-        AuthHandler oauth2Handler = OAuth2AuthHandler.create(oauth2Provider)
+        return OAuth2AuthHandler.create(oauth2Provider)
                 .setupCallback(callbackRoute)
                 .addAuthority("user:email");
-        return oauth2Handler;
     }
 }
