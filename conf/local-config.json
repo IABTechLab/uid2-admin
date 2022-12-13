@@ -1,5 +1,5 @@
 {
-  "aws_s3_endpoint": "http://localhost:4566",
+  "aws_s3_endpoint": "http://localhost:5001",
   "core_s3_bucket": "test-core-bucket",
   "pre_signed_url_expiry": 1800,
   "aws_region": "test-region",
@@ -24,6 +24,5 @@
   "site_key_expires_after_seconds": 90000,
   "salt_snapshot_activates_in_seconds": 180,
   "salt_snapshot_expires_after_seconds": 180000,
-  "github_client_id": "no id",
-  "github_client_secret": "no secret"
+  "is_auth_disabled": true
 }
