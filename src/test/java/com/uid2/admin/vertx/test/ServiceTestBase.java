@@ -81,7 +81,7 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
 
         auth = new AuthMiddleware(this.adminUserProvider);
-        AdminVerticle verticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider, createService());
+        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, createService());
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 

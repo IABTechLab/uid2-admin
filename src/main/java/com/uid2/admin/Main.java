@@ -37,6 +37,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.Route;
+import io.vertx.ext.web.handler.AuthHandler;
 import io.vertx.micrometer.Label;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
@@ -106,7 +108,7 @@ public class Main {
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, storageManager, keyProvider, keyGenerator);
 
-            AdminVerticle adminVerticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider,
+            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider,
                     new AdminKeyService(config, auth, writeLock, storageManager, adminUserProvider, keyGenerator),
                     new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator),
                     new EnclaveIdService(auth, writeLock, storageManager, enclaveIdProvider),
@@ -150,7 +152,7 @@ public class Main {
                 Main app = new Main(vertx, ar.result());
                 app.run();
             } catch (Exception e) {
-                LOGGER.fatal("Error: " +e.getMessage(), e);
+                LOGGER.fatal("Error: " + e.getMessage(), e);
                 vertx.close();
                 System.exit(1);
             }
@@ -162,7 +164,8 @@ public class Main {
             ObjectName objectName = new ObjectName("uid2.admin:type=jmx,name=AdminApi");
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             server.registerMBean(AdminApi.instance, objectName);
-        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException e) {
+        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException |
+                 MalformedObjectNameException e) {
             System.err.format("%s", e.getMessage());
             System.exit(-1);
         }
