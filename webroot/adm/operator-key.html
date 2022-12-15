@@ -17,6 +17,8 @@
 <input type="text" id="operatorName" name="operatorName">
 <label for="protocol">Protocol:</label>
 <input type="text" id="protocol" name="protocol">
+<label for="siteId">Site ID:</label>
+<input type="number" id="siteId" name="siteId">
 
 <br>
 <br>
@@ -63,7 +65,8 @@
         $('#doAdd').on('click', function () {
             var operatorName = encodeURIComponent($('#operatorName').val());
             var protocol = encodeURIComponent($('#protocol').val());
-            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol;
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
