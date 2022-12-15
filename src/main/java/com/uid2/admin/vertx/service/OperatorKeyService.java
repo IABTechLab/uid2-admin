@@ -16,6 +16,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -24,6 +26,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -99,10 +103,10 @@ public class OperatorKeyService implements IService {
 
     private void handleOperatorList(RoutingContext rc) {
         try {
-            JsonArray ja = new JsonArray();
-            Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
+            final JsonArray ja = new JsonArray();
+            final Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
             for (OperatorKey o : collection) {
-                JsonObject jo = new JsonObject();
+                final JsonObject jo = new JsonObject();
                 ja.add(jo);
 
                 jo.put("name", o.getName());
@@ -110,6 +114,7 @@ public class OperatorKeyService implements IService {
                 jo.put("protocol", o.getProtocol());
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
+                jo.put("site_id", o.getSiteId());
             }
 
             rc.response()
@@ -144,8 +149,13 @@ public class OperatorKeyService implements IService {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
+            if (!rc.queryParams().contains("name")) {
+                ResponseUtil.error(rc, 400, "no name specified");
+                return;
+            }
             final String name = rc.queryParam("name").get(0);
-            Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
+
+            final Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (existingOperator.isPresent()) {
@@ -153,13 +163,26 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
+            final String protocol = rc.queryParams().contains("protocol")
+                    ? RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0))
+                    : null;
             if (protocol == null) {
                 ResponseUtil.error(rc, 400, "no protocol specified");
                 return;
             }
 
-            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+            Integer siteId;
+            try {
+                siteId = rc.queryParam("site_id").get(0) == null ? null : Integer.parseInt(rc.queryParam("site_id").get(0));
+            } catch (NumberFormatException e) {
+                LOGGER.error(e.getMessage(), e);
+                siteId = null;
+            }
+            if (siteId == null) {
+                ResponseUtil.error(rc, 400, "no site ID specified");
+            }
+
+            final List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
@@ -169,7 +192,7 @@ public class OperatorKeyService implements IService {
 
             // add new client to array
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId);
 
             // add client to the array
             operators.add(newOperator);
@@ -255,6 +278,7 @@ public class OperatorKeyService implements IService {
             response.put("contact", c.getContact());
             response.put("created", c.getCreated());
             response.put("disabled", c.isDisabled());
+            response.put("site_id", c.getSiteId());
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
