@@ -46,7 +46,7 @@ public class AdminVerticle extends AbstractVerticle {
         final int port = Const.Port.ServicePortForAdmin + portOffset;
 
         vertx.createHttpServer()
-                .requestHandler(router::handle)
+                .requestHandler(router)
                 .listen(port, result -> {
                     if (result.succeeded()) {
                         startPromise.complete();
@@ -159,15 +159,5 @@ public class AdminVerticle extends AbstractVerticle {
             rc.fail(ex);
         }
     }
-
-
-
-
-
-
-
-
-
-
 
 }

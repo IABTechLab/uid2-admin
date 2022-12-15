@@ -10,20 +10,44 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <image.version>${project.version}</image.version>
+        <uid2-shared.version>1.2.1</uid2-shared.version>
         <vertx.version>3.9.4</vertx.version>
         <vertx-maven-plugin.version>1.0.22</vertx-maven-plugin.version>
         <vertx.verticle>com.uid2.admin.vertx.AdminVerticle</vertx.verticle>
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
         <micrometer.version>1.1.0</micrometer.version>
         <junit-jupiter.version>5.7.0</junit-jupiter.version>
-        <uid2-shared.version>1.2.1</uid2-shared.version>
-        <image.version>${project.version}</image.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <!-- Import dependency management from Spring Boot -->
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>2.2.1.RELEASE</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>com.uid2</groupId>
             <artifactId>uid2-shared</artifactId>
             <version>${uid2-shared.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
@@ -92,6 +116,15 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources/properties</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -118,7 +151,7 @@
                 <configuration>
                     <redeploy>true</redeploy>
                     <jvmArgs>
-                      <jvmArg>-Djava.security.egd=file:/dev/./urandom</jvmArg>
+                        <jvmArg>-Djava.security.egd=file:/dev/./urandom</jvmArg>
                     </jvmArgs>
                 </configuration>
             </plugin>
