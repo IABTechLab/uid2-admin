@@ -1,8 +1,10 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.RotatingSiteStore;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,6 +35,7 @@ public class OperatorKeyService implements IService {
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
+    private final RotatingSiteStore siteProvider;
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String operatorKeyPrefix;
@@ -41,11 +45,13 @@ public class OperatorKeyService implements IService {
                               WriteLock writeLock,
                               IStorageManager storageManager,
                               RotatingOperatorKeyProvider operatorKeyProvider,
+                              RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
         this.operatorKeyProvider = operatorKeyProvider;
+        this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
@@ -180,6 +186,12 @@ public class OperatorKeyService implements IService {
             }
             if (siteId == null) {
                 ResponseUtil.error(rc, 400, "no site ID specified");
+                return;
+            }
+            Integer finalSiteId = siteId;
+            if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() != finalSiteId)) {
+                ResponseUtil.error(rc, 400, "provided site ID does not exist");
+                return;
             }
 
             final List<OperatorKey> operators = this.operatorKeyProvider.getAll()

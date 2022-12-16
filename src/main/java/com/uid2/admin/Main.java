@@ -112,7 +112,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, storageManager, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, storageManager, keyAclProvider, siteProvider, encryptionKeyService),
-                    new OperatorKeyService(config, auth, writeLock, storageManager, operatorKeyProvider, keyGenerator),
+                    new OperatorKeyService(config, auth, writeLock, storageManager, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, storageManager, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, storageManager, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, storageManager, partnerConfigProvider));
@@ -123,7 +123,7 @@ public class Main {
 
             vertx.deployVerticle(adminVerticle);
         } catch (Exception e) {
-            System.out.println("failed to initialize core verticle: " + e.getMessage());
+            LOGGER.error(e.getMessage(), e);
             System.exit(-1);
         }
     }
