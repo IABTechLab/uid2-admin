@@ -189,7 +189,7 @@ public class OperatorKeyService implements IService {
                 return;
             }
             Integer finalSiteId = siteId;
-            if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() != finalSiteId)) {
+            if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() == finalSiteId)) {
                 ResponseUtil.error(rc, 400, "provided site ID does not exist");
                 return;
             }
