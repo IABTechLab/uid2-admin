@@ -9,6 +9,7 @@ import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
@@ -89,6 +90,12 @@ public class OperatorKeyService implements IService {
                 this.handleOperatorEnable(ctx);
             }
         }, Role.OPERATOR_MANAGER));
+
+        router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleOperatorUpdate(ctx);
+            }
+        }, Role.ADMINISTRATOR));
 
         router.post("/api/operator/rekey").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -297,6 +304,39 @@ public class OperatorKeyService implements IService {
 
             // respond with operator disabled/enabled
             rc.response().end(response.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleOperatorUpdate(RoutingContext rc) {
+        try {
+            // refresh manually
+            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+
+            final String name = rc.queryParam("name").get(0);
+            OperatorKey existingOperator = this.operatorKeyProvider.getAll()
+                    .stream().filter(o -> o.getName().equals(name))
+                    .findFirst().orElse(null);
+            if (existingOperator == null) {
+                ResponseUtil.error(rc, 404, "operator name not found");
+                return;
+            }
+
+            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+            if (site == null) return;
+
+            existingOperator.setSiteId(site.getId());
+
+            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
+
+            // upload to storage
+            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+
+            // return the updated client
+            rc.response().end(jsonWriter.writeValueAsString(existingOperator));
         } catch (Exception e) {
             rc.fail(500, e);
         }
