@@ -1,0 +1,18 @@
+[
+  {
+    "key" : "b3BlcmF0b3Iga2V5IDE=",
+    "name" : "MegaTest-Operator",
+    "contact" : "MegaTest-Operator",
+    "protocol" : "trusted",
+    "created" : 1618873215,
+    "disabled" : false
+  },
+  {
+    "key" : "b3BlcmF0b3Iga2V5IDI=",
+    "name" : "MegaTest-Operator-AWS",
+    "contact" : "MegaTest-Operator-AWS",
+    "protocol" : "aws-nitro",
+    "created" : 1618873215,
+    "disabled" : false
+  }
+]
