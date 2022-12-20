@@ -92,7 +92,6 @@ public class SaltService implements IService {
                     .end(toJson(result.getSnapshot()).encode());
         } catch (Exception e) {
             e.printStackTrace();
-
             rc.fail(500, e);
         }
     }

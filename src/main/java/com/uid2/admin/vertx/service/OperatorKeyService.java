@@ -192,12 +192,12 @@ public class OperatorKeyService implements IService {
                 siteId = null;
             }
             if (siteId == null) {
-                ResponseUtil.error(rc, 400, "no site ID specified");
+                ResponseUtil.error(rc, 400, "no site id specified");
                 return;
             }
             Integer finalSiteId = siteId;
             if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() == finalSiteId)) {
-                ResponseUtil.error(rc, 400, "provided site ID does not exist");
+                ResponseUtil.error(rc, 400, "provided site id does not exist");
                 return;
             }
 
@@ -325,7 +325,7 @@ public class OperatorKeyService implements IService {
 
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
             if (site == null) {
-                ResponseUtil.error(rc, 404, "site ID not found");
+                ResponseUtil.error(rc, 404, "site id not found");
                 return;
             }
 
