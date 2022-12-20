@@ -130,6 +130,10 @@ public abstract class ServiceTestBase {
         when(keyAclProviderSnapshot.getAllAcls()).thenReturn(acls);
     }
 
+    protected void setOperatorKeys(OperatorKey... operatorKeys) {
+        when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
+    }
+
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
         return ar -> {
             assertTrue(ar.succeeded());
