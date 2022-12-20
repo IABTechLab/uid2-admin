@@ -324,7 +324,10 @@ public class OperatorKeyService implements IService {
             }
 
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) return;
+            if (site == null) {
+                ResponseUtil.error(rc, 404, "site ID not found");
+                return;
+            }
 
             existingOperator.setSiteId(site.getId());
 
