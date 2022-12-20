@@ -1,0 +1,15 @@
+[
+  {
+    "key" : "ZW5jb2RlZCBjbGllbnRzIGtleQ==",
+    "secret" : "ZW5jb2RlZCBjbGllbnRzIHNlY3JldA==",
+    "name" : "MegaTest Client",
+    "contact" : "MegaTest Client",
+    "created" : 1609459200,
+    "roles" : [
+      "MAPPER",
+      "GENERATOR"
+    ],
+    "disabled" : false,
+    "site_id" : 123
+  }
+]

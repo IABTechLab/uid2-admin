@@ -61,6 +61,7 @@ public class SaltService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
+            e.printStackTrace();
             rc.fail(500, e);
         }
     }
@@ -90,6 +91,8 @@ public class SaltService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(result.getSnapshot()).encode());
         } catch (Exception e) {
+            e.printStackTrace();
+
             rc.fail(500, e);
         }
     }

@@ -106,7 +106,7 @@ public class Main {
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, storageManager, keyProvider, keyGenerator);
 
-            AdminVerticle adminVerticle = new AdminVerticle(authHandlerFactory, auth, adminUserProvider,
+            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider,
                     new AdminKeyService(config, auth, writeLock, storageManager, adminUserProvider, keyGenerator),
                     new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator),
                     new EnclaveIdService(auth, writeLock, storageManager, enclaveIdProvider),
@@ -123,7 +123,7 @@ public class Main {
 
             vertx.deployVerticle(adminVerticle);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.fatal("failed to initialize core verticle", e);
             System.exit(-1);
         }
     }
@@ -150,7 +150,7 @@ public class Main {
                 Main app = new Main(vertx, ar.result());
                 app.run();
             } catch (Exception e) {
-                LOGGER.fatal("Error: " +e.getMessage(), e);
+                LOGGER.fatal("Error: " + e.getMessage(), e);
                 vertx.close();
                 System.exit(1);
             }
@@ -162,7 +162,8 @@ public class Main {
             ObjectName objectName = new ObjectName("uid2.admin:type=jmx,name=AdminApi");
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             server.registerMBean(AdminApi.instance, objectName);
-        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException e) {
+        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException |
+                 MalformedObjectNameException e) {
             System.err.format("%s", e.getMessage());
             System.exit(-1);
         }
