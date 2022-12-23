@@ -32,6 +32,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             assertEquals(expectedOperator.getProtocol(), actualOperator.getString("protocol"));
             assertEquals(expectedOperator.isDisabled(), actualOperator.getBoolean("disabled"));
             assertEquals(expectedOperator.getSiteId(), actualOperator.getInteger("site_id"));
+            assertEquals(expectedOperator.isPublicOperator(), actualOperator.getBoolean("publicOperator"));
         }
     }
 
@@ -40,10 +41,10 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, true)
         };
 
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5", "", ar -> {
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&isPublicOperator=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -69,12 +70,12 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     void clientUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         setSites(new Site(5, "test_site", true));
-        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, true)
         };
 
-        post(vertx, "api/operator/update?name=test_operator&site_id=5", "", ar -> {
+        post(vertx, "api/operator/update?name=test_operator&site_id=5&isPublicOperator=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
