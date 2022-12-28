@@ -3,27 +3,29 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
-import com.uid2.admin.store.IStorageManager;
-import com.uid2.admin.store.RotatingSiteStore;
+import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
@@ -31,7 +33,7 @@ public class OperatorKeyService implements IService {
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final OperatorKeyStoreWriter operatorKeyStoreWriter;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
     private final RotatingSiteStore siteProvider;
     private final IKeyGenerator keyGenerator;
@@ -41,13 +43,13 @@ public class OperatorKeyService implements IService {
     public OperatorKeyService(JsonObject config,
                               AuthMiddleware auth,
                               WriteLock writeLock,
-                              IStorageManager storageManager,
+                              OperatorKeyStoreWriter operatorKeyStoreWriter,
                               RotatingOperatorKeyProvider operatorKeyProvider,
                               RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.operatorKeyStoreWriter = operatorKeyStoreWriter;
         this.operatorKeyProvider = operatorKeyProvider;
         this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
@@ -212,7 +214,6 @@ public class OperatorKeyService implements IService {
                 ResponseUtil.error(rc, 400, "no site id specified");
                 return;
             }
-
             Integer finalSiteId = siteId;
             if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() == finalSiteId)) {
                 ResponseUtil.error(rc, 400, "provided site id does not exist");
@@ -243,7 +244,7 @@ public class OperatorKeyService implements IService {
             operators.add(newOperator);
 
             // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+            operatorKeyStoreWriter.upload(operators);
 
             // respond with new key
             rc.response().end(jsonWriter.writeValueAsString(newOperator));
@@ -275,7 +276,7 @@ public class OperatorKeyService implements IService {
             operators.remove(o);
 
             // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+            operatorKeyStoreWriter.upload(operators);
 
             // respond with client deleted
             rc.response().end(jsonWriter.writeValueAsString(o));
@@ -328,7 +329,7 @@ public class OperatorKeyService implements IService {
             response.put("operator_type", operator.getOperatorType());
 
             // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+            operatorKeyStoreWriter.upload(operators);
 
             // respond with operator disabled/enabled
             rc.response().end(response.encode());
@@ -379,7 +380,7 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+            operatorKeyStoreWriter.upload(operators);
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingOperator));
@@ -452,7 +453,7 @@ public class OperatorKeyService implements IService {
             o.setRoles(roles);
 
             // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+            operatorKeyStoreWriter.upload(operators);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(o));

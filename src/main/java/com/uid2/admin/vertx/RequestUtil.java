@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.model.Site;
-import com.uid2.admin.store.ISiteStore;
+import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SiteUtil;
 import io.vertx.ext.web.RoutingContext;

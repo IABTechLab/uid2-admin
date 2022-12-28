@@ -1,31 +1,38 @@
 package com.uid2.admin;
 
-import com.uid2.admin.auth.*;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminUserProvider;
+import com.uid2.admin.auth.GithubAuthHandlerFactory;
+import com.uid2.admin.auth.IAuthHandlerFactory;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.secret.SaltRotation;
 import com.uid2.admin.secret.SecureKeyGenerator;
-import com.uid2.admin.store.CloudStorageManager;
-import com.uid2.admin.store.IStorageManager;
-import com.uid2.admin.store.RotatingPartnerStore;
-import com.uid2.admin.store.RotatingSiteStore;
+import com.uid2.admin.store.*;
+import com.uid2.admin.store.reader.RotatingPartnerStore;
+import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.version.ConsecutiveVersionGenerator;
+import com.uid2.admin.store.writer.*;
+import com.uid2.admin.vertx.AdminVerticle;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
-import com.uid2.shared.auth.RotatingClientKeyProvider;
-import com.uid2.shared.auth.RotatingKeyAclProvider;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
+import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.store.RotatingKeyStore;
+import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
-import com.uid2.admin.vertx.AdminVerticle;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -44,7 +51,8 @@ import io.vertx.micrometer.backends.BackendRegistries;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.Optional;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -58,45 +66,72 @@ public class Main {
     }
 
     public void run() {
-        IAuthHandlerFactory authHandlerFactory = new GithubAuthHandlerFactory(config);
-        ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
-        IStorageManager storageManager = new CloudStorageManager(config, cloudStorage);
         try {
+            IAuthHandlerFactory authHandlerFactory = new GithubAuthHandlerFactory(config);
+            ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+            FileStorage fileStorage = new TmpFileStorage();
+            ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+            FileManager fileManager = new FileManager(cloudStorage, fileStorage);
+            Clock clock = new InstantClock();
+
             String adminsMetadataPath = config.getString(AdminUserProvider.ADMINS_METADATA_PATH);
             AdminUserProvider adminUserProvider = new AdminUserProvider(cloudStorage, adminsMetadataPath);
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
+            ConsecutiveVersionGenerator adminUserVersionGenerator = new ConsecutiveVersionGenerator(adminUserProvider);
+            AdminUserStoreWriter adminUserStoreWriter = new AdminUserStoreWriter(adminUserProvider, fileManager, jsonWriter, adminUserVersionGenerator);
 
-            String sitesMetadataPath = config.getString(RotatingSiteStore.SITES_METADATA_PATH);
-            RotatingSiteStore siteProvider = new RotatingSiteStore(cloudStorage, sitesMetadataPath);
+            CloudPath sitesMetadataPath = new CloudPath(config.getString(RotatingSiteStore.SITES_METADATA_PATH));
+            GlobalScope siteGlobalScope = new GlobalScope(sitesMetadataPath);
+            RotatingSiteStore siteProvider = new RotatingSiteStore(cloudStorage, siteGlobalScope);
             siteProvider.loadContent(siteProvider.getMetadata());
+            ConsecutiveVersionGenerator siteVersionGenerator = new ConsecutiveVersionGenerator(siteProvider);
+            SiteStoreWriter siteStoreWriter = new SiteStoreWriter(siteProvider, fileManager, jsonWriter, siteVersionGenerator, clock, siteGlobalScope);
 
-            String clientMetadataPath = config.getString(Const.Config.ClientsMetadataPathProp);
-            RotatingClientKeyProvider clientKeyProvider = new RotatingClientKeyProvider(cloudStorage, clientMetadataPath);
+            CloudPath clientMetadataPath = new CloudPath(config.getString(Const.Config.ClientsMetadataPathProp));
+            GlobalScope clientGlobalScope = new GlobalScope(clientMetadataPath);
+            RotatingClientKeyProvider clientKeyProvider = new RotatingClientKeyProvider(cloudStorage, clientGlobalScope);
             clientKeyProvider.loadContent();
+            ConsecutiveVersionGenerator clientVersionGenerator = new ConsecutiveVersionGenerator(clientKeyProvider);
+            ClientKeyStoreWriter clientKeyStoreWriter = new ClientKeyStoreWriter(clientKeyProvider, fileManager, jsonWriter, clientVersionGenerator, clock, clientGlobalScope);
 
-            String keyMetadataPath = config.getString(Const.Config.KeysMetadataPathProp);
-            RotatingKeyStore keyProvider = new RotatingKeyStore(cloudStorage, keyMetadataPath);
+            CloudPath keyMetadataPath = new CloudPath(config.getString(Const.Config.KeysMetadataPathProp));
+            GlobalScope keyGlobalScope = new GlobalScope(keyMetadataPath);
+            RotatingKeyStore keyProvider = new RotatingKeyStore(cloudStorage, keyGlobalScope);
             keyProvider.loadContent();
+            ConsecutiveVersionGenerator keyVersionGenerator = new ConsecutiveVersionGenerator(keyProvider);
+            EncryptionKeyStoreWriter encryptionKeyStoreWriter = new EncryptionKeyStoreWriter(keyProvider, fileManager, keyVersionGenerator, clock, keyGlobalScope);
 
-            String keyAclMetadataPath = config.getString(Const.Config.KeysAclMetadataPathProp);
-            RotatingKeyAclProvider keyAclProvider = new RotatingKeyAclProvider(cloudStorage, keyAclMetadataPath);
+            CloudPath keyAclMetadataPath = new CloudPath(config.getString(Const.Config.KeysAclMetadataPathProp));
+            GlobalScope keyAclGlobalScope = new GlobalScope(keyAclMetadataPath);
+            RotatingKeyAclProvider keyAclProvider = new RotatingKeyAclProvider(cloudStorage, keyAclGlobalScope);
             keyAclProvider.loadContent();
+            ConsecutiveVersionGenerator keyAclVersionGenerator = new ConsecutiveVersionGenerator(keyAclProvider);
+            KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, keyAclVersionGenerator, clock, keyAclGlobalScope);
 
-            String operatorMetadataPath = config.getString(Const.Config.OperatorsMetadataPathProp);
-            RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorMetadataPath);
+            CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
+            GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
+            RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+            ConsecutiveVersionGenerator operatorKeyVersionGenerator = new ConsecutiveVersionGenerator(operatorKeyProvider);
+            OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, operatorKeyVersionGenerator);
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
+            ConsecutiveVersionGenerator enclaveVersionGenerator = new ConsecutiveVersionGenerator(enclaveIdProvider);
+            EnclaveStoreWriter enclaveStoreWriter = new EnclaveStoreWriter(enclaveIdProvider, fileManager, jsonWriter, enclaveVersionGenerator);
 
             String saltMetadataPath = config.getString(Const.Config.SaltsMetadataPathProp);
             RotatingSaltProvider saltProvider = new RotatingSaltProvider(cloudStorage, saltMetadataPath);
             saltProvider.loadContent();
+            ConsecutiveVersionGenerator saltVersionGenerator = new ConsecutiveVersionGenerator(saltProvider);
+            SaltStoreWriter saltStoreWriter = new SaltStoreWriter(config, saltProvider, fileManager, cloudStorage, saltVersionGenerator);
 
             String partnerMetadataPath = config.getString(RotatingPartnerStore.PARTNERS_METADATA_PATH);
             RotatingPartnerStore partnerConfigProvider = new RotatingPartnerStore(cloudStorage, partnerMetadataPath);
             partnerConfigProvider.loadContent();
+            ConsecutiveVersionGenerator partnerVersionGenerator = new ConsecutiveVersionGenerator(partnerConfigProvider);
+            PartnerStoreWriter partnerStoreWriter = new PartnerStoreWriter(partnerConfigProvider, fileManager, partnerVersionGenerator);
 
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
@@ -104,18 +139,21 @@ public class Main {
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, storageManager, keyProvider, keyGenerator);
+                    config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider,
-                    new AdminKeyService(config, auth, writeLock, storageManager, adminUserProvider, keyGenerator),
-                    new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator),
-                    new EnclaveIdService(auth, writeLock, storageManager, enclaveIdProvider),
+            IService[] services = {
+                    new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator),
+                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyGenerator),
+                    new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
-                    new KeyAclService(auth, writeLock, storageManager, keyAclProvider, siteProvider, encryptionKeyService),
-                    new OperatorKeyService(config, auth, writeLock, storageManager, operatorKeyProvider, siteProvider, keyGenerator),
-                    new SaltService(auth, writeLock, storageManager, saltProvider, saltRotation),
-                    new SiteService(auth, writeLock, storageManager, siteProvider, clientKeyProvider),
-                    new PartnerConfigService(auth, writeLock, storageManager, partnerConfigProvider));
+                    new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
+                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
+                    new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
+                    new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
+                    new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
+            };
+
+            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
 
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
                     "admins", 10000, adminUserProvider);

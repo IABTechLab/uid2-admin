@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.ISaltRotation;
-import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -27,13 +27,13 @@ public class SaltService implements IService {
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final SaltStoreWriter storageManager;
     private final RotatingSaltProvider saltProvider;
     private final ISaltRotation saltRotation;
 
     public SaltService(AuthMiddleware auth,
                        WriteLock writeLock,
-                       IStorageManager storageManager,
+                       SaltStoreWriter storageManager,
                        RotatingSaltProvider saltProvider,
                        ISaltRotation saltRotation) {
         this.auth = auth;
@@ -89,7 +89,7 @@ public class SaltService implements IService {
                 return;
             }
 
-            storageManager.uploadSalts(this.saltProvider, result.getSnapshot());
+            storageManager.upload(result.getSnapshot());
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")

@@ -1,9 +1,9 @@
-package com.uid2.admin.store;
+package com.uid2.admin.store.reader;
 
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.UidCoreClient;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.store.IMetadataVersionedStore;
+import com.uid2.shared.store.reader.IMetadataVersionedStore;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;

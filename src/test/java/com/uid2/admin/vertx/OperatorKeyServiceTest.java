@@ -20,13 +20,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 
 public class OperatorKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new OperatorKeyService(config, auth, writeLock, storageManager, operatorKeyProvider, siteProvider, keyGenerator);
+        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator);
     }
 
     private void checkOperatorKeyResponse(OperatorKey[] expectedOperators, Object[] actualOperators) {
@@ -66,7 +65,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+                verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -155,7 +154,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+                verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }

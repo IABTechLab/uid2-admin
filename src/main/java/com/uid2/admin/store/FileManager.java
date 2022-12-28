@@ -1,0 +1,38 @@
+package com.uid2.admin.store;
+
+import com.uid2.shared.cloud.CloudStorageException;
+import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.store.CloudPath;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+public class FileManager {
+    private final ICloudStorage cloudStorage;
+    private final FileStorage fileStorage;
+
+    public FileManager(ICloudStorage cloudStorage, FileStorage fileStorage) {
+        this.cloudStorage = cloudStorage;
+        this.fileStorage = fileStorage;
+    }
+
+    public void uploadFile(CloudPath location, FileName fileName, String content) throws IOException, CloudStorageException {
+        String newFile = fileStorage.create(fileName, content);
+        cloudStorage.upload(newFile, location.toString());
+    }
+
+    public void backupFile(CloudPath path, FileName fileName, long timestamp) throws IOException, CloudStorageException {
+        InputStream download = cloudStorage.download(path.toString());
+        String localTemp = fileStorage.create(fileName, download);
+        cloudStorage.upload(localTemp, path + ".bak");
+        cloudStorage.upload(localTemp, path + "." + timestamp + ".bak");
+    }
+
+    public void uploadMetadata(JsonObject metadata, String name, CloudPath location) throws Exception {
+        FileName fileName = new FileName(name + "-metadata", ".json");
+        String content = Json.encodePrettily(metadata);
+        uploadFile(location, fileName, content);
+    }
+}

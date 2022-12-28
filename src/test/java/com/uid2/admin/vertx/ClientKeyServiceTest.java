@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 public class ClientKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new ClientKeyService(config, auth, writeLock, storageManager, clientKeyProvider, siteProvider, keyGenerator);
+        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyGenerator);
     }
 
     private void checkClientKeyResponse(ClientKey[] expectedClients, Object[] actualClients) {
@@ -59,7 +59,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadClientKeys(any(), collectionOfSize(1));
+                verify(clientKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -102,7 +102,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadClientKeys(any(), collectionOfSize(1));
+                verify(clientKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }

@@ -1,4 +1,4 @@
-package com.uid2.admin.store;
+package com.uid2.admin.store.reader;
 
 import com.uid2.admin.model.Site;
 

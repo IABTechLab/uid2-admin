@@ -1,19 +1,18 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
-import com.uid2.admin.store.ISiteStore;
-import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.admin.store.reader.ISiteStore;
+import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.RotatingClientKeyProvider;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.optout.OptOutUtils;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
 public class ClientKeyService implements IService {
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final ClientKeyStoreWriter storeWriter;
     private final RotatingClientKeyProvider clientKeyProvider;
     private final ISiteStore siteProvider;
     private final IKeyGenerator keyGenerator;
@@ -40,13 +39,13 @@ public class ClientKeyService implements IService {
     public ClientKeyService(JsonObject config,
                             AuthMiddleware auth,
                             WriteLock writeLock,
-                            IStorageManager storageManager,
+                            ClientKeyStoreWriter storeWriter,
                             RotatingClientKeyProvider clientKeyProvider,
                             ISiteStore siteProvider,
                             IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.storeWriter = storeWriter;
         this.clientKeyProvider = clientKeyProvider;
         this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
@@ -207,7 +206,7 @@ public class ClientKeyService implements IService {
             clients.add(newClient);
 
             // upload to storage
-            storageManager.uploadClientKeys(clientKeyProvider, clients);
+            storeWriter.upload(clients);
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newClient));
@@ -239,7 +238,7 @@ public class ClientKeyService implements IService {
             clients.remove(c);
 
             // upload to storage
-            storageManager.uploadClientKeys(clientKeyProvider, clients);
+            storeWriter.upload(clients);
 
             // respond with client deleted
             rc.response().end(jsonWriter.writeValueAsString(c));
@@ -272,7 +271,7 @@ public class ClientKeyService implements IService {
                     .collect(Collectors.toList());
 
             // upload to storage
-            storageManager.uploadClientKeys(clientKeyProvider, clients);
+            storeWriter.upload(clients);
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
@@ -322,7 +321,7 @@ public class ClientKeyService implements IService {
             response.put("disabled", c.isDisabled());
 
             // upload to storage
-            storageManager.uploadClientKeys(clientKeyProvider, clients);
+            storeWriter.upload(clients);
 
             // respond with client disabled/enabled
             rc.response().end(response.encode());
@@ -358,7 +357,7 @@ public class ClientKeyService implements IService {
             c.setSecret(keyGenerator.generateRandomKeyString(32));
 
             // upload to storage
-            storageManager.uploadClientKeys(clientKeyProvider, clients);
+            storeWriter.upload(clients);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
@@ -395,7 +394,7 @@ public class ClientKeyService implements IService {
             c.withRoles(roles);
 
             // upload to storage
-            storageManager.uploadClientKeys(clientKeyProvider, clients);
+            storeWriter.upload( clients);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
