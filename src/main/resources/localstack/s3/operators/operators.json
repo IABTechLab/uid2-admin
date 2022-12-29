@@ -5,7 +5,10 @@
     "contact" : "MegaTest-Operator",
     "protocol" : "trusted",
     "created" : 1618873215,
-    "disabled" : false
+    "disabled" : false,
+    "roles" : [
+      "OPERATOR"
+    ]
   },
   {
     "key" : "b3BlcmF0b3Iga2V5IDI=",
