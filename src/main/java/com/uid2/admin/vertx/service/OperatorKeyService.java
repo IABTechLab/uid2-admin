@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
@@ -102,6 +103,12 @@ public class OperatorKeyService implements IService {
                 this.handleOperatorRekey(ctx);
             }
         }, Role.ADMINISTRATOR));
+
+        router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleOperatorRoles(ctx);
+            }
+        }, Role.OPERATOR_MANAGER));
     }
 
     private void handleOperatorMetadata(RoutingContext rc) {
@@ -124,6 +131,7 @@ public class OperatorKeyService implements IService {
 
                 jo.put("name", o.getName());
                 jo.put("contact", o.getContact());
+                jo.put("roles", RequestUtil.getRolesSpec(o.getRoles()));
                 jo.put("protocol", o.getProtocol());
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
@@ -184,6 +192,8 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
+            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
+
             Integer siteId;
             try {
                 siteId = rc.queryParam("site_id").get(0) == null ? null : Integer.parseInt(rc.queryParam("site_id").get(0));
@@ -211,7 +221,7 @@ public class OperatorKeyService implements IService {
 
             // add new client to array
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles);
 
             // add client to the array
             operators.add(newOperator);
@@ -367,6 +377,43 @@ public class OperatorKeyService implements IService {
             String newKey = keyGenerator.generateRandomKeyString(32);
             if (this.operatorKeyPrefix != null) newKey = this.operatorKeyPrefix + newKey;
             o.setKey(newKey);
+
+            // upload to storage
+            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+
+            // return client with new key
+            rc.response().end(jsonWriter.writeValueAsString(o));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleOperatorRoles(RoutingContext rc) {
+        try {
+            // refresh manually
+            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+
+            final String name = rc.queryParam("name").get(0);
+            Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
+                    .stream().filter(o -> o.getName().equals(name))
+                    .findFirst();
+            if (!existingOperator.isPresent()) {
+                ResponseUtil.error(rc, 404, "operator key not found");
+                return;
+            }
+
+            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            if (roles == null) {
+                ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                return;
+            }
+
+            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
+
+            OperatorKey o = existingOperator.get();
+            o.withRoles(roles);
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);

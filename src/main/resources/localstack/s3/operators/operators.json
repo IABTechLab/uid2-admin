@@ -6,6 +6,9 @@
     "protocol" : "trusted",
     "created" : 1618873215,
     "disabled" : false,
+    "roles" : [
+      "OPERATOR"
+    ]
     "site_id": 123
   },
   {
