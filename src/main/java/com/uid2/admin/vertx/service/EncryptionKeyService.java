@@ -89,6 +89,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 this.handleRotateMasterKey(ctx);
             }
         }, Role.SECRET_MANAGER));
+
+        router.post("/api/key/add").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleAddSiteKey(ctx);
+            }
+        }, Role.SECRET_MANAGER));
+
         router.post("/api/key/rotate_site").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateSiteKey(ctx);
@@ -137,6 +144,43 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private void handleAddSiteKey(RoutingContext rc) {
+        final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
+        if (!siteIdOpt.isPresent()) {
+            return;
+        }
+
+        final int siteId = siteIdOpt.get();
+
+        if (!SiteUtil.isValidSiteId(siteId)) {
+            ResponseUtil.error(rc, 400, "must specify a valid site id");
+            return;
+        }
+
+        final boolean siteKeyExists = this.keyProvider.getSnapshot()
+                .getActiveKeySet()
+                .stream()
+                .anyMatch(key -> key.getSiteId() == siteId);
+
+        if (siteKeyExists) {
+            ResponseUtil.error(rc, 400, "Key already exists for specified site id: " + siteId);
+            return;
+        }
+
+        final EncryptionKey siteKey;
+        try {
+            siteKey = addSiteKey(siteId);
+        } catch (Exception e) {
+            rc.fail(500, e);
+            return;
+        }
+
+        final JsonObject json = toJson(siteKey);
+        rc.response()
+                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .end(json.encode());
     }
 
     private void handleRotateSiteKey(RoutingContext rc) {
