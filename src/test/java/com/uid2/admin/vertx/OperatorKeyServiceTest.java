@@ -60,13 +60,13 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void clientAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
+    void operatorAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void clientUpdate(Vertx vertx, VertxTestContext testContext) {
+    void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         setSites(new Site(5, "test_site", true));
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null));
@@ -91,7 +91,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
+    void operatorUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         post(vertx, "api/operator/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
     }
