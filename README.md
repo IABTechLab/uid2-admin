@@ -2,7 +2,7 @@
 ### Setup
 1. Run `docker-compose up`. This will create a Localstack and initialize it with everything under `./src/main/resources/localstack/`.
 2. Wait for localstack to start up and initialize. If it's not ready, the app will crash on boot. 
-3. Start the application on CLI or IntelliJ Maven configuration via `mvn clean compile exec:java -Dvertex-configpath="conf/local-config.json"`
+3. Start the application on CLI or IntelliJ Maven configuration via `mvn clean compile exec:java -Dvertx-config-path=conf/local-config.json -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -Dlogback.configurationFile=conf/logback.xml`
 4. Once started, admin service runs on `http://localhost:8089/`
 
 ### Test data
