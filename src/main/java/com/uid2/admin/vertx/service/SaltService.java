@@ -12,6 +12,8 @@ import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class SaltService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
@@ -61,7 +65,7 @@ public class SaltService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
@@ -91,7 +95,7 @@ public class SaltService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(result.getSnapshot()).encode());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
