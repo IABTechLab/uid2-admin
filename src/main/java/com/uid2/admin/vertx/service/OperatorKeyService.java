@@ -1,12 +1,15 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.RotatingSiteStore;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
@@ -16,18 +19,24 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final IStorageManager storageManager;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
+    private final RotatingSiteStore siteProvider;
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String operatorKeyPrefix;
@@ -37,11 +46,13 @@ public class OperatorKeyService implements IService {
                               WriteLock writeLock,
                               IStorageManager storageManager,
                               RotatingOperatorKeyProvider operatorKeyProvider,
+                              RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
         this.operatorKeyProvider = operatorKeyProvider;
+        this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
@@ -80,6 +91,12 @@ public class OperatorKeyService implements IService {
             }
         }, Role.OPERATOR_MANAGER));
 
+        router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleOperatorUpdate(ctx);
+            }
+        }, Role.ADMINISTRATOR));
+
         router.post("/api/operator/rekey").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRekey(ctx);
@@ -99,10 +116,10 @@ public class OperatorKeyService implements IService {
 
     private void handleOperatorList(RoutingContext rc) {
         try {
-            JsonArray ja = new JsonArray();
-            Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
+            final JsonArray ja = new JsonArray();
+            final Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
             for (OperatorKey o : collection) {
-                JsonObject jo = new JsonObject();
+                final JsonObject jo = new JsonObject();
                 ja.add(jo);
 
                 jo.put("name", o.getName());
@@ -110,6 +127,7 @@ public class OperatorKeyService implements IService {
                 jo.put("protocol", o.getProtocol());
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
+                jo.put("site_id", o.getSiteId());
             }
 
             rc.response()
@@ -144,8 +162,13 @@ public class OperatorKeyService implements IService {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
+            if (!rc.queryParams().contains("name")) {
+                ResponseUtil.error(rc, 400, "no name specified");
+                return;
+            }
             final String name = rc.queryParam("name").get(0);
-            Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
+
+            final Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (existingOperator.isPresent()) {
@@ -153,13 +176,32 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
+            final String protocol = rc.queryParams().contains("protocol")
+                    ? RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0))
+                    : null;
             if (protocol == null) {
                 ResponseUtil.error(rc, 400, "no protocol specified");
                 return;
             }
 
-            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+            Integer siteId;
+            try {
+                siteId = rc.queryParam("site_id").get(0) == null ? null : Integer.parseInt(rc.queryParam("site_id").get(0));
+            } catch (NumberFormatException e) {
+                LOGGER.error(e.getMessage(), e);
+                siteId = null;
+            }
+            if (siteId == null) {
+                ResponseUtil.error(rc, 400, "no site id specified");
+                return;
+            }
+            Integer finalSiteId = siteId;
+            if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() == finalSiteId)) {
+                ResponseUtil.error(rc, 400, "provided site id does not exist");
+                return;
+            }
+
+            final List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
@@ -169,7 +211,7 @@ public class OperatorKeyService implements IService {
 
             // add new client to array
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId);
 
             // add client to the array
             operators.add(newOperator);
@@ -255,12 +297,49 @@ public class OperatorKeyService implements IService {
             response.put("contact", c.getContact());
             response.put("created", c.getCreated());
             response.put("disabled", c.isDisabled());
+            response.put("site_id", c.getSiteId());
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
 
             // respond with operator disabled/enabled
             rc.response().end(response.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleOperatorUpdate(RoutingContext rc) {
+        try {
+            // refresh manually
+            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+
+            final String name = rc.queryParam("name").get(0);
+            OperatorKey existingOperator = this.operatorKeyProvider.getAll()
+                    .stream().filter(o -> o.getName().equals(name))
+                    .findFirst().orElse(null);
+            if (existingOperator == null) {
+                ResponseUtil.error(rc, 404, "operator name not found");
+                return;
+            }
+
+            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+            if (site == null) {
+                ResponseUtil.error(rc, 404, "site id not found");
+                return;
+            }
+
+            existingOperator.setSiteId(site.getId());
+
+            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
+
+            // upload to storage
+            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+
+            // return the updated client
+            rc.response().end(jsonWriter.writeValueAsString(existingOperator));
         } catch (Exception e) {
             rc.fail(500, e);
         }
