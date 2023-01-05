@@ -131,12 +131,12 @@ public class Main {
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {
-            System.out.format("Running CUSTOM CONFIG mode, config: %s\n", vertxConfigPath);
+            LOGGER.info("Running CUSTOM CONFIG mode, config: {}", vertxConfigPath);
         } else if (!Utils.isProductionEnvironment()) {
-            System.out.format("Running LOCAL DEBUG mode, config: %s\n", Const.Config.LOCAL_CONFIG_PATH);
+            LOGGER.info("Running LOCAL DEBUG mode, config: {}", Const.Config.LOCAL_CONFIG_PATH);
             System.setProperty(Const.Config.VERTX_CONFIG_PATH_PROP, Const.Config.LOCAL_CONFIG_PATH);
         } else {
-            System.out.format("Running PRODUCTION mode, config: %s\n", Const.Config.OVERRIDE_CONFIG_PATH);
+            LOGGER.info("Running PRODUCTION mode, config: {}", Const.Config.OVERRIDE_CONFIG_PATH);
         }
 
         Vertx vertx = createVertx();
@@ -150,7 +150,7 @@ public class Main {
                 Main app = new Main(vertx, ar.result());
                 app.run();
             } catch (Exception e) {
-                LOGGER.fatal("Error: " + e.getMessage(), e);
+                LOGGER.fatal(e.getMessage(), e);
                 vertx.close();
                 System.exit(1);
             }
@@ -164,7 +164,7 @@ public class Main {
             server.registerMBean(AdminApi.instance, objectName);
         } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException |
                  MalformedObjectNameException e) {
-            System.err.format("%s", e.getMessage());
+            LOGGER.fatal(e.getMessage(), e);
             System.exit(-1);
         }
 
