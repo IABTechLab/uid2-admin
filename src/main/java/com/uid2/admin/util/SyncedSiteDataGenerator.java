@@ -5,9 +5,11 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EncryptionKey;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Given global sets of data, generate Synced Sites data for private operators
@@ -15,16 +17,16 @@ import java.util.*;
  */
 public class SyncedSiteDataGenerator {
 
-    public Map<Integer, Collection<ClientKey>> generateClientKeyData(Collection<Site> sites, Collection<OperatorKey> operators, Collection<ClientKey> keys) {
+    public Map<Integer, Collection<ClientKey>> generateClientKeyData(Collection<Site> sites, Collection<OperatorKey> operators, Collection<ClientKey> clients) {
         Map<Integer, Collection<ClientKey>> result = new HashMap<>();
         initialiseSyncedSiteSites(operators, result);
 
-        keys.forEach(k -> {
-            if (!k.isDisabled()) {
+        clients.forEach(c -> {
+            if (!c.isDisabled()) {
                 // For each client key that is enabled
-                // Add it to /clients/site/{site_id}/clients.json
-                result.computeIfPresent(k.getSiteId(), (syncedSiteId, syncedSiteSet) -> {
-                    syncedSiteSet.add(k);
+                // Add it to every Synced Site
+                result.computeIfPresent(c.getSiteId(), (syncedSiteId, syncedSiteSet) -> {
+                    syncedSiteSet.add(c);
                     return syncedSiteSet;
                 });
             }
@@ -32,7 +34,7 @@ public class SyncedSiteDataGenerator {
         return result;
     }
 
-    public Map<Integer, Collection<EncryptionKey>> generateEncryptionKeyData(Collection<Site> sites, Collection<OperatorKey> operators, List<EncryptionKey> keys, Map<Integer, EncryptionKeyAcl> acls) {
+    public Map<Integer, Collection<EncryptionKey>> generateEncryptionKeyData(Collection<Site> sites, Collection<OperatorKey> operators, List<EncryptionKey> keys, Map<Integer, EncryptionKeyAcl> acls, Collection<ClientKey> clients) {
         Map<Integer, Collection<EncryptionKey>> result = new HashMap<>();
         initialiseSyncedSiteSites(operators, result);
 
@@ -54,10 +56,45 @@ public class SyncedSiteDataGenerator {
             });
         });
 
-        //TODO deal with reader sites
-
-
-
+        Set<Integer> readerSites = clients.stream().filter(c -> c.hasRole(Role.ID_READER)).map(ck -> ck.getSiteId()).collect(Collectors.toSet());
+        //filter OUT special keys and filter IN Reader Site keys ONLY
+        keys.stream().filter(k -> !isSpecialSite(k.getSiteId()) && readerSites.contains(k.getSiteId())).forEach(encryptionKey ->
+        {
+            if(acls.containsKey(encryptionKey.getSiteId())) {
+                EncryptionKeyAcl acl = acls.get(encryptionKey.getSiteId());
+                if (acl.getIsWhitelist()) {
+                    //If it is a whitelist write this key to every site_id on the whitelist
+                    //the filter below is to stop adding duplicate which could have been inserted for its corresponding synced site
+                    acl.getAccessList().stream().filter(whiteListedSiteId -> whiteListedSiteId != encryptionKey.getSiteId()).forEach(whiteListedSiteId ->
+                    {
+                        result.computeIfPresent(whiteListedSiteId, (syncedSiteId, syncedSiteSet) -> {
+                            syncedSiteSet.add(encryptionKey);
+                            return syncedSiteSet;
+                        });
+                    });
+                } else //blacklisted
+                {
+                    //If it is a blacklist write this key to every site_id that is not on the blacklist
+                    final Set<Integer> blacklisted = acl.getAccessList();
+                    result.forEach((syncedSiteId, syncedSiteSet) -> {
+                        //stop adding duplicate which could have been inserted for its corresponding synced site earlier
+                        if (!blacklisted.contains(syncedSiteId) && syncedSiteId != encryptionKey.getSiteId()) {
+                            syncedSiteSet.add(encryptionKey);
+                        }
+                    });
+                }
+            }
+            else {
+                //If no keys_acl are for this site_id
+                //Add it to each site
+                result.forEach((syncedSiteId, syncedSiteSet) -> {
+                    //stop adding duplicate which could have been inserted for its corresponding synced site earlier
+                    if (syncedSiteId != encryptionKey.getSiteId()) {
+                        syncedSiteSet.add(encryptionKey);
+                    }
+                });
+            }
+        });
         return result;
     }
 
@@ -77,7 +114,11 @@ public class SyncedSiteDataGenerator {
                 acl.getAccessList().forEach(whiteListedSiteId ->
                 {
                     result.computeIfPresent(whiteListedSiteId, (syncedSiteId, syncedSiteSet) -> {
-                        syncedSiteSet.add(acl);
+                        // avoid adding duplicate as it could be added above already
+                        if(syncedSiteId != siteId)
+                        {
+                            syncedSiteSet.add(acl);
+                        }
                         return syncedSiteSet;
                     });
                 });
@@ -86,7 +127,8 @@ public class SyncedSiteDataGenerator {
                 // If it's a blacklist also write it to every site file except those on the blacklist
                 final Set<Integer> blacklisted = acl.getAccessList();
                 result.forEach((syncedSiteId, syncedSiteSet) -> {
-                    if (!blacklisted.contains(syncedSiteId)) {
+                    // avoid adding duplicate as it could be added above already
+                    if (!blacklisted.contains(syncedSiteId) && syncedSiteId != siteId ) {
                         syncedSiteSet.add(acl);
                     }
                 });
