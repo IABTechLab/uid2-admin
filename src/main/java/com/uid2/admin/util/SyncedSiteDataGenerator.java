@@ -17,9 +17,8 @@ import java.util.stream.Collectors;
  */
 public class SyncedSiteDataGenerator {
 
-    public Map<Integer, Collection<ClientKey>> generateClientKeyData(Collection<Site> sites, Collection<OperatorKey> operators, Collection<ClientKey> clients) {
-        Map<Integer, Collection<ClientKey>> result = new HashMap<>();
-        initialiseSyncedSiteSites(operators, result);
+    public static Map<Integer, Collection<ClientKey>> generateClientKeyData(Collection<Site> sites, Collection<OperatorKey> operators, Collection<ClientKey> clients) {
+        Map<Integer, Collection<ClientKey>> result = initialiseSyncedSiteDataSet(operators);
 
         clients.forEach(c -> {
             if (!c.isDisabled()) {
@@ -34,9 +33,8 @@ public class SyncedSiteDataGenerator {
         return result;
     }
 
-    public Map<Integer, Collection<EncryptionKey>> generateEncryptionKeyData(Collection<Site> sites, Collection<OperatorKey> operators, List<EncryptionKey> keys, Map<Integer, EncryptionKeyAcl> acls, Collection<ClientKey> clients) {
-        Map<Integer, Collection<EncryptionKey>> result = new HashMap<>();
-        initialiseSyncedSiteSites(operators, result);
+    public static Map<Integer, Collection<EncryptionKey>> generateEncryptionKeyData(Collection<Site> sites, Collection<OperatorKey> operators, List<EncryptionKey> keys, Map<Integer, EncryptionKeyAcl> acls, Collection<ClientKey> clients) {
+        Map<Integer, Collection<EncryptionKey>> result = initialiseSyncedSiteDataSet(operators);
 
         //If it is for a Special Site
         //Add this key to every Synced Site
@@ -99,9 +97,8 @@ public class SyncedSiteDataGenerator {
     }
 
     //acls is Map<SiteId, EncryptionKeyAcl>
-    public Map<Integer, Collection<EncryptionKeyAcl>> generateEncryptionKeyAclData(Collection<Site> sites, Collection<OperatorKey> operators, Map<Integer, EncryptionKeyAcl> acls) {
-        Map<Integer, Collection<EncryptionKeyAcl>> result = new HashMap<>();
-        initialiseSyncedSiteSites(operators, result);
+    public static Map<Integer, Collection<EncryptionKeyAcl>> generateEncryptionKeyAclData(Collection<Site> sites, Collection<OperatorKey> operators, Map<Integer, EncryptionKeyAcl> acls) {
+        Map<Integer, Collection<EncryptionKeyAcl>> result = initialiseSyncedSiteDataSet(operators);
 
         acls.forEach((siteId, acl) -> {
             //Add it to site file for its site_id
@@ -137,11 +134,8 @@ public class SyncedSiteDataGenerator {
         return result;
     }
 
-    public Map<Integer, Collection<Site>> generateSiteData
-            (Collection<Site> sites, Collection<OperatorKey> operators) {
-        Map<Integer, Collection<Site>> result = new HashMap<>();
-
-        initialiseSyncedSiteSites(operators, result);
+    public static Map<Integer, Collection<Site>> generateSiteData(Collection<Site> sites, Collection<OperatorKey> operators) {
+        Map<Integer, Collection<Site>> result = initialiseSyncedSiteDataSet(operators);
 
         sites.forEach(s ->
         {
@@ -165,8 +159,8 @@ public class SyncedSiteDataGenerator {
     /**
      * Initialise a Map<SiteId, Collection<T>> object which has an entry for each site that has at least 1 private operator
      */
-    private static <T> void initialiseSyncedSiteSites
-    (Collection<OperatorKey> operators, Map<Integer, Collection<T>> result) {
+    private static <T> Map<Integer, Collection<T>> initialiseSyncedSiteDataSet(Collection<OperatorKey> operators) {
+        Map<Integer, Collection<T>> result = new HashMap<>();
         operators.forEach(o ->
         {
             // TODO should we check if site is disabled?
@@ -174,6 +168,7 @@ public class SyncedSiteDataGenerator {
                 result.put(o.getSiteId(), new HashSet());
             }
         });
+        return result;
     }
 
     private static boolean isSpecialSite(int siteId) {
