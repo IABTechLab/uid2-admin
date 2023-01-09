@@ -22,11 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
@@ -191,8 +187,11 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
-
+            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? Set.of() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            if (roles.stream().allMatch(Objects::isNull)) {
+                ResponseUtil.error(rc, 400, "No roles specified");
+                return;
+            }
             Integer siteId;
             try {
                 siteId = rc.queryParam("site_id").get(0) == null ? null : Integer.parseInt(rc.queryParam("site_id").get(0));
@@ -307,6 +306,7 @@ public class OperatorKeyService implements IService {
             response.put("created", c.getCreated());
             response.put("disabled", c.isDisabled());
             response.put("site_id", c.getSiteId());
+            response.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
@@ -401,9 +401,9 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
-            if (roles == null) {
-                ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? Set.of() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            if (roles.stream().allMatch(Objects::isNull)) {
+                ResponseUtil.error(rc, 400, "No roles specified");
                 return;
             }
 
@@ -412,7 +412,7 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             OperatorKey o = existingOperator.get();
-            o.withRoles(roles);
+            o.setRoles(roles);
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
