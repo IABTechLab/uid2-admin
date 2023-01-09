@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -132,8 +133,8 @@ public class OperatorKeyService implements IService {
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
                 jo.put("site_id", o.getSiteId());
-                jo.put("isPublicOperator", o.isPublicOperator());
-                jo.put("isPrivateOperator", o.isPrivateOperator());
+                jo.put("is_public_operator", o.isPublicOperator());
+                jo.put("is_private_operator", o.isPrivateOperator());
             }
 
             rc.response()
@@ -208,7 +209,8 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0).equals("true")? true : false;
+            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
+                    rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
 
             final List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
@@ -220,7 +222,8 @@ public class OperatorKeyService implements IService {
 
             // add new client to array
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, isPublicOperator);
+            //TODO the empty role here is TO BE fixed after UID2-602 changes are merged to master
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, new HashSet<Role>(), isPublicOperator);
 
             // add client to the array
             operators.add(newOperator);
@@ -336,7 +339,8 @@ public class OperatorKeyService implements IService {
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
-            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0).equals("true")? true : false;
+            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
+                    rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
 
             OperatorKey c = existingOperator.get();
             if (c.isPublicOperator() == isPublicOperator) {

@@ -70,7 +70,7 @@
             var operatorName = encodeURIComponent($('#operatorName').val());
             var protocol = encodeURIComponent($('#protocol').val());
             var siteId = encodeURIComponent($('#siteId').val());
-            var isPublicOperator = encodeURIComponent($('#isPublicOperator').val());
+            var isPublicOperator = (document.getElementById('isPublicOperator').checked == true)? "true" : "false";
             var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&isPublicOperator=' + isPublicOperator;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');

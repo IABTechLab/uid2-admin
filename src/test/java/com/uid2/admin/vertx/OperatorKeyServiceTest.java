@@ -12,6 +12,9 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
@@ -32,19 +35,22 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             assertEquals(expectedOperator.getProtocol(), actualOperator.getString("protocol"));
             assertEquals(expectedOperator.isDisabled(), actualOperator.getBoolean("disabled"));
             assertEquals(expectedOperator.getSiteId(), actualOperator.getInteger("site_id"));
-            assertEquals(expectedOperator.isPublicOperator(), actualOperator.getBoolean("publicOperator"));
+            assertEquals(expectedOperator.isPublicOperator(), actualOperator.getBoolean("is_public_operator"));
         }
     }
 
     @Test
     void operatorAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPTOUT);
+        roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, true)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, true)
         };
 
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&isPublicOperator=true", "", ar -> {
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&isPublicOperator=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -69,10 +75,12 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
-        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, true));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, roles, true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, true)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, true)
         };
 
         post(vertx, "api/operator/update?name=test_operator&site_id=5&isPublicOperator=true", "", ar -> {
