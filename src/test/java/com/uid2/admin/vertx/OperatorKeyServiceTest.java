@@ -54,7 +54,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5).withRoles(roles)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles)
         };
 
         post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout", "", ar -> {
@@ -130,9 +130,9 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPTOUT);
         roles.add(Role.OPERATOR);
-        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false).withRoles(roles)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles)
         };
 
         post(vertx, "api/operator/roles?name=test_operator&roles=optout", "", ar -> {
