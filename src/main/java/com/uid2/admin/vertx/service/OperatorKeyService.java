@@ -187,7 +187,7 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? Set.of() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? new HashSet<>() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles.stream().allMatch(Objects::isNull)) {
                 ResponseUtil.error(rc, 400, "No roles specified");
                 return;
@@ -401,7 +401,7 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? Set.of() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? new HashSet<>() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles.stream().allMatch(Objects::isNull)) {
                 ResponseUtil.error(rc, 400, "No roles specified");
                 return;
