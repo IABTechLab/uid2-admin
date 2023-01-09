@@ -5,12 +5,18 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
@@ -32,19 +38,22 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             assertEquals(expectedOperator.getProtocol(), actualOperator.getString("protocol"));
             assertEquals(expectedOperator.isDisabled(), actualOperator.getBoolean("disabled"));
             assertEquals(expectedOperator.getSiteId(), actualOperator.getInteger("site_id"));
-            assertEquals(expectedOperator.isPublicOperator(), actualOperator.getBoolean("publicOperator"));
+            assertEquals(expectedOperator.getOperatorType(), OperatorType.valueOf(actualOperator.getString("operator_type")));
         }
     }
 
     @Test
     void operatorAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPTOUT);
+        roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, true)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC)
         };
 
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&isPublicOperator=true", "", ar -> {
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -69,13 +78,15 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
-        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, true));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, roles, OperatorType.PRIVATE));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, true)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC)
         };
 
-        post(vertx, "api/operator/update?name=test_operator&site_id=5&isPublicOperator=true", "", ar -> {
+        post(vertx, "api/operator/update?name=test_operator&site_id=5&operator_type=public", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -95,5 +106,32 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     void operatorUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         post(vertx, "api/operator/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
+    }
+
+    //update Public Operator Status to Private
+    @Test
+    void operatorFlipPublicOperatorStatusViaUpdate(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPERATOR);
+        setSites(new Site(5, "test_site", true));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC));
+        OperatorKey[] expectedOperators = {
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)
+        };
+        post(vertx, "api/operator/update?name=test_operator&operator_type=private", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
     }
 }

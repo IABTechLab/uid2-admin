@@ -19,8 +19,8 @@
 <input type="text" id="protocol" name="protocol">
 <label for="siteId">Site Id:</label>
 <input type="text" id="siteId" name="siteId">
-<label for="isPublicOperator">Public Operator:</label>
-<input type="checkbox" id="isPublicOperator" name="isPublicOperator">
+<label for="operatorType">Public Operator?</label>
+<input type="checkbox" id="operatorType" name="operatorType">
 
 <br>
 <br>
@@ -70,8 +70,8 @@
             var operatorName = encodeURIComponent($('#operatorName').val());
             var protocol = encodeURIComponent($('#protocol').val());
             var siteId = encodeURIComponent($('#siteId').val());
-            var isPublicOperator = encodeURIComponent($('#isPublicOperator').val());
-            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&isPublicOperator=' + isPublicOperator;
+            var isPublicOperator = (document.getElementById('operatorType').checked == true)? "public" : "private";
+            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&operator_type=' + isPublicOperator;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
@@ -114,8 +114,8 @@
 
         $('#doSetOperatorType').on('click', function () {
             var operatorName = encodeURIComponent($('#operatorName').val());
-            var isPublicOperator = (document.getElementById('isPublicOperator').checked == true)? "true" : "false";
-            var url = '/api/operator/updatePublicPrivateOperator?name=' + operatorName + '&isPublicOperator=' + isPublicOperator;
+            var operatorType = (document.getElementById('operatorType').checked == true)? "public" : "private";
+            var url = '/api/operator/update?name=' + operatorName + '&operator_type=' + operatorType;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
