@@ -296,22 +296,22 @@ public class OperatorKeyService implements IService {
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
-            OperatorKey c = existingOperator.get();
-            if (c.isDisabled() == disableFlag) {
+            OperatorKey operator = existingOperator.get();
+            if (operator.isDisabled() == disableFlag) {
                 ResponseUtil.error(rc, 400, "no change needed");
                 return;
             }
 
-            c.setDisabled(disableFlag);
+            operator.setDisabled(disableFlag);
 
             JsonObject response = new JsonObject();
-            response.put("name", c.getName());
-            response.put("contact", c.getContact());
-            response.put("created", c.getCreated());
-            response.put("disabled", c.isDisabled());
-            response.put("site_id", c.getSiteId());
-            response.put("is_public_operator", c.isPublicOperator());
-            response.put("is_private_operator", c.isPrivateOperator());
+            response.put("name", operator.getName());
+            response.put("contact", operator.getContact());
+            response.put("created", operator.getCreated());
+            response.put("disabled", operator.isDisabled());
+            response.put("site_id", operator.getSiteId());
+            response.put("is_public_operator", operator.isPublicOperator());
+            response.put("is_private_operator", operator.isPrivateOperator());
 
 
             // upload to storage
@@ -338,26 +338,25 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
-
             boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
                     rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
 
-            OperatorKey c = existingOperator.get();
-            if (c.isPublicOperator() == isPublicOperator) {
+            OperatorKey operator = existingOperator.get();
+            if (operator.isPublicOperator() == isPublicOperator) {
                 ResponseUtil.error(rc, 400, "no change needed");
                 return;
             }
+            operator.setPublicOperator(isPublicOperator);
 
-            c.setPublicOperator(isPublicOperator);
+            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
 
             // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(c));
+            rc.response().end(jsonWriter.writeValueAsString(operator));
         } catch (Exception e) {
             rc.fail(500, e);
         }
