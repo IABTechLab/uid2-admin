@@ -82,7 +82,27 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorKeyAddEmptyRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=", "", expectHttpError(testContext, 400));
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPERATOR);
+        setSites(new Site(5, "test_site", true));
+        OperatorKey[] expectedOperators = {
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles)
+        };
+
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
     }
 
     @Test

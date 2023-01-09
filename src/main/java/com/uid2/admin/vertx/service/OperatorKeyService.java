@@ -188,10 +188,12 @@ public class OperatorKeyService implements IService {
             }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? new HashSet<>() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
-            if (roles.stream().allMatch(Objects::isNull)) {
-                ResponseUtil.error(rc, 400, "No roles specified");
+
+            if (rc.queryParam("roles").get(0) != "" && roles.stream().allMatch(Objects::isNull)) {
+                ResponseUtil.error(rc, 400, "Incorrect roles specified");
                 return;
             }
+
             Integer siteId;
             try {
                 siteId = rc.queryParam("site_id").get(0) == null ? null : Integer.parseInt(rc.queryParam("site_id").get(0));
