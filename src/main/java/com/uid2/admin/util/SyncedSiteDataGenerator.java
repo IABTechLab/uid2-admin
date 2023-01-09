@@ -41,7 +41,7 @@ public final class SyncedSiteDataGenerator {
 
     public static SyncedSiteDataMap<EncryptionKey> generateEncryptionKeyData(
             Collection<OperatorKey> operators,
-            List<EncryptionKey> keys,
+            Collection<EncryptionKey> keys,
             Map<Integer, EncryptionKeyAcl> acls,
             Collection<ClientKey> clients) {
         final SyncedSiteDataMap<EncryptionKey> result = initialiseSyncedSiteDataSet(operators);
@@ -108,7 +108,9 @@ public final class SyncedSiteDataGenerator {
         return result;
     }
 
-    public static SyncedSiteDataMap<Site> generateSiteData(Collection<Site> sites, Collection<OperatorKey> operators) {
+    public static SyncedSiteDataMap<Site> generateSiteData(
+            Collection<Site> sites,
+            Collection<OperatorKey> operators) {
         final SyncedSiteDataMap<Site> result = initialiseSyncedSiteDataSet(operators);
 
         sites.forEach(s -> {
@@ -154,6 +156,7 @@ public final class SyncedSiteDataGenerator {
             final EncryptionKeyAcl acl = acls.get(encryptionKey.getSiteId());
             if (acl.getIsWhitelist()) {
                 // If it is a whitelist, write this key to every site_id on the whitelist
+                // The filter below is to stop adding duplicates which could have been inserted for its corresponding synced site
                 acl.getAccessList().stream()
                         .filter(whiteListedSiteId -> whiteListedSiteId != encryptionKey.getSiteId())
                         .forEach(whiteListedSiteId ->
@@ -165,6 +168,7 @@ public final class SyncedSiteDataGenerator {
                 // If it is a blacklist, write this key to every site_id that is not on the blacklist
                 final Set<Integer> blacklisted = acl.getAccessList();
                 syncedSiteEncryptionKeyMap.forEach((syncedSiteId, syncedSiteSet) -> {
+                    // Stop adding duplicates which could have been inserted for its corresponding synced site earlier
                     if (!blacklisted.contains(syncedSiteId) && syncedSiteId != encryptionKey.getSiteId()) {
                         syncedSiteSet.add(encryptionKey);
                     }
@@ -173,6 +177,7 @@ public final class SyncedSiteDataGenerator {
         } else {
             // If no keys_acl are for this site_id, add it to each site
             syncedSiteEncryptionKeyMap.forEach((syncedSiteId, syncedSiteSet) -> {
+                // Stop adding duplicates which could have been inserted for its corresponding synced site earlier
                 if (syncedSiteId != encryptionKey.getSiteId()) {
                     syncedSiteSet.add(encryptionKey);
                 }
