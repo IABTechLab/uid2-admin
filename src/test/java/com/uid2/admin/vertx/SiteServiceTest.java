@@ -92,6 +92,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false),
+                new Site(14, "site3", false),
         };
         setSites(sites);
 
@@ -99,6 +100,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new ClientKey("ck1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
                 new ClientKey("ck2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
                 new ClientKey("ck3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
+                new ClientKey("ck4", "cs4").withSiteId(13).withRoles(Role.SHARER),
         };
         setClientKeys(clientKeys);
 
@@ -109,7 +111,8 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(sites, response.bodyAsJsonArray().stream().toArray());
             checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 11, 2, Role.GENERATOR, Role.ID_READER, Role.MAPPER);
             checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 12, 1, Role.MAPPER);
-            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 13, 0);
+            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 13, 1, Role.SHARER);
+            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 14, 0);
             testContext.completeNow();
         });
     }
