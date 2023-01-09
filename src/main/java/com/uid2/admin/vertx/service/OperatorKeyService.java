@@ -310,6 +310,9 @@ public class OperatorKeyService implements IService {
             response.put("created", c.getCreated());
             response.put("disabled", c.isDisabled());
             response.put("site_id", c.getSiteId());
+            response.put("is_public_operator", c.isPublicOperator());
+            response.put("is_private_operator", c.isPrivateOperator());
+
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
@@ -381,6 +384,11 @@ public class OperatorKeyService implements IService {
             }
 
             existingOperator.setSiteId(site.getId());
+
+            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
+                    rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
+
+            existingOperator.setPublicOperator(isPublicOperator);
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))

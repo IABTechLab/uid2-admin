@@ -78,7 +78,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
-        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, roles, true));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, roles, false));
         OperatorKey[] expectedOperators = {
                 new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, true)
         };
@@ -103,5 +103,33 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     void operatorUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         post(vertx, "api/operator/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
+    }
+
+    //update Public Operator Status to Private
+    @Test
+    void operatorFlipPublicOperatorStatus(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPERATOR);
+        setSites(new Site(5, "test_site", true));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, null, roles, true));
+        OperatorKey[] expectedOperators = {
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, false)
+        };
+
+        post(vertx, "api/operator/update?name=test_operator&site_id=5&isPublicOperator=false", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
     }
 }
