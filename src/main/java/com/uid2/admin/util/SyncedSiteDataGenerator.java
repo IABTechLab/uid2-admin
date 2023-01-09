@@ -3,10 +3,7 @@ package com.uid2.admin.util;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.model.SyncedSiteDataMap;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.ClientKey;
-import com.uid2.shared.auth.EncryptionKeyAcl;
-import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.Role;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.model.EncryptionKey;
 
 import java.util.*;
@@ -89,7 +86,7 @@ public final class SyncedSiteDataGenerator {
                 acl.getAccessList().forEach(whiteListedSiteId ->
                         result.computeIfPresent(whiteListedSiteId, (syncedSiteId, syncedSiteSet) -> {
                             // Avoid adding duplicate as it could be added above already
-                            if(syncedSiteId != siteId) {
+                            if(syncedSiteId.intValue() != siteId.intValue()) {
                                 syncedSiteSet.add(acl);
                             }
                             return syncedSiteSet;
@@ -99,7 +96,7 @@ public final class SyncedSiteDataGenerator {
                 final Set<Integer> blacklisted = acl.getAccessList();
                 result.forEach((syncedSiteId, syncedSiteSet) -> {
                     // Avoid adding duplicate as it could be added above already
-                    if (!blacklisted.contains(syncedSiteId) && syncedSiteId != siteId) {
+                    if (!blacklisted.contains(syncedSiteId) && syncedSiteId.intValue() != siteId.intValue()) {
                         syncedSiteSet.add(acl);
                     }
                 });
@@ -134,7 +131,7 @@ public final class SyncedSiteDataGenerator {
         SyncedSiteDataMap<T> result = new SyncedSiteDataMap<>();
         operators.forEach(o -> {
             // TODO: Should we check if site is disabled?
-            if (o.isPrivateOperator()
+            if (o.getOperatorType() == OperatorType.PRIVATE
                     && o.getSiteId() != null && !result.containsKey(o.getSiteId())) {
                 result.put(o.getSiteId(), new HashSet<>());
             }
