@@ -10,6 +10,7 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -96,12 +97,6 @@ public class OperatorKeyService implements IService {
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/operator/updatePublicPrivateOperator").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleOperatorUpdatePublicPrivateType(ctx);
-            }
-        }, Role.ADMINISTRATOR));
-
         router.post("/api/operator/rekey").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRekey(ctx);
@@ -133,8 +128,7 @@ public class OperatorKeyService implements IService {
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
                 jo.put("site_id", o.getSiteId());
-                jo.put("is_public_operator", o.isPublicOperator());
-                jo.put("is_private_operator", o.isPrivateOperator());
+                jo.put("operator_type", o.getOperatorType());
             }
 
             rc.response()
@@ -209,8 +203,13 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
-                    rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
+            OperatorType operatorType;
+            try {
+                operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());
+            } catch (Exception e) {
+                ResponseUtil.error(rc, 400, "Operator type must be either public or private");
+                return;
+            }
 
             final List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
@@ -223,7 +222,7 @@ public class OperatorKeyService implements IService {
             // add new client to array
             long created = Instant.now().getEpochSecond();
             //TODO the empty role here is TO BE fixed after UID2-602 changes are merged to master
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, new HashSet<Role>(), isPublicOperator);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, new HashSet<Role>(), operatorType);
 
             // add client to the array
             operators.add(newOperator);
@@ -310,8 +309,7 @@ public class OperatorKeyService implements IService {
             response.put("created", operator.getCreated());
             response.put("disabled", operator.isDisabled());
             response.put("site_id", operator.getSiteId());
-            response.put("is_public_operator", operator.isPublicOperator());
-            response.put("is_private_operator", operator.isPrivateOperator());
+            response.put("operator_type", operator.getOperatorType());
 
 
             // upload to storage
@@ -319,44 +317,6 @@ public class OperatorKeyService implements IService {
 
             // respond with operator disabled/enabled
             rc.response().end(response.encode());
-        } catch (Exception e) {
-            rc.fail(500, e);
-        }
-    }
-
-    private void handleOperatorUpdatePublicPrivateType(RoutingContext rc) {
-        try {
-            // refresh manually
-            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-
-            final String name = rc.queryParam("name").get(0);
-            Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
-                    .stream().filter(o -> o.getName().equals(name))
-                    .findFirst();
-            if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator name not found");
-                return;
-            }
-
-            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
-                    rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
-
-            OperatorKey operator = existingOperator.get();
-            if (operator.isPublicOperator() == isPublicOperator) {
-                ResponseUtil.error(rc, 400, "no change needed");
-                return;
-            }
-            operator.setPublicOperator(isPublicOperator);
-
-            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
-
-            // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
-
-            // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(operator));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -376,18 +336,28 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) {
-                ResponseUtil.error(rc, 404, "site id not found");
-                return;
+            if (!rc.queryParam("site_id").isEmpty())
+            {
+                final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+                if (site == null) {
+                    ResponseUtil.error(rc, 404, "site id not found");
+                    return;
+                }
+                existingOperator.setSiteId(site.getId());
             }
 
-            existingOperator.setSiteId(site.getId());
+            if(!rc.queryParam("operator_type").isEmpty())
+            {
+                OperatorType operatorType;
+                try {
+                    operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());
+                } catch (Exception e) {
+                    ResponseUtil.error(rc, 400, "Operator type can only be either public or private");
+                    return;
+                }
 
-            boolean isPublicOperator = rc.queryParam("isPublicOperator").get(0) == null ? false :
-                    rc.queryParam("isPublicOperator").get(0).equals("true") ? true : false;
-
-            existingOperator.setPublicOperator(isPublicOperator);
+                existingOperator.setOperatorType(operatorType);
+            }
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
