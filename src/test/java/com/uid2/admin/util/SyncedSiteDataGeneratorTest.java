@@ -104,6 +104,41 @@ public class SyncedSiteDataGeneratorTest {
     }
 
     @Test
+    public void testGenerateEncryptionKeyAclData() {
+        final OperatorKey[] operatorKeys = {
+                new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, false),
+                new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, false),
+                new OperatorKey("key5", "name5", "contact5", "aws-nitro", 2, false, 5, true),
+                new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, false)
+        };
+
+        final Set<Integer> site3Whitelist = new HashSet<>();
+        site3Whitelist.add(4);
+        final Set<Integer> site4Blacklist = new HashSet<>();
+        site4Blacklist.add(3);
+        final Map<Integer, EncryptionKeyAcl> acls = new HashMap<>();
+        acls.put(3, new EncryptionKeyAcl(true, site3Whitelist));
+        acls.put(4, new EncryptionKeyAcl(false, site4Blacklist));
+
+        SyncedSiteDataMap<EncryptionKeyAcl> result = SyncedSiteDataGenerator.generateEncryptionKeyAclData(
+                Arrays.asList(operatorKeys), acls);
+
+        final Set<EncryptionKeyAcl> site3EncryptionKeyAcls = new HashSet<>();
+        site3EncryptionKeyAcls.add(acls.get(3));
+        final Set<EncryptionKeyAcl> site4EncryptionKeyAcls = new HashSet<>();
+        site4EncryptionKeyAcls.add(acls.get(3));
+        site4EncryptionKeyAcls.add(acls.get(4));
+        final Set<EncryptionKeyAcl> site6EncryptionKeyAcls = new HashSet<>();
+        site6EncryptionKeyAcls.add(acls.get(4));
+        final SyncedSiteDataMap<EncryptionKeyAcl> expected = new SyncedSiteDataMap<>();
+        expected.put(3, site3EncryptionKeyAcls);
+        expected.put(4, site4EncryptionKeyAcls);
+        expected.put(6, site6EncryptionKeyAcls);
+
+        assertEquals(expected, result);
+    }
+
+    @Test
     public void testGenerateSiteData() {
         final Site[] sites = {
                 new Site(Const.Data.AdvertisingTokenSiteId, "1", true),
