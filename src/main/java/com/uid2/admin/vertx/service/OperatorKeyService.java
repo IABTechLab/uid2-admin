@@ -23,10 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
@@ -102,6 +99,12 @@ public class OperatorKeyService implements IService {
                 this.handleOperatorRekey(ctx);
             }
         }, Role.ADMINISTRATOR));
+
+        router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleOperatorRoles(ctx);
+            }
+        }, Role.OPERATOR_MANAGER));
     }
 
     private void handleOperatorMetadata(RoutingContext rc) {
@@ -124,6 +127,7 @@ public class OperatorKeyService implements IService {
 
                 jo.put("name", o.getName());
                 jo.put("contact", o.getContact());
+                jo.put("roles", RequestUtil.getRolesSpec(o.getRoles()));
                 jo.put("protocol", o.getProtocol());
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
@@ -184,6 +188,18 @@ public class OperatorKeyService implements IService {
                 ResponseUtil.error(rc, 400, "no protocol specified");
                 return;
             }
+            Set<Role> roles;
+            if (!rc.queryParams().contains("roles")) {
+                roles = new HashSet<>();
+            } else {
+                roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
+                    ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
+                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            }
+            if (roles == null) {
+                ResponseUtil.error(rc, 400, "Incorrect roles specified");
+                return;
+            }
 
             Integer siteId;
             try {
@@ -221,8 +237,7 @@ public class OperatorKeyService implements IService {
 
             // add new client to array
             long created = Instant.now().getEpochSecond();
-            //TODO the empty role here is TO BE fixed after UID2-602 changes are merged to master
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, new HashSet<>(), operatorType);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);
@@ -309,8 +324,8 @@ public class OperatorKeyService implements IService {
             response.put("created", operator.getCreated());
             response.put("disabled", operator.isDisabled());
             response.put("site_id", operator.getSiteId());
+            response.put("roles", RequestUtil.getRolesSpec(operator.getRoles()));
             response.put("operator_type", operator.getOperatorType());
-
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
@@ -395,6 +410,46 @@ public class OperatorKeyService implements IService {
             String newKey = keyGenerator.generateRandomKeyString(32);
             if (this.operatorKeyPrefix != null) newKey = this.operatorKeyPrefix + newKey;
             o.setKey(newKey);
+
+            // upload to storage
+            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+
+            // return client with new key
+            rc.response().end(jsonWriter.writeValueAsString(o));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleOperatorRoles(RoutingContext rc) {
+        try {
+            // refresh manually
+            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+
+            final String name = rc.queryParam("name").get(0);
+            Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
+                    .stream().filter(o -> o.getName().equals(name))
+                    .findFirst();
+            if (!existingOperator.isPresent()) {
+                ResponseUtil.error(rc, 404, "operator key not found");
+                return;
+            }
+
+            Set<Role> roles = !rc.queryParams().contains("roles")
+                    || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
+                        ? null
+                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            if (roles == null) {
+                ResponseUtil.error(rc, 400, "No roles or incorrect roles specified");
+                return;
+            }
+
+            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
+
+            OperatorKey o = existingOperator.get();
+            o.setRoles(roles);
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
