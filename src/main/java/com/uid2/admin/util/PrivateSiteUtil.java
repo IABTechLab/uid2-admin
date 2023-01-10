@@ -1,7 +1,7 @@
 package com.uid2.admin.util;
 
 import com.uid2.admin.model.Site;
-import com.uid2.admin.model.SyncedSiteDataMap;
+import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.model.EncryptionKey;
@@ -10,25 +10,25 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Given global sets of data, generate Synced Sites data for private operators
- * Note: only generate Synced Site data for each site that has at least 1 private operator
+ * Given global sets of data, generate Private Site data for private operators
+ * Note: only generate Private Site data for each site that has at least 1 private operator
  */
-public final class SyncedSiteDataGenerator {
+public final class PrivateSiteUtil {
 
-    private SyncedSiteDataGenerator() {
+    private PrivateSiteUtil() {
     }
 
-    public static SyncedSiteDataMap<ClientKey> generateClientKeyData(
+    public static PrivateSiteDataMap<ClientKey> getClientKeys(
             Collection<OperatorKey> operators,
             Collection<ClientKey> clients) {
-        final SyncedSiteDataMap<ClientKey> result = initialiseSyncedSiteDataSet(operators);
+        final PrivateSiteDataMap<ClientKey> result = getPrivateSites(operators);
 
         // For each client key that is enabled, add it to every Synced Site
         clients.forEach(c -> {
             if (!c.isDisabled()) {
-                result.computeIfPresent(c.getSiteId(), (syncedSiteId, syncedSiteSet) -> {
-                    syncedSiteSet.add(c);
-                    return syncedSiteSet;
+                result.computeIfPresent(c.getSiteId(), (privateSiteId, privateSiteSet) -> {
+                    privateSiteSet.add(c);
+                    return privateSiteSet;
                 });
             }
         });
@@ -36,24 +36,24 @@ public final class SyncedSiteDataGenerator {
         return result;
     }
 
-    public static SyncedSiteDataMap<EncryptionKey> generateEncryptionKeyData(
+    public static PrivateSiteDataMap<EncryptionKey> getEncryptionKeys(
             Collection<OperatorKey> operators,
             Collection<EncryptionKey> keys,
             Map<Integer, EncryptionKeyAcl> acls,
             Collection<ClientKey> clients) {
-        final SyncedSiteDataMap<EncryptionKey> result = initialiseSyncedSiteDataSet(operators);
+        final PrivateSiteDataMap<EncryptionKey> result = getPrivateSites(operators);
 
-        // If it is for a Special Site, add this key to every Synced Site
+        // If it is for a Special Site, add this key to every Private Site
         keys.stream()
                 .filter(k -> isSpecialSite(k.getSiteId()))
-                .forEach(k -> result.forEach((syncedSiteId, syncedSiteSet) -> syncedSiteSet.add(k)));
+                .forEach(k -> result.forEach((privateSiteId, privateSiteSet) -> privateSiteSet.add(k)));
 
-        // Else, add it to corresponding Synced Site
+        // Else, add it to corresponding Private Site
         keys.stream()
                 .filter(k -> !isSpecialSite(k.getSiteId()))
-                .forEach(k -> result.computeIfPresent(k.getSiteId(), (syncedSiteId, syncedSiteSet) -> {
-                    syncedSiteSet.add(k);
-                    return syncedSiteSet;
+                .forEach(k -> result.computeIfPresent(k.getSiteId(), (privateSiteId, privateSiteSet) -> {
+                    privateSiteSet.add(k);
+                    return privateSiteSet;
                 }));
 
         // Filter OUT special keys and filter IN Reader Site keys ONLY
@@ -69,35 +69,35 @@ public final class SyncedSiteDataGenerator {
     }
 
     // acls is Map<SiteId, EncryptionKeyAcl>
-    public static SyncedSiteDataMap<EncryptionKeyAcl> generateEncryptionKeyAclData(
+    public static PrivateSiteDataMap<EncryptionKeyAcl> getEncryptionKeyAcls(
             Collection<OperatorKey> operators,
             Map<Integer, EncryptionKeyAcl> acls) {
-        final SyncedSiteDataMap<EncryptionKeyAcl> result = initialiseSyncedSiteDataSet(operators);
+        final PrivateSiteDataMap<EncryptionKeyAcl> result = getPrivateSites(operators);
 
         acls.forEach((siteId, acl) -> {
             // Add it to site file for its site_id
-            result.computeIfPresent(siteId, (syncedSiteId, syncedSiteSet) -> {
-                syncedSiteSet.add(acl);
-                return syncedSiteSet;
+            result.computeIfPresent(siteId, (privateSiteId, privateSiteSet) -> {
+                privateSiteSet.add(acl);
+                return privateSiteSet;
             });
 
             if (acl.getIsWhitelist()) {
                 // If it's a whitelist, also write it to every site file for the whitelist
                 acl.getAccessList().forEach(whiteListedSiteId ->
-                        result.computeIfPresent(whiteListedSiteId, (syncedSiteId, syncedSiteSet) -> {
+                        result.computeIfPresent(whiteListedSiteId, (privateSiteId, privateSiteSet) -> {
                             // Avoid adding duplicate as it could be added above already
-                            if(syncedSiteId.intValue() != siteId.intValue()) {
-                                syncedSiteSet.add(acl);
+                            if(privateSiteId.intValue() != siteId.intValue()) {
+                                privateSiteSet.add(acl);
                             }
-                            return syncedSiteSet;
+                            return privateSiteSet;
                         }));
             } else { // Blacklisted
                 // If it's a blacklist, also write it to every site file except those on the blacklist
                 final Set<Integer> blacklisted = acl.getAccessList();
-                result.forEach((syncedSiteId, syncedSiteSet) -> {
+                result.forEach((privateSiteId, privateSiteSet) -> {
                     // Avoid adding duplicate as it could be added above already
-                    if (!blacklisted.contains(syncedSiteId) && syncedSiteId.intValue() != siteId.intValue()) {
-                        syncedSiteSet.add(acl);
+                    if (!blacklisted.contains(privateSiteId) && privateSiteId.intValue() != siteId.intValue()) {
+                        privateSiteSet.add(acl);
                     }
                 });
             }
@@ -105,21 +105,21 @@ public final class SyncedSiteDataGenerator {
         return result;
     }
 
-    public static SyncedSiteDataMap<Site> generateSiteData(
+    public static PrivateSiteDataMap<Site> getSites(
             Collection<Site> sites,
             Collection<OperatorKey> operators) {
-        final SyncedSiteDataMap<Site> result = initialiseSyncedSiteDataSet(operators);
+        final PrivateSiteDataMap<Site> result = getPrivateSites(operators);
 
         sites.forEach(s -> {
             // Special case
             if (s.getId() == Const.Data.AdvertisingTokenSiteId) {
                 // If its id is 2, add it for every site
-                result.forEach((syncedSiteId, syncedSiteData) -> syncedSiteData.add(s));
+                result.forEach((privateSiteId, privateSiteData) -> privateSiteData.add(s));
             } else {
                 // Add it to its own site data file only
-                result.computeIfPresent(s.getId(), (syncedSiteId, syncedSiteSet) -> {
-                    syncedSiteSet.add(s);
-                    return syncedSiteSet;
+                result.computeIfPresent(s.getId(), (privateSiteId, privateSiteSet) -> {
+                    privateSiteSet.add(s);
+                    return privateSiteSet;
                 });
             }
         });
@@ -127,8 +127,8 @@ public final class SyncedSiteDataGenerator {
         return result;
     }
 
-    private static <T> SyncedSiteDataMap<T> initialiseSyncedSiteDataSet(Collection<OperatorKey> operators) {
-        SyncedSiteDataMap<T> result = new SyncedSiteDataMap<>();
+    private static <T> PrivateSiteDataMap<T> getPrivateSites(Collection<OperatorKey> operators) {
+        PrivateSiteDataMap<T> result = new PrivateSiteDataMap<>();
         operators.forEach(o -> {
             // TODO: Should we check if site is disabled?
             if (o.getOperatorType() == OperatorType.PRIVATE
@@ -147,36 +147,36 @@ public final class SyncedSiteDataGenerator {
 
     private static void processAclPermissionsForEncryptionKey(
             EncryptionKey encryptionKey,
-            SyncedSiteDataMap<EncryptionKey> syncedSiteEncryptionKeyMap,
+            PrivateSiteDataMap<EncryptionKey> privateSiteEncryptionKeyMap,
             Map<Integer, EncryptionKeyAcl> acls) {
         if(acls.containsKey(encryptionKey.getSiteId())) {
             final EncryptionKeyAcl acl = acls.get(encryptionKey.getSiteId());
             if (acl.getIsWhitelist()) {
                 // If it is a whitelist, write this key to every site_id on the whitelist
-                // The filter below is to stop adding duplicates which could have been inserted for its corresponding synced site
+                // The filter below is to avoid adding duplicate as it could be added above already
                 acl.getAccessList().stream()
                         .filter(whiteListedSiteId -> whiteListedSiteId != encryptionKey.getSiteId())
                         .forEach(whiteListedSiteId ->
-                                syncedSiteEncryptionKeyMap.computeIfPresent(whiteListedSiteId, (syncedSiteId, syncedSiteSet) -> {
-                                    syncedSiteSet.add(encryptionKey);
-                                    return syncedSiteSet;
+                                privateSiteEncryptionKeyMap.computeIfPresent(whiteListedSiteId, (privateSiteId, privateSiteSet) -> {
+                                    privateSiteSet.add(encryptionKey);
+                                    return privateSiteSet;
                                 }));
             } else { // Blacklisted
                 // If it is a blacklist, write this key to every site_id that is not on the blacklist
                 final Set<Integer> blacklisted = acl.getAccessList();
-                syncedSiteEncryptionKeyMap.forEach((syncedSiteId, syncedSiteSet) -> {
-                    // Stop adding duplicates which could have been inserted for its corresponding synced site earlier
-                    if (!blacklisted.contains(syncedSiteId) && syncedSiteId != encryptionKey.getSiteId()) {
-                        syncedSiteSet.add(encryptionKey);
+                privateSiteEncryptionKeyMap.forEach((privateSiteId, privateSiteSet) -> {
+                    // Avoid adding duplicate as it could be added above already
+                    if (!blacklisted.contains(privateSiteId) && privateSiteId != encryptionKey.getSiteId()) {
+                        privateSiteSet.add(encryptionKey);
                     }
                 });
             }
         } else {
             // If no keys_acl are for this site_id, add it to each site
-            syncedSiteEncryptionKeyMap.forEach((syncedSiteId, syncedSiteSet) -> {
-                // Stop adding duplicates which could have been inserted for its corresponding synced site earlier
-                if (syncedSiteId != encryptionKey.getSiteId()) {
-                    syncedSiteSet.add(encryptionKey);
+            privateSiteEncryptionKeyMap.forEach((privateSiteId, privateSiteSet) -> {
+                // Avoid adding duplicate as it could be added above already
+                if (privateSiteId != encryptionKey.getSiteId()) {
+                    privateSiteSet.add(encryptionKey);
                 }
             });
         }
