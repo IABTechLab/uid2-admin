@@ -109,7 +109,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorKeyAddInvalidRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=nonexist", "", expectHttpError(testContext, 400));
+        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,nonexist", "", expectHttpError(testContext, 400));
     }
 
     @Test
@@ -202,7 +202,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     void operatorKeySetInvalidRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
-        post(vertx, "api/operator/roles?name=test_operator&roles=role", "", expectHttpError(testContext, 400));
+        post(vertx, "api/operator/roles?name=test_operator&roles=operator,role", "", expectHttpError(testContext, 400));
     }
 
     @Test

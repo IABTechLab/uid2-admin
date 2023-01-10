@@ -186,15 +186,15 @@ public class OperatorKeyService implements IService {
                 ResponseUtil.error(rc, 400, "no protocol specified");
                 return;
             }
-
-            Set<Role> roles = (!rc.queryParams().contains("roles")
-                    || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null)
-                        ? new HashSet<>()
-                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
-
-            if (rc.queryParams().contains("roles")
-                    && rc.queryParam("roles").get(0) != ""
-                    && roles.stream().allMatch(Objects::isNull)) {
+            Set<Role> roles;
+            if (!rc.queryParams().contains("roles")) {
+                roles = new HashSet<>();
+            } else {
+                roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
+                    ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
+                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            }
+            if (roles == null) {
                 ResponseUtil.error(rc, 400, "Incorrect roles specified");
                 return;
             }
@@ -410,10 +410,10 @@ public class OperatorKeyService implements IService {
 
             Set<Role> roles = !rc.queryParams().contains("roles")
                     || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
-                        ? new HashSet<>()
+                        ? null
                         : RequestUtil.getRoles(rc.queryParam("roles").get(0));
-            if (roles.stream().allMatch(Objects::isNull)) {
-                ResponseUtil.error(rc, 400, "No roles specified");
+            if (roles == null) {
+                ResponseUtil.error(rc, 400, "No roles or incorrect roles specified");
                 return;
             }
 
