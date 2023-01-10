@@ -187,9 +187,14 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? new HashSet<>() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = (!rc.queryParams().contains("roles")
+                    || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null)
+                        ? new HashSet<>()
+                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
 
-            if (rc.queryParam("roles").get(0) != "" && roles.stream().allMatch(Objects::isNull)) {
+            if (rc.queryParams().contains("roles")
+                    && rc.queryParam("roles").get(0) != ""
+                    && roles.stream().allMatch(Objects::isNull)) {
                 ResponseUtil.error(rc, 400, "Incorrect roles specified");
                 return;
             }
@@ -403,7 +408,10 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null ? new HashSet<>() : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = !rc.queryParams().contains("roles")
+                    || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
+                        ? new HashSet<>()
+                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles.stream().allMatch(Objects::isNull)) {
                 ResponseUtil.error(rc, 400, "No roles specified");
                 return;
