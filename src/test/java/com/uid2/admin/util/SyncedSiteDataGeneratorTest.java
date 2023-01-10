@@ -50,18 +50,22 @@ public class SyncedSiteDataGeneratorTest {
                 new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
                 new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
                 new OperatorKey("key5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
+                new OperatorKey("key7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
         };
         final EncryptionKey[] encryptionKeys = {
                 new EncryptionKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), Const.Data.RefreshKeySiteId),
                 new EncryptionKey(2, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 3),
                 new EncryptionKey(3, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 4),
                 new EncryptionKey(4, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 5),
-                new EncryptionKey(5, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 6)
+                new EncryptionKey(5, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 6),
+                //testing for Reader site role that doesn't have any ACL white/blacklist defined
+                new EncryptionKey(6, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 7),
         };
         final ClientKey[] clientKeys = {
                 new ClientKey("key3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
-                new ClientKey("key4", "", "name4", "contact4", Instant.now(), readerRole, 4, false)
+                new ClientKey("key4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
+                new ClientKey("key7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
         };
 
         final Set<Integer> site3Whitelist = new HashSet<>();
@@ -76,7 +80,7 @@ public class SyncedSiteDataGeneratorTest {
         final Map<Integer, EncryptionKeyAcl> acls = new HashMap<>();
         acls.put(3, new EncryptionKeyAcl(true, site3Whitelist));
         acls.put(4, new EncryptionKeyAcl(false, site4Blacklist));
-        acls.put(6, new EncryptionKeyAcl(true, site6Blacklist));
+        acls.put(6, new EncryptionKeyAcl(false, site6Blacklist));
 
         final SyncedSiteDataMap<EncryptionKey> result = SyncedSiteDataGenerator.generateEncryptionKeyData(
                 Arrays.asList(operatorKeys), Arrays.asList(encryptionKeys), acls, Arrays.asList(clientKeys));
@@ -84,14 +88,17 @@ public class SyncedSiteDataGeneratorTest {
         final Set<EncryptionKey> expectedSite3EncryptionKeys = new HashSet<>();
         expectedSite3EncryptionKeys.add(encryptionKeys[0]);
         expectedSite3EncryptionKeys.add(encryptionKeys[1]);
+        expectedSite3EncryptionKeys.add(encryptionKeys[5]);
         final Set<EncryptionKey> expectedSite4EncryptionKeys = new HashSet<>();
         expectedSite4EncryptionKeys.add(encryptionKeys[0]);
         expectedSite4EncryptionKeys.add(encryptionKeys[1]);
         expectedSite4EncryptionKeys.add(encryptionKeys[2]);
+        expectedSite4EncryptionKeys.add(encryptionKeys[5]);
         final Set<EncryptionKey> expectedSite6EncryptionKeys = new HashSet<>();
         expectedSite6EncryptionKeys.add(encryptionKeys[0]);
         expectedSite6EncryptionKeys.add(encryptionKeys[2]);
         expectedSite6EncryptionKeys.add(encryptionKeys[4]);
+        expectedSite6EncryptionKeys.add(encryptionKeys[5]);
         final SyncedSiteDataMap<EncryptionKey> expected = new SyncedSiteDataMap<>();
         expected.put(3, expectedSite3EncryptionKeys);
         expected.put(4, expectedSite4EncryptionKeys);
