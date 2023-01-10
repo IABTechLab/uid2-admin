@@ -74,8 +74,8 @@
             var protocol = encodeURIComponent($('#protocol').val());
             var roles = encodeURIComponent($('#roles').val());
             var siteId = encodeURIComponent($('#siteId').val());
-            var isPublicOperator = (document.getElementById('operatorType').checked == true)? "public" : "private";
-            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&roles=' + roles + '&operator_type=' + isPublicOperator;
+            var operatorType = (document.getElementById('operatorType').checked == true)? "public" : "private";
+            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&roles=' + roles + '&operator_type=' + operatorType;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });

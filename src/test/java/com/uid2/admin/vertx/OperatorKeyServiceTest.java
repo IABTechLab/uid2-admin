@@ -142,8 +142,6 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)), OperatorType.PRIVATE));
         OperatorKey[] expectedOperators = {
