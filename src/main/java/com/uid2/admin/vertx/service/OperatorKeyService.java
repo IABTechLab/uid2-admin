@@ -222,7 +222,7 @@ public class OperatorKeyService implements IService {
             // add new client to array
             long created = Instant.now().getEpochSecond();
             //TODO the empty role here is TO BE fixed after UID2-602 changes are merged to master
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, new HashSet<Role>(), operatorType);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, new HashSet<>(), operatorType);
 
             // add client to the array
             operators.add(newOperator);
@@ -346,7 +346,7 @@ public class OperatorKeyService implements IService {
                 existingOperator.setSiteId(site.getId());
             }
 
-            if(!rc.queryParam("operator_type").isEmpty())
+            if (!rc.queryParam("operator_type").isEmpty() && rc.queryParam("operator_type").get(0) != null)
             {
                 OperatorType operatorType;
                 try {
