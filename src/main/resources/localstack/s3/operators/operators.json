@@ -9,7 +9,8 @@
     "roles" : [
       "OPERATOR"
     ],
-    "site_id": 123
+    "site_id": 123,
+    "operator_type": "PUBLIC"
   },
   {
     "key" : "b3BlcmF0b3Iga2V5IDI=",
@@ -18,6 +19,7 @@
     "protocol" : "aws-nitro",
     "created" : 1618873215,
     "disabled" : false,
-    "site_id": 123
+    "site_id": 123,
+    "operator_type": "PRIVATE"
   }
 ]

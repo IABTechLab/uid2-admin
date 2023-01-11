@@ -21,6 +21,8 @@
 <input type="text" id="roles" name="roles">
 <label for="siteId">Site Id:</label>
 <input type="text" id="siteId" name="siteId">
+<label for="operatorType">Public Operator?</label>
+<input type="checkbox" id="operatorType" name="operatorType">
 
 <br>
 <br>
@@ -35,6 +37,7 @@
     <li class="ro-opm" style="display: none"><a href="#" id="doDisable">Disable Operator Key</a></li>
     <li class="ro-opm" style="display: none"><a href="#" id="doEnable">Enable Operator Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetOperatorType">Update Public/Private Operator Type</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
     <li class="ro-opm" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Operator Key</a></li>
@@ -71,7 +74,8 @@
             var protocol = encodeURIComponent($('#protocol').val());
             var roles = encodeURIComponent($('#roles').val());
             var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&roles=' + roles;
+            var operatorType = (document.getElementById('operatorType').checked == true)? "public" : "private";
+            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&roles=' + roles + '&operator_type=' + operatorType;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
@@ -116,6 +120,14 @@
             var operatorName = encodeURIComponent($('#operatorName').val());
             var siteId = encodeURIComponent($('#siteId').val());
             var url = '/api/operator/update?name=' + operatorName + '&site_id=' + siteId;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doSetOperatorType').on('click', function () {
+            var operatorName = encodeURIComponent($('#operatorName').val());
+            var operatorType = (document.getElementById('operatorType').checked == true)? "public" : "private";
+            var url = '/api/operator/update?name=' + operatorName + '&operator_type=' + operatorType;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });

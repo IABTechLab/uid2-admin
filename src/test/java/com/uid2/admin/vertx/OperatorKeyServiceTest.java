@@ -5,6 +5,7 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -38,12 +39,12 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             assertEquals(expectedOperator.getProtocol(), actualOperator.getString("protocol"));
             assertEquals(expectedOperator.isDisabled(), actualOperator.getBoolean("disabled"));
             assertEquals(expectedOperator.getSiteId(), actualOperator.getInteger("site_id"));
-
             List<Role> actualRoles = actualOperator.getJsonArray("roles").stream()
                     .map(r -> Role.valueOf((String) r))
                     .collect(Collectors.toList());
             assertEquals(expectedOperator.getRoles().size(), actualRoles.size());
             assertTrue(actualRoles.containsAll(expectedOperator.getRoles()));
+            assertEquals(expectedOperator.getOperatorType(), OperatorType.valueOf(actualOperator.getString("operator_type")));
         }
     }
 
@@ -55,10 +56,10 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC)
         };
 
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout", "", ar -> {
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -87,10 +88,10 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)
         };
 
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=", "", ar -> {
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=&operator_type=private", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -119,10 +120,10 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         roles.add(Role.OPERATOR);
         setSites(new Site(5, "test_site", true));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles)
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)
         };
 
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5", "", ar -> {
+        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&operator_type=private", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -142,13 +143,12 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         setSites(new Site(5, "test_site", true));
-        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
-
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)), OperatorType.PRIVATE));
         OperatorKey[] expectedOperators = {
-                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)))
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)), OperatorType.PUBLIC)
         };
 
-        post(vertx, "api/operator/update?name=test_operator&site_id=5", "", ar -> {
+        post(vertx, "api/operator/update?name=test_operator&site_id=5&operator_type=public", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -169,6 +169,33 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
         setOperatorKeys(new OperatorKey("", "test_client", "test_operator", "trusted", 0, false));
         post(vertx, "api/operator/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
+    }
+
+    //update Public Operator Status to Private
+    @Test
+    void operatorFlipPublicOperatorStatusViaUpdate(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.OPERATOR);
+        setSites(new Site(5, "test_site", true));
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC));
+        OperatorKey[] expectedOperators = {
+                new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)
+        };
+        post(vertx, "api/operator/update?name=test_operator&operator_type=private", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
     }
 
     @Test

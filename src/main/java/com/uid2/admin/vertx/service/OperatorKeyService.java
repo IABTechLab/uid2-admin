@@ -10,6 +10,7 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -131,6 +132,7 @@ public class OperatorKeyService implements IService {
                 jo.put("created", o.getCreated());
                 jo.put("disabled", o.isDisabled());
                 jo.put("site_id", o.getSiteId());
+                jo.put("operator_type", o.getOperatorType());
             }
 
             rc.response()
@@ -210,9 +212,18 @@ public class OperatorKeyService implements IService {
                 ResponseUtil.error(rc, 400, "no site id specified");
                 return;
             }
+
             Integer finalSiteId = siteId;
             if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() == finalSiteId)) {
                 ResponseUtil.error(rc, 400, "provided site id does not exist");
+                return;
+            }
+
+            OperatorType operatorType;
+            try {
+                operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());
+            } catch (Exception e) {
+                ResponseUtil.error(rc, 400, "Operator type must be either public or private");
                 return;
             }
 
@@ -226,7 +237,7 @@ public class OperatorKeyService implements IService {
 
             // add new client to array
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles);
+            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);
@@ -299,21 +310,22 @@ public class OperatorKeyService implements IService {
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
-            OperatorKey c = existingOperator.get();
-            if (c.isDisabled() == disableFlag) {
+            OperatorKey operator = existingOperator.get();
+            if (operator.isDisabled() == disableFlag) {
                 ResponseUtil.error(rc, 400, "no change needed");
                 return;
             }
 
-            c.setDisabled(disableFlag);
+            operator.setDisabled(disableFlag);
 
             JsonObject response = new JsonObject();
-            response.put("name", c.getName());
-            response.put("contact", c.getContact());
-            response.put("created", c.getCreated());
-            response.put("disabled", c.isDisabled());
-            response.put("site_id", c.getSiteId());
-            response.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
+            response.put("name", operator.getName());
+            response.put("contact", operator.getContact());
+            response.put("created", operator.getCreated());
+            response.put("disabled", operator.isDisabled());
+            response.put("site_id", operator.getSiteId());
+            response.put("roles", RequestUtil.getRolesSpec(operator.getRoles()));
+            response.put("operator_type", operator.getOperatorType());
 
             // upload to storage
             storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
@@ -339,13 +351,28 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
-            if (site == null) {
-                ResponseUtil.error(rc, 404, "site id not found");
-                return;
+            if (!rc.queryParam("site_id").isEmpty())
+            {
+                final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+                if (site == null) {
+                    ResponseUtil.error(rc, 404, "site id not found");
+                    return;
+                }
+                existingOperator.setSiteId(site.getId());
             }
 
-            existingOperator.setSiteId(site.getId());
+            if (!rc.queryParam("operator_type").isEmpty() && rc.queryParam("operator_type").get(0) != null)
+            {
+                OperatorType operatorType;
+                try {
+                    operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());
+                } catch (Exception e) {
+                    ResponseUtil.error(rc, 400, "Operator type can only be either public or private");
+                    return;
+                }
+
+                existingOperator.setOperatorType(operatorType);
+            }
 
             List<OperatorKey> operators = this.operatorKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
