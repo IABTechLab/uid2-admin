@@ -55,9 +55,16 @@ public class JobDispatcher {
     }
 
     public List<JobInfo> getJobQueueInfo() {
-        return JOB_QUEUE.stream()
-                .map(job -> new JobInfo(job.getId()))
-                .collect(Collectors.toList());
+        List<JobInfo> jobInfos = new ArrayList<>();
+        synchronized (JOB_LOCK) {
+            if (currentJob != null) {
+                jobInfos.add(new JobInfo(currentJob.getId(), true));
+            }
+            jobInfos.addAll(JOB_QUEUE.stream()
+                    .map(job -> new JobInfo(job.getId(), false))
+                    .collect(Collectors.toList()));
+        }
+        return jobInfos;
     }
 
     private void runJobs(int maxRetries) {
