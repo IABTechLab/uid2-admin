@@ -1,7 +1,7 @@
-package com.uid2.job;
+package com.uid2.admin.job;
 
-import com.uid2.job.model.Job;
-import com.uid2.job.model.JobInfo;
+import com.uid2.admin.job.model.Job;
+import com.uid2.admin.job.model.JobInfo;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 

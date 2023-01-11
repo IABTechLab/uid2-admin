@@ -1,4 +1,4 @@
-package com.uid2.job.model;
+package com.uid2.admin.job.model;
 
 import java.time.Instant;
 

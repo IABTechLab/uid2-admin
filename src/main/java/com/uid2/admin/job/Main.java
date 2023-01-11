@@ -1,6 +1,6 @@
-package com.uid2.job;
+package com.uid2.admin.job;
 
-import com.uid2.job.model.SampleJob;
+import com.uid2.admin.job.model.SampleJob;
 
 public class Main {
 

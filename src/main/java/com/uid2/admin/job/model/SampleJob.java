@@ -1,4 +1,4 @@
-package com.uid2.job.model;
+package com.uid2.admin.job.model;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -7,12 +7,11 @@ public class SampleJob implements Job {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SampleJob.class);
 
-    public SampleJob() {
-    }
+    public SampleJob() {}
 
     @Override
     public String getId() {
-        return "My Custom Job";
+        return "Sample Job";
     }
 
     @Override
