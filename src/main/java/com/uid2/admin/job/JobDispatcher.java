@@ -34,9 +34,16 @@ public class JobDispatcher {
     public void start(int interval, int maxRetries) {
         if (STARTED.compareAndSet(false, true)) {
             LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", interval, maxRetries);
-            SCHEDULER.scheduleAtFixedRate(() -> runJobs(maxRetries), 0, interval, TimeUnit.MILLISECONDS);
+            SCHEDULER.scheduleAtFixedRate(() -> run(maxRetries), 0, interval, TimeUnit.MILLISECONDS);
         } else {
             LOGGER.warn("Already started job dispatcher");
+        }
+    }
+
+    public void stop() {
+        LOGGER.info("Stopping job dispatcher");
+        synchronized (JOB_LOCK) {
+            JOB_QUEUE.clear();
         }
     }
 
@@ -45,7 +52,7 @@ public class JobDispatcher {
 
         synchronized (JOB_LOCK) {
             if ((currentJob == null || !currentJob.getId().equals(id))
-                    && !isJobQueued(id)) {
+                    && JOB_QUEUE.stream().noneMatch(queuedJob -> queuedJob.getId().equals(id))) {
                 LOGGER.info("Queueing new job: {}", id);
                 JOB_QUEUE.add(job);
             } else {
@@ -67,7 +74,7 @@ public class JobDispatcher {
         return jobInfos;
     }
 
-    private void runJobs(int maxRetries) {
+    private void run(int maxRetries) {
         LOGGER.debug("Checking for jobs");
         if (JOB_QUEUE.isEmpty()) {
             LOGGER.debug("No jobs to run");
@@ -106,10 +113,6 @@ public class JobDispatcher {
                 currentJob = null;
             }
         });
-    }
-
-    private boolean isJobQueued(String id) {
-        return JOB_QUEUE.stream().anyMatch(job -> job.getId().equals(id));
     }
 
 }
