@@ -1,13 +1,13 @@
-package com.uid2.job.custom;
+package com.uid2.job.model;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-public class MyJob implements Job {
+public class SampleJob implements Job {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(MyJob.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SampleJob.class);
 
-    public MyJob() {
+    public SampleJob() {
     }
 
     @Override

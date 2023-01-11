@@ -1,18 +1,18 @@
 package com.uid2.job;
 
-import com.uid2.job.custom.JobDispatcher;
-import com.uid2.job.custom.MyJob;
+import com.uid2.job.model.SampleJob;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        JobDispatcher jobDispatcher = JobDispatcher.getInstance(1000, 3);
+        JobDispatcher jobDispatcher = JobDispatcher.getInstance();
+        jobDispatcher.start(1000, 3);
 
-        jobDispatcher.enqueue(new MyJob());
-        jobDispatcher.enqueue(new MyJob());
+        jobDispatcher.enqueue(new SampleJob());
+        jobDispatcher.enqueue(new SampleJob());
         Thread.sleep(3L * 1000L);
-        jobDispatcher.enqueue(new MyJob());
-        jobDispatcher.enqueue(new MyJob());
+        jobDispatcher.enqueue(new SampleJob());
+        jobDispatcher.enqueue(new SampleJob());
     }
 
 }

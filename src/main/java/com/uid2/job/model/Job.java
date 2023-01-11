@@ -1,4 +1,4 @@
-package com.uid2.job.custom;
+package com.uid2.job.model;
 
 public interface Job {
 
