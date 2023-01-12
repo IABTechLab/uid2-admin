@@ -119,6 +119,7 @@ public abstract class ServiceTestBase {
         when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
     }
 
+
     protected void setEncryptionKeys(int maxKeyId, EncryptionKey... keys) throws Exception {
         JsonObject metadata = new JsonObject();
         metadata.put("max_key_id", maxKeyId);

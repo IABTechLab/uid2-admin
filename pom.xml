@@ -16,7 +16,7 @@
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
         <micrometer.version>1.1.0</micrometer.version>
         <junit-jupiter.version>5.7.0</junit-jupiter.version>
-        <uid2-shared.version>1.122.0-SNAPSHOT</uid2-shared.version>
+        <uid2-shared.version>1.13.0</uid2-shared.version>
         <image.version>${project.version}</image.version>
     </properties>
     <dependencies>
@@ -92,6 +92,12 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
             <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.23.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
