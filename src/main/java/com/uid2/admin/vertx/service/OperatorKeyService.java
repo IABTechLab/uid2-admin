@@ -9,10 +9,7 @@ import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.shared.auth.ClientKey;
-import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.RotatingOperatorKeyProvider;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -23,9 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
@@ -413,7 +408,7 @@ public class OperatorKeyService implements IService {
             o.setKey(newKey);
 
             // upload to storage
-            storageManager.uploadOperatorKeys(operatorKeyProvider, operators);
+            operatorKeyStoreWriter.upload(operators);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(o));

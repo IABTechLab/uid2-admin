@@ -11,7 +11,8 @@ import com.uid2.admin.secret.SecureKeyGenerator;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.reader.RotatingSiteStore;
-import com.uid2.admin.store.version.ConsecutiveVersionGenerator;
+import com.uid2.admin.store.version.EpochVersionGenerator;
+import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.JsonUtil;
@@ -73,65 +74,57 @@ public class Main {
             ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
             FileManager fileManager = new FileManager(cloudStorage, fileStorage);
             Clock clock = new InstantClock();
+            VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
 
             String adminsMetadataPath = config.getString(AdminUserProvider.ADMINS_METADATA_PATH);
             AdminUserProvider adminUserProvider = new AdminUserProvider(cloudStorage, adminsMetadataPath);
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
-            ConsecutiveVersionGenerator adminUserVersionGenerator = new ConsecutiveVersionGenerator(adminUserProvider);
-            AdminUserStoreWriter adminUserStoreWriter = new AdminUserStoreWriter(adminUserProvider, fileManager, jsonWriter, adminUserVersionGenerator);
+            AdminUserStoreWriter adminUserStoreWriter = new AdminUserStoreWriter(adminUserProvider, fileManager, jsonWriter, versionGenerator);
 
             CloudPath sitesMetadataPath = new CloudPath(config.getString(RotatingSiteStore.SITES_METADATA_PATH));
             GlobalScope siteGlobalScope = new GlobalScope(sitesMetadataPath);
             RotatingSiteStore siteProvider = new RotatingSiteStore(cloudStorage, siteGlobalScope);
             siteProvider.loadContent(siteProvider.getMetadata());
-            ConsecutiveVersionGenerator siteVersionGenerator = new ConsecutiveVersionGenerator(siteProvider);
-            SiteStoreWriter siteStoreWriter = new SiteStoreWriter(siteProvider, fileManager, jsonWriter, siteVersionGenerator, clock, siteGlobalScope);
+            SiteStoreWriter siteStoreWriter = new SiteStoreWriter(siteProvider, fileManager, jsonWriter, versionGenerator, clock, siteGlobalScope);
 
             CloudPath clientMetadataPath = new CloudPath(config.getString(Const.Config.ClientsMetadataPathProp));
             GlobalScope clientGlobalScope = new GlobalScope(clientMetadataPath);
             RotatingClientKeyProvider clientKeyProvider = new RotatingClientKeyProvider(cloudStorage, clientGlobalScope);
             clientKeyProvider.loadContent();
-            ConsecutiveVersionGenerator clientVersionGenerator = new ConsecutiveVersionGenerator(clientKeyProvider);
-            ClientKeyStoreWriter clientKeyStoreWriter = new ClientKeyStoreWriter(clientKeyProvider, fileManager, jsonWriter, clientVersionGenerator, clock, clientGlobalScope);
+            ClientKeyStoreWriter clientKeyStoreWriter = new ClientKeyStoreWriter(clientKeyProvider, fileManager, jsonWriter, versionGenerator, clock, clientGlobalScope);
 
             CloudPath keyMetadataPath = new CloudPath(config.getString(Const.Config.KeysMetadataPathProp));
             GlobalScope keyGlobalScope = new GlobalScope(keyMetadataPath);
             RotatingKeyStore keyProvider = new RotatingKeyStore(cloudStorage, keyGlobalScope);
             keyProvider.loadContent();
-            ConsecutiveVersionGenerator keyVersionGenerator = new ConsecutiveVersionGenerator(keyProvider);
-            EncryptionKeyStoreWriter encryptionKeyStoreWriter = new EncryptionKeyStoreWriter(keyProvider, fileManager, keyVersionGenerator, clock, keyGlobalScope);
+            EncryptionKeyStoreWriter encryptionKeyStoreWriter = new EncryptionKeyStoreWriter(keyProvider, fileManager, versionGenerator, clock, keyGlobalScope);
 
             CloudPath keyAclMetadataPath = new CloudPath(config.getString(Const.Config.KeysAclMetadataPathProp));
             GlobalScope keyAclGlobalScope = new GlobalScope(keyAclMetadataPath);
             RotatingKeyAclProvider keyAclProvider = new RotatingKeyAclProvider(cloudStorage, keyAclGlobalScope);
             keyAclProvider.loadContent();
-            ConsecutiveVersionGenerator keyAclVersionGenerator = new ConsecutiveVersionGenerator(keyAclProvider);
-            KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, keyAclVersionGenerator, clock, keyAclGlobalScope);
+            KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, versionGenerator, clock, keyAclGlobalScope);
 
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
             GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
             RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-            ConsecutiveVersionGenerator operatorKeyVersionGenerator = new ConsecutiveVersionGenerator(operatorKeyProvider);
-            OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, operatorKeyVersionGenerator);
+            OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, versionGenerator);
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
-            ConsecutiveVersionGenerator enclaveVersionGenerator = new ConsecutiveVersionGenerator(enclaveIdProvider);
-            EnclaveStoreWriter enclaveStoreWriter = new EnclaveStoreWriter(enclaveIdProvider, fileManager, jsonWriter, enclaveVersionGenerator);
+            EnclaveStoreWriter enclaveStoreWriter = new EnclaveStoreWriter(enclaveIdProvider, fileManager, jsonWriter, versionGenerator);
 
             String saltMetadataPath = config.getString(Const.Config.SaltsMetadataPathProp);
             RotatingSaltProvider saltProvider = new RotatingSaltProvider(cloudStorage, saltMetadataPath);
             saltProvider.loadContent();
-            ConsecutiveVersionGenerator saltVersionGenerator = new ConsecutiveVersionGenerator(saltProvider);
-            SaltStoreWriter saltStoreWriter = new SaltStoreWriter(config, saltProvider, fileManager, cloudStorage, saltVersionGenerator);
+            SaltStoreWriter saltStoreWriter = new SaltStoreWriter(config, saltProvider, fileManager, cloudStorage, versionGenerator);
 
             String partnerMetadataPath = config.getString(RotatingPartnerStore.PARTNERS_METADATA_PATH);
             RotatingPartnerStore partnerConfigProvider = new RotatingPartnerStore(cloudStorage, partnerMetadataPath);
             partnerConfigProvider.loadContent();
-            ConsecutiveVersionGenerator partnerVersionGenerator = new ConsecutiveVersionGenerator(partnerConfigProvider);
-            PartnerStoreWriter partnerStoreWriter = new PartnerStoreWriter(partnerConfigProvider, fileManager, partnerVersionGenerator);
+            PartnerStoreWriter partnerStoreWriter = new PartnerStoreWriter(partnerConfigProvider, fileManager, versionGenerator);
 
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();

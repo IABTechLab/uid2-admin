@@ -97,7 +97,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+                verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -129,7 +129,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+                verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -188,7 +188,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+                verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -215,7 +215,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             checkOperatorKeyResponse(expectedOperators, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadOperatorKeys(any(), collectionOfSize(1));
+                verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
