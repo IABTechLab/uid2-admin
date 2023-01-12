@@ -8,10 +8,14 @@ public class JobInfo {
     private final boolean executing;
     private final Instant executionTime;
 
-    public JobInfo(String id, boolean executing) {
+    public JobInfo(String id, boolean executing, Instant executionTime) {
         this.id = id;
         this.executing = executing;
-        this.executionTime = Instant.now();
+        this.executionTime = executionTime;
+    }
+
+    public JobInfo(String id, boolean executing) {
+        this(id, executing, Instant.now());
     }
 
     public String getId() {

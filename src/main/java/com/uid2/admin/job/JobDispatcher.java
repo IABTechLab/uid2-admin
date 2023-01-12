@@ -7,7 +7,6 @@ import io.vertx.core.logging.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class JobDispatcher {
@@ -18,11 +17,11 @@ public class JobDispatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JobDispatcher.class);
 
-    private final ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1);
     private final ExecutorService JOB_EXECUTOR = Executors.newSingleThreadExecutor();
     private final Queue<Job> JOB_QUEUE = new ConcurrentLinkedQueue<>();
-    private final AtomicBoolean STARTED = new AtomicBoolean(false);
     private final Object JOB_LOCK = new Object();
+    private boolean started = false;
+    private ScheduledExecutorService scheduler;
     private Job currentJob;
 
     private JobDispatcher() {}
@@ -32,19 +31,32 @@ public class JobDispatcher {
     }
 
     public void start(int interval, int maxRetries) {
-        if (STARTED.compareAndSet(false, true)) {
-            LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", interval, maxRetries);
-            SCHEDULER.scheduleAtFixedRate(() -> run(maxRetries), 0, interval, TimeUnit.MILLISECONDS);
-        } else {
-            LOGGER.warn("Already started job dispatcher");
+        synchronized (JOB_LOCK) {
+            if (!started) {
+                LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", interval, maxRetries);
+                scheduler = Executors.newScheduledThreadPool(1);
+                scheduler.scheduleAtFixedRate(() -> run(maxRetries), 0, interval, TimeUnit.MILLISECONDS);
+                started = true;
+            } else {
+                LOGGER.warn("Already started job dispatcher");
+            }
         }
     }
 
-    public void stop() {
-        LOGGER.info("Stopping job dispatcher");
+    public void shutdown() {
+        LOGGER.info("Shutting down job dispatcher");
         synchronized (JOB_LOCK) {
+            started = false;
             JOB_QUEUE.clear();
+            if (scheduler != null) {
+                scheduler.shutdown();
+            }
         }
+    }
+
+    public void clear() {
+        LOGGER.info("Clearing job dispatcher");
+        JOB_QUEUE.clear();
     }
 
     public void enqueue(Job job) {
@@ -64,7 +76,7 @@ public class JobDispatcher {
     public List<JobInfo> getJobQueueInfo() {
         List<JobInfo> jobInfos = new ArrayList<>();
         synchronized (JOB_LOCK) {
-            if (currentJob != null) {
+            if (isExecutingJob()) {
                 jobInfos.add(new JobInfo(currentJob.getId(), true));
             }
             jobInfos.addAll(JOB_QUEUE.stream()
@@ -74,19 +86,32 @@ public class JobDispatcher {
         return jobInfos;
     }
 
-    private void run(int maxRetries) {
-        LOGGER.debug("Checking for jobs");
-        if (JOB_QUEUE.isEmpty()) {
-            LOGGER.debug("No jobs to run");
-            return;
-        }
-        if (currentJob != null) {
-            LOGGER.debug("Job already running: {}", currentJob.getId());
-            return;
-        }
+    public Job getExecutingJob() {
+        return currentJob;
+    }
 
+    public boolean isExecutingJob() {
+        return currentJob != null;
+    }
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    private void run(int maxRetries) {
         String currentJobId;
+
         synchronized (JOB_LOCK) {
+            LOGGER.debug("Checking for jobs");
+            if (JOB_QUEUE.isEmpty()) {
+                LOGGER.debug("No jobs to run");
+                return;
+            }
+            if (currentJob != null) {
+                LOGGER.debug("Job already running: {}", currentJob.getId());
+                return;
+            }
+
             currentJob = JOB_QUEUE.poll();
             assert currentJob != null;
             currentJobId = currentJob.getId();
@@ -97,6 +122,7 @@ public class JobDispatcher {
             for (int retryCount = 1; retryCount <= maxRetries; retryCount++) {
                 try {
                     currentJob.execute();
+                    LOGGER.info("Job successfully executed: {}", currentJobId);
                     break;
                 } catch (Throwable t) {
                     if (retryCount < maxRetries) {
