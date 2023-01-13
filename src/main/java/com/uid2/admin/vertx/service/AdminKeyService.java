@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.secret.IKeyGenerator;
-import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.writer.AdminUserStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class AdminKeyService implements IService {
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final AdminUserStoreWriter storeWriter;
     private final AdminUserProvider adminUserProvider;
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
@@ -36,12 +36,12 @@ public class AdminKeyService implements IService {
     public AdminKeyService(JsonObject config,
                            AuthMiddleware auth,
                            WriteLock writeLock,
-                           IStorageManager storageManager,
+                           AdminUserStoreWriter storeWriter,
                            AdminUserProvider adminUserProvider,
                            IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.storeWriter = storeWriter;
         this.adminUserProvider = adminUserProvider;
         this.keyGenerator = keyGenerator;
 
@@ -184,7 +184,7 @@ public class AdminKeyService implements IService {
             admins.add(newAdmin);
 
             // upload to storage
-            storageManager.uploadAdminUsers(adminUserProvider, admins);
+            storeWriter.upload(admins);
 
             // respond with new admin created
             rc.response().end(jsonWriter.writeValueAsString(newAdmin));
@@ -216,7 +216,7 @@ public class AdminKeyService implements IService {
             admins.remove(a);
 
             // upload to storage
-            storageManager.uploadAdminUsers(adminUserProvider, admins);
+            storeWriter.upload(admins);
 
             // respond with admin deleted
             rc.response().end(jsonWriter.writeValueAsString(a));
@@ -266,7 +266,7 @@ public class AdminKeyService implements IService {
             response.put("disabled", a.isDisabled());
 
             // upload to storage
-            storageManager.uploadAdminUsers(adminUserProvider, admins);
+            storeWriter.upload(admins);
 
             // respond with admin disabled/enabled
             rc.response().end(response.encode());
@@ -299,7 +299,7 @@ public class AdminKeyService implements IService {
             a.setKey(newKey);
 
             // upload to storage
-            storageManager.uploadAdminUsers(adminUserProvider, admins);
+            storeWriter.upload(admins);
 
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
@@ -336,7 +336,7 @@ public class AdminKeyService implements IService {
             a.setRoles(roles);
 
             // upload to storage
-            storageManager.uploadAdminUsers(adminUserProvider, admins);
+            storeWriter.upload(admins);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(a));

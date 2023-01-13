@@ -6,8 +6,9 @@ import com.uid2.admin.auth.IAuthHandlerFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
-import com.uid2.admin.store.IStorageManager;
-import com.uid2.admin.store.RotatingSiteStore;
+import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.service.IService;
@@ -17,7 +18,9 @@ import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.store.IKeyStore;
-import com.uid2.shared.store.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
+import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -56,7 +59,18 @@ public abstract class ServiceTestBase {
 
     @Mock protected AuthHandler authHandler;
     @Mock protected IAuthHandlerFactory authHandlerFactory;
-    @Mock protected IStorageManager storageManager;
+
+    @Mock protected FileManager fileManager;
+    @Mock protected AdminUserStoreWriter adminUserStoreWriter;
+    @Mock protected SiteStoreWriter siteStoreWriter;
+    @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
+    @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
+    @Mock protected KeyAclStoreWriter keyAclStoreWriter;
+    @Mock protected OperatorKeyStoreWriter operatorKeyStoreWriter;
+    @Mock protected EnclaveStoreWriter enclaveStoreWriter;
+    @Mock protected SaltStoreWriter saltStoreWriter;
+    @Mock protected PartnerStoreWriter partnerStoreWriter;
+
     @Mock protected IEncryptionKeyManager keyManager;
     @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;
@@ -64,7 +78,7 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
     @Mock protected RotatingKeyAclProvider keyAclProvider;
-    @Mock protected RotatingKeyAclProvider.AclSnapshot keyAclProviderSnapshot;
+    @Mock protected AclSnapshot keyAclProviderSnapshot;
     @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
@@ -81,7 +95,8 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
 
         auth = new AuthMiddleware(this.adminUserProvider);
-        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, createService());
+        IService[] services = {createService()};
+        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 

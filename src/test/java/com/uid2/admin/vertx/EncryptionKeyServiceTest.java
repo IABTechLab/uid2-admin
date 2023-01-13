@@ -33,7 +33,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         this.config.put("site_key_activates_in_seconds", SITE_KEY_ACTIVATES_IN_SECONDS);
         this.config.put("site_key_expires_after_seconds", SITE_KEY_EXPIRES_AFTER_SECONDS);
 
-        keyService = new EncryptionKeyService(config, auth, writeLock, storageManager, keyProvider, keyGenerator);
+        keyService = new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator);
         return keyService;
     }
 
@@ -87,7 +87,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void addSiteKey() throws Exception {
         setEncryptionKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
-        verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(1), eq(124));
+        verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
         assertSiteKeyActivation(key, Instant.now());
     }
 
@@ -144,7 +144,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+2), eq(777+2));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(777+2));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -170,7 +170,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
-                verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -198,7 +198,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+2), eq(777+2));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(777+2));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -224,7 +224,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+1), eq(777+1));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(777+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -248,7 +248,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
-                verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -274,7 +274,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+1), eq(777+1));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(777+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -289,7 +289,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setEncryptionKeys(777);
 
         post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", expectHttpError(testContext, 404));
-        verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
     }
 
     @Test
@@ -303,7 +303,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setEncryptionKeys(777, keys);
 
         post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
-        verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
     }
 
     @Test
@@ -316,7 +316,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setEncryptionKeys(777, keys);
 
         post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
-        verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
     }
 
     @Test
@@ -336,7 +336,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+1), eq(777+1));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(777+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -365,7 +365,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+2), eq(777+2));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(777+2));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -395,7 +395,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(storageManager).uploadEncryptionKeys(any(), collectionOfSize(keys.length+4), eq(777+4));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+4), eq(777+4));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -419,7 +419,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
-                verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -439,7 +439,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
-                verify(storageManager, times(0)).uploadEncryptionKeys(any(), any(), anyInt());
+                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
             } catch (Exception ex) {
                 fail(ex);
             }

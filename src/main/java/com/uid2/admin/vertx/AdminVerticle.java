@@ -35,7 +35,7 @@ public class AdminVerticle extends AbstractVerticle {
                          IAuthHandlerFactory authHandlerFactory,
                          AuthMiddleware auth,
                          IAdminUserProvider adminUserProvider,
-                         IService... services) {
+                         IService[] services) {
         this.config = config;
         this.authHandlerFactory = authHandlerFactory;
         this.auth = auth;

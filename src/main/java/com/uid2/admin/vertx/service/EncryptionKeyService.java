@@ -2,7 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
-import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -11,7 +11,7 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.SiteUtil;
-import com.uid2.shared.store.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingKeyStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -35,7 +35,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final EncryptionKeyStoreWriter storeWriter;
     private final RotatingKeyStore keyProvider;
     private final IKeyGenerator keyGenerator;
 
@@ -47,12 +47,12 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     public EncryptionKeyService(JsonObject config,
                                 AuthMiddleware auth,
                                 WriteLock writeLock,
-                                IStorageManager storageManager,
+                                EncryptionKeyStoreWriter storeWriter,
                                 RotatingKeyStore keyProvider,
                                 IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.storeWriter = storeWriter;
         this.keyProvider = keyProvider;
         this.keyGenerator = keyGenerator;
 
@@ -247,7 +247,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             addedKeys.add(key);
         }
 
-        storageManager.uploadEncryptionKeys(keyProvider, keys, maxKeyId);
+        storeWriter.upload(keys, maxKeyId);
 
         return addedKeys;
     }
