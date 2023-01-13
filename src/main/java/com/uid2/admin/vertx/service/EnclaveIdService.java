@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.writer.EnclaveStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -25,17 +25,17 @@ import java.util.stream.Collectors;
 public class EnclaveIdService implements IService {
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final EnclaveStoreWriter storeWriter;
     private final EnclaveIdentifierProvider enclaveIdProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     public EnclaveIdService(AuthMiddleware auth,
                             WriteLock writeLock,
-                            IStorageManager storageManager,
+                            EnclaveStoreWriter storeWriter,
                             EnclaveIdentifierProvider enclaveIdProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.storeWriter = storeWriter;
         this.enclaveIdProvider = enclaveIdProvider;
     }
 
@@ -128,7 +128,7 @@ public class EnclaveIdService implements IService {
             enclaveIds.add(newEnclaveId);
 
             // upload to storage
-            storageManager.uploadEnclaveIds(enclaveIdProvider, enclaveIds);
+            storeWriter.upload(enclaveIds);
 
             // respond with new enclave id
             rc.response().end(jsonWriter.writeValueAsString(newEnclaveId));
@@ -160,7 +160,7 @@ public class EnclaveIdService implements IService {
             enclaveIds.remove(e);
 
             // upload to storage
-            storageManager.uploadEnclaveIds(enclaveIdProvider, enclaveIds);
+            storeWriter.upload(enclaveIds);
 
             // respond with the deleted enclave id
             rc.response().end(jsonWriter.writeValueAsString(e));

@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.model.Site;
+import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.KeyAclService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.*;
 public class KeyAclServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new KeyAclService(auth, writeLock, storageManager, keyAclProvider, siteProvider, keyManager);
+        return new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, keyManager);
     }
 
     private void checkEncryptionKeyAclsResponse(Map<Integer, EncryptionKeyAcl> expectedAcls, Object[] actualAcls) {
@@ -93,7 +94,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -121,7 +122,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -151,7 +152,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -181,7 +182,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -239,7 +240,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager, times(0)).uploadKeyAcls(any(), any());
+                verify(keyAclStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -271,7 +272,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -303,7 +304,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -333,7 +334,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -363,7 +364,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -396,7 +397,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(storageManager).uploadKeyAcls(any(), mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -470,7 +471,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager, times(0)).uploadKeyAcls(any(), any());
+                verify(keyAclStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -500,7 +501,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager, times(0)).uploadKeyAcls(any(), any());
+                verify(keyAclStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -530,7 +531,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager, times(0)).uploadKeyAcls(any(), any());
+                verify(keyAclStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -560,7 +561,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(storageManager, times(0)).uploadKeyAcls(any(), any());
+                verify(keyAclStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }

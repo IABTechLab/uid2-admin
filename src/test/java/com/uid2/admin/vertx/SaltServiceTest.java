@@ -27,7 +27,7 @@ public class SaltServiceTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        return new SaltService(auth, writeLock, storageManager, saltProvider, saltRotation);
+        return new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation);
     }
 
     private void checkSnapshotsResponse(RotatingSaltProvider.SaltSnapshot[] expectedSnapshots, Object[] actualSnapshots) {
@@ -108,7 +108,7 @@ public class SaltServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
             try {
-                verify(storageManager).uploadSalts(any(), any());
+                verify(saltStoreWriter).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -137,7 +137,7 @@ public class SaltServiceTest extends ServiceTestBase {
             assertFalse(jo.containsKey("effective"));
             assertFalse(jo.containsKey("expires"));
             try {
-                verify(storageManager, times(0)).uploadSalts(any(), any());
+                verify(saltStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }

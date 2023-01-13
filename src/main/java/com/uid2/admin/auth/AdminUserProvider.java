@@ -3,7 +3,7 @@ package com.uid2.admin.auth;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.store.IMetadataVersionedStore;
+import com.uid2.shared.store.reader.IMetadataVersionedStore;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;

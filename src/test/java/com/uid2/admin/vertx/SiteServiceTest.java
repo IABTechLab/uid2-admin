@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 public class SiteServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SiteService(auth, writeLock, storageManager, siteProvider, clientKeyProvider);
+        return new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider);
     }
 
     private void checkSitesResponse(Site[] expectedSites, Object[] actualSites) {
@@ -136,7 +136,7 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadSites(any(), collectionOfSize(initialSites.length + 1));
+                verify(siteStoreWriter).upload(collectionOfSize(initialSites.length + 1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -165,7 +165,7 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadSites(any(), collectionOfSize(initialSites.length + 1));
+                verify(siteStoreWriter).upload(collectionOfSize(initialSites.length + 1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -193,7 +193,7 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadSites(any(), collectionOfSize(initialSites.length + 1));
+                verify(siteStoreWriter).upload(collectionOfSize(initialSites.length + 1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -243,7 +243,7 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadSites(any(), collectionOfSize(initialSites.length));
+                verify(siteStoreWriter).upload(collectionOfSize(initialSites.length));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -272,7 +272,7 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager).uploadSites(any(), collectionOfSize(initialSites.length));
+                verify(siteStoreWriter).upload(collectionOfSize(initialSites.length));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -301,7 +301,7 @@ public class SiteServiceTest extends ServiceTestBase {
             checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(storageManager, times(0)).uploadSites(any(), any());
+                verify(siteStoreWriter, times(0)).upload(any());
             } catch (Exception ex) {
                 fail(ex);
             }

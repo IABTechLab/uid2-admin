@@ -2,14 +2,14 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.model.Site;
-import com.uid2.admin.store.ISiteStore;
-import com.uid2.admin.store.IStorageManager;
+import com.uid2.admin.store.reader.ISiteStore;
+import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.RotatingKeyAclProvider;
+import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SiteUtil;
 import io.vertx.core.http.HttpHeaders;
@@ -23,20 +23,20 @@ import java.util.*;
 public class KeyAclService implements IService {
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final IStorageManager storageManager;
+    private final KeyAclStoreWriter storeWriter;
     private final RotatingKeyAclProvider keyAclProvider;
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
 
     public KeyAclService(AuthMiddleware auth,
                          WriteLock writeLock,
-                         IStorageManager storageManager,
+                         KeyAclStoreWriter storeWriter,
                          RotatingKeyAclProvider keyAclProvider,
                          ISiteStore siteProvider,
                          IEncryptionKeyManager keyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.storeWriter = storeWriter;
         this.keyAclProvider = keyAclProvider;
         this.siteProvider = siteProvider;
         this.keyManager = keyManager;
@@ -91,7 +91,7 @@ public class KeyAclService implements IService {
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
             collection.put(existingSite.getId(), newAcl);
 
-            storageManager.uploadKeyAcls(keyAclProvider, collection);
+            storeWriter.upload(collection);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -156,7 +156,7 @@ public class KeyAclService implements IService {
             }
 
             if (added || removed) {
-                storageManager.uploadKeyAcls(keyAclProvider, collection);
+                storeWriter.upload(collection);
             }
 
             rc.response()
