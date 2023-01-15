@@ -130,7 +130,7 @@ public class Main {
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
-
+            
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator);
 

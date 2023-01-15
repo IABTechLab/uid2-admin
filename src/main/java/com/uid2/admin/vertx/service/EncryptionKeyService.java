@@ -3,6 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
+import com.uid2.admin.util.MaxKeyUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -231,7 +232,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
                 .collect(Collectors.toList());
 
-        int maxKeyId = getMaxKeyId();
+        int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),
+                this.keyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<EncryptionKey> addedKeys = new ArrayList<>();
         final Instant now = Instant.now();
@@ -250,24 +252,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         storeWriter.upload(keys, maxKeyId);
 
         return addedKeys;
-    }
-
-    private int getMaxKeyId() throws Exception {
-        final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
-                .sorted(Comparator.comparingInt(EncryptionKey::getId))
-                .collect(Collectors.toList());
-
-        int maxKeyId = keys.isEmpty() ? 0 : keys.get(keys.size()-1).getId();
-        final Integer metadataMaxKeyId = this.keyProvider.getMetadata().getInteger("max_key_id");
-        if(metadataMaxKeyId != null) {
-            // allows to avoid re-using deleted keys' ids
-            maxKeyId = Integer.max(maxKeyId, metadataMaxKeyId);
-        }
-        if(maxKeyId == Integer.MAX_VALUE) {
-            throw new ArithmeticException("Cannot generate a new key id: max key id reached");
-        }
-
-        return maxKeyId;
     }
 
     private JsonObject toJson(EncryptionKey key) {

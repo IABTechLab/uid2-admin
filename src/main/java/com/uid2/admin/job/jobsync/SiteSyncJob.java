@@ -1,4 +1,4 @@
-package com.uid2.admin.job.sitesync;
+package com.uid2.admin.job.jobsync;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;
@@ -7,19 +7,20 @@ import com.uid2.admin.store.SiteStoreFactory;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class SiteSyncJob implements Job {
-    private final RotatingOperatorKeyProvider globalOperatorKeyProvider;
+    private final Collection<OperatorKey> globalOperators;
+    private final Collection<Site> globalSites;
     private final SiteStoreFactory siteStoreFactory;
 
-    public SiteSyncJob(SiteStoreFactory siteStoreFactory, RotatingOperatorKeyProvider globalOperatorKeyProvider) {
+    public SiteSyncJob(SiteStoreFactory siteStoreFactory, Collection<Site> globalSites, Collection<OperatorKey> globalOperators) {
         this.siteStoreFactory = siteStoreFactory;
-        this.globalOperatorKeyProvider = globalOperatorKeyProvider;
+        this.globalSites = globalSites;
+        this.globalOperators = globalOperators;
     }
 
     @Override
@@ -29,20 +30,12 @@ public class SiteSyncJob implements Job {
 
     @Override
     public void execute() throws Exception {
-        globalOperatorKeyProvider.loadContent(globalOperatorKeyProvider.getMetadata());
-        RotatingSiteStore globalReader = siteStoreFactory.getGlobalReader();
-        globalReader.loadContent();
-
-        Collection<Site> sites = globalReader.getAllSites();
-        Collection<OperatorKey> operators = globalOperatorKeyProvider.getAll();
-
-        PrivateSiteDataMap<Site> desiredState = PrivateSiteUtil.getSites(sites, operators);
+        PrivateSiteDataMap<Site> desiredState = PrivateSiteUtil.getSites(globalSites, globalOperators);
         PrivateSiteDataMap<Site> currentState = getCurrentState(desiredState.keySet());
-
-        writeSites(desiredState, getSitesToWrite(desiredState, currentState));
+        write(desiredState, getSitesToWrite(desiredState, currentState));
     }
 
-    private void writeSites(PrivateSiteDataMap<Site> desiredState, Collection<Integer> sitesToWrite) throws Exception {
+    private void write(PrivateSiteDataMap<Site> desiredState, Collection<Integer> sitesToWrite) throws Exception {
         for (Integer addedSite : sitesToWrite) {
             siteStoreFactory.getWriter(addedSite).upload(desiredState.get(addedSite));
         }

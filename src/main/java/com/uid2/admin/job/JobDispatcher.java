@@ -30,12 +30,12 @@ public class JobDispatcher {
         return Loader.INSTANCE;
     }
 
-    public void start(int interval, int maxRetries) {
+    public void start(int intervalMs, int maxRetries) {
         synchronized (JOB_LOCK) {
             if (!started) {
-                LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", interval, maxRetries);
+                LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", intervalMs, maxRetries);
                 scheduler = Executors.newScheduledThreadPool(1);
-                scheduler.scheduleAtFixedRate(() -> run(maxRetries), 0, interval, TimeUnit.MILLISECONDS);
+                scheduler.scheduleAtFixedRate(() -> run(maxRetries), 0, intervalMs, TimeUnit.MILLISECONDS);
                 started = true;
             } else {
                 LOGGER.warn("Already started job dispatcher");
