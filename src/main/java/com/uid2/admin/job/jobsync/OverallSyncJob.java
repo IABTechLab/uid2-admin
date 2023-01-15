@@ -82,7 +82,7 @@ public class OverallSyncJob implements Job {
         // synchronized (writeLock)
         {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-            
+
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
@@ -98,11 +98,11 @@ public class OverallSyncJob implements Job {
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteStoreFactory, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientKeyStoreFactory, globalClients, globalOperators);
         EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(encryptionKeyStoreFactory, globalEncryptionKeys, globalClients, globalOperators, globalKeyAcls);
-        // TODO: KeyAclSync job
+        KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclStoreFactory, globalOperators, globalKeyAcls);
 
         siteSyncJob.execute();
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
-        // TODO: KeyAclSync job
+        keyAclSyncJob.execute();
     }
 }

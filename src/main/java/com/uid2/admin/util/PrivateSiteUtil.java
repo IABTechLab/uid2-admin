@@ -105,6 +105,43 @@ public final class PrivateSiteUtil {
         return result;
     }
 
+    // acls is Map<SiteId, EncryptionKeyAcl>
+    public static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getEncryptionKeyAcls2(
+            Collection<OperatorKey> operators,
+            Map<Integer, EncryptionKeyAcl> acls) {
+        final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = getPrivateSiteAcls(operators);
+
+        acls.forEach((siteId, acl) -> {
+            // Add it to site file for its site_id
+            result.computeIfPresent(siteId, (privateSiteId, privateSiteMap) -> {
+                privateSiteMap.put(siteId, acl);
+                return privateSiteMap;
+            });
+
+            if (acl.getIsWhitelist()) {
+                // If it's a whitelist, also write it to every site file for the whitelist
+                acl.getAccessList().forEach(whiteListedSiteId ->
+                        result.computeIfPresent(whiteListedSiteId, (privateSiteId, privateSiteMap) -> {
+                            // Avoid adding duplicate as it could be added above already
+                            if(privateSiteId.intValue() != siteId.intValue()) {
+                                privateSiteMap.put(siteId, acl);
+                            }
+                            return privateSiteMap;
+                        }));
+            } else { // Blacklisted
+                // If it's a blacklist, also write it to every site file except those on the blacklist
+                final Set<Integer> blacklisted = acl.getAccessList();
+                result.forEach((privateSiteId, privateSiteMap) -> {
+                    // Avoid adding duplicate as it could be added above already
+                    if (!blacklisted.contains(privateSiteId) && privateSiteId.intValue() != siteId.intValue()) {
+                        privateSiteMap.put(siteId, acl);
+                    }
+                });
+            }
+        });
+        return result;
+    }
+
     public static PrivateSiteDataMap<Site> getSites(
             Collection<Site> sites,
             Collection<OperatorKey> operators) {
@@ -134,6 +171,18 @@ public final class PrivateSiteUtil {
             if (o.getOperatorType() == OperatorType.PRIVATE
                     && o.getSiteId() != null && !result.containsKey(o.getSiteId())) {
                 result.put(o.getSiteId(), new HashSet<>());
+            }
+        });
+        return result;
+    }
+
+    private static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getPrivateSiteAcls(Collection<OperatorKey> operators) {
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = new HashMap<Integer, Map<Integer, EncryptionKeyAcl>>();
+        operators.forEach(o -> {
+            // TODO: Should we check if site is disabled?
+            if (o.getOperatorType() == OperatorType.PRIVATE
+                    && o.getSiteId() != null && !result.containsKey(o.getSiteId())) {
+                result.put(o.getSiteId(), new HashMap<>());
             }
         });
         return result;
