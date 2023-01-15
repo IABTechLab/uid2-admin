@@ -142,6 +142,47 @@ public class PrivateSiteUtilTest {
         assertEquals(expected, result);
     }
 
+    // TODO: Ask Gian/Aleks if this is the actual way to write private site data for KeyACLs as
+    // com.uid2.admin.store.writer.KeyAclStoreWriter.upload takes Map<Integer, EncryptionKeyAcl> data
+    @Test
+    public void testGenerateEncryptionKeyAclData2() {
+        final OperatorKey[] operatorKeys = {
+                new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                new OperatorKey("key5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+        };
+
+        final Set<Integer> site3Whitelist = new HashSet<>();
+        site3Whitelist.add(4);
+        final Set<Integer> site4Blacklist = new HashSet<>();
+        site4Blacklist.add(3);
+        final Map<Integer, EncryptionKeyAcl> acls = new HashMap<>();
+        acls.put(3, new EncryptionKeyAcl(true, site3Whitelist));
+        acls.put(4, new EncryptionKeyAcl(false, site4Blacklist));
+
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = PrivateSiteUtil.getEncryptionKeyAcls2(
+                Arrays.asList(operatorKeys), acls);
+
+        final Map<Integer, EncryptionKeyAcl> site3EncryptionKeyAcls = new HashMap<>();
+        site3EncryptionKeyAcls.put(3, acls.get(3));
+
+        final Map<Integer, EncryptionKeyAcl> site4EncryptionKeyAcls = new HashMap<>();
+        site4EncryptionKeyAcls.put(3, acls.get(3));
+        site4EncryptionKeyAcls.put(4, acls.get(4));
+
+        final Map<Integer, EncryptionKeyAcl> site6EncryptionKeyAcls = new HashMap<>();
+        site6EncryptionKeyAcls.put(4, acls.get(4));
+
+
+        final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> expected = new HashMap<>();
+        expected.put(3, site3EncryptionKeyAcls);
+        expected.put(4, site4EncryptionKeyAcls);
+        expected.put(6, site6EncryptionKeyAcls);
+
+        assertEquals(expected, result);
+    }
+
     @Test
     public void testGenerateSiteData() {
         final Site[] sites = {

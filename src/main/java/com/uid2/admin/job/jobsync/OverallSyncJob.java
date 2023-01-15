@@ -25,6 +25,9 @@ import io.vertx.core.json.JsonObject;
 import java.util.Collection;
 import java.util.Map;
 
+/*
+ * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl) data type
+ */
 public class OverallSyncJob implements Job {
     public OverallSyncJob() {
     }

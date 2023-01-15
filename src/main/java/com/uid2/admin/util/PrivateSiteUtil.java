@@ -105,7 +105,8 @@ public final class PrivateSiteUtil {
         return result;
     }
 
-    // acls is Map<SiteId, EncryptionKeyAcl>
+    // TODO: Ask Gian/Aleks if this is the actual way to write private site data for KeyACLs as
+    // com.uid2.admin.store.writer.KeyAclStoreWriter.upload takes Map<Integer, EncryptionKeyAcl> data
     public static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getEncryptionKeyAcls2(
             Collection<OperatorKey> operators,
             Map<Integer, EncryptionKeyAcl> acls) {
