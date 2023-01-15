@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.GithubAuthHandlerFactory;
 import com.uid2.admin.auth.IAuthHandlerFactory;
+import com.uid2.admin.job.JobDispatcher;
+import com.uid2.admin.job.StaticConfig;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.secret.SaltRotation;
@@ -64,6 +66,7 @@ public class Main {
     public Main(Vertx vertx, JsonObject config) {
         this.vertx = vertx;
         this.config = config;
+        StaticConfig.LoadConfig(config);
     }
 
     public void run() {
@@ -130,7 +133,8 @@ public class Main {
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
-            
+
+
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator);
 
@@ -144,7 +148,10 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
+                    new PrivateSiteDataRefreshService(auth, writeLock),
             };
+            //check job for every minute
+            JobDispatcher.getInstance().start(1000 * 60, 2);
 
             AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
 
@@ -153,6 +160,8 @@ public class Main {
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
             vertx.deployVerticle(adminVerticle);
+
+
         } catch (Exception e) {
             LOGGER.fatal("failed to initialize core verticle", e);
             System.exit(-1);

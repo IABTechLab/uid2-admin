@@ -2,7 +2,8 @@ package com.uid2.admin.job;
 
 import io.vertx.core.json.JsonObject;
 
-public final class MetadataPaths {
+//For use by OverallSyncJob
+public final class StaticConfig {
     public static JsonObject Config;
 
     public static void LoadConfig(JsonObject config)
