@@ -81,14 +81,12 @@ public class OverallSyncJob implements Job {
         // so that we will get a single consistent version of every thing before generating private site data
         // synchronized (writeLock)
         {
+            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+            
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
             keyAclStoreFactory.getGlobalReader().loadContent();
-
-
-            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-            OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, versionGenerator);
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
