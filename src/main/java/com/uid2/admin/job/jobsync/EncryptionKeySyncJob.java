@@ -50,7 +50,8 @@ public class EncryptionKeySyncJob implements Job {
     private void write(PrivateSiteDataMap<EncryptionKey> desiredState, Collection<Integer> sitesToWrite) throws Exception {
         for (Integer addedSite : sitesToWrite) {
             Collection<EncryptionKey> siteKeys = desiredState.get(addedSite);
-            int maxKeyId = MaxKeyUtil.getMaxKeyId(siteKeys);
+            //TODO: Not sure if this is right need to check with Aleks the purpose of providing the old max key id
+            int maxKeyId = MaxKeyUtil.getMaxKeyId(siteKeys, null);
             factory.getWriter(addedSite).upload(siteKeys, maxKeyId);
         }
     }
