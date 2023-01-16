@@ -1,7 +1,9 @@
 package com.uid2.admin.store;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.model.Site;
 import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.reader.StoreReader;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.SiteStoreWriter;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -44,7 +46,7 @@ public class SiteStoreFactory {
         );
     }
 
-    public RotatingSiteStore getReader(Integer siteId) {
+    public StoreReader<Site> getReader(Integer siteId) {
         return new RotatingSiteStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 

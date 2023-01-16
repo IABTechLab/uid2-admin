@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.Collection;
 import java.util.Map;
 
-public class RotatingSiteStore implements ISiteStore, IMetadataVersionedStore {
+public class RotatingSiteStore implements ISiteStore, IMetadataVersionedStore, StoreReader<Site> {
     public static final String SITES_METADATA_PATH = "sites_metadata_path";
     private final ScopedStoreReader<Map<Integer, Site>> reader;
 
@@ -24,6 +24,11 @@ public class RotatingSiteStore implements ISiteStore, IMetadataVersionedStore {
 
     @Override
     public Collection<Site> getAllSites() {
+        return getAll();
+    }
+
+    @Override
+    public Collection<Site> getAll() {
         return reader.getSnapshot().values();
     }
 

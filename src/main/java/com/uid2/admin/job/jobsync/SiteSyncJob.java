@@ -4,7 +4,7 @@ import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.SiteStoreFactory;
-import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.reader.StoreReader;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.OperatorKey;
 
@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 public class SiteSyncJob implements Job {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<Site> globalSites;
-    private final SiteStoreFactory siteStoreFactory;
+    private final SiteStoreFactory storeFactory;
 
-    public SiteSyncJob(SiteStoreFactory siteStoreFactory, Collection<Site> globalSites, Collection<OperatorKey> globalOperators) {
-        this.siteStoreFactory = siteStoreFactory;
+    public SiteSyncJob(SiteStoreFactory storeFactory, Collection<Site> globalSites, Collection<OperatorKey> globalOperators) {
+        this.storeFactory = storeFactory;
         this.globalSites = globalSites;
         this.globalOperators = globalOperators;
     }
@@ -38,7 +38,7 @@ public class SiteSyncJob implements Job {
 
     private void write(PrivateSiteDataMap<Site> desiredState, Collection<Integer> sitesToWrite) throws Exception {
         for (Integer addedSite : sitesToWrite) {
-            siteStoreFactory.getWriter(addedSite).upload(desiredState.get(addedSite));
+            storeFactory.getWriter(addedSite).upload(desiredState.get(addedSite));
         }
     }
 
@@ -62,10 +62,10 @@ public class SiteSyncJob implements Job {
     private PrivateSiteDataMap<Site> getCurrentState(Collection<Integer> siteIds) throws Exception {
         PrivateSiteDataMap<Site> currentState = new PrivateSiteDataMap<>();
         for (Integer siteId : siteIds) {
-            RotatingSiteStore reader = siteStoreFactory.getReader(siteId);
+            StoreReader<Site> reader = storeFactory.getReader(siteId);
             if (reader.getMetadata() != null) {
                 reader.loadContent();
-                currentState.put(siteId, reader.getAllSites());
+                currentState.put(siteId, reader.getAll());
             }
         }
         return currentState;

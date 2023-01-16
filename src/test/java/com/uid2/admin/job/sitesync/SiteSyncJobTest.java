@@ -7,7 +7,7 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.InstantClock;
 import com.uid2.admin.store.SiteStoreFactory;
-import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.reader.StoreReader;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
@@ -71,9 +71,9 @@ public class SiteSyncJobTest {
 
         job.execute();
 
-        RotatingSiteStore reader = siteStoreFactory.getReader(scopedSiteId);
+        StoreReader<Site> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
-        Collection<Site> scopedSites = reader.getAllSites();
+        Collection<Site> scopedSites = reader.getAll();
         assertThat(scopedSites).isEmpty();
 
     }
@@ -89,9 +89,9 @@ public class SiteSyncJobTest {
                 "/some/test/path/sites/site/10/sites.json"
         );
 
-        RotatingSiteStore reader = siteStoreFactory.getReader(scopedSiteId);
+        StoreReader<Site> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
-        Collection<Site> scopedSites = reader.getAllSites();
+        Collection<Site> scopedSites = reader.getAll();
         assertThat(scopedSites).containsExactly(site);
     }
 
@@ -100,7 +100,7 @@ public class SiteSyncJobTest {
         siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
 
 
-        RotatingSiteStore reader = siteStoreFactory.getReader(scopedSiteId);
+        StoreReader<Site> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
@@ -110,7 +110,7 @@ public class SiteSyncJobTest {
         job.execute();
 
         reader.loadContent();
-        assertThat(reader.getAllSites()).containsExactly(updatedSite);
+        assertThat(reader.getAll()).containsExactly(updatedSite);
 
         Long newVersion = reader.getMetadata().getLong("version");
         assertThat(newVersion).isGreaterThan(oldVersion);
@@ -121,7 +121,7 @@ public class SiteSyncJobTest {
         siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
         siteStoreFactory.getGlobalWriter().upload(ImmutableList.of(site));
 
-        RotatingSiteStore reader = siteStoreFactory.getReader(scopedSiteId);
+        StoreReader<Site> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
@@ -130,7 +130,7 @@ public class SiteSyncJobTest {
         job.execute();
 
         reader.loadContent();
-        assertThat(reader.getAllSites()).containsExactly(site);
+        assertThat(reader.getAll()).containsExactly(site);
         Long newVersion = reader.getMetadata().getLong("version");
         assertThat(newVersion).isEqualTo(oldVersion);
     }
