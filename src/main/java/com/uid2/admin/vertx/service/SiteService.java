@@ -3,7 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.reader.RotatingSiteStore;
-import com.uid2.admin.store.writer.SiteStoreWriter;
+import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -25,14 +25,14 @@ import java.util.stream.Collectors;
 public class SiteService implements IService {
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final SiteStoreWriter storageManager;
+    private final StoreWriter storageManager;
     private final RotatingSiteStore siteProvider;
     private final IClientKeyProvider clientKeyProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     public SiteService(AuthMiddleware auth,
                        WriteLock writeLock,
-                       SiteStoreWriter storageManager,
+                       StoreWriter storageManager,
                        RotatingSiteStore siteProvider,
                        IClientKeyProvider clientKeyProvider) {
         this.auth = auth;

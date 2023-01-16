@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.*;
+import com.uid2.admin.store.factory.ClientKeyStoreFactory;
+import com.uid2.admin.store.factory.EncryptionKeyStoreFactory;
+import com.uid2.admin.store.factory.KeyAclStoreFactory;
+import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
@@ -51,28 +55,31 @@ public class PrivateSiteDataSyncJob implements Job {
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
 
-        SiteStoreFactory siteStoreFactory = new SiteStoreFactory(cloudStorage,
+        SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
+                cloudStorage,
                 new CloudPath(config.getString(RotatingSiteStore.SITES_METADATA_PATH)),
                 fileStorage,
                 jsonWriter,
                 versionGenerator,
                 clock);
 
-        ClientKeyStoreFactory clientKeyStoreFactory = new ClientKeyStoreFactory(cloudStorage,
+        ClientKeyStoreFactory clientKeyStoreFactory = new ClientKeyStoreFactory(
+                cloudStorage,
                 new CloudPath(config.getString(Const.Config.ClientsMetadataPathProp)),
                 fileStorage,
                 jsonWriter,
                 versionGenerator,
                 clock);
 
-        EncryptionKeyStoreFactory encryptionKeyStoreFactory = new EncryptionKeyStoreFactory(cloudStorage,
+        EncryptionKeyStoreFactory encryptionKeyStoreFactory = new EncryptionKeyStoreFactory(
+                cloudStorage,
                 new CloudPath(config.getString(Const.Config.KeysMetadataPathProp)),
                 fileStorage,
-                jsonWriter,
                 versionGenerator,
                 clock);
 
-        KeyAclStoreFactory keyAclStoreFactory = new KeyAclStoreFactory(cloudStorage,
+        KeyAclStoreFactory keyAclStoreFactory = new KeyAclStoreFactory(
+                cloudStorage,
                 new CloudPath(config.getString(Const.Config.KeysAclMetadataPathProp)),
                 fileStorage,
                 jsonWriter,
@@ -84,8 +91,7 @@ public class PrivateSiteDataSyncJob implements Job {
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
         // so that we will get a single consistent version of everything before generating private site data
-        synchronized (writeLock)
-        {
+        synchronized (writeLock) {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
@@ -100,12 +106,30 @@ public class PrivateSiteDataSyncJob implements Job {
         Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
 
-        SiteSyncJob siteSyncJob = new SiteSyncJob(siteStoreFactory, globalSites, globalOperators);
-        ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientKeyStoreFactory, globalClients, globalOperators);
-        EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(encryptionKeyStoreFactory, globalEncryptionKeys,
-                globalClients, globalOperators, globalKeyAcls, globalMaxKeyId);
-        KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclStoreFactory, globalOperators, globalKeyAcls);
+        MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
+                siteStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<ClientKey>> clientWriter = new MultiScopeStoreWriter<>(
+                clientKeyStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<EncryptionKey>> encryptionKeyWriter = new MultiScopeStoreWriter<>(
+                encryptionKeyStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Map<Integer, EncryptionKeyAcl>> keyAclWriter = new MultiScopeStoreWriter<>(
+                keyAclStoreFactory,
+                MultiScopeStoreWriter::areMapsEqual);
 
+        SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
+        ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
+        EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(
+                globalEncryptionKeys,
+                globalClients,
+                globalOperators,
+                globalKeyAcls,
+                globalMaxKeyId,
+                encryptionKeyWriter
+        );
+        KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
 
 
         siteSyncJob.execute();

@@ -11,7 +11,7 @@ import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Collection;
 
-public class SiteStoreWriter {
+public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
     private final ScopedStoreWriter writer;
     private final ObjectWriter jsonWriter;
 
@@ -23,6 +23,7 @@ public class SiteStoreWriter {
         writer = new ScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
     }
 
+    @Override
     public void upload(Collection<Site> data) throws Exception {
         writer.upload(jsonWriter.writeValueAsString(data));
     }

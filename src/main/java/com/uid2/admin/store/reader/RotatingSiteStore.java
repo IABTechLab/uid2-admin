@@ -5,14 +5,14 @@ import com.uid2.admin.store.parser.SiteParser;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.ScopedStoreReader;
-import com.uid2.shared.store.reader.IMetadataVersionedStore;
+import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Collection;
 import java.util.Map;
 
-public class RotatingSiteStore implements ISiteStore, IMetadataVersionedStore, StoreReader<Site> {
+public class RotatingSiteStore implements ISiteStore, StoreReader<Collection<Site>> {
     public static final String SITES_METADATA_PATH = "sites_metadata_path";
     private final ScopedStoreReader<Map<Integer, Site>> reader;
 

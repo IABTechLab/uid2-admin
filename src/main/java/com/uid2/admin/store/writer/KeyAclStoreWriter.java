@@ -3,10 +3,10 @@ package com.uid2.admin.store.writer;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.EncryptionKeyAcl;
-import com.uid2.shared.store.reader.RotatingKeyAclProvider;
-import com.uid2.admin.store.FileName;
+import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -14,10 +14,10 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class KeyAclStoreWriter {
+public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKeyAcl>> {
     private final ScopedStoreWriter writer;
 
-    public KeyAclStoreWriter(RotatingKeyAclProvider provider, FileManager fileManager, ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
+    public KeyAclStoreWriter(StoreReader<Map<Integer, EncryptionKeyAcl>> provider, FileManager fileManager, ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
         FileName dataFile = new FileName("keys_acl", ".json");
         FileName backupFile = new FileName("keys_acl-old", ".json");
         String dataType = "keys_acl";

@@ -1,12 +1,9 @@
-package com.uid2.admin.job.sitesync;
+package com.uid2.admin.store;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
-import com.uid2.admin.job.jobsync.SiteSyncJob;
+import com.google.common.collect.ImmutableMap;
 import com.uid2.admin.model.Site;
-import com.uid2.admin.store.Clock;
-import com.uid2.admin.store.InstantClock;
-import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
@@ -19,21 +16,20 @@ import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.StoreReader;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-public class SiteSyncJobTest {
+class MultiScopeStoreWriterTest {
     private InMemoryStorageMock cloudStorage;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
     ObjectWriter objectWriter = JsonUtil.createJsonWriter();
     Integer scopedSiteId = 10;
+    private SiteStoreFactory siteStoreFactory;
+
     ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
                     "key",
@@ -47,7 +43,6 @@ public class SiteSyncJobTest {
                     OperatorType.PRIVATE));
 
     Site site = new Site(scopedSiteId, "site 1", true);
-    private SiteStoreFactory siteStoreFactory;
 
     @BeforeEach
     void setUp() {
@@ -65,30 +60,22 @@ public class SiteSyncJobTest {
     }
 
     @Test
-    public void writesNoSitesIfThereAreNoSites() throws Exception {
-        SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
-                siteStoreFactory,
-                MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(), operators
-        );
+    public void writesNothingGivenNoDesiredState() throws Exception {
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
-        job.execute();
+        multiStore.uploadIfChanged(ImmutableMap.of());
 
-        StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
-        reader.loadContent();
-        Collection<Site> scopedSites = reader.getAll();
-        assertThat(scopedSites).isEmpty();
+        assertThat(cloudStorage.list("")).isEmpty();
 
     }
 
     @Test
-    public void syncsNewSites() throws Exception {
-        SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
-                siteStoreFactory,
-                MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(site), operators
-        );
-        job.execute();
+    public void syncsNewData() throws Exception {
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+
+        multiStore.uploadIfChanged(ImmutableMap.of(
+                scopedSiteId, ImmutableList.of(site)
+        ));
 
         List<String> allFilesInCloud = cloudStorage.list("");
         assertThat(allFilesInCloud).contains(
@@ -103,22 +90,19 @@ public class SiteSyncJobTest {
     }
 
     @Test
-    public void overridesPreviouslySyncedSitesWhenThereAreChanges() throws Exception {
+    public void overwritesExistingDataWhenChanged() throws Exception {
         siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
-
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
         Site updatedSite = new Site(scopedSiteId, "site 1 updated", true);
-        SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
-                siteStoreFactory,
-                MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(updatedSite), operators
-        );
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
-        job.execute();
+        multiStore.uploadIfChanged(ImmutableMap.of(
+                scopedSiteId, ImmutableList.of(updatedSite)
+        ));
 
         reader.loadContent();
         assertThat(reader.getAll()).containsExactly(updatedSite);
@@ -128,7 +112,7 @@ public class SiteSyncJobTest {
     }
 
     @Test
-    public void doesNotSyncSitesThatAreNotChanged() throws Exception {
+    public void doesNotWriteDataThatHasNotChanged() throws Exception {
         siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
         siteStoreFactory.getGlobalWriter().upload(ImmutableList.of(site));
 
@@ -136,17 +120,68 @@ public class SiteSyncJobTest {
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
-        SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
-                siteStoreFactory,
-                MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(site), operators
-        );
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
-        job.execute();
+        multiStore.uploadIfChanged(ImmutableMap.of(
+                scopedSiteId, ImmutableList.of(site)
+        ));
 
         reader.loadContent();
         assertThat(reader.getAll()).containsExactly(site);
         Long newVersion = reader.getMetadata().getLong("version");
         assertThat(newVersion).isEqualTo(oldVersion);
+    }
+
+    @Nested
+    class AreMapsEqual {
+        Map<String, String> a = ImmutableMap.of(
+                "day", "giorno",
+                "evening", "sera"
+        );
+        Map<String, String> b = ImmutableMap.of(
+                "day", "Tag",
+                "evening", "Abend"
+        );
+        @Test
+        void whenSameObjectReturnsTrue() {
+            assertThat(MultiScopeStoreWriter.areMapsEqual(a, a)).isTrue();
+        }
+
+        @Test
+        void whenEqualReturnsTrue() {
+            Map<String, String> a1 = ImmutableMap.of(
+                    "day", "giorno",
+                    "evening", "sera"
+            );
+
+            assertThat(MultiScopeStoreWriter.areMapsEqual(a, a1)).isTrue();
+        }
+
+        @Test
+        void whenNotEqualReturnsFalse() {
+            assertThat(MultiScopeStoreWriter.areMapsEqual(a, b)).isFalse();
+        }
+    }
+
+    @Nested
+    class AreCollectionsEqual {
+        Collection<String> a = ImmutableList.of("day", "evening");
+        Collection<String> b = ImmutableList.of("morning", "night");
+        @Test
+        void whenSameObjectReturnsTrue() {
+            assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, a)).isTrue();
+        }
+
+        @Test
+        void whenEqualReturnsTrue() {
+            Collection<String> a1 = ImmutableList.of("day", "evening");
+
+            assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, a1)).isTrue();
+        }
+
+        @Test
+        void whenNotEqualReturnsFalse() {
+            assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, b)).isFalse();
+        }
     }
 }

@@ -1,35 +1,36 @@
-package com.uid2.admin.store;
+package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.Clock;
+import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileStorage;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
-import com.uid2.admin.store.writer.KeyAclStoreWriter;
-import com.uid2.admin.store.writer.SiteStoreWriter;
+import com.uid2.admin.store.writer.ClientKeyStoreWriter;
+import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.RotatingKeyAclProvider;
-import com.uid2.shared.store.reader.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 
-public class KeyAclStoreFactory {
+import java.util.Collection;
+
+public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
     private final VersionGenerator versionGenerator;
     private final Clock clock;
     private final FileManager fileManager;
-    private final RotatingKeyAclProvider globalReader;
-    private final KeyAclStoreWriter globalWriter;
+    private final RotatingClientKeyProvider globalReader;
 
-    public KeyAclStoreFactory(
+    public ClientKeyStoreFactory(
             ICloudStorage fileStreamProvider,
             CloudPath rootMetadataPath,
             FileStorage fileStorage,
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
-            Clock clock) {
+            Clock clock)  {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
@@ -37,23 +38,15 @@ public class KeyAclStoreFactory {
         this.clock = clock;
         fileManager = new FileManager(fileStreamProvider, fileStorage);
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
-        globalReader = new RotatingKeyAclProvider(fileStreamProvider, globalScope);
-        globalWriter = new KeyAclStoreWriter(
-                globalReader,
-                fileManager,
-                objectWriter,
-                versionGenerator,
-                clock,
-                globalScope
-        );
+        globalReader = new RotatingClientKeyProvider(fileStreamProvider, globalScope);
     }
 
-    public RotatingKeyAclProvider getReader(Integer siteId) {
-        return new RotatingKeyAclProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
+    public RotatingClientKeyProvider getReader(Integer siteId) {
+        return new RotatingClientKeyProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public KeyAclStoreWriter getWriter(Integer siteId) {
-        return new KeyAclStoreWriter(
+    public ClientKeyStoreWriter getWriter(Integer siteId) {
+        return new ClientKeyStoreWriter(
                 getReader(siteId),
                 fileManager,
                 objectWriter,
@@ -63,11 +56,7 @@ public class KeyAclStoreFactory {
         );
     }
 
-    public RotatingKeyAclProvider getGlobalReader() {
+    public RotatingClientKeyProvider getGlobalReader() {
         return globalReader;
-    }
-
-    public KeyAclStoreWriter getGlobalWriter() {
-        return globalWriter;
     }
 }

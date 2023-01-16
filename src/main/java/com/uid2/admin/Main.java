@@ -6,6 +6,7 @@ import com.uid2.admin.auth.GithubAuthHandlerFactory;
 import com.uid2.admin.auth.IAuthHandlerFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
+import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.secret.SaltRotation;
@@ -23,16 +24,16 @@ import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
-import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
+import com.uid2.shared.store.reader.RotatingKeyAclProvider;
+import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
@@ -54,6 +55,7 @@ import io.vertx.micrometer.backends.BackendRegistries;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Optional;
 
@@ -87,7 +89,7 @@ public class Main {
             GlobalScope siteGlobalScope = new GlobalScope(sitesMetadataPath);
             RotatingSiteStore siteProvider = new RotatingSiteStore(cloudStorage, siteGlobalScope);
             siteProvider.loadContent(siteProvider.getMetadata());
-            SiteStoreWriter siteStoreWriter = new SiteStoreWriter(siteProvider, fileManager, jsonWriter, versionGenerator, clock, siteGlobalScope);
+            StoreWriter<Collection<Site>> siteStoreWriter = new SiteStoreWriter(siteProvider, fileManager, jsonWriter, versionGenerator, clock, siteGlobalScope);
 
             CloudPath clientMetadataPath = new CloudPath(config.getString(Const.Config.ClientsMetadataPathProp));
             GlobalScope clientGlobalScope = new GlobalScope(clientMetadataPath);
