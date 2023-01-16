@@ -1,15 +1,14 @@
 package com.uid2.admin.job.jobsync;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.job.StaticConfig;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.EncryptionKeyAcl;
@@ -29,7 +28,14 @@ import java.util.Map;
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl) data type
  */
 public class OverallSyncJob implements Job {
-    public OverallSyncJob() {
+
+    public final JsonObject config;
+
+    private final WriteLock writeLock;
+
+    public OverallSyncJob(JsonObject config, WriteLock writeLock) {
+        this.config = config;
+        this.writeLock = writeLock;
     }
 
     @Override
@@ -39,8 +45,6 @@ public class OverallSyncJob implements Job {
 
     @Override
     public void execute() throws Exception {
-
-        JsonObject config = StaticConfig.Config;
         ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
         FileStorage fileStorage = new TmpFileStorage();
         ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
@@ -81,11 +85,10 @@ public class OverallSyncJob implements Job {
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
         // TODO: if we put a global write lock (com.uid2.admin.vertx.service.AdminKeyService.writeLock)
-        // so that we will get a single consistent version of every thing before generating private site data
-        // synchronized (writeLock)
+        // so that we will get a single consistent version of everything before generating private site data
+        synchronized (writeLock)
         {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
