@@ -32,7 +32,8 @@ public class SiteSyncJob implements Job {
     public void execute() throws Exception {
         PrivateSiteDataMap<Site> desiredState = PrivateSiteUtil.getSites(globalSites, globalOperators);
         PrivateSiteDataMap<Site> currentState = getCurrentState(desiredState.keySet());
-        write(desiredState, getSitesToWrite(desiredState, currentState));
+        List<Integer> sitesToWrite = getSitesToWrite(desiredState, currentState);
+        write(desiredState, sitesToWrite);
     }
 
     private void write(PrivateSiteDataMap<Site> desiredState, Collection<Integer> sitesToWrite) throws Exception {
