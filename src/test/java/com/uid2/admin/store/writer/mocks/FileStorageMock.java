@@ -14,16 +14,16 @@ import java.util.stream.Collectors;
 // we can use InMemoryStorageMock in tests
 // If we stop writing to disk every time we upload/backup file we can get rid of this
 public class FileStorageMock implements FileStorage {
-    private final InMemoryStorageMock localStackStorageMock;
+    private final InMemoryStorageMock cloudStorageMock;
 
-    public FileStorageMock(InMemoryStorageMock localStackStorageMock) {
-        this.localStackStorageMock = localStackStorageMock;
+    public FileStorageMock(InMemoryStorageMock cloudStorageMock) {
+        this.cloudStorageMock = cloudStorageMock;
     }
 
     @Override
     public String create(FileName fileName, String content) {
         String path = "/tmp/" + fileName.toString();
-        localStackStorageMock.save(content.getBytes(), path);
+        cloudStorageMock.save(content.getBytes(), path);
         return path;
     }
 
