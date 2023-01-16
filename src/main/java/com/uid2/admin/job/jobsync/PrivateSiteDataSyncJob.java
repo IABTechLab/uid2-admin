@@ -48,7 +48,6 @@ public class PrivateSiteDataSyncJob implements Job {
         ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
         FileStorage fileStorage = new TmpFileStorage();
         ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
-        FileManager fileManager = new FileManager(cloudStorage, fileStorage);
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
 
@@ -84,7 +83,6 @@ public class PrivateSiteDataSyncJob implements Job {
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
-        // TODO: if we put a global write lock (com.uid2.admin.vertx.service.AdminKeyService.writeLock)
         // so that we will get a single consistent version of everything before generating private site data
         synchronized (writeLock)
         {
@@ -99,12 +97,16 @@ public class PrivateSiteDataSyncJob implements Job {
         Collection<Site> globalSites = siteStoreFactory.getGlobalReader().getAllSites();
         Collection<ClientKey> globalClients = clientKeyStoreFactory.getGlobalReader().getAll();
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
+        Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
 
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteStoreFactory, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientKeyStoreFactory, globalClients, globalOperators);
-        EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(encryptionKeyStoreFactory, globalEncryptionKeys, globalClients, globalOperators, globalKeyAcls);
+        EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(encryptionKeyStoreFactory, globalEncryptionKeys,
+                globalClients, globalOperators, globalKeyAcls, globalMaxKeyId);
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclStoreFactory, globalOperators, globalKeyAcls);
+
+
 
         siteSyncJob.execute();
         clientSyncJob.execute();

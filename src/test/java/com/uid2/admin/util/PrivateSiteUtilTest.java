@@ -142,10 +142,8 @@ public class PrivateSiteUtilTest {
         assertEquals(expected, result);
     }
 
-    // TODO: Ask Gian/Aleks if this is the actual way to write private site data for KeyACLs as
-    // com.uid2.admin.store.writer.KeyAclStoreWriter.upload takes Map<Integer, EncryptionKeyAcl> data
     @Test
-    public void testGenerateEncryptionKeyAclData2() {
+    public void testGenerateEncryptionKeyAclDataForEachSite() {
         final OperatorKey[] operatorKeys = {
                 new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
                 new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
@@ -161,7 +159,7 @@ public class PrivateSiteUtilTest {
         acls.put(3, new EncryptionKeyAcl(true, site3Whitelist));
         acls.put(4, new EncryptionKeyAcl(false, site4Blacklist));
 
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = PrivateSiteUtil.getEncryptionKeyAcls2(
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(
                 Arrays.asList(operatorKeys), acls);
 
         final Map<Integer, EncryptionKeyAcl> site3EncryptionKeyAcls = new HashMap<>();

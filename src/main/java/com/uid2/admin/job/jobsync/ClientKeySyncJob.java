@@ -54,7 +54,6 @@ public class ClientKeySyncJob implements Job {
         }).collect(Collectors.toList());
     }
 
-    //TODO: should we implement ClientKey.equals/hashcode to use secretBytes & disabled flag?
     private static boolean areEqual(Collection<ClientKey> current, Collection<ClientKey> desired) {
         return current.size() == desired.size() && current.containsAll(desired);
     }

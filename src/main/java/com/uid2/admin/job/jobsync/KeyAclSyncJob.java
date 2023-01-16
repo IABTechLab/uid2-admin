@@ -1,7 +1,6 @@
 package com.uid2.admin.job.jobsync;
 
 import com.uid2.admin.job.model.Job;
-import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.KeyAclStoreFactory;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.EncryptionKeyAcl;
@@ -34,7 +33,7 @@ public class KeyAclSyncJob implements Job {
 
     @Override
     public void execute() throws Exception {
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAcls2(globalOperators, globalAcls);
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(globalOperators, globalAcls);
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> currentState = getCurrentState(desiredState.keySet());
         write(desiredState, getSitesToWrite(desiredState, currentState));
     }

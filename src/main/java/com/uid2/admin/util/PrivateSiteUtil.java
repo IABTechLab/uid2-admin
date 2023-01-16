@@ -105,9 +105,9 @@ public final class PrivateSiteUtil {
         return result;
     }
 
-    // TODO: Ask Gian/Aleks if this is the actual way to write private site data for KeyACLs as
-    // com.uid2.admin.store.writer.KeyAclStoreWriter.upload takes Map<Integer, EncryptionKeyAcl> data
-    public static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getEncryptionKeyAcls2(
+    //returns <SiteId, Map<SiteId, EncryptionKeyAcl>> - so for each site (id) X, returns
+    // a map of <Site, EncryptionKeyAcl> that Site X needs to know about
+    public static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getEncryptionKeyAclsForEachSite(
             Collection<OperatorKey> operators,
             Map<Integer, EncryptionKeyAcl> acls) {
         final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = getPrivateSiteAcls(operators);
@@ -178,7 +178,7 @@ public final class PrivateSiteUtil {
     }
 
     private static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getPrivateSiteAcls(Collection<OperatorKey> operators) {
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = new HashMap<Integer, Map<Integer, EncryptionKeyAcl>>();
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = new HashMap<>();
         operators.forEach(o -> {
             // TODO: Should we check if site is disabled?
             if (o.getOperatorType() == OperatorType.PRIVATE

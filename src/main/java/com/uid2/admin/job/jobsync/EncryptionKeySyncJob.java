@@ -22,17 +22,20 @@ public class EncryptionKeySyncJob implements Job {
     private final Collection<ClientKey> globalClientKeys;
     private final Map<Integer, EncryptionKeyAcl> globalAcls;
     private final EncryptionKeyStoreFactory factory;
+    private final Integer globalMaxKeyId;
 
     public EncryptionKeySyncJob(EncryptionKeyStoreFactory factory,
                                 Collection<EncryptionKey> globalEncryptionKeys,
                                 Collection<ClientKey> globalClientKeys,
                                 Collection<OperatorKey> globalOperators,
-                                Map<Integer, EncryptionKeyAcl> globalAcls) {
+                                Map<Integer, EncryptionKeyAcl> globalAcls,
+                                Integer globalMaxKeyId) {
         this.factory = factory;
         this.globalEncryptionKeys = globalEncryptionKeys;
         this.globalClientKeys = globalClientKeys;
         this.globalOperators = globalOperators;
         this.globalAcls = globalAcls;
+        this.globalMaxKeyId = globalMaxKeyId;
     }
 
     @Override
@@ -50,8 +53,7 @@ public class EncryptionKeySyncJob implements Job {
     private void write(PrivateSiteDataMap<EncryptionKey> desiredState, Collection<Integer> sitesToWrite) throws Exception {
         for (Integer addedSite : sitesToWrite) {
             Collection<EncryptionKey> siteKeys = desiredState.get(addedSite);
-            //TODO: Not sure if this is right need to check with Aleks the purpose of providing the old max key id
-            int maxKeyId = MaxKeyUtil.getMaxKeyId(siteKeys, null);
+            int maxKeyId = MaxKeyUtil.getMaxKeyId(siteKeys, this.globalMaxKeyId);
             factory.getWriter(addedSite).upload(siteKeys, maxKeyId);
         }
     }
