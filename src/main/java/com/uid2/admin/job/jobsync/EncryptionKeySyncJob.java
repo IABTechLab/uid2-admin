@@ -24,12 +24,13 @@ public class EncryptionKeySyncJob implements Job {
     private final EncryptionKeyStoreFactory factory;
     private final Integer globalMaxKeyId;
 
-    public EncryptionKeySyncJob(EncryptionKeyStoreFactory factory,
-                                Collection<EncryptionKey> globalEncryptionKeys,
-                                Collection<ClientKey> globalClientKeys,
-                                Collection<OperatorKey> globalOperators,
-                                Map<Integer, EncryptionKeyAcl> globalAcls,
-                                Integer globalMaxKeyId) {
+    public EncryptionKeySyncJob(
+            EncryptionKeyStoreFactory factory,
+            Collection<EncryptionKey> globalEncryptionKeys,
+            Collection<ClientKey> globalClientKeys,
+            Collection<OperatorKey> globalOperators,
+            Map<Integer, EncryptionKeyAcl> globalAcls,
+            Integer globalMaxKeyId) {
         this.factory = factory;
         this.globalEncryptionKeys = globalEncryptionKeys;
         this.globalClientKeys = globalClientKeys;

@@ -28,7 +28,6 @@ import java.util.Map;
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl) data type
  */
 public class PrivateSiteDataSyncJob implements Job {
-
     public final JsonObject config;
 
     private final WriteLock writeLock;
@@ -84,8 +83,7 @@ public class PrivateSiteDataSyncJob implements Job {
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
         // so that we will get a single consistent version of everything before generating private site data
-        synchronized (writeLock)
-        {
+        synchronized (writeLock) {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
@@ -105,8 +103,6 @@ public class PrivateSiteDataSyncJob implements Job {
         EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(encryptionKeyStoreFactory, globalEncryptionKeys,
                 globalClients, globalOperators, globalKeyAcls, globalMaxKeyId);
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclStoreFactory, globalOperators, globalKeyAcls);
-
-
 
         siteSyncJob.execute();
         clientSyncJob.execute();

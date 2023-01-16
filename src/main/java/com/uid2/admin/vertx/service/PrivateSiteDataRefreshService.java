@@ -14,9 +14,10 @@ public class PrivateSiteDataRefreshService implements IService {
     private final WriteLock writeLock;
     private final JsonObject config;
 
-    public PrivateSiteDataRefreshService(AuthMiddleware auth,
-                                            WriteLock writeLock,
-                                         JsonObject config) {
+    public PrivateSiteDataRefreshService(
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            JsonObject config) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.config = config;
@@ -27,18 +28,36 @@ public class PrivateSiteDataRefreshService implements IService {
         // this can be called by a k8s cronjob setup such as
         // https://gitlab.adsrvr.org/uid2/k8-deployment/-/tree/master/uid2
         router.post("/api/private-sites/refresh").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handlePrivateSiteDataGenerate(ctx);
-            }
-        },
-        //can be other role
-        Role.ADMINISTRATOR));
+                    synchronized (writeLock) {
+                        this.handlePrivateSiteDataGenerate(ctx);
+                    }
+                },
+                //can be other role
+                Role.ADMINISTRATOR));
+
+        router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle((ctx) -> {
+                    synchronized (writeLock) {
+                        this.handlePrivateSiteDataGenerateNow(ctx);
+                    }
+                },
+                //can be other role
+                Role.ADMINISTRATOR));
     }
 
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {
         try {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePrivateSiteDataGenerateNow(RoutingContext rc) {
+        try {
+            PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
+            JobDispatcher.getInstance().enqueue(job);
+            JobDispatcher.getInstance().executeNextJob(3);
         } catch (Exception e) {
             rc.fail(500, e);
         }

@@ -98,6 +98,10 @@ public class JobDispatcher {
         return started;
     }
 
+    public void executeNextJob(int maxRetries) {
+        run(maxRetries);
+    }
+
     private void run(int maxRetries) {
         String currentJobId;
 
