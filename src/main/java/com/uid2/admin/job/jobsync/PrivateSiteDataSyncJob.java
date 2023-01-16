@@ -27,20 +27,20 @@ import java.util.Map;
 /*
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl) data type
  */
-public class OverallSyncJob implements Job {
+public class PrivateSiteDataSyncJob implements Job {
 
     public final JsonObject config;
 
     private final WriteLock writeLock;
 
-    public OverallSyncJob(JsonObject config, WriteLock writeLock) {
+    public PrivateSiteDataSyncJob(JsonObject config, WriteLock writeLock) {
         this.config = config;
         this.writeLock = writeLock;
     }
 
     @Override
     public String getId() {
-        return "global-to-site-scope-sync-overall";
+        return "global-to-site-scope-sync-private-site-data";
     }
 
     @Override

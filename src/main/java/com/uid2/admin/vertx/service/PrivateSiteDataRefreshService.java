@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.job.JobDispatcher;
-import com.uid2.admin.job.jobsync.OverallSyncJob;
+import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -37,7 +37,7 @@ public class PrivateSiteDataRefreshService implements IService {
 
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {
         try {
-            OverallSyncJob job = new OverallSyncJob(config, writeLock);
+            PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
         } catch (Exception e) {
             rc.fail(500, e);

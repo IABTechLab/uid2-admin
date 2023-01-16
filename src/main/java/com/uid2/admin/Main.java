@@ -5,7 +5,7 @@ import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.GithubAuthHandlerFactory;
 import com.uid2.admin.auth.IAuthHandlerFactory;
 import com.uid2.admin.job.JobDispatcher;
-import com.uid2.admin.job.jobsync.OverallSyncJob;
+import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.secret.SaltRotation;
@@ -161,7 +161,7 @@ public class Main {
             vertx.deployVerticle(adminVerticle);
 
             //TODO: should we create a new Verticle for private site data generation like RotatingStoreVerticle?
-            OverallSyncJob job = new OverallSyncJob(config, writeLock);
+            PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
         } catch (Exception e) {
             LOGGER.fatal("failed to initialize core verticle", e);
