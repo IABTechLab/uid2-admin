@@ -24,16 +24,17 @@ public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKey
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
     }
 
-    public void upload(Map<Integer, EncryptionKeyAcl> data) throws Exception {
+    @Override
+    public void upload(Map<Integer, EncryptionKeyAcl> data, JsonObject extraMeta) throws Exception {
         // generate new acls
         JsonArray jsonAcls = new JsonArray();
         for(Map.Entry<Integer, EncryptionKeyAcl> acl : data.entrySet()) {
             JsonObject jsonAcl = new JsonObject();
             jsonAcl.put("site_id", acl.getKey());
             jsonAcl.put((acl.getValue().getIsWhitelist() ? "whitelist" : "blacklist"),
-                    new JsonArray(new ArrayList<>(acl.getValue().getAccessList())));
+                        new JsonArray(new ArrayList<>(acl.getValue().getAccessList())));
             jsonAcls.add(jsonAcl);
         }
-        writer.upload(jsonAcls.encodePrettily());
+        writer.upload(jsonAcls.encodePrettily(), extraMeta);
     }
 }

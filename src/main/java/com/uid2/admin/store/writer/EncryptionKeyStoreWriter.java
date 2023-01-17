@@ -22,12 +22,8 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
     }
 
-    public void upload(Collection<EncryptionKey> data, Integer newMaxKeyId) throws Exception {
-        JsonObject extraMeta = new JsonObject();
-        if (newMaxKeyId != null) {
-            extraMeta.put("max_key_id", newMaxKeyId);
-        }
-
+    @Override
+    public void upload(Collection<EncryptionKey> data, JsonObject extraMeta) throws Exception {
         final JsonArray jsonKeys = new JsonArray();
         for (EncryptionKey key : data) {
             JsonObject json = new JsonObject();
@@ -43,8 +39,11 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
         writer.upload(content, extraMeta);
     }
 
-    @Override
-    public void upload(Collection<EncryptionKey> data) throws Exception {
-        upload(data, null);
+    public void upload(Collection<EncryptionKey> data, Integer newMaxKeyId) throws Exception {
+        upload(data, maxKeyMeta(newMaxKeyId));
+    }
+
+    public static JsonObject maxKeyMeta(Integer newMaxKeyId) {
+        return new JsonObject().put("max_key_id", newMaxKeyId);
     }
 }

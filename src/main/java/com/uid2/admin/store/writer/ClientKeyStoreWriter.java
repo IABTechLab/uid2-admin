@@ -8,6 +8,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.scope.StoreScope;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Collection;
 
@@ -23,8 +24,9 @@ public class ClientKeyStoreWriter implements StoreWriter<Collection<ClientKey>> 
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
     }
 
-    public void upload(Collection<ClientKey> data) throws Exception {
-        writer.upload(jsonWriter.writeValueAsString(data));
+    @Override
+    public void upload(Collection<ClientKey> data, JsonObject extraMeta) throws Exception {
+        writer.upload(jsonWriter.writeValueAsString(data), extraMeta);
     }
 }
 ;

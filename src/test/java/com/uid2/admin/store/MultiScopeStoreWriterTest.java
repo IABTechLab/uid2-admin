@@ -15,6 +15,7 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.StoreReader;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ class MultiScopeStoreWriterTest {
     public void writesNothingGivenNoDesiredState() throws Exception {
         MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
-        multiStore.uploadIfChanged(ImmutableMap.of());
+        multiStore.uploadIfChanged(ImmutableMap.of(), null);
 
         assertThat(cloudStorage.list("")).isEmpty();
 
@@ -73,9 +74,7 @@ class MultiScopeStoreWriterTest {
     public void syncsNewData() throws Exception {
         MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
-        multiStore.uploadIfChanged(ImmutableMap.of(
-                scopedSiteId, ImmutableList.of(site)
-        ));
+        multiStore.uploadIfChanged(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)),null);
 
         List<String> allFilesInCloud = cloudStorage.list("");
         assertThat(allFilesInCloud).contains(
@@ -88,10 +87,23 @@ class MultiScopeStoreWriterTest {
         Collection<Site> scopedSites = reader.getAll();
         assertThat(scopedSites).containsExactly(site);
     }
+    @Test
+    public void addsExtraMetadataProvided() throws Exception {
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+
+        JsonObject extraMeta = new JsonObject().put("key1", "value1").put("key2", 2);
+
+        multiStore.uploadIfChanged(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)), extraMeta);
+
+        StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
+        JsonObject actualMetadata = reader.getMetadata();
+        assertThat(actualMetadata.getString("key1")).isEqualTo("value1");
+        assertThat(actualMetadata.getInteger("key2")).isEqualTo(2);
+    }
 
     @Test
     public void overwritesExistingDataWhenChanged() throws Exception {
-        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
+        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site), null);
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
@@ -102,7 +114,7 @@ class MultiScopeStoreWriterTest {
 
         multiStore.uploadIfChanged(ImmutableMap.of(
                 scopedSiteId, ImmutableList.of(updatedSite)
-        ));
+        ), null);
 
         reader.loadContent();
         assertThat(reader.getAll()).containsExactly(updatedSite);
@@ -113,8 +125,8 @@ class MultiScopeStoreWriterTest {
 
     @Test
     public void doesNotWriteDataThatHasNotChanged() throws Exception {
-        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
-        siteStoreFactory.getGlobalWriter().upload(ImmutableList.of(site));
+        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site), null);
+        siteStoreFactory.getGlobalWriter().upload(ImmutableList.of(site), null);
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
@@ -124,7 +136,7 @@ class MultiScopeStoreWriterTest {
 
         multiStore.uploadIfChanged(ImmutableMap.of(
                 scopedSiteId, ImmutableList.of(site)
-        ));
+        ), null);
 
         reader.loadContent();
         assertThat(reader.getAll()).containsExactly(site);

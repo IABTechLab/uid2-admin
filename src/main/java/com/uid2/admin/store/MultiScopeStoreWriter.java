@@ -2,6 +2,7 @@ package com.uid2.admin.store;
 
 import com.uid2.admin.store.factory.StoreFactory;
 import com.uid2.shared.store.reader.StoreReader;
+import io.vertx.core.json.JsonObject;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -15,10 +16,10 @@ public class MultiScopeStoreWriter<T> {
         this.areEqual = areEqual;
     }
 
-    public void uploadIfChanged(Map<Integer, T> desiredState) throws Exception {
+    public void uploadIfChanged(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         Map<Integer, T> currentState = getCurrentState(desiredState.keySet());
         List<Integer> sitesToWrite = getSitesToWrite(desiredState, currentState);
-        write(desiredState, sitesToWrite);
+        write(desiredState, sitesToWrite, extraMeta);
     }
 
     private List<Integer> getSitesToWrite(
@@ -46,9 +47,9 @@ public class MultiScopeStoreWriter<T> {
         return currentState;
     }
 
-    private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite) throws Exception {
+    private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
         for (Integer addedSite : sitesToWrite) {
-            factory.getWriter(addedSite).upload(desiredState.get(addedSite));
+            factory.getWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
         }
     }
 

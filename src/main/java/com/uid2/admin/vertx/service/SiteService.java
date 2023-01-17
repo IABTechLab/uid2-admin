@@ -133,7 +133,7 @@ public class SiteService implements IService {
             sites.add(newSite);
 
             // upload to storage
-            storageManager.upload(sites);
+            storageManager.upload(sites, null);
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newSite));
@@ -169,7 +169,7 @@ public class SiteService implements IService {
 
             if (existingSite.isEnabled() != enabled) {
                 existingSite.setEnabled(enabled);
-                storageManager.upload(sites);
+                storageManager.upload(sites, null);
             }
 
             rc.response().end(jsonWriter.writeValueAsString(existingSite));

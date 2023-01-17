@@ -73,8 +73,8 @@ class ClientKeySyncJobTest {
 
     @Test
     public void doesNotSyncClientsThatAreNotChanged() throws Exception {
-        clientKeyStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(client));
-        clientKeyStoreFactory.getGlobalWriter().upload(ImmutableList.of(client));
+        clientKeyStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(client), null);
+        clientKeyStoreFactory.getGlobalWriter().upload(ImmutableList.of(client), null);
 
         StoreReader<Collection<ClientKey>> reader = clientKeyStoreFactory.getReader(scopedSiteId);
         reader.loadContent();

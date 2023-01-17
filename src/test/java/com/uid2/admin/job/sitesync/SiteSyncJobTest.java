@@ -104,7 +104,7 @@ public class SiteSyncJobTest {
 
     @Test
     public void overridesPreviouslySyncedSitesWhenThereAreChanges() throws Exception {
-        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
+        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site), null);
 
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
@@ -129,8 +129,8 @@ public class SiteSyncJobTest {
 
     @Test
     public void doesNotSyncSitesThatAreNotChanged() throws Exception {
-        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site));
-        siteStoreFactory.getGlobalWriter().upload(ImmutableList.of(site));
+        siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site), null);
+        siteStoreFactory.getGlobalWriter().upload(ImmutableList.of(site), null);
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();

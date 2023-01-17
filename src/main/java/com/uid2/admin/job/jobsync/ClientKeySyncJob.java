@@ -31,6 +31,6 @@ public class ClientKeySyncJob implements Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<ClientKey> desiredState = PrivateSiteUtil.getClientKeys(globalOperators, globalClientKeys);
-        multiScopeStoreWriter.uploadIfChanged(desiredState);
+        multiScopeStoreWriter.uploadIfChanged(desiredState, null);
     }
 }

@@ -34,6 +34,6 @@ public class KeyAclSyncJob implements Job {
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(
                 globalOperators,
                 globalAcls);
-        multiScopeStoreWriter.uploadIfChanged(desiredState);
+        multiScopeStoreWriter.uploadIfChanged(desiredState, null);
     }
 }

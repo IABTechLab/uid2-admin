@@ -59,7 +59,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(clientKeyStoreWriter).upload(collectionOfSize(1));
+                verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -102,7 +102,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
 
             try {
-                verify(clientKeyStoreWriter).upload(collectionOfSize(1));
+                verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
