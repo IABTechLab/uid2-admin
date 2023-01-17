@@ -10,7 +10,6 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class JobDispatcher {
-
     private static class Loader {
         public static final JobDispatcher INSTANCE = new JobDispatcher();
     }
@@ -144,5 +143,4 @@ public class JobDispatcher {
             }
         });
     }
-
 }
