@@ -25,6 +25,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private static final int MASTER_KEY_EXPIRES_AFTER_SECONDS = 7200;
     private static final int SITE_KEY_ACTIVATES_IN_SECONDS = 36000;
     private static final int SITE_KEY_EXPIRES_AFTER_SECONDS = 72000;
+<<<<<<< HEAD
     private static final long KEY_CREATE_TIME_IN_MILLI = 100010011L;
     private static final long KEY_ACTIVATE_TIME_IN_MILLI = 100020011L;
     private static final long KEY_EXPIRE_TIME_IN_MILLI = 100030011L;
