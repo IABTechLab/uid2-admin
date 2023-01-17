@@ -3,10 +3,7 @@ package com.uid2.admin.store;
 import com.uid2.admin.store.factory.StoreFactory;
 import com.uid2.shared.store.reader.StoreReader;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -56,10 +53,10 @@ public class MultiScopeStoreWriter<T> {
     }
 
     public static <K, V> boolean areMapsEqual(Map<K, V> a, Map<K, V> b) {
-        return a.size() == b.size() && a.entrySet().containsAll(b.entrySet());
+        return a.size() == b.size() && a.entrySet().stream().allMatch(b.entrySet()::contains);
     }
 
     public static <T> boolean areCollectionsEqual(Collection<T> a, Collection<T> b) {
-        return a.size() == b.size() && a.containsAll(b);
+        return a.size() == b.size() && a.stream().allMatch(b::contains);
     }
 }
