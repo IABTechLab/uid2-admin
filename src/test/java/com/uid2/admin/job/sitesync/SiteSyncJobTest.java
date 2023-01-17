@@ -2,7 +2,7 @@ package com.uid2.admin.job.sitesync;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
-import com.uid2.admin.job.jobsync.SiteSyncJob;
+import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.InstantClock;

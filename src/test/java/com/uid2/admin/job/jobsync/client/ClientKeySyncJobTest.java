@@ -1,8 +1,9 @@
-package com.uid2.admin.job.jobsync;
+package com.uid2.admin.job.jobsync.client;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.InstantClock;
 import com.uid2.admin.store.MultiScopeStoreWriter;

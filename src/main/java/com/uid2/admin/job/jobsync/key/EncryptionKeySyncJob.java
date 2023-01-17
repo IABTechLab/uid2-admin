@@ -1,4 +1,4 @@
-package com.uid2.admin.job.jobsync;
+package com.uid2.admin.job.jobsync.key;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;

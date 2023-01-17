@@ -1,4 +1,4 @@
-package com.uid2.admin.job.jobsync;
+package com.uid2.admin.job.jobsync.acl;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.store.MultiScopeStoreWriter;
