@@ -165,8 +165,8 @@ class MultiScopeStoreWriterTest {
 
     @Nested
     class AreCollectionsEqual {
-        Collection<String> a = ImmutableList.of("day", "evening");
-        Collection<String> b = ImmutableList.of("morning", "night");
+        Collection<TestData> a = ImmutableList.of(new TestData("day"), new TestData("evening"));
+        Collection<TestData> b = ImmutableList.of(new TestData("morning"), new TestData("night"))  ;
         @Test
         void whenSameObjectReturnsTrue() {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, a)).isTrue();
@@ -174,7 +174,7 @@ class MultiScopeStoreWriterTest {
 
         @Test
         void whenEqualReturnsTrue() {
-            Collection<String> a1 = ImmutableList.of("day", "evening");
+            Collection<TestData> a1 = ImmutableList.of(new TestData("day"), new TestData("evening"));
 
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, a1)).isTrue();
         }
@@ -182,6 +182,27 @@ class MultiScopeStoreWriterTest {
         @Test
         void whenNotEqualReturnsFalse() {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, b)).isFalse();
+        }
+    }
+
+    class TestData {
+        private final String field1;
+
+        public TestData(String field1) {
+            this.field1 = field1;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TestData testData = (TestData) o;
+            return Objects.equals(field1, testData.field1);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(field1);
         }
     }
 }
