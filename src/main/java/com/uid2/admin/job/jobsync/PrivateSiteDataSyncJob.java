@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /*
- * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl) data type
+ * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl data type
  */
 public class PrivateSiteDataSyncJob implements Job {
     public final JsonObject config;

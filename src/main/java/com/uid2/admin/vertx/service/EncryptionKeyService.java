@@ -29,6 +29,11 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.maxBy;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager {
+    private static class RotationResult {
+        public Set<Integer> siteIds = null;
+        public List<EncryptionKey> rotatedKeys = new ArrayList<>();
+    }
+
     private static final String MASTER_KEY_ACTIVATES_IN_SECONDS = "master_key_activates_in_seconds";
     private static final String MASTER_KEY_EXPIRES_AFTER_SECONDS = "master_key_expires_after_seconds";
     private static final String SITE_KEY_ACTIVATES_IN_SECONDS = "site_key_activates_in_seconds";
@@ -45,12 +50,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration siteKeyActivatesIn;
     private final Duration siteKeyExpiresAfter;
 
-    public EncryptionKeyService(JsonObject config,
-                                AuthMiddleware auth,
-                                WriteLock writeLock,
-                                EncryptionKeyStoreWriter storeWriter,
-                                RotatingKeyStore keyProvider,
-                                IKeyGenerator keyGenerator) {
+    public EncryptionKeyService(
+            JsonObject config,
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            EncryptionKeyStoreWriter storeWriter,
+            RotatingKeyStore keyProvider,
+            IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -118,7 +124,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private void handleRotateMasterKey(RoutingContext rc) {
         try {
             final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
-                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
+                    s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
@@ -262,11 +268,5 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         jo.put("activates", key.getActivates().toEpochMilli());
         jo.put("expires", key.getExpires().toEpochMilli());
         return jo;
-    }
-
-    private class RotationResult
-    {
-        public Set<Integer> siteIds = null;
-        public List<EncryptionKey> rotatedKeys = new ArrayList<>();
     }
 }
