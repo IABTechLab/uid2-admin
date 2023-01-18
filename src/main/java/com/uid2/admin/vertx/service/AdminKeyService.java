@@ -14,6 +14,8 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -25,6 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminKeyService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final AdminUserStoreWriter storeWriter;
@@ -33,12 +37,13 @@ public class AdminKeyService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String adminKeyPrefix;
 
-    public AdminKeyService(JsonObject config,
-                           AuthMiddleware auth,
-                           WriteLock writeLock,
-                           AdminUserStoreWriter storeWriter,
-                           AdminUserProvider adminUserProvider,
-                           IKeyGenerator keyGenerator) {
+    public AdminKeyService(
+            JsonObject config,
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            AdminUserStoreWriter storeWriter,
+            AdminUserProvider adminUserProvider,
+            IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -189,6 +194,7 @@ public class AdminKeyService implements IService {
             // respond with new admin created
             rc.response().end(jsonWriter.writeValueAsString(newAdmin));
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
@@ -221,6 +227,7 @@ public class AdminKeyService implements IService {
             // respond with admin deleted
             rc.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
@@ -271,6 +278,7 @@ public class AdminKeyService implements IService {
             // respond with admin disabled/enabled
             rc.response().end(response.encode());
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
@@ -304,6 +312,7 @@ public class AdminKeyService implements IService {
             // return admin with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
@@ -341,6 +350,7 @@ public class AdminKeyService implements IService {
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }

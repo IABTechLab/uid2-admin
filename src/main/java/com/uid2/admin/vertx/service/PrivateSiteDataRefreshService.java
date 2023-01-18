@@ -6,10 +6,14 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 public class PrivateSiteDataRefreshService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final JsonObject config;
@@ -48,7 +52,9 @@ public class PrivateSiteDataRefreshService implements IService {
         try {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
+            rc.response().end("OK");
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
@@ -58,7 +64,9 @@ public class PrivateSiteDataRefreshService implements IService {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
             JobDispatcher.getInstance().executeNextJob(3);
+            rc.response().end("OK");
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
