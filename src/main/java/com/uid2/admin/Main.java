@@ -132,7 +132,7 @@ public class Main {
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator);
+                    config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock);
 
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator),
