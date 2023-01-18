@@ -334,7 +334,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
         final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
-                .filter(k -> now.compareTo(k.getCreated().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0)
+                .filter(k -> now.compareTo(k.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0)
                 .collect(Collectors.toList());
 
         int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),

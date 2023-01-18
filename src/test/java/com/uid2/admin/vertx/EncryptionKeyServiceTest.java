@@ -182,17 +182,17 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
         };
 
-        setEncryptionKeys(777, keys);
+        setEncryptionKeys(MAX_KEY_ID, keys);
 
         post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(777+1, new int[] { -1, -2 },
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(2), eq(777+2));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(2), eq(MAX_KEY_ID+2));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -401,17 +401,17 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
         };
-        setEncryptionKeys(777, keys);
+        setEncryptionKeys(MAX_KEY_ID, keys);
 
         post(vertx, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(777+1, new int[] { 2 },
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 2 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(777+1));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
