@@ -14,11 +14,14 @@
   },
   {
     "key": "OPINTAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
-    "name": "MegaTest-Operator-AWS",
-    "contact": "MegaTest-Operator-AWS",
-    "protocol": "aws-nitro",
+    "name": "MegaTest-Operator-Private",
+    "contact": "MegaTest-Operator-Private",
+    "protocol": "trusted",
     "created": 1618873215,
     "disabled": false,
+    "roles": [
+      "OPERATOR"
+    ],
     "site_id": 123,
     "operator_type": "PRIVATE"
   },
@@ -42,6 +45,9 @@
     "protocol": "gcp-vmid",
     "created": 1618873215,
     "disabled": false,
+    "roles": [
+      "OPERATOR"
+    ],
     "site_id": 125,
     "operator_type": "PRIVATE"
   }
