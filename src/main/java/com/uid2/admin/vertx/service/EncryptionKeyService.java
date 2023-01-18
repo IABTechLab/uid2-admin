@@ -204,7 +204,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 .filter(s -> siteSelector.test(s))
                 .collect(Collectors.toSet());
 
-        final Instant now = Instant.ofEpochSecond(clock.getEpochSecond());
+        final Instant now = clock.now();
         final Instant activatesThreshold = now.minusSeconds(minAge.getSeconds());
 
         // within the selected sites, find keys with max activation time
@@ -238,7 +238,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         int maxKeyId = getMaxKeyId();
 
         final List<EncryptionKey> addedKeys = new ArrayList<>();
-        final Instant now = Instant.ofEpochSecond(clock.getEpochSecond());
+        final Instant now = clock.now();
 
         for (Integer siteId : siteIds) {
             ++maxKeyId;
