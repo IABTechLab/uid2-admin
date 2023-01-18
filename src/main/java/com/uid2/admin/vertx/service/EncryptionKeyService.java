@@ -2,6 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.util.MaxKeyUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -40,6 +41,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static final String SITE_KEY_EXPIRES_AFTER_SECONDS = "site_key_expires_after_seconds";
 
     private final AuthMiddleware auth;
+    private final Clock clock;
     private final WriteLock writeLock;
     private final EncryptionKeyStoreWriter storeWriter;
     private final RotatingKeyStore keyProvider;
@@ -50,18 +52,19 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration siteKeyActivatesIn;
     private final Duration siteKeyExpiresAfter;
 
-    public EncryptionKeyService(
-            JsonObject config,
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            EncryptionKeyStoreWriter storeWriter,
-            RotatingKeyStore keyProvider,
-            IKeyGenerator keyGenerator) {
+    public EncryptionKeyService(JsonObject config,
+                                AuthMiddleware auth,
+                                WriteLock writeLock,
+                                EncryptionKeyStoreWriter storeWriter,
+                                RotatingKeyStore keyProvider,
+                                IKeyGenerator keyGenerator,
+                                Clock clock) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keyProvider = keyProvider;
         this.keyGenerator = keyGenerator;
+        this.clock = clock;
 
         masterKeyActivatesIn = Duration.ofSeconds(config.getInteger(MASTER_KEY_ACTIVATES_IN_SECONDS));
         masterKeyExpiresAfter = Duration.ofSeconds(config.getInteger(MASTER_KEY_EXPIRES_AFTER_SECONDS));
@@ -207,7 +210,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 .filter(s -> siteSelector.test(s))
                 .collect(Collectors.toSet());
 
-        final Instant now = Instant.now();
+        final Instant now = clock.now();
         final Instant activatesThreshold = now.minusSeconds(minAge.getSeconds());
 
         // within the selected sites, find keys with max activation time
@@ -242,7 +245,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 this.keyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<EncryptionKey> addedKeys = new ArrayList<>();
-        final Instant now = Instant.now();
+        final Instant now = clock.now();
 
         for (Integer siteId : siteIds) {
             ++maxKeyId;
