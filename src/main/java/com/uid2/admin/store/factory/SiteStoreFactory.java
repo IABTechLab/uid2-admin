@@ -1,15 +1,23 @@
-package com.uid2.admin.store;
+package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.model.Site;
+import com.uid2.admin.store.Clock;
+import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileStorage;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.SiteStoreWriter;
+import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 
-public class SiteStoreFactory {
+import java.util.Collection;
+
+public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
@@ -44,11 +52,13 @@ public class SiteStoreFactory {
         );
     }
 
-    public RotatingSiteStore getReader(Integer siteId) {
+    @Override
+    public StoreReader<Collection<Site>> getReader(Integer siteId) {
         return new RotatingSiteStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public SiteStoreWriter getWriter(Integer siteId) {
+    @Override
+    public StoreWriter<Collection<Site>> getWriter(Integer siteId) {
         return new SiteStoreWriter(
                 getReader(siteId),
                 fileManager,
@@ -63,7 +73,7 @@ public class SiteStoreFactory {
         return globalReader;
     }
 
-    public SiteStoreWriter getGlobalWriter() {
+    public StoreWriter<Collection<Site>> getGlobalWriter() {
         return globalWriter;
     }
 }

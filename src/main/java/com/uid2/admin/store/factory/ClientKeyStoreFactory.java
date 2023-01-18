@@ -1,17 +1,22 @@
-package com.uid2.admin.store;
+package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.Clock;
+import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileStorage;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
-import com.uid2.admin.store.writer.SiteStoreWriter;
+import com.uid2.admin.store.writer.StoreWriter;
+import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 
-public class ClientKeyStoreFactory {
+import java.util.Collection;
+
+public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
@@ -27,7 +32,7 @@ public class ClientKeyStoreFactory {
             FileStorage fileStorage,
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
-            Clock clock) {
+            Clock clock)  {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
@@ -65,7 +70,7 @@ public class ClientKeyStoreFactory {
         return globalReader;
     }
 
-    public ClientKeyStoreWriter getGlobalWriter() {
+    public StoreWriter<Collection<ClientKey>> getGlobalWriter() {
         return globalWriter;
     }
 }

@@ -206,7 +206,7 @@ public class ClientKeyService implements IService {
             clients.add(newClient);
 
             // upload to storage
-            storeWriter.upload(clients);
+            storeWriter.upload(clients, null);
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newClient));
@@ -238,7 +238,7 @@ public class ClientKeyService implements IService {
             clients.remove(c);
 
             // upload to storage
-            storeWriter.upload(clients);
+            storeWriter.upload(clients, null);
 
             // respond with client deleted
             rc.response().end(jsonWriter.writeValueAsString(c));
@@ -271,7 +271,7 @@ public class ClientKeyService implements IService {
                     .collect(Collectors.toList());
 
             // upload to storage
-            storeWriter.upload(clients);
+            storeWriter.upload(clients, null);
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
@@ -321,7 +321,7 @@ public class ClientKeyService implements IService {
             response.put("disabled", c.isDisabled());
 
             // upload to storage
-            storeWriter.upload(clients);
+            storeWriter.upload(clients, null);
 
             // respond with client disabled/enabled
             rc.response().end(response.encode());
@@ -357,7 +357,7 @@ public class ClientKeyService implements IService {
             c.setSecret(keyGenerator.generateRandomKeyString(32));
 
             // upload to storage
-            storeWriter.upload(clients);
+            storeWriter.upload(clients, null);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
@@ -394,7 +394,7 @@ public class ClientKeyService implements IService {
             c.withRoles(roles);
 
             // upload to storage
-            storeWriter.upload( clients);
+            storeWriter.upload(clients, null);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
