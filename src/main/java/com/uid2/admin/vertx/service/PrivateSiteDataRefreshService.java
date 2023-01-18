@@ -37,7 +37,7 @@ public class PrivateSiteDataRefreshService implements IService {
                     }
                 },
                 //can be other role
-                Role.ADMINISTRATOR));
+                Role.ADMINISTRATOR, Role.PRIVATE_SITE_REFRESHER));
 
         router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
@@ -45,7 +45,7 @@ public class PrivateSiteDataRefreshService implements IService {
                     }
                 },
                 //can be other role
-                Role.ADMINISTRATOR));
+                Role.ADMINISTRATOR, Role.PRIVATE_SITE_REFRESHER));
     }
 
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {
