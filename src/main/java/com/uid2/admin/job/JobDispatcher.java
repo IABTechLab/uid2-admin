@@ -10,7 +10,6 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class JobDispatcher {
-
     private static class Loader {
         public static final JobDispatcher INSTANCE = new JobDispatcher();
     }
@@ -98,6 +97,10 @@ public class JobDispatcher {
         return started;
     }
 
+    public void executeNextJob(int maxRetries) {
+        run(maxRetries);
+    }
+
     private void run(int maxRetries) {
         String currentJobId;
 
@@ -140,5 +143,4 @@ public class JobDispatcher {
             }
         });
     }
-
 }

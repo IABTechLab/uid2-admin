@@ -135,7 +135,6 @@ public class Main {
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
-
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator);
 
