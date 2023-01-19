@@ -91,7 +91,7 @@ public class KeyAclService implements IService {
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
             collection.put(existingSite.getId(), newAcl);
 
-            storeWriter.upload(collection);
+            storeWriter.upload(collection, null);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -156,7 +156,7 @@ public class KeyAclService implements IService {
             }
 
             if (added || removed) {
-                storeWriter.upload(collection);
+                storeWriter.upload(collection, null);
             }
 
             rc.response()

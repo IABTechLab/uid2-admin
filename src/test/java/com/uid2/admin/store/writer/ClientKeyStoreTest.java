@@ -35,7 +35,7 @@ class ClientKeyStoreTest {
         void uploadsClients() throws Exception {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
-            writer.upload(oneClient);
+            writer.upload(oneClient, null);
 
             Collection<ClientKey> actual = globalStore.getAll();
             assertThat(actual).containsExactlyElementsOf(oneClient);
@@ -45,8 +45,8 @@ class ClientKeyStoreTest {
         void overridesWithNewDataOnSubsequentUploads() throws Exception {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
-            writer.upload(oneClient);
-            writer.upload(anotherClient);
+            writer.upload(oneClient, null);
+            writer.upload(anotherClient, null);
 
             Collection<ClientKey> actual = globalStore.getAll();
             assertThat(actual).containsExactlyElementsOf(anotherClient);
@@ -59,8 +59,8 @@ class ClientKeyStoreTest {
 
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
-            writer.upload(oneClient);
-            writer.upload(anotherClient);
+            writer.upload(oneClient, null);
+            writer.upload(anotherClient, null);
 
             List<String> files = cloudStorage.list(rootDir);
             String datedBackup = "this-test-data-type/clients.json." + now + ".bak";
@@ -76,12 +76,12 @@ class ClientKeyStoreTest {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
             when(versionGenerator.getVersion()).thenReturn(10L);
-            writer.upload(oneClient);
+            writer.upload(oneClient, null);
             JsonObject metadata1 = globalStore.getMetadata();
             assertThat(metadata1.getLong("version")).isEqualTo(10L);
 
             when(versionGenerator.getVersion()).thenReturn(11L);
-            writer.upload(anotherClient);
+            writer.upload(anotherClient, null);
             JsonObject metadata2 = globalStore.getMetadata();
             assertThat(metadata2.getLong("version")).isEqualTo(11L);
         }
@@ -90,7 +90,7 @@ class ClientKeyStoreTest {
         void savesGlobalFilesToCorrectLocation() throws Exception {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
-            writer.upload(oneClient);
+            writer.upload(oneClient, null);
 
             List<String> files = cloudStorage.list(rootDir);
             String dataFile = rootDir + "/clients.json";
@@ -107,10 +107,10 @@ class ClientKeyStoreTest {
         @Test
         void doesNotWriteToGlobalScope() throws Exception {
             ClientKeyStoreWriter globalWriter = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
-            globalWriter.upload(Collections.emptyList());
+            globalWriter.upload(Collections.emptyList(), null);
 
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
-            clientWriter.upload(oneClient);
+            clientWriter.upload(oneClient, null);
 
             Collection<ClientKey> actual = globalStore.getAll();
             assertThat(actual).isEmpty();
@@ -120,7 +120,7 @@ class ClientKeyStoreTest {
         void writesToSiteScope() throws Exception {
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
 
-            clientWriter.upload(oneClient);
+            clientWriter.upload(oneClient, null);
 
             ClientKey actual = clientStore.getClientKey(oneClient.get(0).getKey());
             assertThat(actual).isEqualTo(oneClient.get(0));
@@ -129,13 +129,13 @@ class ClientKeyStoreTest {
         @Test
         void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
-            clientWriter.upload(oneClient);
+            clientWriter.upload(oneClient, null);
 
             int siteInScope2 = 6;
             SiteScope scope2 = new SiteScope(globalMetadataPath, siteInScope2);
             RotatingClientKeyProvider siteStore2 = new RotatingClientKeyProvider(cloudStorage, scope2);
             ClientKeyStoreWriter siteWriter2 = new ClientKeyStoreWriter(siteStore2, fileManager, jsonWriter, versionGenerator, clock, scope2);
-            siteWriter2.upload(anotherClient);
+            siteWriter2.upload(anotherClient, null);
 
             Collection<ClientKey> actual1 = clientStore.getAll();
             assertThat(actual1).containsExactlyElementsOf(oneClient);
@@ -147,7 +147,7 @@ class ClientKeyStoreTest {
         @Test
         void savesClientFilesToCorrectLocation() throws Exception {
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
-            clientWriter.upload(oneClient);
+            clientWriter.upload(oneClient, null);
 
             String scopedSiteDir = rootDir + "/site/" + siteInScope;
             List<String> files = cloudStorage.list(scopedSiteDir);

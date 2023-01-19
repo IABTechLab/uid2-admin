@@ -56,7 +56,9 @@ public class ScopedStoreWriter {
 
         metadata.setVersion(versionGenerator.getVersion());
         metadata.setGenerated(generated);
-        metadata.addExtra(extraMeta);
+        if (extraMeta != null) {
+            metadata.addExtra(extraMeta);
+        }
 
         if (!isFirstWrite) {
             fileManager.backupFile(location, backupFile, generated);
@@ -69,6 +71,6 @@ public class ScopedStoreWriter {
     }
 
     public void upload(String data) throws Exception {
-        upload(data, new JsonObject());
+        upload(data, null);
     }
 }

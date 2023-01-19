@@ -4,6 +4,7 @@ import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
+import com.uid2.admin.util.MaxKeyUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -29,6 +30,11 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.maxBy;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager {
+    private static class RotationResult {
+        public Set<Integer> siteIds = null;
+        public List<EncryptionKey> rotatedKeys = new ArrayList<>();
+    }
+
     private static final String MASTER_KEY_ACTIVATES_IN_SECONDS = "master_key_activates_in_seconds";
     private static final String MASTER_KEY_EXPIRES_AFTER_SECONDS = "master_key_expires_after_seconds";
     private static final String SITE_KEY_ACTIVATES_IN_SECONDS = "site_key_activates_in_seconds";
@@ -121,7 +127,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private void handleRotateMasterKey(RoutingContext rc) {
         try {
             final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
-                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
+                    s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
@@ -235,7 +241,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
                 .collect(Collectors.toList());
 
-        int maxKeyId = getMaxKeyId();
+        int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),
+                this.keyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<EncryptionKey> addedKeys = new ArrayList<>();
         final Instant now = clock.now();
@@ -256,24 +263,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return addedKeys;
     }
 
-    private int getMaxKeyId() throws Exception {
-        final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
-                .sorted(Comparator.comparingInt(EncryptionKey::getId))
-                .collect(Collectors.toList());
-
-        int maxKeyId = keys.isEmpty() ? 0 : keys.get(keys.size()-1).getId();
-        final Integer metadataMaxKeyId = this.keyProvider.getMetadata().getInteger("max_key_id");
-        if(metadataMaxKeyId != null) {
-            // allows to avoid re-using deleted keys' ids
-            maxKeyId = Integer.max(maxKeyId, metadataMaxKeyId);
-        }
-        if(maxKeyId == Integer.MAX_VALUE) {
-            throw new ArithmeticException("Cannot generate a new key id: max key id reached");
-        }
-
-        return maxKeyId;
-    }
-
     private JsonObject toJson(EncryptionKey key) {
         JsonObject jo = new JsonObject();
         jo.put("id", key.getId());
@@ -282,11 +271,5 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         jo.put("activates", key.getActivates().toEpochMilli());
         jo.put("expires", key.getExpires().toEpochMilli());
         return jo;
-    }
-
-    private class RotationResult
-    {
-        public Set<Integer> siteIds = null;
-        public List<EncryptionKey> rotatedKeys = new ArrayList<>();
     }
 }

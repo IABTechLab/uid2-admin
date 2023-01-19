@@ -1,7 +1,6 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.model.Site;
-import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.KeyAclService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -13,7 +12,10 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,7 +96,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -122,7 +124,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -152,7 +154,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -182,7 +184,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -240,7 +242,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any());
+                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -272,7 +274,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -304,7 +306,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -334,7 +336,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -364,7 +366,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -397,7 +399,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1));
+                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -471,7 +473,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any());
+                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -501,7 +503,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any());
+                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -531,7 +533,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any());
+                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -561,7 +563,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any());
+                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }

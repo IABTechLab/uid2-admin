@@ -10,7 +10,6 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class JobDispatcher {
-
     private static class Loader {
         public static final JobDispatcher INSTANCE = new JobDispatcher();
     }
@@ -30,12 +29,12 @@ public class JobDispatcher {
         return Loader.INSTANCE;
     }
 
-    public void start(int interval, int maxRetries) {
+    public void start(int intervalMs, int maxRetries) {
         synchronized (JOB_LOCK) {
             if (!started) {
-                LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", interval, maxRetries);
+                LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", intervalMs, maxRetries);
                 scheduler = Executors.newScheduledThreadPool(1);
-                scheduler.scheduleAtFixedRate(() -> run(maxRetries), 0, interval, TimeUnit.MILLISECONDS);
+                scheduler.scheduleAtFixedRate(() -> run(maxRetries), 0, intervalMs, TimeUnit.MILLISECONDS);
                 started = true;
             } else {
                 LOGGER.warn("Already started job dispatcher");
@@ -98,6 +97,10 @@ public class JobDispatcher {
         return started;
     }
 
+    public void executeNextJob(int maxRetries) {
+        run(maxRetries);
+    }
+
     private void run(int maxRetries) {
         String currentJobId;
 
@@ -140,5 +143,4 @@ public class JobDispatcher {
             }
         });
     }
-
 }

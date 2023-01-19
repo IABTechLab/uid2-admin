@@ -62,7 +62,7 @@ public abstract class ServiceTestBase {
 
     @Mock protected FileManager fileManager;
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
-    @Mock protected SiteStoreWriter siteStoreWriter;
+    @Mock protected StoreWriter storeWriter;
     @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeyAclStoreWriter keyAclStoreWriter;
