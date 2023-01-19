@@ -150,8 +150,6 @@ public class Main {
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, writeLock, config),
             };
-            //check job for every minute
-            JobDispatcher.getInstance().start(1000 * 60, 2);
 
             AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
 
@@ -161,9 +159,13 @@ public class Main {
 
             vertx.deployVerticle(adminVerticle);
 
-            //TODO: should we create a new Verticle for private site data generation like RotatingStoreVerticle?
+            //UID2-575 setup a job dispatcher that will write private site data periodically if there is any changes
+            //check job for every minute
+            JobDispatcher.getInstance().start(1000 * 60, 3);
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
+            JobDispatcher.getInstance().executeNextJob(3);
+
         } catch (Exception e) {
             LOGGER.fatal("failed to initialize core verticle", e);
             System.exit(-1);
