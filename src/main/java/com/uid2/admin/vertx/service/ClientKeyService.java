@@ -11,11 +11,13 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -35,6 +37,7 @@ public class ClientKeyService implements IService {
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String clientKeyPrefix;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
 
     public ClientKeyService(JsonObject config,
                             AuthMiddleware auth,
@@ -57,6 +60,11 @@ public class ClientKeyService implements IService {
     public void setupRoutes(Router router) {
         router.get("/api/client/metadata").handler(
                 auth.handle(this::handleClientMetadata, Role.CLIENTKEY_ISSUER));
+        router.post("/api/client/metadata").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleRewriteMetadata(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
         router.get("/api/client/list").handler(
                 auth.handle(this::handleClientList, Role.CLIENTKEY_ISSUER));
         router.get("/api/client/reveal").handler(
@@ -103,6 +111,15 @@ public class ClientKeyService implements IService {
                 this.handleClientRoles(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+    }
+
+    private void handleRewriteMetadata(RoutingContext rc) {
+        try {
+            storeWriter.rewriteMeta();
+        } catch (Exception e) {
+            LOGGER.error("Could not rewrite metadata", e);
+            rc.fail(500, e);
+        }
     }
 
     private void handleClientMetadata(RoutingContext rc) {

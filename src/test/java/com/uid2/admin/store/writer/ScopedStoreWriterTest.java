@@ -170,10 +170,41 @@ class ScopedStoreWriterTest {
         }
 
         private RotatingSiteStore siteStore;
+
         @BeforeEach
         void setUp() {
             siteStore = new RotatingSiteStore(cloudStorage, siteScope);
         }
+    }
+
+
+    @Test
+    void rewritesMetadata() throws Exception {
+        ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
+
+        String unchangedMetaField = "unchangedMetaField";
+        String unchangedMetaValue = "unchangedMetaValue";
+        when(versionGenerator.getVersion()).thenReturn(100L);
+        writer.upload("[]", new JsonObject().put(unchangedMetaField, unchangedMetaValue));
+
+        long expectedVersion = 200L;
+        when(versionGenerator.getVersion()).thenReturn(expectedVersion);
+        writer.rewriteMeta();
+
+        JsonObject metadata = globalStore.getMetadata();
+        Long actualVersion = metadata.getLong("version");
+        assertThat(actualVersion).isEqualTo(expectedVersion);
+        assertThat(metadata.getString(unchangedMetaField)).isEqualTo(unchangedMetaValue);
+    }
+
+    @Test
+    void ignoresMetadataRewritesWhenNoMetadata() throws Exception {
+        ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
+
+        writer.rewriteMeta();
+
+        JsonObject metadata = globalStore.getMetadata();
+        assertThat(metadata).isNull();
     }
 
     @BeforeEach

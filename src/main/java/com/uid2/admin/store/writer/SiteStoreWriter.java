@@ -28,4 +28,9 @@ public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
     public void upload(Collection<Site> data, JsonObject extraMeta) throws Exception {
         writer.upload(jsonWriter.writeValueAsString(data), extraMeta);
     }
+
+    @Override
+    public void rewriteMeta() throws Exception {
+        writer.rewriteMeta();
+    }
 }

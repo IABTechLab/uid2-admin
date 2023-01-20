@@ -28,13 +28,18 @@ public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKey
     public void upload(Map<Integer, EncryptionKeyAcl> data, JsonObject extraMeta) throws Exception {
         // generate new acls
         JsonArray jsonAcls = new JsonArray();
-        for(Map.Entry<Integer, EncryptionKeyAcl> acl : data.entrySet()) {
+        for (Map.Entry<Integer, EncryptionKeyAcl> acl : data.entrySet()) {
             JsonObject jsonAcl = new JsonObject();
             jsonAcl.put("site_id", acl.getKey());
             jsonAcl.put((acl.getValue().getIsWhitelist() ? "whitelist" : "blacklist"),
-                        new JsonArray(new ArrayList<>(acl.getValue().getAccessList())));
+                    new JsonArray(new ArrayList<>(acl.getValue().getAccessList())));
             jsonAcls.add(jsonAcl);
         }
         writer.upload(jsonAcls.encodePrettily(), extraMeta);
+    }
+
+    @Override
+    public void rewriteMeta() throws Exception {
+        writer.rewriteMeta();
     }
 }

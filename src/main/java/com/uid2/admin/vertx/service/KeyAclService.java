@@ -15,6 +15,8 @@ import com.uid2.shared.model.SiteUtil;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -27,6 +29,7 @@ public class KeyAclService implements IService {
     private final RotatingKeyAclProvider keyAclProvider;
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyAclService.class);
 
     public KeyAclService(AuthMiddleware auth,
                          WriteLock writeLock,
@@ -46,6 +49,13 @@ public class KeyAclService implements IService {
     public void setupRoutes(Router router) {
         router.get("/api/keys_acl/list").handler(
                 auth.handle(this::handleKeyAclList, Role.CLIENTKEY_ISSUER));
+
+        router.post("/api/keys_acl/metadata").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleRewriteMetadata(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+
         router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleKeyAclReset(ctx);
@@ -56,6 +66,15 @@ public class KeyAclService implements IService {
                 this.handleKeyAclUpdate(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+    }
+
+    private void handleRewriteMetadata(RoutingContext rc) {
+        try {
+            storeWriter.rewriteMeta();
+        } catch (Exception e) {
+            LOGGER.error("Could not rewrite metadata", e);
+            rc.fail(500, e);
+        }
     }
 
     private void handleKeyAclList(RoutingContext rc) {
