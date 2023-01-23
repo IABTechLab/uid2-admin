@@ -44,6 +44,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static final String SITE_KEY_ACTIVATES_IN_SECONDS = "site_key_activates_in_seconds";
     private static final String SITE_KEY_EXPIRES_AFTER_SECONDS = "site_key_expires_after_seconds";
     private static final String SITE_KEY_ROTATION_CUT_OFF_DAYS = "site_key_rotation_cut_off_days";
+    private static final String REFRESH_KEY_ROTATION_CUT_OFF_DAYS = "refresh_key_rotation_cut_off_days";
 
     private final AuthMiddleware auth;
     private final Clock clock;
@@ -58,6 +59,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration siteKeyActivatesIn;
     private final Duration siteKeyExpiresAfter;
     private final Duration siteKeyRotationCutOffTime;
+    private final Duration refreshKeyRotationCutOffTime;
 
     public EncryptionKeyService(JsonObject config,
                                 AuthMiddleware auth,
@@ -79,6 +81,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         siteKeyActivatesIn = Duration.ofSeconds(config.getInteger(SITE_KEY_ACTIVATES_IN_SECONDS));
         siteKeyExpiresAfter = Duration.ofSeconds(config.getInteger(SITE_KEY_EXPIRES_AFTER_SECONDS));
         siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS));
+        refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS));
 
         if (masterKeyActivatesIn.compareTo(masterKeyExpiresAfter) >= 0) {
             throw new IllegalStateException(MASTER_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + MASTER_KEY_EXPIRES_AFTER_SECONDS);
@@ -164,11 +167,14 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private void handleRotateMasterKey(RoutingContext rc) {
         try {
-            final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, masterKeyRotationCutoffTime,
-                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
+            final RotationResult masterKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, masterKeyRotationCutoffTime,
+                s -> s == Const.Data.MasterKeySiteId);
+            final RotationResult refreshKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, refreshKeyRotationCutOffTime,
+                    s -> s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
-            result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
+            masterKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
+            refreshKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());

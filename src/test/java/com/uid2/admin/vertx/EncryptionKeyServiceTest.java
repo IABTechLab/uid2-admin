@@ -27,6 +27,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private static final int SITE_KEY_ACTIVATES_IN_SECONDS = 36000;
     private static final int SITE_KEY_EXPIRES_AFTER_SECONDS = 72000;
     private static final int SITE_KEY_ROTATION_CUT_OFF_DAYS = 30;
+    private static final int REFRESH_KEY_ROTATION_CUT_OFF_DAYS = 30;
     private static final long KEY_CREATE_TIME_IN_MILLI = 100010011L;
     private static final long KEY_ACTIVATE_TIME_IN_MILLI = 100020011L;
     private static final long KEY_EXPIRE_TIME_IN_MILLI = 100030011L;
@@ -51,6 +52,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         this.config.put("site_key_activates_in_seconds", SITE_KEY_ACTIVATES_IN_SECONDS);
         this.config.put("site_key_expires_after_seconds", SITE_KEY_EXPIRES_AFTER_SECONDS);
         this.config.put("site_key_rotation_cut_off_days", SITE_KEY_ROTATION_CUT_OFF_DAYS);
+        this.config.put("refresh_key_rotation_cut_off_days", REFRESH_KEY_ROTATION_CUT_OFF_DAYS);
 
         keyService = new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock);
         return keyService;
@@ -151,6 +153,31 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
                 new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+1), 5),
+        };
+        setEncryptionKeys(MAX_KEY_ID, keys);
+
+        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1 },
+                    MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
+                    response.bodyAsJsonArray().stream().toArray());
+            try {
+                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void rotateRefreshKey(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.SECRET_MANAGER);
+
+        final EncryptionKey[] keys = {
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+1), 5),
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+2), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+1), -2),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
@@ -159,11 +186,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, -2 },
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
+                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -179,7 +206,6 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
         };
 
         setEncryptionKeys(MAX_KEY_ID, keys);
@@ -188,11 +214,39 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, -2 },
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(2), eq(MAX_KEY_ID+2));
+                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void filterOutRefreshKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
+        // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        fakeAuth(Role.SECRET_MANAGER);
+
+        final EncryptionKey[] keys = {
+                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
+        };
+
+        setEncryptionKeys(MAX_KEY_ID, keys);
+
+        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
+                    MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
+                    response.bodyAsJsonArray().stream().toArray());
+            try {
+                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -233,6 +287,30 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
                 new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), -1),
+        };
+        setEncryptionKeys(MAX_KEY_ID, keys);
+
+        post(vertx, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, },
+                    MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
+                    response.bodyAsJsonArray().stream().toArray());
+            try {
+                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            } catch (Exception ex) {
+                fail(ex);
+            }
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void rotateRefreshKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.SECRET_MANAGER);
+
+        final EncryptionKey[] keys = {
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
                 new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), -2),
         };
@@ -242,11 +320,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, -2 },
+            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
+                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
