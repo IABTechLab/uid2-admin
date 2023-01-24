@@ -111,6 +111,7 @@ $ gcloud compute instances \\\n\
 
 bootcmd:
 - iptables -D INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+- iptables -A INPUT -p tcp -m tcp --dport 22 -j DROP
 - systemctl mask --now serial-getty@ttyS0.service
 
 runcmd:
