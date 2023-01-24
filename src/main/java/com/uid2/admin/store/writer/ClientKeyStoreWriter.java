@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Collection;
 
-public class ClientKeyStoreWriter implements StoreWriter<Collection<ClientKey>>  {
+public class ClientKeyStoreWriter implements StoreWriter<Collection<ClientKey>> {
     private final ScopedStoreWriter writer;
     private final ObjectWriter jsonWriter;
 
@@ -27,6 +27,11 @@ public class ClientKeyStoreWriter implements StoreWriter<Collection<ClientKey>> 
     @Override
     public void upload(Collection<ClientKey> data, JsonObject extraMeta) throws Exception {
         writer.upload(jsonWriter.writeValueAsString(data), extraMeta);
+    }
+
+    @Override
+    public void rewriteMeta() throws Exception {
+        writer.rewriteMeta();
     }
 }
 ;

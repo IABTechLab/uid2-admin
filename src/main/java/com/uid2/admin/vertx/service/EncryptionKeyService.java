@@ -17,6 +17,8 @@ import com.uid2.shared.store.reader.RotatingKeyStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -35,6 +37,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         public List<EncryptionKey> rotatedKeys = new ArrayList<>();
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionKeyService.class);
     private static final String MASTER_KEY_ACTIVATES_IN_SECONDS = "master_key_activates_in_seconds";
     private static final String MASTER_KEY_EXPIRES_AFTER_SECONDS = "master_key_expires_after_seconds";
     private static final String SITE_KEY_ACTIVATES_IN_SECONDS = "site_key_activates_in_seconds";
@@ -84,6 +87,12 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         router.get("/api/key/list").handler(
                 auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
 
+        router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleRewriteMetadata(ctx);
+            }
+        }, Role.SECRET_MANAGER));
+
         router.post("/api/key/rotate_master").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateMasterKey(ctx);
@@ -106,6 +115,17 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 this.handleRotateAllSiteKeys(ctx);
             }
         }, Role.SECRET_MANAGER));
+    }
+
+
+    private void handleRewriteMetadata(RoutingContext rc) {
+        try {
+            storeWriter.rewriteMeta();
+            rc.response().end("OK");
+        } catch (Exception e) {
+            LOGGER.error("Could not rewrite metadata", e);
+            rc.fail(500, e);
+        }
     }
 
     @Override

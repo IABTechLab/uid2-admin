@@ -16,6 +16,8 @@ import com.uid2.shared.store.IClientKeyProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -25,25 +27,32 @@ import java.util.stream.Collectors;
 public class SiteService implements IService {
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final StoreWriter storageManager;
+    private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
     private final IClientKeyProvider clientKeyProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
     public SiteService(AuthMiddleware auth,
                        WriteLock writeLock,
-                       StoreWriter storageManager,
+                       StoreWriter<Collection<Site>> storeWriter,
                        RotatingSiteStore siteProvider,
                        IClientKeyProvider clientKeyProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storageManager = storageManager;
+        this.storeWriter = storeWriter;
         this.siteProvider = siteProvider;
         this.clientKeyProvider = clientKeyProvider;
     }
 
     @Override
     public void setupRoutes(Router router) {
+        router.post("/api/site/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleRewriteMetadata(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+
         router.get("/api/site/list").handler(
                 auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
@@ -56,6 +65,16 @@ public class SiteService implements IService {
                 this.handleSiteEnable(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+    }
+
+    private void handleRewriteMetadata(RoutingContext rc) {
+        try {
+            storeWriter.rewriteMeta();
+            rc.response().end("OK");
+        } catch (Exception e) {
+            LOGGER.error("Could not rewrite metadata", e);
+            rc.fail(500, e);
+        }
     }
 
     private void handleSiteList(RoutingContext rc) {
@@ -133,7 +152,7 @@ public class SiteService implements IService {
             sites.add(newSite);
 
             // upload to storage
-            storageManager.upload(sites, null);
+            storeWriter.upload(sites, null);
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newSite));
@@ -169,7 +188,7 @@ public class SiteService implements IService {
 
             if (existingSite.isEnabled() != enabled) {
                 existingSite.setEnabled(enabled);
-                storageManager.upload(sites, null);
+                storeWriter.upload(sites, null);
             }
 
             rc.response().end(jsonWriter.writeValueAsString(existingSite));

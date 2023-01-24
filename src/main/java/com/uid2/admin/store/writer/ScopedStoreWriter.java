@@ -73,4 +73,16 @@ public class ScopedStoreWriter {
     public void upload(String data) throws Exception {
         upload(data, null);
     }
+
+    public void rewriteMeta() throws Exception {
+        JsonObject rawMetadata = provider.getMetadata();
+        if (rawMetadata == null) {
+            return;
+        }
+        Metadata metadata = new Metadata(rawMetadata);
+        Long version = versionGenerator.getVersion();
+        metadata.setVersion(version);
+
+        fileManager.uploadMetadata(metadata.getJson(), dataType, scope.getMetadataPath());
+    }
 }

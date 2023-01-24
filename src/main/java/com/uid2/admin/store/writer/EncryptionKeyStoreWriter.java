@@ -43,6 +43,11 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
         upload(data, maxKeyMeta(newMaxKeyId));
     }
 
+    @Override
+    public void rewriteMeta() throws Exception {
+        writer.rewriteMeta();
+    }
+
     public static JsonObject maxKeyMeta(Integer newMaxKeyId) {
         return new JsonObject().put("max_key_id", newMaxKeyId);
     }
