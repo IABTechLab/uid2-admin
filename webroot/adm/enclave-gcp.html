@@ -1,91 +1,99 @@
 <html>
+
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
-    <style>
-      label.bold { font-weight:bold }
-    </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <style>
+    label.bold {
+      font-weight: bold
+    }
+  </style>
 </head>
+
 <body>
-<h1>UID2 Admin - GCP Enclave ID Tool</h1>
+  <h1>UID2 Admin - GCP Enclave ID Tool</h1>
 
-<a href="/">Back</a>
+  <a href="/">Back</a>
 
-<br>
-<br>
+  <br>
+  <br>
 
-<h3>Inputs</h3>
+  <h3>Inputs</h3>
 
-<label for="diskUri" class="bold">GCP Disk URI.</label>
-<br>
-<label for="diskUri">To get the latest: gcloud compute images list --filter="name~'cos-stable'" --standard-images --uri</label>
-<br>
-<input type="text" id="diskUri" name="diskUri" size="100" value="">
-<br>
-<br>
+  <label for="diskUri" class="bold">GCP Disk URI.</label>
+  <br>
+  <label for="diskUri">To get the latest: gcloud compute images list --filter="name~'cos-stable'" --standard-images
+    --uri</label>
+  <br>
+  <input type="text" id="diskUri" name="diskUri" size="100" value="">
+  <br>
+  <br>
 
-<label for="apiToken" class="bold">Operator Api Key:</label>
-<br>
-<label for="apiToken">This can be found here: <a href="operator-key.html">Operator Key Management</a> using Reveal Operator Key</label>
-<br>
-<input type="text" id="apiToken" name="apiToken" size="100" value="">
-<br>
-<br>
+  <label for="apiToken" class="bold">Operator Api Key:</label>
+  <br>
+  <label for="apiToken">This can be found here: <a href="operator-key.html">Operator Key Management</a> using Reveal
+    Operator Key</label>
+  <br>
+  <input type="text" id="apiToken" name="apiToken" size="100" value="">
+  <br>
+  <br>
 
-<label for="imageId" class="bold">Operator Docker Image ID:</label>
-<br>
-<label for="imageId">The full digest for the image, with or without 'sha256:'</label>
-<br>
-<input type="text" id="imageId" name="imageId" size="100" value="">
-<br>
-<br>
+  <label for="imageId" class="bold">Operator Docker Image ID:</label>
+  <br>
+  <label for="imageId">The full digest for the image, with or without 'sha256:'</label>
+  <br>
+  <input type="text" id="imageId" name="imageId" size="100" value="">
+  <br>
+  <br>
 
-<label for="envId" class="bold">Environment:</label>
-<br>
-<select id="envId">
-  <option value="integ">Integration</option>
-  <option value="prod">Production</option>
-</select>
-<br>
-<br>
+  <label for="envId" class="bold">Environment:</label>
+  <br>
+  <select id="envId">
+    <option value="integ">Integration</option>
+    <option value="prod">Production</option>
+  </select>
+  <br>
+  <br>
 
-<label for="accesstokenId" class="bold">Docker Registry Access Token:</label>
-<br>
-<label for="accesstokenId">This is a Personal Access Tooken that allows read access to ghcr.io where the docker image is to be downloaded from.</label>
-<br>
-<input type="text" id="accesstokenId" name="accesstokenId" size="100">
-<br>
-<br>
+  <label for="accesstokenId" class="bold">Docker Registry Access Token:</label>
+  <br>
+  <label for="accesstokenId">This is a Personal Access Token that allows read access to ghcr.io where the docker image
+    is to be downloaded from.</label>
+  <br>
+  <input type="text" id="accesstokenId" name="accesstokenId" size="100">
+  <br>
+  <br>
 
-<h3>Operations</h3>
+  <h3>Operations</h3>
 
-<ul>
+  <ul>
     <li><a href="#" id="doGenerate">Generate GCP cloud-init, Enclave ID and gcloud command</a></li>
-</ul>
-<br>
+  </ul>
+  <br>
 
-<h3>Outputs</h3>
+  <h3>Outputs</h3>
 
-<label for="cloudInitSha256">cloud-init sha256, make sure your downloaded cloud-init config matches exactly the value below:</label>
-<br>
-<pre><label id="cloudInitSha256">TBD</label></pre>
-<br>
-<br>
+  <label for="cloudInitSha256">cloud-init sha256, make sure your downloaded cloud-init config matches exactly the value
+    below:</label>
+  <br>
+  <pre><label id="cloudInitSha256">TBD</label></pre>
+  <br>
+  <br>
 
-<label for="gcloudCli">Example gcloud command to create GCP Operator Enclave VM:</label>
-<br>
-<textarea id="gcloudCli" name="gcloudCli" rows="10" cols="120" readonly>
+  <label for="gcloudCli">Example gcloud command to create GCP Operator Enclave VM:</label>
+  <br>
+  <textarea id="gcloudCli" name="gcloudCli" rows="10" cols="120" readonly>
 </textarea>
-<br>
-<br>
+  <br>
+  <br>
 
-<label for="enclaveId">Generated GCP Enclave ID:</label>
-<br>
-<pre><label id="enclaveId">TBD</label></pre>
-<br>
-<br>
+  <label for="enclaveId">Generated GCP Enclave ID:</label>
+  <br>
+  <pre><label id="enclaveId">TBD</label></pre>
+  <br>
+  <br>
 
-<script language="JavaScript">
+  <script language="JavaScript">
     var gcloudCliOrig = '$ sha256sum < ./<CLOUD_INIT_FN> # !!! check if sha256 matches exactly below !!!\\\n\
 <CLOUD_INIT_MD>\n\
 \n\
@@ -99,62 +107,58 @@ $ gcloud compute instances \\\n\
 
     $('#gcloudCli').val(gcloudCliOrig);
 
-    var cloudInit = `
-    #cloud-config
- 
- bootcmd:
- - iptables -D INPUT -p tcp -m tcp --dport 22 -j ACCEPT
- - systemctl mask --now serial-getty@ttyS0.service
-  
- runcmd:
- - systemctl daemon-reload
- - systemctl start uid2-operator.service
-  
- write_files:
- - path: /etc/systemd/system/uid2-operator.service
-   permissions: 0644
-   owner: root
-   content: |
-     [Unit]
-     Description=Start UID 2.0 operator as docker container
-  
-     [Service]
-     Environment="UID2_ENCLAVE_API_TOKEN=dummy"
-     Environment="UID2_ENCLAVE_IMAGE_ID=dummy"
-     Environment="GHCR_RO_ACCESS_TOKEN={{token}}"
-     Environment="HOME=/run/uid2"
-     ExecStartPre=mkdir -p /run/uid2/.config/gcloud
-     ExecStartPre=docker login ghcr.io -u gcp-uid2-docker -p \${GHCR_RO_ACCESS_TOKEN}
-     ExecStartPre=/usr/bin/docker-credential-gcr configure-docker
-     ExecStart=/usr/bin/docker run --rm --name uid2-operator -v /run/uid2/operator.json:/app/conf/config.json -e KUBERNETES_SERVICE_HOST=1 -e core_api_token=\${UID2_ENCLAVE_API_TOKEN} -e optout_api_token=\${UID2_ENCLAVE_API_TOKEN} -p 80:8080 ghcr.io/iabtechlab/uid2-operator@\${UID2_ENCLAVE_IMAGE_ID}
-     ExecStop=/usr/bin/docker stop uid2-operator
-     ExecStopPost=/usr/bin/docker rm uid2-operator
- - path: /run/uid2/operator.json
-   permissions: 0644
-   owner: root
-   content: |
-     {
-       "clients_metadata_path": "https://core-{{env}}.uidapi.com/clients/refresh",
-       "keys_metadata_path": "https://core-{{env}}.uidapi.com/key/refresh",
-       "keys_acl_metadata_path": "https://core-{{env}}.uidapi.com/key/acl/refresh",
-       "salts_metadata_path": "https://core-{{env}}.uidapi.com/salt/refresh",
-       "core_attest_url": "https://core-{{env}}.uidapi.com/attest",
-       "optout_metadata_path": "https://optout-{{env}}.uidapi.com/optout/refresh",
-       "optout_api_uri": "https://optout-{{env}}.uidapi.com/optout/replicate",
-       "optout_s3_folder": "optout-v2/",
-       "optout_inmem_cache": true,
-       "identity_token_expires_after_seconds": 14400,
-       "refresh_token_expires_after_seconds": 2592000,
-       "refresh_identity_token_after_seconds": 3600,
-       "enclave_platform": "gcp-vmid",
-       "enforce_https": true,
-       "service_instances": 16,
-       "allow_legacy_api": false
-     }
-     `;
+    const cloudInitInitial = `#cloud-config
 
-    //var ghcrAccessToken = atob("Z2hwX2dRTEx0aHB1T1J3SHFMM3R1R" + "FliTGNkaWFkN295cDNsYVBRZg==")
-       
+bootcmd:
+- iptables -D INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+- systemctl mask --now serial-getty@ttyS0.service
+
+runcmd:
+- systemctl daemon-reload
+- systemctl start uid2-operator.service
+
+write_files:
+- path: /etc/systemd/system/uid2-operator.service
+  permissions: 0644
+  owner: root
+  content: |
+    [Unit]
+    Description=Start UID 2.0 operator as docker container
+
+    [Service]
+    Environment="UID2_ENCLAVE_API_TOKEN=dummy"
+    Environment="UID2_ENCLAVE_IMAGE_ID=dummy"
+    Environment="GHCR_RO_ACCESS_TOKEN={{token}}"
+    Environment="HOME=/run/uid2"
+    ExecStartPre=mkdir -p /run/uid2/.config/gcloud
+    ExecStartPre=docker login ghcr.io -u gcp-uid2-docker -p \${GHCR_RO_ACCESS_TOKEN}
+    ExecStartPre=/usr/bin/docker-credential-gcr configure-docker
+    ExecStart=/usr/bin/docker run --rm --name uid2-operator -v /run/uid2/operator.json:/app/conf/config.json -e KUBERNETES_SERVICE_HOST=1 -e core_api_token=\${UID2_ENCLAVE_API_TOKEN} -e optout_api_token=\${UID2_ENCLAVE_API_TOKEN} -p 80:8080 ghcr.io/iabtechlab/uid2-operator@sha256:\${UID2_ENCLAVE_IMAGE_ID}
+    ExecStop=/usr/bin/docker stop uid2-operator
+    ExecStopPost=/usr/bin/docker rm uid2-operator
+- path: /run/uid2/operator.json
+  permissions: 0644
+  owner: root
+  content: |
+    {
+      "clients_metadata_path": "https://core-{{env}}.uidapi.com/clients/refresh",
+      "keys_metadata_path": "https://core-{{env}}.uidapi.com/key/refresh",
+      "keys_acl_metadata_path": "https://core-{{env}}.uidapi.com/key/acl/refresh",
+      "salts_metadata_path": "https://core-{{env}}.uidapi.com/salt/refresh",
+      "core_attest_url": "https://core-{{env}}.uidapi.com/attest",
+      "optout_metadata_path": "https://optout-{{env}}.uidapi.com/optout/refresh",
+      "optout_api_uri": "https://optout-{{env}}.uidapi.com/optout/replicate",
+      "optout_s3_folder": "optout-v2/",
+      "optout_inmem_cache": true,
+      "identity_token_expires_after_seconds": 14400,
+      "refresh_token_expires_after_seconds": 2592000,
+      "refresh_identity_token_after_seconds": 3600,
+      "enclave_platform": "gcp-vmid",
+      "enforce_https": true,
+      "service_instances": 16,
+      "allow_legacy_api": false
+    }
+`;
 
     function sha256hex(string) {
       const utf8 = new TextEncoder().encode(string);
@@ -188,75 +192,77 @@ $ gcloud compute instances \\\n\
     }
 
     function normalizeCloudInit(text) {
-        return text
-            .replace(/([^\n])$/g, '$1\n')
-            .replace(/\n+$/g, '\n');
+      return text
+        .replace(/([^\n])$/g, '$1\n')
+        .replace(/\n+$/g, '\n');
     }
 
     $(document).ready(function () {
-        $('#doGenerate').on('click', function () {
-           var env = $('#envId').val();
-           var ghcrAccessToken = $('#accesstokenId').val();
+      $('#doGenerate').on('click', function () {
+        var cloudInit = cloudInitInitial;
+        var env = $('#envId').val();
+        var ghcrAccessToken = $('#accesstokenId').val();
 
-           var ts = Math.floor(new Date() / 1000);
-            var fn = 'cloud-init-' + ts + '.yaml';
-            var diskUri = $('#diskUri').val();
+        var ts = Math.floor(new Date() / 1000);
+        var fn = 'cloud-init-' + ts + '.yaml';
+        var diskUri = $('#diskUri').val();
 
-            cloudInit = cloudInit.replaceAll('{{env}}', env);
-            cloudInit = cloudInit.replaceAll('{{token}}', ghcrAccessToken)
-            cloudInit = normalizeCloudInit(cloudInit);
+        cloudInit = cloudInit.replaceAll('{{env}}', env);
+        cloudInit = cloudInit.replaceAll('{{token}}', ghcrAccessToken)
+        cloudInit = normalizeCloudInit(cloudInit);
 
-            //var cloudInit = normalizeCloudInit($('#cloudInit').val());
+        //var cloudInit = normalizeCloudInit($('#cloudInit').val());
 
-            var apiToken = $('#apiToken').val();
-            
-            var imageId = $('#imageId').val();
-            if (!imageId.startsWith('sha256:')) {
-              imageId = 'sha256:' + imageId;
-            }
+        var apiToken = $('#apiToken').val();
 
-            cloudInit = cloudInit
-              .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.+?\"$/gm, '$1=' + apiToken + '"')
-              .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.+?\"$/gm, '$1=' + imageId + '"');
+        var imageId = $('#imageId').val();
+        if (imageId.startsWith('sha256:')) {
+          imageId = imageId.replace('sha256:', '');
+        }
 
-            download(fn, cloudInit);
+        cloudInit = cloudInit
+          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.+?\"$/gm, '$1=' + apiToken + '"')
+          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.+?\"$/gm, '$1=' + imageId + '"');
 
-            sha256hex(cloudInit).then(hex => {
-              $('#cloudInitSha256').text(hex);
+        download(fn, cloudInit);
 
-              var cli = gcloudCliOrig
-                  .replaceAll('<CLOUD_INIT_FN>', fn)
-                  .replaceAll('<CLOUD_INIT_MD>', hex)
-                  .replaceAll('<DISK_URI>', diskUri);
+        sha256hex(cloudInit).then(hex => {
+          $('#cloudInitSha256').text(hex);
 
-              $('#gcloudCli').val(cli);
-            });
+          var cli = gcloudCliOrig
+            .replaceAll('<CLOUD_INIT_FN>', fn)
+            .replaceAll('<CLOUD_INIT_MD>', hex)
+            .replaceAll('<DISK_URI>', diskUri);
 
-            var tplCloudInit = cloudInit;
-            var enclaveParams = "API_TOKEN,IMAGE_ID";
-            if (env == 'prod') {
-               enclaveParams = "API_TOKEN,";
-            }
-            var enclaveParamsList = enclaveParams.split(',');
-
-            enclaveParamsList.forEach(p => {
-              var enclaveParam = "UID2_ENCLAVE_" + p;
-              const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.+?\"$', 'gm');
-              tplCloudInit = tplCloudInit.replace(reMaskParam, '$1=dummy"');
-            });
-
-            //$('#cloudInit').val(tplCloudInit);
-
-            sha256base64(diskUri).then(s1 => {
-              sha256base64(tplCloudInit).then(s2 => {
-                sha256base64(s1 + s2).then(enclaveId => {
-                  $('#enclaveId').text(enclaveId);
-                });
-              });
-            });
+          $('#gcloudCli').val(cli);
         });
+
+        var tplCloudInit = cloudInit;
+        var enclaveParams = "API_TOKEN,IMAGE_ID";
+        if (env == 'prod') {
+          enclaveParams = "API_TOKEN,";
+        }
+        var enclaveParamsList = enclaveParams.split(',');
+
+        enclaveParamsList.forEach(p => {
+          var enclaveParam = "UID2_ENCLAVE_" + p;
+          const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.+?\"$', 'gm');
+          tplCloudInit = tplCloudInit.replace(reMaskParam, '$1=dummy"');
+        });
+
+        //$('#cloudInit').val(tplCloudInit);
+
+        sha256base64(diskUri).then(s1 => {
+          sha256base64(tplCloudInit).then(s2 => {
+            sha256base64(s1 + s2).then(enclaveId => {
+              $('#enclaveId').text(enclaveId);
+            });
+          });
+        });
+      });
     });
-</script>
+  </script>
 
 </body>
+
 </html>
