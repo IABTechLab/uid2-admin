@@ -32,7 +32,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private static final long KEY_ACTIVATE_TIME_IN_MILLI = 100020011L;
     private static final long KEY_EXPIRE_TIME_IN_MILLI = 100030011L;
     private static final long TEN_DAYS_IN_MILLI = 864000000L;
-    private static final long TEN_DAYS_IN_SECONDS = 864000L;
+    private static final long A_HUNDRED_DAYS_IN_SECONDS = 8640000L;
     private static final int MAX_KEY_ID = 777;
     private Clock clock = mock(Clock.class);
     private EncryptionKeyService keyService = null;
@@ -260,9 +260,9 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), -1),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), -1),
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
-                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), -2),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), -2),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
@@ -286,7 +286,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), -1),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), -1),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
@@ -312,7 +312,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
-                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), -2),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), -2),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
@@ -364,7 +364,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(SITE_KEY_ACTIVATES_IN_SECONDS + 100), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(SITE_KEY_ACTIVATES_IN_SECONDS + 100), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
@@ -388,7 +388,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(SITE_KEY_ACTIVATES_IN_SECONDS + 100), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(SITE_KEY_ACTIVATES_IN_SECONDS + 100), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
@@ -503,7 +503,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+2), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+2), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+2), 6),
                 new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+3), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+3), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+3), 7),
                 new EncryptionKey(15, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+4), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+4), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+4), -1),
@@ -533,7 +533,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+2), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+2), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+2), 6),
                 new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+3), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+3), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+3), 7),
                 new EncryptionKey(15, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+4), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+4), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+4), 2),
@@ -563,7 +563,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
-                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + TEN_DAYS_IN_SECONDS * 10), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + TEN_DAYS_IN_SECONDS * 10), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
