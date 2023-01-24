@@ -5,6 +5,9 @@ import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.AdminUserStoreWriter;
+import com.uid2.admin.store.writer.ClientKeyStoreWriter;
+import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
+import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -36,6 +39,9 @@ public class AdminKeyService implements IService {
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String adminKeyPrefix;
+    private final ClientKeyStoreWriter clientKeyStoreWriter;
+    private final EncryptionKeyStoreWriter encryptionKeyStoreWriter;
+    private final KeyAclStoreWriter keyAclStoreWriter;
 
     public AdminKeyService(
             JsonObject config,
@@ -43,13 +49,18 @@ public class AdminKeyService implements IService {
             WriteLock writeLock,
             AdminUserStoreWriter storeWriter,
             AdminUserProvider adminUserProvider,
-            IKeyGenerator keyGenerator) {
+            IKeyGenerator keyGenerator,
+            ClientKeyStoreWriter clientKeyStoreWriter,
+            EncryptionKeyStoreWriter encryptionKeyStoreWriter,
+            KeyAclStoreWriter keyAclStoreWriter) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.adminUserProvider = adminUserProvider;
         this.keyGenerator = keyGenerator;
-
+        this.clientKeyStoreWriter = clientKeyStoreWriter;
+        this.encryptionKeyStoreWriter = encryptionKeyStoreWriter;
+        this.keyAclStoreWriter = keyAclStoreWriter;
         this.adminKeyPrefix = config.getString("admin_key_prefix");
     }
 
@@ -97,6 +108,11 @@ public class AdminKeyService implements IService {
         router.post("/api/admin/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleAdminRoles(ctx);
+            }
+        }, Role.ADMINISTRATOR));
+        router.post("/api/admin/rewrite-meta").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleRewriteMetadata(ctx);
             }
         }, Role.ADMINISTRATOR));
     }
@@ -349,6 +365,23 @@ public class AdminKeyService implements IService {
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(a));
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleRewriteMetadata(RoutingContext rc) {
+        try {
+            clientKeyStoreWriter.rewriteMeta();
+            encryptionKeyStoreWriter.rewriteMeta();
+            keyAclStoreWriter.rewriteMeta();
+            JsonObject json = new JsonObject();
+            json.put("Result", "Successfully overwritten global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs");
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(jsonWriter.writeValueAsString(json));
+
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);

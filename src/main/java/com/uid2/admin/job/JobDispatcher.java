@@ -124,8 +124,11 @@ public class JobDispatcher {
         JOB_EXECUTOR.execute(() -> {
             for (int retryCount = 1; retryCount <= maxRetries; retryCount++) {
                 try {
+                    long before = System.currentTimeMillis();
                     currentJob.execute();
-                    LOGGER.info("Job successfully executed: {}", currentJobId);
+                    long after = System.currentTimeMillis();
+                    long durationInSeconds = (after - before)/1000;
+                    LOGGER.info("Job successfully executed: {} in {} seconds", currentJobId, durationInSeconds);
                     break;
                 } catch (Throwable t) {
                     if (retryCount < maxRetries) {
