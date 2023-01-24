@@ -58,7 +58,7 @@
 
         $('#doAddSiteKey').on('click', function () {
             var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/key/add?&site_id=' + siteId;
+            var url = '/api/key/add?site_id=' + siteId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
