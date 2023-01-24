@@ -28,6 +28,7 @@
 <ul>
     <li class="ro-sem" style="display: none"><a href="#" id="doList">List Keys</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateMaster">Rotate Master Key</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doAddSiteKey">Add Site Key</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateSite">Rotate Site Key</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateAllSites">Rotate All Site Keys</a></li>
 </ul>
@@ -51,6 +52,13 @@
             var minAge = encodeURIComponent($('#minAge').val());
             var url = '/api/key/rotate_master?min_age_seconds=' + minAge;
             if ($('#force').is(':checked')) url = url + '&force=true';
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doAddSiteKey').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/key/add?site_id=' + siteId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
