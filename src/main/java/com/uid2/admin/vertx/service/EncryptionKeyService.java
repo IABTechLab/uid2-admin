@@ -130,10 +130,14 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     @Override
     public EncryptionKey addSiteKey(int siteId) throws Exception {
+        return addSiteKey(siteId, siteKeyActivatesIn);
+    }
+
+    private EncryptionKey addSiteKey(int siteId, Duration activatesIn) throws Exception {
         // force refresh manually
         this.keyProvider.loadContent();
 
-        return addSiteKeys(Arrays.asList(siteId), siteKeyActivatesIn, siteKeyExpiresAfter).get(0);
+        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter).get(0);
     }
 
     private void handleKeyList(RoutingContext rc) {
@@ -189,9 +193,27 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             return;
         }
 
+        final Optional<String> activatesQueryParam = rc.queryParam("activates_in_seconds")
+                .stream()
+                .findFirst();
+
+        Optional<Duration> activatesInSeconds = Optional.empty();
+
+        if (activatesQueryParam.isPresent() && !activatesQueryParam.get().isEmpty()) {
+            final long seconds;
+            try {
+                seconds = Long.parseUnsignedLong(activatesQueryParam.get());
+            } catch (NumberFormatException e) {
+                ResponseUtil.error(rc, 400, "activates_in_seconds must be a non-negative number of seconds");
+                return;
+            }
+
+            activatesInSeconds = Optional.of(Duration.ofSeconds(seconds));
+        }
+
         final EncryptionKey siteKey;
         try {
-            siteKey = addSiteKey(siteId);
+            siteKey = addSiteKey(siteId, activatesInSeconds.orElse(siteKeyActivatesIn));
         } catch (Exception e) {
             rc.fail(500, e);
             return;
