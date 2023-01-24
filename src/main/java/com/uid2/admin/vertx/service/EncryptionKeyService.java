@@ -146,8 +146,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         // force refresh manually
         this.keyProvider.loadContent();
 
-        // Set cutoffTime to be 0 here as we don't want to filter out the keys that have passed the cutoff time
-        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, Duration.ofDays(0)).get(0);
+        // Set cutoffTime to be maximum here as we don't want to filter out the keys that have passed the cutoff time
+        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, Duration.ofNanos(Instant.MAX.getNano())).get(0);
     }
 
     private void handleKeyList(RoutingContext rc) {
