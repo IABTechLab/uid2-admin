@@ -34,7 +34,7 @@
     <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Admin User</a></li>
     <br/><br/>
-        <li class="ro-adm" style="display: none"><a href="#" id="doRewriteMetadata">Overwrite</a> global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs (no underlying data change). </li>
+        <li class="ro-adm" style="display: none"><a href="#" id="doRewriteMetadata">Rewrite</a> global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs (no underlying data change). </li>
         <ul>
             <li> Useful for rolling back private operators to use (and force re-read of) global data and disabling "provide_private_site_data" config in core service.</li>
         </ul>
@@ -83,8 +83,8 @@
         });
 
         $('#doRewriteMetadata').on('click', function () {
-            var url = '/api/admin/rewrite-meta';
-            var result = confirm("Are you sure you want to overwrite the global metadata?");
+            var url = '/api/admin/rewrite_metadata';
+            var result = confirm("Are you sure you want to rewrite the global metadata?");
             if (result != true) {
                 return;
             }

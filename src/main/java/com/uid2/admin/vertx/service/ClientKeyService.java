@@ -60,7 +60,7 @@ public class ClientKeyService implements IService {
     public void setupRoutes(Router router) {
         router.get("/api/client/metadata").handler(
                 auth.handle(this::handleClientMetadata, Role.CLIENTKEY_ISSUER));
-        router.post("/api/client/metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
@@ -116,6 +116,7 @@ public class ClientKeyService implements IService {
     private void handleRewriteMetadata(RoutingContext rc) {
         try {
             storeWriter.rewriteMeta();
+            rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
             rc.fail(500, e);

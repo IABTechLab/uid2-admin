@@ -87,11 +87,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         router.get("/api/key/list").handler(
                 auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
 
-        router.post("/api/key/metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.SECRET_MANAGER));
 
         router.post("/api/key/rotate_master").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -114,6 +114,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private void handleRewriteMetadata(RoutingContext rc) {
         try {
             storeWriter.rewriteMeta();
+            rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
             rc.fail(500, e);

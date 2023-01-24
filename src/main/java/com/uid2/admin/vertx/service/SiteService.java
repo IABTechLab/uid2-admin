@@ -47,7 +47,7 @@ public class SiteService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/site/metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/site/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
@@ -70,6 +70,7 @@ public class SiteService implements IService {
     private void handleRewriteMetadata(RoutingContext rc) {
         try {
             storeWriter.rewriteMeta();
+            rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
             rc.fail(500, e);

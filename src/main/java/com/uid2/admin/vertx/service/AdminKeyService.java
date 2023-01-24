@@ -110,7 +110,7 @@ public class AdminKeyService implements IService {
                 this.handleAdminRoles(ctx);
             }
         }, Role.ADMINISTRATOR));
-        router.post("/api/admin/rewrite-meta").blockingHandler(auth.handle(ctx -> {
+        router.post("/api/admin/rewrite_metadata").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
@@ -377,7 +377,7 @@ public class AdminKeyService implements IService {
             encryptionKeyStoreWriter.rewriteMeta();
             keyAclStoreWriter.rewriteMeta();
             JsonObject json = new JsonObject();
-            json.put("Result", "Successfully overwritten global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs");
+            json.put("Result", "Successfully rewrote global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs");
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(json));

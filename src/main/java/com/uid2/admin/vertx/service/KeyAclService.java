@@ -50,7 +50,7 @@ public class KeyAclService implements IService {
         router.get("/api/keys_acl/list").handler(
                 auth.handle(this::handleKeyAclList, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/keys_acl/metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/keys_acl/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
@@ -71,6 +71,7 @@ public class KeyAclService implements IService {
     private void handleRewriteMetadata(RoutingContext rc) {
         try {
             storeWriter.rewriteMeta();
+            rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
             rc.fail(500, e);
