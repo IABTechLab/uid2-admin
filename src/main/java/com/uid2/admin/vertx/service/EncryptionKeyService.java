@@ -45,6 +45,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static final String SITE_KEY_EXPIRES_AFTER_SECONDS = "site_key_expires_after_seconds";
     private static final String SITE_KEY_ROTATION_CUT_OFF_DAYS = "site_key_rotation_cut_off_days";
     private static final String REFRESH_KEY_ROTATION_CUT_OFF_DAYS = "refresh_key_rotation_cut_off_days";
+    private static final String FILTER_KEY_OVER_CUT_OFF_DAYS = "filter_key_over_cut_off_days";
 
     private final AuthMiddleware auth;
     private final Clock clock;
@@ -60,6 +61,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration siteKeyExpiresAfter;
     private final Duration siteKeyRotationCutOffTime;
     private final Duration refreshKeyRotationCutOffTime;
+    private final boolean filterKeyOverCutOffTime;
 
     public EncryptionKeyService(JsonObject config,
                                 AuthMiddleware auth,
@@ -82,6 +84,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         siteKeyExpiresAfter = Duration.ofSeconds(config.getInteger(SITE_KEY_EXPIRES_AFTER_SECONDS));
         siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS, 110));
         refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS, 40));
+        filterKeyOverCutOffTime = config.getBoolean(FILTER_KEY_OVER_CUT_OFF_DAYS, false);
 
         if (masterKeyActivatesIn.compareTo(masterKeyExpiresAfter) >= 0) {
             throw new IllegalStateException(MASTER_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + MASTER_KEY_EXPIRES_AFTER_SECONDS);
@@ -340,7 +343,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
         final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
-                .filter(k -> now.compareTo(k.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0)
+                .filter(filterKeyOverCutOffTime ? k -> now.compareTo(k.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0 : k -> true)
                 .collect(Collectors.toList());
 
         int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),
