@@ -77,11 +77,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
         masterKeyActivatesIn = Duration.ofSeconds(config.getInteger(MASTER_KEY_ACTIVATES_IN_SECONDS));
         masterKeyExpiresAfter = Duration.ofSeconds(config.getInteger(MASTER_KEY_EXPIRES_AFTER_SECONDS));
-        masterKeyRotationCutoffTime = Duration.ofDays(config.getInteger(MASTER_KEY_ROTATION_CUT_OFF_DAYS));
+        masterKeyRotationCutoffTime = Duration.ofDays(config.getInteger(MASTER_KEY_ROTATION_CUT_OFF_DAYS, 15));
         siteKeyActivatesIn = Duration.ofSeconds(config.getInteger(SITE_KEY_ACTIVATES_IN_SECONDS));
         siteKeyExpiresAfter = Duration.ofSeconds(config.getInteger(SITE_KEY_EXPIRES_AFTER_SECONDS));
-        siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS));
-        refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS));
+        siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS, 110));
+        refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS, 40));
 
         if (masterKeyActivatesIn.compareTo(masterKeyExpiresAfter) >= 0) {
             throw new IllegalStateException(MASTER_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + MASTER_KEY_EXPIRES_AFTER_SECONDS);
