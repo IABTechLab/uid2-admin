@@ -44,6 +44,7 @@ class MultiScopeStoreWriterTest {
                     OperatorType.PRIVATE));
 
     Site site = new Site(scopedSiteId, "site 1", true);
+    private FileManager fileManager;
 
     @BeforeEach
     void setUp() {
@@ -51,18 +52,19 @@ class MultiScopeStoreWriterTest {
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
+        fileManager = new FileManager(cloudStorage, fileStorage);
         siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
-                fileStorage,
                 objectWriter,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
     }
 
     @Test
     public void writesNothingGivenNoDesiredState() throws Exception {
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
         multiStore.uploadIfChanged(ImmutableMap.of(), null);
 
@@ -72,7 +74,7 @@ class MultiScopeStoreWriterTest {
 
     @Test
     public void syncsNewData() throws Exception {
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
         multiStore.uploadIfChanged(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)),null);
 
@@ -89,7 +91,7 @@ class MultiScopeStoreWriterTest {
     }
     @Test
     public void addsExtraMetadataProvided() throws Exception {
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
         JsonObject extraMeta = new JsonObject().put("key1", "value1").put("key2", 2);
 
@@ -110,7 +112,7 @@ class MultiScopeStoreWriterTest {
         Long oldVersion = reader.getMetadata().getLong("version");
 
         Site updatedSite = new Site(scopedSiteId, "site 1 updated", true);
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
         multiStore.uploadIfChanged(ImmutableMap.of(
                 scopedSiteId, ImmutableList.of(updatedSite)
@@ -132,7 +134,7 @@ class MultiScopeStoreWriterTest {
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
         multiStore.uploadIfChanged(ImmutableMap.of(
                 scopedSiteId, ImmutableList.of(site)

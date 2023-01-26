@@ -203,8 +203,7 @@ class ScopedStoreWriterTest {
 
         writer.rewriteMeta();
 
-        JsonObject metadata = globalStore.getMetadata();
-        assertThat(metadata).isNull();
+        assertThat(cloudStorage.list("")).isEmpty();
     }
 
     @BeforeEach

@@ -57,37 +57,38 @@ public class PrivateSiteDataSyncJob implements Job {
         ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
+        FileManager fileManager = new FileManager(cloudStorage, fileStorage);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 new CloudPath(config.getString(RotatingSiteStore.SITES_METADATA_PATH)),
-                fileStorage,
                 jsonWriter,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
 
         ClientKeyStoreFactory clientKeyStoreFactory = new ClientKeyStoreFactory(
                 cloudStorage,
                 new CloudPath(config.getString(Const.Config.ClientsMetadataPathProp)),
-                fileStorage,
                 jsonWriter,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
 
         EncryptionKeyStoreFactory encryptionKeyStoreFactory = new EncryptionKeyStoreFactory(
                 cloudStorage,
                 new CloudPath(config.getString(Const.Config.KeysMetadataPathProp)),
-                fileStorage,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
 
         KeyAclStoreFactory keyAclStoreFactory = new KeyAclStoreFactory(
                 cloudStorage,
                 new CloudPath(config.getString(Const.Config.KeysAclMetadataPathProp)),
-                fileStorage,
                 jsonWriter,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
@@ -110,15 +111,19 @@ public class PrivateSiteDataSyncJob implements Job {
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
+                fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
         MultiScopeStoreWriter<Collection<ClientKey>> clientWriter = new MultiScopeStoreWriter<>(
+                fileManager,
                 clientKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
         MultiScopeStoreWriter<Collection<EncryptionKey>> encryptionKeyWriter = new MultiScopeStoreWriter<>(
+                fileManager,
                 encryptionKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
         MultiScopeStoreWriter<Map<Integer, EncryptionKeyAcl>> keyAclWriter = new MultiScopeStoreWriter<>(
+                fileManager,
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
 

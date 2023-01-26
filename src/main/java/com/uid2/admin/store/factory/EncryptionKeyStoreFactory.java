@@ -2,7 +2,6 @@ package com.uid2.admin.store.factory;
 
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.FileStorage;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -25,14 +24,14 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
     public EncryptionKeyStoreFactory(
             ICloudStorage fileStreamProvider,
             CloudPath rootMetadataPath,
-            FileStorage fileStorage,
             VersionGenerator versionGenerator,
-            Clock clock) {
+            Clock clock,
+            FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
-        fileManager = new FileManager(fileStreamProvider, fileStorage);
+        this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeyStore(fileStreamProvider, globalScope);
     }

@@ -3,8 +3,8 @@ package com.uid2.admin.job.jobsync.client;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
 import com.uid2.admin.store.Clock;
+import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.InstantClock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.store.factory.ClientKeyStoreFactory;
@@ -56,6 +56,7 @@ class ClientKeySyncJobTest {
             scopedSiteId,
             false);
     private ClientKeyStoreFactory clientKeyStoreFactory;
+    private FileManager fileManager;
 
     @BeforeEach
     void setUp() {
@@ -63,13 +64,14 @@ class ClientKeySyncJobTest {
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
+        fileManager = new FileManager(cloudStorage, fileStorage);
         clientKeyStoreFactory = new ClientKeyStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
-                fileStorage,
                 objectWriter,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
     }
 
     @Test
@@ -82,6 +84,7 @@ class ClientKeySyncJobTest {
         Long oldVersion = reader.getMetadata().getLong("version");
 
         ClientKeySyncJob job = new ClientKeySyncJob(new MultiScopeStoreWriter<>(
+                fileManager,
                 clientKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
                 ImmutableList.of(client), operators

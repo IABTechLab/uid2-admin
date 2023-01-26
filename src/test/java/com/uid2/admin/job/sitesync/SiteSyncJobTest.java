@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
+import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.InstantClock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.store.factory.SiteStoreFactory;
@@ -48,6 +49,7 @@ public class SiteSyncJobTest {
 
     Site site = new Site(scopedSiteId, "site 1", true);
     private SiteStoreFactory siteStoreFactory;
+    private FileManager fileManager;
 
     @BeforeEach
     void setUp() {
@@ -55,18 +57,20 @@ public class SiteSyncJobTest {
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
+        fileManager = new FileManager(cloudStorage, fileStorage);
         siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
-                fileStorage,
                 objectWriter,
                 versionGenerator,
-                clock);
+                clock,
+                fileManager);
     }
 
     @Test
     public void writesNoSitesIfThereAreNoSites() throws Exception {
         SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
+                fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
                 ImmutableList.of(), operators
@@ -84,6 +88,7 @@ public class SiteSyncJobTest {
     @Test
     public void syncsNewSites() throws Exception {
         SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
+                fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
                 ImmutableList.of(site), operators
@@ -113,6 +118,7 @@ public class SiteSyncJobTest {
 
         Site updatedSite = new Site(scopedSiteId, "site 1 updated", true);
         SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
+                fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
                 ImmutableList.of(updatedSite), operators
@@ -137,6 +143,7 @@ public class SiteSyncJobTest {
         Long oldVersion = reader.getMetadata().getLong("version");
 
         SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
+                fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
                 ImmutableList.of(site), operators

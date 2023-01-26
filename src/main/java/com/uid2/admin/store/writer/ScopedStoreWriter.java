@@ -41,16 +41,15 @@ public class ScopedStoreWriter {
 
     public void upload(String data, JsonObject extraMeta) throws Exception {
         final long generated = clock.getEpochSecond();
-        JsonObject rawMetadata = provider.getMetadata();
-        boolean isFirstWrite = rawMetadata == null;
-        Metadata metadata;
+        boolean isFirstWrite = !fileManager.isPresent(scope.getMetadataPath());
         CloudPath location;
+        Metadata metadata;
         if (isFirstWrite) {
             metadata = new Metadata(new JsonObject());
             location = scope.resolve(new CloudPath(dataFile.toString()));
             metadata.setLocation(dataType, location);
         } else {
-            metadata = new Metadata(rawMetadata);
+            metadata = new Metadata(provider.getMetadata());
             location = metadata.locationOf(dataType);
         }
 
@@ -75,11 +74,10 @@ public class ScopedStoreWriter {
     }
 
     public void rewriteMeta() throws Exception {
-        JsonObject rawMetadata = provider.getMetadata();
-        if (rawMetadata == null) {
+        if (!fileManager.isPresent(scope.getMetadataPath())) {
             return;
         }
-        Metadata metadata = new Metadata(rawMetadata);
+        Metadata metadata = new Metadata(provider.getMetadata());
         Long version = versionGenerator.getVersion();
         metadata.setVersion(version);
 

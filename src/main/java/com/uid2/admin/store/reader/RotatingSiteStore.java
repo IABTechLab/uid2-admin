@@ -20,6 +20,7 @@ public class RotatingSiteStore implements ISiteStore, StoreReader<Collection<Sit
         this.reader = new ScopedStoreReader<>(fileStreamProvider, scope, new SiteParser(), "sites");
     }
 
+    @Override
     public CloudPath getMetadataPath() { return reader.getMetadataPath(); }
 
     @Override
