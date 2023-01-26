@@ -9,9 +9,11 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class MultiScopeStoreWriter<T> {
+    private final FileManager fileManager;
     private final StoreFactory<T> factory;
     private final BiFunction<T, T, Boolean> areEqual;
-    public MultiScopeStoreWriter(StoreFactory<T> factory, BiFunction<T, T, Boolean> areEqual) {
+    public MultiScopeStoreWriter(FileManager fileManager, StoreFactory<T> factory, BiFunction<T, T, Boolean> areEqual) {
+        this.fileManager = fileManager;
         this.factory = factory;
         this.areEqual = areEqual;
     }
@@ -39,7 +41,7 @@ public class MultiScopeStoreWriter<T> {
         Map<Integer, T> currentState = new HashMap<>();
         for (Integer siteId : siteIds) {
             StoreReader<T> reader = factory.getReader(siteId);
-            if (reader.getMetadata() != null) {
+            if (fileManager.isPresent(reader.getMetadataPath())) {
                 reader.loadContent();
                 currentState.put(siteId, reader.getAll());
             }

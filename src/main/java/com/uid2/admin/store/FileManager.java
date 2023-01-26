@@ -8,6 +8,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class FileManager {
     private final ICloudStorage cloudStorage;
@@ -34,5 +35,10 @@ public class FileManager {
         FileName fileName = new FileName(name + "-metadata", ".json");
         String content = Json.encodePrettily(metadata);
         uploadFile(location, fileName, content);
+    }
+
+    public boolean isPresent(CloudPath path) throws CloudStorageException {
+        List<String> files = cloudStorage.list(path.toString());
+        return !files.isEmpty();
     }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.FileStorage;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.SiteStoreWriter;
@@ -30,21 +29,21 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     public SiteStoreFactory(
             ICloudStorage fileStreamProvider,
             CloudPath rootMetadataPath,
-            FileStorage fileStorage,
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
-            Clock clock) {
+            Clock clock,
+            FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
-        fileManager = new FileManager(fileStreamProvider, fileStorage);
+        this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingSiteStore(fileStreamProvider, globalScope);
         globalWriter = new SiteStoreWriter(
                 globalReader,
-                fileManager,
+                this.fileManager,
                 objectWriter,
                 versionGenerator,
                 clock,

@@ -3,7 +3,6 @@ package com.uid2.admin.store.factory;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.FileStorage;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
@@ -29,21 +28,21 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>
     public ClientKeyStoreFactory(
             ICloudStorage fileStreamProvider,
             CloudPath rootMetadataPath,
-            FileStorage fileStorage,
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
-            Clock clock)  {
+            Clock clock,
+            FileManager fileManager)  {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
-        fileManager = new FileManager(fileStreamProvider, fileStorage);
+        this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingClientKeyProvider(fileStreamProvider, globalScope);
         globalWriter = new ClientKeyStoreWriter(
                 globalReader,
-                fileManager,
+                this.fileManager,
                 objectWriter,
                 versionGenerator,
                 clock,
