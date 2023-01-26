@@ -35,6 +35,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static class RotationResult {
         public Set<Integer> siteIds = null;
         public List<EncryptionKey> rotatedKeys = new ArrayList<>();
+        public void combine(RotationResult newRotationResult) {
+            siteIds.addAll(newRotationResult.siteIds);
+            rotatedKeys.addAll(newRotationResult.rotatedKeys);
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionKeyService.class);
@@ -175,9 +179,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             final RotationResult refreshKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, refreshKeyRotationCutOffTime,
                     s -> s == Const.Data.RefreshKeySiteId);
 
+            masterKeyResult.combine(refreshKeyResult);
+
             final JsonArray ja = new JsonArray();
             masterKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
-            refreshKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
