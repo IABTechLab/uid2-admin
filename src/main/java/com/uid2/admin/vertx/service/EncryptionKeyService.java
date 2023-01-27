@@ -373,21 +373,22 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     }
 
     private boolean isWithinCutOffTime(EncryptionKey key, Instant now, boolean duringRotation) {
-        int siteId = 8;
-        Duration cutoffTime;
-        switch (siteId) {
-            case -1:  cutoffTime = masterKeyRotationCutoffTime;
-                break;
-            case -2:  cutoffTime = refreshKeyRotationCutOffTime;
-                break;
-            default: cutoffTime = siteKeyRotationCutOffTime;
-                break;
-        }
-        if (filterKeyOverCutOffTime && duringRotation) {
-            return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
-        } else {
-            // Always return true if the feature flag is not turned on.
+        if (!(filterKeyOverCutOffTime && duringRotation)) {
             return true;
         }
+        int siteId = key.getSiteId();
+        Duration cutoffTime;
+        switch (siteId) {
+            case Const.Data.MasterKeySiteId:
+                cutoffTime = masterKeyRotationCutoffTime;
+                break;
+            case Const.Data.RefreshKeySiteId:
+                cutoffTime = refreshKeyRotationCutOffTime;
+                break;
+            default:
+                cutoffTime = siteKeyRotationCutOffTime;
+                break;
+        }
+        return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
     }
  }
