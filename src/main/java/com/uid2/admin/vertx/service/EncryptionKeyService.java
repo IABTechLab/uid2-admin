@@ -79,11 +79,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
         masterKeyActivatesIn = Duration.ofSeconds(config.getInteger(MASTER_KEY_ACTIVATES_IN_SECONDS));
         masterKeyExpiresAfter = Duration.ofSeconds(config.getInteger(MASTER_KEY_EXPIRES_AFTER_SECONDS));
-        masterKeyRotationCutoffTime = Duration.ofDays(config.getInteger(MASTER_KEY_ROTATION_CUT_OFF_DAYS, 15));
+        masterKeyRotationCutoffTime = Duration.ofDays(config.getInteger(MASTER_KEY_ROTATION_CUT_OFF_DAYS, 37));
         siteKeyActivatesIn = Duration.ofSeconds(config.getInteger(SITE_KEY_ACTIVATES_IN_SECONDS));
         siteKeyExpiresAfter = Duration.ofSeconds(config.getInteger(SITE_KEY_EXPIRES_AFTER_SECONDS));
-        siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS, 110));
-        refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS, 40));
+        siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS, 37));
+        refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS, 37));
         filterKeyOverCutOffTime = config.getBoolean(FILTER_KEY_OVER_CUT_OFF_DAYS, false);
 
         if (masterKeyActivatesIn.compareTo(masterKeyExpiresAfter) >= 0) {
