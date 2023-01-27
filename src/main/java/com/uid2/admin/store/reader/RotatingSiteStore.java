@@ -3,7 +3,6 @@ package com.uid2.admin.store.reader;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.parser.SiteParser;
 import com.uid2.shared.cloud.DownloadCloudStorage;
-import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.ScopedStoreReader;
 import com.uid2.shared.store.reader.StoreReader;
