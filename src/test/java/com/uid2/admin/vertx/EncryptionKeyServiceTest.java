@@ -32,6 +32,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private static final long KEY_ACTIVATE_TIME_IN_MILLI = 100020011L;
     private static final long KEY_EXPIRE_TIME_IN_MILLI = 100030011L;
     private static final long TEN_DAYS_IN_MILLI = 864000000L;
+    private static final long A_HUNDRED_DAYS_IN_MILLI = 86400000000L;
     private static final long A_HUNDRED_DAYS_IN_SECONDS = 8640000L;
     private static final int MAX_KEY_ID = 777;
     private static final boolean FILTER_KEY_OVER_CUT_OFF_DAYS = false;
@@ -207,7 +208,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -235,7 +236,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     @Test
     void filterOutMasterKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -267,7 +268,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -295,7 +296,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     @Test
     void filterOutRefreshKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -543,7 +544,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -570,7 +571,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     @Test
     void filterOutSiteKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI * 10));
+        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
