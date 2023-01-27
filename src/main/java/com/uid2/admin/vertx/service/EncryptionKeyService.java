@@ -333,13 +333,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return result;
     }
 
-    private List<EncryptionKey> addSiteKeys(Iterable<Integer> siteIds, Duration activatesIn, Duration expiresAfter, boolean duringRotation)
+    private List<EncryptionKey> addSiteKeys(Iterable<Integer> siteIds, Duration activatesIn, Duration expiresAfter, boolean isDuringRotation)
             throws Exception {
         final Instant now = clock.now();
 
         final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
-                .filter(k -> isWithinCutOffTime(k, now, duringRotation))
+                .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
                 .collect(Collectors.toList());
 
         int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),
