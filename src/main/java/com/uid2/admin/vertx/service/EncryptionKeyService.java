@@ -35,10 +35,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static class RotationResult {
         public Set<Integer> siteIds = null;
         public List<EncryptionKey> rotatedKeys = new ArrayList<>();
-        public void combine(RotationResult newRotationResult) {
-            siteIds.addAll(newRotationResult.siteIds);
-            rotatedKeys.addAll(newRotationResult.rotatedKeys);
-        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionKeyService.class);
@@ -153,8 +149,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         // force refresh manually
         this.keyProvider.loadContent();
 
-        // Set cutoffTime to be maximum here as we don't want to filter out the keys that have passed the cutoff time
-        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, Duration.ofNanos(Instant.MAX.getNano())).get(0);
+        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, false).get(0);
     }
 
     private void handleKeyList(RoutingContext rc) {
@@ -174,12 +169,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private void handleRotateMasterKey(RoutingContext rc) {
         try {
-            final RotationResult masterKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, masterKeyRotationCutoffTime,
-                s -> s == Const.Data.MasterKeySiteId);
-            final RotationResult refreshKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter, refreshKeyRotationCutOffTime,
-                    s -> s == Const.Data.RefreshKeySiteId);
-
-            masterKeyResult.combine(refreshKeyResult);
+            final RotationResult masterKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
+                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
             masterKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
@@ -257,7 +248,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 return;
             }
 
-            final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, siteKeyRotationCutOffTime, s -> s == siteId);
+            final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> s == siteId);
             if (result == null) {
                 return;
             } else if (!result.siteIds.contains(siteId)) {
@@ -277,7 +268,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private void handleRotateAllSiteKeys(RoutingContext rc) {
         try {
-            final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, siteKeyRotationCutOffTime, s -> SiteUtil.isValidSiteId(s) || s == Const.Data.AdvertisingTokenSiteId);
+            final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> SiteUtil.isValidSiteId(s) || s == Const.Data.AdvertisingTokenSiteId);
             if (result == null) {
                 return;
             }
@@ -292,17 +283,17 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         }
     }
 
-    private RotationResult rotateKeys(RoutingContext rc, Duration activatesIn, Duration expiresAfter, Duration cutOffTime, Predicate<Integer> siteSelector)
+    private RotationResult rotateKeys(RoutingContext rc, Duration activatesIn, Duration expiresAfter, Predicate<Integer> siteSelector)
             throws Exception {
         final Duration minAge = RequestUtil.getDuration(rc, "min_age_seconds");
         if (minAge == null) return null;
         final Optional<Boolean> force = RequestUtil.getBoolean(rc, "force", false);
         if (!force.isPresent()) return null;
 
-        return rotateKeys(siteSelector, minAge, activatesIn, expiresAfter, cutOffTime, force.get());
+        return rotateKeys(siteSelector, minAge, activatesIn, expiresAfter, force.get());
     }
 
-    private RotationResult rotateKeys(Predicate<Integer> siteSelector, Duration minAge, Duration activatesIn, Duration expiresAfter, Duration cutoffTime, boolean force)
+    private RotationResult rotateKeys(Predicate<Integer> siteSelector, Duration minAge, Duration activatesIn, Duration expiresAfter, boolean force)
             throws Exception {
         RotationResult result = new RotationResult();
 
@@ -337,18 +328,18 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             return result;
         }
 
-        result.rotatedKeys = addSiteKeys(siteIds, activatesIn, expiresAfter, cutoffTime);
+        result.rotatedKeys = addSiteKeys(siteIds, activatesIn, expiresAfter, true);
 
         return result;
     }
 
-    private List<EncryptionKey> addSiteKeys(Iterable<Integer> siteIds, Duration activatesIn, Duration expiresAfter, Duration cutoffTime)
+    private List<EncryptionKey> addSiteKeys(Iterable<Integer> siteIds, Duration activatesIn, Duration expiresAfter, boolean duringRotation)
             throws Exception {
         final Instant now = clock.now();
 
         final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
-                .filter(filterKeyOverCutOffTime ? k -> now.compareTo(k.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0 : k -> true)
+                .filter(k -> isWithinCutOffTime(k, now, duringRotation))
                 .collect(Collectors.toList());
 
         int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),
@@ -380,4 +371,23 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         jo.put("expires", key.getExpires().toEpochMilli());
         return jo;
     }
-}
+
+    private boolean isWithinCutOffTime(EncryptionKey key, Instant now, boolean duringRotation) {
+        int siteId = 8;
+        Duration cutoffTime;
+        switch (siteId) {
+            case -1:  cutoffTime = masterKeyRotationCutoffTime;
+                break;
+            case -2:  cutoffTime = refreshKeyRotationCutOffTime;
+                break;
+            default: cutoffTime = siteKeyRotationCutOffTime;
+                break;
+        }
+        if (filterKeyOverCutOffTime && duringRotation) {
+            return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
+        } else {
+            // Always return true if the feature flag is not turned on.
+            return true;
+        }
+    }
+ }
