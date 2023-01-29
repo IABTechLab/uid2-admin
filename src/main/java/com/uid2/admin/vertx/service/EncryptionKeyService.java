@@ -24,12 +24,12 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.maxBy;
+import static java.util.stream.Collectors.*;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static class RotationResult {
@@ -40,8 +40,12 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionKeyService.class);
     private static final String MASTER_KEY_ACTIVATES_IN_SECONDS = "master_key_activates_in_seconds";
     private static final String MASTER_KEY_EXPIRES_AFTER_SECONDS = "master_key_expires_after_seconds";
+    private static final String MASTER_KEY_ROTATION_CUT_OFF_DAYS = "master_key_rotation_cut_off_days";
     private static final String SITE_KEY_ACTIVATES_IN_SECONDS = "site_key_activates_in_seconds";
     private static final String SITE_KEY_EXPIRES_AFTER_SECONDS = "site_key_expires_after_seconds";
+    private static final String SITE_KEY_ROTATION_CUT_OFF_DAYS = "site_key_rotation_cut_off_days";
+    private static final String REFRESH_KEY_ROTATION_CUT_OFF_DAYS = "refresh_key_rotation_cut_off_days";
+    private static final String FILTER_KEY_OVER_CUT_OFF_DAYS = "filter_key_over_cut_off_days";
 
     private final AuthMiddleware auth;
     private final Clock clock;
@@ -52,8 +56,12 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private final Duration masterKeyActivatesIn;
     private final Duration masterKeyExpiresAfter;
+    private final Duration masterKeyRotationCutoffTime;
     private final Duration siteKeyActivatesIn;
     private final Duration siteKeyExpiresAfter;
+    private final Duration siteKeyRotationCutOffTime;
+    private final Duration refreshKeyRotationCutOffTime;
+    private final boolean filterKeyOverCutOffTime;
 
     public EncryptionKeyService(JsonObject config,
                                 AuthMiddleware auth,
@@ -71,8 +79,12 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
         masterKeyActivatesIn = Duration.ofSeconds(config.getInteger(MASTER_KEY_ACTIVATES_IN_SECONDS));
         masterKeyExpiresAfter = Duration.ofSeconds(config.getInteger(MASTER_KEY_EXPIRES_AFTER_SECONDS));
+        masterKeyRotationCutoffTime = Duration.ofDays(config.getInteger(MASTER_KEY_ROTATION_CUT_OFF_DAYS, 37));
         siteKeyActivatesIn = Duration.ofSeconds(config.getInteger(SITE_KEY_ACTIVATES_IN_SECONDS));
         siteKeyExpiresAfter = Duration.ofSeconds(config.getInteger(SITE_KEY_EXPIRES_AFTER_SECONDS));
+        siteKeyRotationCutOffTime = Duration.ofDays(config.getInteger(SITE_KEY_ROTATION_CUT_OFF_DAYS, 37));
+        refreshKeyRotationCutOffTime = Duration.ofDays(config.getInteger(REFRESH_KEY_ROTATION_CUT_OFF_DAYS, 37));
+        filterKeyOverCutOffTime = config.getBoolean(FILTER_KEY_OVER_CUT_OFF_DAYS, false);
 
         if (masterKeyActivatesIn.compareTo(masterKeyExpiresAfter) >= 0) {
             throw new IllegalStateException(MASTER_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + MASTER_KEY_EXPIRES_AFTER_SECONDS);
@@ -137,7 +149,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         // force refresh manually
         this.keyProvider.loadContent();
 
-        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter).get(0);
+        return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, false).get(0);
     }
 
     private void handleKeyList(RoutingContext rc) {
@@ -157,11 +169,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
 
     private void handleRotateMasterKey(RoutingContext rc) {
         try {
-            final RotationResult result = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
-                    s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
+            final RotationResult masterKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
+                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
-            result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
+            masterKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
@@ -316,22 +328,24 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             return result;
         }
 
-        result.rotatedKeys = addSiteKeys(siteIds, activatesIn, expiresAfter);
+        result.rotatedKeys = addSiteKeys(siteIds, activatesIn, expiresAfter, true);
 
         return result;
     }
 
-    private List<EncryptionKey> addSiteKeys(Iterable<Integer> siteIds, Duration activatesIn, Duration expiresAfter)
+    private List<EncryptionKey> addSiteKeys(Iterable<Integer> siteIds, Duration activatesIn, Duration expiresAfter, boolean isDuringRotation)
             throws Exception {
+        final Instant now = clock.now();
+
         final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))
+                .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
                 .collect(Collectors.toList());
 
         int maxKeyId = MaxKeyUtil.getMaxKeyId(this.keyProvider.getSnapshot().getActiveKeySet(),
                 this.keyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<EncryptionKey> addedKeys = new ArrayList<>();
-        final Instant now = clock.now();
 
         for (Integer siteId : siteIds) {
             ++maxKeyId;
@@ -343,7 +357,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             keys.add(key);
             addedKeys.add(key);
         }
-
         storeWriter.upload(keys, maxKeyId);
 
         return addedKeys;
@@ -358,4 +371,24 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         jo.put("expires", key.getExpires().toEpochMilli());
         return jo;
     }
-}
+
+    private boolean isWithinCutOffTime(EncryptionKey key, Instant now, boolean duringRotation) {
+        if (!(filterKeyOverCutOffTime && duringRotation)) {
+            return true;
+        }
+        int siteId = key.getSiteId();
+        Duration cutoffTime;
+        switch (siteId) {
+            case Const.Data.MasterKeySiteId:
+                cutoffTime = masterKeyRotationCutoffTime;
+                break;
+            case Const.Data.RefreshKeySiteId:
+                cutoffTime = refreshKeyRotationCutOffTime;
+                break;
+            default:
+                cutoffTime = siteKeyRotationCutOffTime;
+                break;
+        }
+        return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
+    }
+ }
