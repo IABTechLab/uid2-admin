@@ -15,14 +15,17 @@ public class PrivateSiteDataRefreshService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
 
     private final AuthMiddleware auth;
+    private final JobDispatcher jobDispatcher;
     private final WriteLock writeLock;
     private final JsonObject config;
 
     public PrivateSiteDataRefreshService(
             AuthMiddleware auth,
+            JobDispatcher jobDispatcher,
             WriteLock writeLock,
             JsonObject config) {
         this.auth = auth;
+        this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;
         this.config = config;
     }
@@ -51,7 +54,7 @@ public class PrivateSiteDataRefreshService implements IService {
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {
         try {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
-            JobDispatcher.getInstance().enqueue(job);
+            jobDispatcher.enqueue(job);
             rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -62,8 +65,8 @@ public class PrivateSiteDataRefreshService implements IService {
     private void handlePrivateSiteDataGenerateNow(RoutingContext rc) {
         try {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
-            JobDispatcher.getInstance().enqueue(job);
-            JobDispatcher.getInstance().executeNextJob(3);
+            jobDispatcher.enqueue(job);
+            jobDispatcher.executeNextJob();
             rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);

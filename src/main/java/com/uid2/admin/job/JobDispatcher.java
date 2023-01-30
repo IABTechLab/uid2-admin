@@ -2,6 +2,7 @@ package com.uid2.admin.job;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.job.model.JobInfo;
+import com.uid2.admin.store.Clock;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -10,31 +11,38 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class JobDispatcher {
-    private static class Loader {
-        public static final JobDispatcher INSTANCE = new JobDispatcher();
-    }
-
     private static final Logger LOGGER = LoggerFactory.getLogger(JobDispatcher.class);
 
     private final ExecutorService JOB_EXECUTOR = Executors.newSingleThreadExecutor();
     private final Queue<Job> JOB_QUEUE = new ConcurrentLinkedQueue<>();
     private final Object JOB_LOCK = new Object();
+
+    private final String id;
+    private final int intervalMs;
+    private final int maxRetries;
+    private final Clock clock;
+
     private boolean started = false;
+    private Job currentJob = null;
     private ScheduledExecutorService scheduler;
-    private Job currentJob;
 
-    private JobDispatcher() {}
-
-    public static JobDispatcher getInstance() {
-        return Loader.INSTANCE;
+    public JobDispatcher(
+            String id,
+            int intervalMs,
+            int maxRetries,
+            Clock clock) {
+        this.id = id;
+        this.intervalMs = intervalMs;
+        this.maxRetries = maxRetries;
+        this.clock = clock;
     }
 
-    public void start(int intervalMs, int maxRetries) {
+    public void start() {
         synchronized (JOB_LOCK) {
             if (!started) {
                 LOGGER.info("Starting job dispatcher (Interval: {}ms | Max retries: {})", intervalMs, maxRetries);
                 scheduler = Executors.newScheduledThreadPool(1);
-                scheduler.scheduleAtFixedRate(() -> run(maxRetries), 0, intervalMs, TimeUnit.MILLISECONDS);
+                scheduler.scheduleAtFixedRate(this::executeNextJob, 0, intervalMs, TimeUnit.MILLISECONDS);
                 started = true;
             } else {
                 LOGGER.warn("Already started job dispatcher");
@@ -46,15 +54,18 @@ public class JobDispatcher {
         LOGGER.info("Shutting down job dispatcher");
         synchronized (JOB_LOCK) {
             started = false;
+            currentJob = null;
             JOB_QUEUE.clear();
+
             if (scheduler != null) {
                 scheduler.shutdown();
+                scheduler = null;
             }
         }
     }
 
     public void clear() {
-        LOGGER.info("Clearing job dispatcher");
+        LOGGER.info("Clearing job dispatcher queue");
         JOB_QUEUE.clear();
     }
 
@@ -66,42 +77,14 @@ public class JobDispatcher {
                     && JOB_QUEUE.stream().noneMatch(queuedJob -> queuedJob.getId().equals(id))) {
                 LOGGER.info("Queueing new job: {}", id);
                 JOB_QUEUE.add(job);
+                job.setEnqueueTime(clock.now());
             } else {
                 LOGGER.warn("Already queued job: {}", id);
             }
         }
     }
 
-    public List<JobInfo> getJobQueueInfo() {
-        List<JobInfo> jobInfos = new ArrayList<>();
-        synchronized (JOB_LOCK) {
-            if (isExecutingJob()) {
-                jobInfos.add(new JobInfo(currentJob.getId(), true));
-            }
-            jobInfos.addAll(JOB_QUEUE.stream()
-                    .map(job -> new JobInfo(job.getId(), false))
-                    .collect(Collectors.toList()));
-        }
-        return jobInfos;
-    }
-
-    public Job getExecutingJob() {
-        return currentJob;
-    }
-
-    public boolean isExecutingJob() {
-        return currentJob != null;
-    }
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public void executeNextJob(int maxRetries) {
-        run(maxRetries);
-    }
-
-    private void run(int maxRetries) {
+    public void executeNextJob() {
         String currentJobId;
 
         synchronized (JOB_LOCK) {
@@ -118,6 +101,7 @@ public class JobDispatcher {
             currentJob = JOB_QUEUE.poll();
             assert currentJob != null;
             currentJobId = currentJob.getId();
+            currentJob.setExecutionTime(clock.now());
             LOGGER.info("Executing job: {} ({} jobs remaining in queue)", currentJobId, JOB_QUEUE.size());
         }
 
@@ -145,5 +129,37 @@ public class JobDispatcher {
                 currentJob = null;
             }
         });
+    }
+
+    public List<JobInfo> getJobQueueInfo() {
+        List<JobInfo> jobInfos = new ArrayList<>();
+
+        synchronized (JOB_LOCK) {
+            if (isExecutingJob()) {
+                jobInfos.add(new JobInfo(currentJob, true));
+            }
+            jobInfos.addAll(JOB_QUEUE.stream()
+                    .map(job -> new JobInfo(job, false))
+                    .collect(Collectors.toList()));
+        }
+        return jobInfos;
+    }
+
+    public JobInfo getExecutingJobInfo() {
+        synchronized (JOB_LOCK) {
+            return currentJob == null ? null : new JobInfo(currentJob, true);
+        }
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public boolean isExecutingJob() {
+        return currentJob != null;
+    }
+
+    public boolean isStarted() {
+        return started;
     }
 }

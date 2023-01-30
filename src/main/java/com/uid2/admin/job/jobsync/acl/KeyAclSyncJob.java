@@ -1,6 +1,7 @@
 package com.uid2.admin.job.jobsync.acl;
 
 import com.uid2.admin.job.model.Job;
+import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.EncryptionKeyAcl;
@@ -10,7 +11,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KeyAclSyncJob implements Job {
+public class KeyAclSyncJob extends Job {
     private final Collection<OperatorKey> globalOperators;
     private final Map<Integer, EncryptionKeyAcl> globalAcls;
     private final MultiScopeStoreWriter<Map<Integer, EncryptionKeyAcl>> multiScopeStoreWriter;

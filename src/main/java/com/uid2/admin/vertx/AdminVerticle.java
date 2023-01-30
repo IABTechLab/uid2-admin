@@ -31,11 +31,12 @@ public class AdminVerticle extends AbstractVerticle {
     private final IService[] services;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public AdminVerticle(JsonObject config,
-                         IAuthHandlerFactory authHandlerFactory,
-                         AuthMiddleware auth,
-                         IAdminUserProvider adminUserProvider,
-                         IService[] services) {
+    public AdminVerticle(
+            JsonObject config,
+            IAuthHandlerFactory authHandlerFactory,
+            AuthMiddleware auth,
+            IAdminUserProvider adminUserProvider,
+            IService[] services) {
         this.config = config;
         this.authHandlerFactory = authHandlerFactory;
         this.auth = auth;
