@@ -165,7 +165,6 @@ public class Main {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             JobDispatcher.getInstance().enqueue(job);
             JobDispatcher.getInstance().executeNextJob(3);
-
         } catch (Exception e) {
             LOGGER.fatal("failed to initialize core verticle", e);
             System.exit(-1);
