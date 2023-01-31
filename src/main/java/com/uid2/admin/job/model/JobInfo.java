@@ -6,14 +6,14 @@ import java.util.Objects;
 public class JobInfo {
     private final String id;
     private final boolean executing;
-    private final Instant enqueueTime;
-    private final Instant executionTime;
+    private final Instant addedToQueueAt;
+    private final Instant startedExecutingAt;
 
     public JobInfo(Job job, boolean executing) {
         this.id = job.getId();
         this.executing = executing;
-        this.enqueueTime = job.getEnqueueTime();
-        this.executionTime = job.getExecutionTime();
+        this.addedToQueueAt = job.getAddedToQueueAt();
+        this.startedExecutingAt = job.getStartedExecutingAt();
     }
 
     public String getId() {
@@ -24,12 +24,12 @@ public class JobInfo {
         return executing;
     }
 
-    public Instant getEnqueueTime() {
-        return enqueueTime;
+    public Instant getAddedToQueueAt() {
+        return addedToQueueAt;
     }
 
-    public Instant getExecutionTime() {
-        return executionTime;
+    public Instant getStartedExecutingAt() {
+        return startedExecutingAt;
     }
 
     @Override
@@ -45,12 +45,12 @@ public class JobInfo {
         JobInfo jobInfo = (JobInfo) o;
         return executing == jobInfo.executing
                 && id.equals(jobInfo.id)
-                && Objects.equals(enqueueTime, jobInfo.enqueueTime)
-                && Objects.equals(executionTime, jobInfo.executionTime);
+                && Objects.equals(addedToQueueAt, jobInfo.addedToQueueAt)
+                && Objects.equals(startedExecutingAt, jobInfo.startedExecutingAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, executing, enqueueTime, executionTime);
+        return Objects.hash(id, executing, addedToQueueAt, startedExecutingAt);
     }
 }

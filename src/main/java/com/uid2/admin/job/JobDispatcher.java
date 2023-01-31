@@ -77,7 +77,7 @@ public class JobDispatcher {
                     && JOB_QUEUE.stream().noneMatch(queuedJob -> queuedJob.getId().equals(id))) {
                 LOGGER.info("Queueing new job: {}", id);
                 JOB_QUEUE.add(job);
-                job.setEnqueueTime(clock.now());
+                job.setAddedToQueueAt(clock.now());
             } else {
                 LOGGER.warn("Already queued job: {}", id);
             }
@@ -101,7 +101,7 @@ public class JobDispatcher {
             currentJob = JOB_QUEUE.poll();
             assert currentJob != null;
             currentJobId = currentJob.getId();
-            currentJob.setExecutionTime(clock.now());
+            currentJob.setStartedExecutingAt(clock.now());
             LOGGER.info("Executing job: {} ({} jobs remaining in queue)", currentJobId, JOB_QUEUE.size());
         }
 

@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -228,9 +227,9 @@ public class JobDispatcherTest {
     }
 
     private void addJobInfo(List<JobInfo> jobInfos, Job job, boolean executing) {
-        job.setEnqueueTime(Instant.EPOCH);
+        job.setAddedToQueueAt(Instant.EPOCH);
         if (executing) {
-            job.setExecutionTime(Instant.EPOCH);
+            job.setStartedExecutingAt(Instant.EPOCH);
         }
         jobInfos.add(new JobInfo(job, executing));
     }

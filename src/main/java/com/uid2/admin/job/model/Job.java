@@ -3,23 +3,23 @@ package com.uid2.admin.job.model;
 import java.time.Instant;
 
 public abstract class Job {
-    private Instant enqueueTime;
-    private Instant executionTime;
+    private Instant addedToQueueAt;
+    private Instant startedExecutingAt;
 
-    public Instant getEnqueueTime() {
-        return enqueueTime;
+    public Instant getAddedToQueueAt() {
+        return addedToQueueAt;
     }
 
-    public void setEnqueueTime(Instant enqueueTime) {
-        this.enqueueTime = enqueueTime;
+    public void setAddedToQueueAt(Instant addedToQueueAt) {
+        this.addedToQueueAt = addedToQueueAt;
     }
 
-    public Instant getExecutionTime() {
-        return executionTime;
+    public Instant getStartedExecutingAt() {
+        return startedExecutingAt;
     }
 
-    public void setExecutionTime(Instant executionTime) {
-        this.executionTime = executionTime;
+    public void setStartedExecutingAt(Instant startedExecutingAt) {
+        this.startedExecutingAt = startedExecutingAt;
     }
 
     abstract public String getId();
