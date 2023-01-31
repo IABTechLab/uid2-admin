@@ -135,7 +135,7 @@ public class Main {
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
-            JobDispatcher jobDispatcher = new JobDispatcher("dispatcher", 1000 * 60, 3, clock);
+            JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
 
             final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock);
