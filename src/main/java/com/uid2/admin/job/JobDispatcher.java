@@ -8,7 +8,6 @@ import io.micrometer.core.instrument.Metrics;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
@@ -40,7 +39,7 @@ public class JobDispatcher {
         this.maxRetries = maxRetries;
         this.clock = clock;
 
-        Gauge.builder("uid2.job_dispatcher.execution_duration_ms", this::getExecutionTime)
+        Gauge.builder("uid2.job_dispatcher.execution_duration_ms", this::getExecutionDuration)
                 .tag("job_dispatcher", id)
                 .description("gauge for " + id + " execution time")
                 .register(Metrics.globalRegistry);
@@ -172,9 +171,8 @@ public class JobDispatcher {
         return started;
     }
 
-    private long getExecutionTime() {
-        synchronized (jobLock) {
-            return currentJob == null ? 0 : ChronoUnit.MILLIS.between(currentJob.getStartedExecutingAt(), Instant.now());
-        }
+    long getExecutionDuration() {
+        Job job = currentJob;
+        return job == null ? 0 : ChronoUnit.MILLIS.between(job.getStartedExecutingAt(), clock.now());
     }
 }

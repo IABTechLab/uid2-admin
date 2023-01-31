@@ -68,6 +68,7 @@ public class JobDispatcherTest {
 
     private static final int INTERVAL_TIME = 50;
     private static final int LONG_RUNNING_TIME = INTERVAL_TIME*3;
+    private Clock clock;
     private JobDispatcher jobDispatcher;
     private int executionCount = 0;
 
@@ -75,7 +76,7 @@ public class JobDispatcherTest {
     public void setup() {
         executionCount = 0;
 
-        Clock clock = mock(Clock.class);
+        clock = mock(Clock.class);
         when(clock.now()).thenReturn(Instant.EPOCH);
         jobDispatcher = new JobDispatcher("test dispatcher", INTERVAL_TIME, 3, clock);
     }
@@ -224,6 +225,32 @@ public class JobDispatcherTest {
         assertFalse(jobDispatcher.isExecutingJob());
         assertEquals(3, executionCount);
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+    }
+
+    @Test
+    public void testJobExecutionDurationWithNoJobInQueueAndNoExecutingJob() {
+        assertEquals(0, jobDispatcher.getExecutionDuration());
+    }
+
+    @Test
+    public void testJobExecutionDurationWithJobsInQueueNoExecutingJob() {
+        jobDispatcher.enqueue(new TestJob());
+
+        assertEquals(0, jobDispatcher.getExecutionDuration());
+    }
+
+    @Test
+    public void testJobExecutionDuration() throws Exception {
+        when(clock.now())
+                .thenReturn(Instant.EPOCH) // For addedToQueueAt
+                .thenReturn(Instant.EPOCH) // For startedExecutingAt
+                .thenReturn(Instant.EPOCH.plusMillis(1000)); // For actual execution duration calculation
+
+        jobDispatcher.enqueue(new TestLongRunningJob());
+        jobDispatcher.start();
+        Thread.sleep(INTERVAL_TIME);
+
+        assertEquals(1000, jobDispatcher.getExecutionDuration());
     }
 
     private void addJobInfo(List<JobInfo> jobInfos, Job job, boolean executing) {
