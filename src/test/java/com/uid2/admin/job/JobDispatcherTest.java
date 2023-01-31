@@ -96,6 +96,7 @@ public class JobDispatcherTest {
         jobDispatcher.clear();
 
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -104,6 +105,7 @@ public class JobDispatcherTest {
         jobDispatcher.clear();
 
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -113,21 +115,24 @@ public class JobDispatcherTest {
 
         assertFalse(jobDispatcher.isStarted());
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
     public void testGetJobQueueInfoWithEmptyJobQueue() {
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
-    public void testGetJobQueueInfoWithOneJob() {
+    public void testGetJobQueueAndExecutingJobInfoWithOneJob() {
         jobDispatcher.enqueue(new TestJob());
 
         List<JobInfo> expected = new ArrayList<>();
         addJobInfo(expected, new TestJob(), false);
 
         assertEquals(expected, jobDispatcher.getJobQueueInfo());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -142,6 +147,7 @@ public class JobDispatcherTest {
         addJobInfo(expected, new TestJob(), false);
 
         assertEquals(expected, jobDispatcher.getJobQueueInfo());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -163,6 +169,7 @@ public class JobDispatcherTest {
         addJobInfo(expected, new TestExceptionJob(), false);
 
         assertEquals(expected, jobDispatcher.getJobQueueInfo());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -179,6 +186,7 @@ public class JobDispatcherTest {
         assertTrue(jobDispatcher.isExecutingJob());
         assertEquals(1, executionCount);
         assertEquals(expected, jobDispatcher.getJobQueueInfo());
+        assertEquals(expected.get(0), jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -190,6 +198,7 @@ public class JobDispatcherTest {
         assertFalse(jobDispatcher.isExecutingJob());
         assertEquals(1, executionCount);
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -202,6 +211,7 @@ public class JobDispatcherTest {
         assertFalse(jobDispatcher.isExecutingJob());
         assertEquals(1, executionCount);
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -214,6 +224,7 @@ public class JobDispatcherTest {
         assertFalse(jobDispatcher.isExecutingJob());
         assertEquals(2, executionCount);
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
@@ -225,6 +236,7 @@ public class JobDispatcherTest {
         assertFalse(jobDispatcher.isExecutingJob());
         assertEquals(3, executionCount);
         assertTrue(jobDispatcher.getJobQueueInfo().isEmpty());
+        assertNull(jobDispatcher.getExecutingJobInfo());
     }
 
     @Test
