@@ -159,6 +159,12 @@ public class JobDispatcher {
         }
     }
 
+    public long getExecutionDuration() {
+        synchronized (jobLock) {
+            return currentJob == null ? 0 : ChronoUnit.MILLIS.between(currentJob.getStartedExecutingAt(), clock.now());
+        }
+    }
+
     public String getId() {
         return id;
     }
@@ -169,11 +175,5 @@ public class JobDispatcher {
 
     public boolean isStarted() {
         return started;
-    }
-
-    long getExecutionDuration() {
-        synchronized (jobLock) {
-            return currentJob == null ? 0 : ChronoUnit.MILLIS.between(currentJob.getStartedExecutingAt(), clock.now());
-        }
     }
 }
