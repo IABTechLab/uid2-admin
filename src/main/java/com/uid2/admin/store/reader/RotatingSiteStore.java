@@ -2,7 +2,7 @@ package com.uid2.admin.store.reader;
 
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.parser.SiteParser;
-import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.ScopedStoreReader;
 import com.uid2.shared.store.reader.StoreReader;
@@ -16,7 +16,7 @@ public class RotatingSiteStore implements ISiteStore, StoreReader<Collection<Sit
     public static final String SITES_METADATA_PATH = "sites_metadata_path";
     private final ScopedStoreReader<Map<Integer, Site>> reader;
 
-    public RotatingSiteStore(ICloudStorage fileStreamProvider, StoreScope scope) {
+    public RotatingSiteStore(DownloadCloudStorage fileStreamProvider, StoreScope scope) {
         this.reader = new ScopedStoreReader<>(fileStreamProvider, scope, new SiteParser(), "sites");
     }
 
