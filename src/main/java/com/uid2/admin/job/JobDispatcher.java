@@ -172,7 +172,8 @@ public class JobDispatcher {
     }
 
     long getExecutionDuration() {
-        Job job = currentJob;
-        return job == null ? 0 : ChronoUnit.MILLIS.between(job.getStartedExecutingAt(), clock.now());
+        synchronized (jobLock) {
+            return currentJob == null ? 0 : ChronoUnit.MILLIS.between(currentJob.getStartedExecutingAt(), clock.now());
+        }
     }
 }
