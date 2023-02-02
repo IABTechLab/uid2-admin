@@ -241,7 +241,7 @@ write_files:
         var tplCloudInit = cloudInit;
         var enclaveParams = "API_TOKEN,IMAGE_ID";
         if (env == 'prod') {
-          enclaveParams = "API_TOKEN,";
+          enclaveParams = "API_TOKEN";
         }
         var enclaveParamsList = enclaveParams.split(',');
 
