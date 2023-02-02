@@ -12,6 +12,7 @@ public class InstantClock implements Clock {
     public Long getEpochMillis() {
         return Instant.now().toEpochMilli();
     }
+
     @Override
     public Instant now() {
         return Instant.now();

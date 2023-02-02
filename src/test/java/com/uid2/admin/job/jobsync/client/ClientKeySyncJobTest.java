@@ -30,11 +30,10 @@ import java.util.HashSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ClientKeySyncJobTest {
-    private InMemoryStorageMock cloudStorage;
-    CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/clients/metadata.json");
-    ObjectWriter objectWriter = JsonUtil.createJsonWriter();
-    Integer scopedSiteId = 10;
-    ImmutableList<OperatorKey> operators = ImmutableList.of(
+    private final CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/clients/metadata.json");
+    private final ObjectWriter objectWriter = JsonUtil.createJsonWriter();
+    private final Integer scopedSiteId = 10;
+    private final ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
                     "key",
                     "name",
@@ -45,8 +44,7 @@ class ClientKeySyncJobTest {
                     scopedSiteId,
                     new HashSet<>(Collections.singletonList(Role.ID_READER)),
                     OperatorType.PRIVATE));
-
-    ClientKey client = new ClientKey(
+    private final ClientKey client = new ClientKey(
             "key",
             "secret",
             "name",
@@ -60,7 +58,7 @@ class ClientKeySyncJobTest {
 
     @BeforeEach
     void setUp() {
-        cloudStorage = new InMemoryStorageMock();
+        InMemoryStorageMock cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
