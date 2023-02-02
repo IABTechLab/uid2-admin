@@ -135,11 +135,12 @@ public class Main {
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
+
             JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
+            jobDispatcher.start();
 
-            final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
+            EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock);
-
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyGenerator),
@@ -154,15 +155,14 @@ public class Main {
                     new JobDispatcherService(auth, jobDispatcher)
             };
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
-
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
                     "admins", 10000, adminUserProvider);
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
+            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
-            //UID2-575 setup a job dispatcher that will write private site data periodically if there is any changes
+            //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
