@@ -119,8 +119,8 @@ public class JobDispatcher {
                     long before = System.currentTimeMillis();
                     currentJob.execute();
                     long after = System.currentTimeMillis();
-                    long durationInSeconds = (after - before)/1000;
-                    LOGGER.info("Job successfully executed: {} in {} seconds", currentJobId, durationInSeconds);
+                    long durationMs = after - before;
+                    LOGGER.info("Job successfully executed: {} in {}ms", currentJobId, durationMs);
                     break;
                 } catch (Throwable t) {
                     if (retryCount < maxRetries) {
