@@ -152,6 +152,23 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, false).get(0);
     }
 
+    @Override
+    public EncryptionKey ensureSiteKeyExists(int siteId) throws Exception {
+        // force refresh manually
+        this.keyProvider.loadContent();
+
+        final boolean siteKeyExists = this.keyProvider.getSnapshot()
+                .getActiveKeySet()
+                .stream()
+                .anyMatch(key -> key.getSiteId() == siteId);
+
+        if (siteKeyExists) {
+            return null;
+        }
+
+        return addSiteKeys(Arrays.asList(siteId), Duration.ZERO, siteKeyExpiresAfter, false).get(0);
+    }
+
     private void handleKeyList(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();
