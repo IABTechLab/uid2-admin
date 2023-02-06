@@ -6,6 +6,7 @@ import com.uid2.admin.auth.GithubAuthHandlerFactory;
 import com.uid2.admin.auth.IAuthHandlerFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
+import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
@@ -135,9 +136,11 @@ public class Main {
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
-            final EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock);
+            JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
+            jobDispatcher.start();
 
+            EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
+                    config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock);
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyGenerator),
@@ -148,23 +151,22 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, writeLock, config),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
+                    new JobDispatcherService(auth, jobDispatcher)
             };
-
-            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
 
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
                     "admins", 10000, adminUserProvider);
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
+            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
-            //UID2-575 setup a job dispatcher that will write private site data periodically if there is any changes
+            //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
-            JobDispatcher.getInstance().start(1000 * 60, 3);
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
-            JobDispatcher.getInstance().enqueue(job);
-            JobDispatcher.getInstance().executeNextJob(3);
+            jobDispatcher.enqueue(job);
+            jobDispatcher.executeNextJob();
         } catch (Exception e) {
             LOGGER.fatal("failed to initialize core verticle", e);
             System.exit(-1);

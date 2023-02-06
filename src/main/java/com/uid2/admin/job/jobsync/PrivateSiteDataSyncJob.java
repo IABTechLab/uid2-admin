@@ -35,9 +35,8 @@ import java.util.Map;
 /*
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl data type
  */
-public class PrivateSiteDataSyncJob implements Job {
+public class PrivateSiteDataSyncJob extends Job {
     public final JsonObject config;
-
     private final WriteLock writeLock;
 
     public PrivateSiteDataSyncJob(JsonObject config, WriteLock writeLock) {
