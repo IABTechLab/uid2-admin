@@ -222,8 +222,8 @@ write_files:
         }
 
         cloudInit = cloudInit
-          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.+?\"$/gm, '$1=' + apiToken + '"')
-          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.+?\"$/gm, '$1=' + imageId + '"');
+          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.*?\"$/gm, '$1=' + apiToken + '"')
+          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.*?\"$/gm, '$1=' + imageId + '"');
 
         download(fn, cloudInit);
 
@@ -241,13 +241,13 @@ write_files:
         var tplCloudInit = cloudInit;
         var enclaveParams = "API_TOKEN,IMAGE_ID";
         if (env == 'prod') {
-          enclaveParams = "API_TOKEN,";
+          enclaveParams = "API_TOKEN";
         }
         var enclaveParamsList = enclaveParams.split(',');
 
         enclaveParamsList.forEach(p => {
           var enclaveParam = "UID2_ENCLAVE_" + p;
-          const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.+?\"$', 'gm');
+          const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.*?\"$', 'gm');
           tplCloudInit = tplCloudInit.replace(reMaskParam, '$1=dummy"');
         });
 
