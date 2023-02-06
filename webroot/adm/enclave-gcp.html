@@ -222,8 +222,8 @@ write_files:
         }
 
         cloudInit = cloudInit
-          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.+?\"$/gm, '$1=' + apiToken + '"')
-          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.+?\"$/gm, '$1=' + imageId + '"');
+          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.*?\"$/gm, '$1=' + apiToken + '"')
+          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.*?\"$/gm, '$1=' + imageId + '"');
 
         download(fn, cloudInit);
 
@@ -247,7 +247,7 @@ write_files:
 
         enclaveParamsList.forEach(p => {
           var enclaveParam = "UID2_ENCLAVE_" + p;
-          const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.+?\"$', 'gm');
+          const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.*?\"$', 'gm');
           tplCloudInit = tplCloudInit.replace(reMaskParam, '$1=dummy"');
         });
 
