@@ -47,8 +47,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.vertx.micrometer.Label;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
@@ -168,7 +168,7 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
         } catch (Exception e) {
-            LOGGER.fatal("failed to initialize core verticle", e);
+            LOGGER.error("failed to initialize core verticle", e);
             System.exit(-1);
         }
     }
@@ -187,7 +187,7 @@ public class Main {
         Vertx vertx = createVertx();
         VertxUtils.createConfigRetriever(vertx).getConfig(ar -> {
             if (ar.failed()) {
-                LOGGER.fatal("Unable to read config: " + ar.cause().getMessage(), ar.cause());
+                LOGGER.error("Unable to read config: " + ar.cause().getMessage(), ar.cause());
                 return;
             }
 
@@ -195,7 +195,7 @@ public class Main {
                 Main app = new Main(vertx, ar.result());
                 app.run();
             } catch (Exception e) {
-                LOGGER.fatal(e.getMessage(), e);
+                LOGGER.error(e.getMessage(), e);
                 vertx.close();
                 System.exit(1);
             }
@@ -209,7 +209,7 @@ public class Main {
             server.registerMBean(AdminApi.instance, objectName);
         } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException |
                  MalformedObjectNameException e) {
-            LOGGER.fatal(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             System.exit(-1);
         }
 
