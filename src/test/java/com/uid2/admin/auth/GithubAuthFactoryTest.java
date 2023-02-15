@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GithubAuthFactoryTest {
+public class GithubAuthFactoryTest {
     Vertx vertx = mock(Vertx.class);
     Route route = mock(Route.class);
     OAuth2Auth provider = mock(OAuth2Auth.class);

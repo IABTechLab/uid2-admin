@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ConsecutiveVersionGeneratorTest {
+public class ConsecutiveVersionGeneratorTest {
     @Test
     void incrementsPreviousVersion() throws Exception {
         JsonObject metadata = new JsonObject();

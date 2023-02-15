@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class EpochVersionGeneratorTest {
+public class EpochVersionGeneratorTest {
     @Test
     void getVersion() {
         Clock clock = mock(Clock.class);

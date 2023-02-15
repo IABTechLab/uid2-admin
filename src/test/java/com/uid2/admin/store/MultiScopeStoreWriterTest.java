@@ -24,7 +24,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MultiScopeStoreWriterTest {
+public class MultiScopeStoreWriterTest {
     private InMemoryStorageMock cloudStorage;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
     ObjectWriter objectWriter = JsonUtil.createJsonWriter();

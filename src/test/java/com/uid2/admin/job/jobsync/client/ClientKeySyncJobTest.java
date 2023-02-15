@@ -29,7 +29,7 @@ import java.util.HashSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ClientKeySyncJobTest {
+public class ClientKeySyncJobTest {
     private final CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/clients/metadata.json");
     private final ObjectWriter objectWriter = JsonUtil.createJsonWriter();
     private final Integer scopedSiteId = 10;
