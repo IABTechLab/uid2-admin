@@ -2,7 +2,7 @@ package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.admin.auth.IAuthHandlerFactory;
+import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
@@ -58,7 +58,7 @@ public abstract class ServiceTestBase {
     protected AuthMiddleware auth;
 
     @Mock protected AuthenticationHandler authHandler;
-    @Mock protected IAuthHandlerFactory authHandlerFactory;
+    @Mock protected AuthFactory authFactory;
 
     @Mock protected FileManager fileManager;
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
@@ -86,7 +86,7 @@ public abstract class ServiceTestBase {
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         mocks = MockitoAnnotations.openMocks(this);
-        when(authHandlerFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
+        when(authFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
@@ -96,7 +96,7 @@ public abstract class ServiceTestBase {
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
-        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
+        AdminVerticle verticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 

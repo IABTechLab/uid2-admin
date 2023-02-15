@@ -13,8 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GithubAuthHandlerFactoryTest {
-
+class GithubAuthFactoryTest {
     Vertx vertx = mock(Vertx.class);
     Route route = mock(Route.class);
     OAuth2Auth provider = mock(OAuth2Auth.class);
@@ -32,7 +31,7 @@ class GithubAuthHandlerFactoryTest {
         config.put("github_client_secret", "secret1");
         config.put("oauth2_callback_url", "http://localhost/oauth2-callback");
 
-        GithubAuthHandlerFactory factory = new GithubAuthHandlerFactory(config);
+        GithubAuthFactory factory = new GithubAuthFactory(config);
         AuthenticationHandler handler = factory.createAuthHandler(vertx, route, provider);
 
         assertEquals(handler.getClass(), OAuth2AuthHandlerImpl.class);
@@ -45,7 +44,7 @@ class GithubAuthHandlerFactoryTest {
         config.put("github_client_secret", "secret1");
         config.put("oauth2_callback_url", "http://localhost/oauth2-callback");
 
-        GithubAuthHandlerFactory factory = new GithubAuthHandlerFactory(config);
+        GithubAuthFactory factory = new GithubAuthFactory(config);
         AuthenticationHandler handler = factory.createAuthHandler(vertx, route, provider);
 
         assertEquals(handler.getClass(), OAuth2AuthHandlerImpl.class);
@@ -56,10 +55,9 @@ class GithubAuthHandlerFactoryTest {
         JsonObject config = new JsonObject();
         config.put("is_auth_disabled", true);
 
-        GithubAuthHandlerFactory factory = new GithubAuthHandlerFactory(config);
+        GithubAuthFactory factory = new GithubAuthFactory(config);
         AuthenticationHandler handler = factory.createAuthHandler(vertx, route, provider);
 
         assertEquals(handler.getClass(), NoopAuthHandler.class);
     }
-
 }

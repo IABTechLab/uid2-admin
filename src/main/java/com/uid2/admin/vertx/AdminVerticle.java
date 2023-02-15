@@ -28,19 +28,19 @@ public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
 
     private final JsonObject config;
-    private final IAuthHandlerFactory authHandlerFactory;
+    private final AuthFactory authFactory;
     private final IAdminUserProvider adminUserProvider;
     private final IService[] services;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     public AdminVerticle(
             JsonObject config,
-            IAuthHandlerFactory authHandlerFactory,
+            AuthFactory authFactory,
             AuthMiddleware auth,
             IAdminUserProvider adminUserProvider,
             IService[] services) {
         this.config = config;
-        this.authHandlerFactory = authHandlerFactory;
+        this.authFactory = authFactory;
         this.adminUserProvider = adminUserProvider;
         this.services = services;
     }
@@ -63,8 +63,8 @@ public class AdminVerticle extends AbstractVerticle {
         final Router router = Router.router(vertx);
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
 
-        OAuth2Auth oauth2Provider = (OAuth2Auth) authHandlerFactory.createAuthProvider(vertx);
-        AuthenticationHandler authHandler = authHandlerFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
+        OAuth2Auth oauth2Provider = (OAuth2Auth) authFactory.createAuthProvider(vertx);
+        AuthenticationHandler authHandler = authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
 
         // protect the resource under "/adm/*"
         router.route("/adm/*").handler(authHandler);

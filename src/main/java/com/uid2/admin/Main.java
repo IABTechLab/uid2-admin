@@ -2,11 +2,10 @@ package com.uid2.admin;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.admin.auth.GithubAuthHandlerFactory;
-import com.uid2.admin.auth.IAuthHandlerFactory;
+import com.uid2.admin.auth.GithubAuthFactory;
+import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
-import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
@@ -73,7 +72,7 @@ public class Main {
 
     public void run() {
         try {
-            IAuthHandlerFactory authHandlerFactory = new GithubAuthHandlerFactory(config);
+            AuthFactory authFactory = new GithubAuthFactory(config);
             ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
             ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
@@ -159,7 +158,7 @@ public class Main {
                     "admins", 10000, adminUserProvider);
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
+            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes

@@ -5,7 +5,7 @@ import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 
-public interface IAuthHandlerFactory {
+public interface AuthFactory {
 
     AuthenticationHandler createAuthHandler(Vertx vertx, Route callbackRoute, AuthenticationProvider authProvider);
     AuthenticationProvider createAuthProvider(Vertx vertx);

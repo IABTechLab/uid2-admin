@@ -11,10 +11,10 @@ import io.vertx.ext.web.handler.OAuth2AuthHandler;
 
 import static com.uid2.admin.auth.AuthUtils.isAuthDisabled;
 
-public class GithubAuthHandlerFactory implements IAuthHandlerFactory {
+public class GithubAuthFactory implements AuthFactory {
     private final JsonObject config;
 
-    public GithubAuthHandlerFactory(JsonObject config) {
+    public GithubAuthFactory(JsonObject config) {
         this.config = config;
     }
 
