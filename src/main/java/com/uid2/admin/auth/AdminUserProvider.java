@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AdminUserProvider implements IAdminUserProvider, IMetadataVersionedStore {
     public static final String ADMINS_METADATA_PATH = "admins_metadata_path";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminUserProvider.class);
 
     private final ICloudStorage metadataStreamProvider;

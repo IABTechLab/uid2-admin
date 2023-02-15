@@ -35,13 +35,14 @@ public class OperatorKeyService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String operatorKeyPrefix;
 
-    public OperatorKeyService(JsonObject config,
-                              AuthMiddleware auth,
-                              WriteLock writeLock,
-                              OperatorKeyStoreWriter operatorKeyStoreWriter,
-                              RotatingOperatorKeyProvider operatorKeyProvider,
-                              RotatingSiteStore siteProvider,
-                              IKeyGenerator keyGenerator) {
+    public OperatorKeyService(
+            JsonObject config,
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            OperatorKeyStoreWriter operatorKeyStoreWriter,
+            RotatingOperatorKeyProvider operatorKeyProvider,
+            RotatingSiteStore siteProvider,
+            IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.operatorKeyStoreWriter = operatorKeyStoreWriter;
@@ -190,8 +191,8 @@ public class OperatorKeyService implements IService {
                 roles = new HashSet<>();
             } else {
                 roles = RequestUtil.getRoles(ctx.queryParam("roles").get(0)) == null
-                    ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
-                    : RequestUtil.getRoles(ctx.queryParam("roles").get(0));
+                        ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
+                        : RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             }
             if (roles == null) {
                 ResponseUtil.error(ctx, 400, "Incorrect roles specified");
@@ -433,8 +434,8 @@ public class OperatorKeyService implements IService {
 
             Set<Role> roles = !ctx.queryParams().contains("roles")
                     || RequestUtil.getRoles(ctx.queryParam("roles").get(0)) == null
-                        ? null
-                        : RequestUtil.getRoles(ctx.queryParam("roles").get(0));
+                    ? null
+                    : RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(ctx, 400, "No roles or incorrect roles specified");
                 return;

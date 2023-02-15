@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final ClientKeyStoreWriter storeWriter;
@@ -37,15 +39,15 @@ public class ClientKeyService implements IService {
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String clientKeyPrefix;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
 
-    public ClientKeyService(JsonObject config,
-                            AuthMiddleware auth,
-                            WriteLock writeLock,
-                            ClientKeyStoreWriter storeWriter,
-                            RotatingClientKeyProvider clientKeyProvider,
-                            ISiteStore siteProvider,
-                            IKeyGenerator keyGenerator) {
+    public ClientKeyService(
+            JsonObject config,
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            ClientKeyStoreWriter storeWriter,
+            RotatingClientKeyProvider clientKeyProvider,
+            ISiteStore siteProvider,
+            IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

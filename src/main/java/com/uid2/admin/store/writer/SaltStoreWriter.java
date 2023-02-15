@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 public class SaltStoreWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltStoreWriter.class);
+
     private final RotatingSaltProvider provider;
     private final FileManager fileManager;
     private final String saltSnapshotLocationPrefix;

@@ -25,19 +25,21 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SiteService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
     private final IClientKeyProvider clientKeyProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
-    private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
-    public SiteService(AuthMiddleware auth,
-                       WriteLock writeLock,
-                       StoreWriter<Collection<Site>> storeWriter,
-                       RotatingSiteStore siteProvider,
-                       IClientKeyProvider clientKeyProvider) {
+    public SiteService(
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            StoreWriter<Collection<Site>> storeWriter,
+            RotatingSiteStore siteProvider,
+            IClientKeyProvider clientKeyProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

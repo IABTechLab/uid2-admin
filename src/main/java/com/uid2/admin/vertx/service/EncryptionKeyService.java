@@ -63,13 +63,14 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration refreshKeyRotationCutOffTime;
     private final boolean filterKeyOverCutOffTime;
 
-    public EncryptionKeyService(JsonObject config,
-                                AuthMiddleware auth,
-                                WriteLock writeLock,
-                                EncryptionKeyStoreWriter storeWriter,
-                                RotatingKeyStore keyProvider,
-                                IKeyGenerator keyGenerator,
-                                Clock clock) {
+    public EncryptionKeyService(
+            JsonObject config,
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            EncryptionKeyStoreWriter storeWriter,
+            RotatingKeyStore keyProvider,
+            IKeyGenerator keyGenerator,
+            Clock clock) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -170,7 +171,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private void handleRotateMasterKey(RoutingContext ctx) {
         try {
             final RotationResult masterKeyResult = rotateKeys(ctx, masterKeyActivatesIn, masterKeyExpiresAfter,
-                s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
+                    s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
             masterKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
@@ -391,4 +392,4 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         }
         return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
     }
- }
+}

@@ -16,11 +16,13 @@ import java.util.*;
 // Ideally we should make it possible to inject an AmazonS3 into CloudStorage instead
 public class LocalStackStorageMock implements ICloudStorage {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackStorageMock.class);
+
     private final AmazonS3 s3;
     public Map<String, String> localFileSystemMock = new HashMap<>();
 
     private long preSignedUrlExpiryInSeconds = 3600;
     private final String bucket = "unit-test-bucket";
+
     public LocalStackStorageMock(AmazonS3 s3) {
         this.s3 = s3;
         createTestBucket();

@@ -23,20 +23,22 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.*;
 
 public class KeyAclService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyAclService.class);
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final KeyAclStoreWriter storeWriter;
     private final RotatingKeyAclProvider keyAclProvider;
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyAclService.class);
 
-    public KeyAclService(AuthMiddleware auth,
-                         WriteLock writeLock,
-                         KeyAclStoreWriter storeWriter,
-                         RotatingKeyAclProvider keyAclProvider,
-                         ISiteStore siteProvider,
-                         IEncryptionKeyManager keyManager) {
+    public KeyAclService(
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            KeyAclStoreWriter storeWriter,
+            RotatingKeyAclProvider keyAclProvider,
+            ISiteStore siteProvider,
+            IEncryptionKeyManager keyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
