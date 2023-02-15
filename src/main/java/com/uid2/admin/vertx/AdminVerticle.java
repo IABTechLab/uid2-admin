@@ -61,38 +61,26 @@ public class AdminVerticle extends AbstractVerticle {
         final Router router = Router.router(vertx);
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
 
-        OAuth2Auth oauth2Provider = (OAuth2Auth) authFactory.createAuthProvider(vertx);
-        AuthenticationHandler authHandler = authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
+        final OAuth2Auth oauth2Provider = (OAuth2Auth) authFactory.createAuthProvider(vertx);
 
-        // protect the resource under "/adm/*"
-        router.route("/adm/*").handler(authHandler);
-
-        // login page requires oauth2
-        router.route("/login").handler(authHandler);
-        router.get("/login").handler(ctx ->
-                ctx.response().setStatusCode(302)
-                        .putHeader(HttpHeaders.LOCATION, "/")
-                        .end("Redirecting to /"));
-
-        // logout
-        router.get("/logout").handler(ctx -> {
-            ctx.session().destroy();
-            ctx.response().setStatusCode(302)
-                    .putHeader(HttpHeaders.LOCATION, "/")
-                    .end("Redirecting to /");
-        });
+        final AuthenticationHandler authHandler = authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
+        final RedirectToRootHandler redirectToRootHandler = new RedirectToRootHandler();
 
         router.route().handler(BodyHandler.create());
+        router.route().handler(StaticHandler.create("webroot"));
 
+        router.route("/login").handler(authHandler);
+        router.route("/adm/*").handler(authHandler);
+
+        router.get("/login").handler(redirectToRootHandler);
+        router.get("/logout").handler(redirectToRootHandler);
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
-
         router.get("/api/token/get").handler(ctx -> handleTokenGet(ctx, oauth2Provider));
 
         for (IService service : this.services) {
             service.setupRoutes(router);
         }
 
-        router.route().handler(StaticHandler.create("webroot"));
         return router;
     }
 
