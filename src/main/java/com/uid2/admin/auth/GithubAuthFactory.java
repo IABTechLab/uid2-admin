@@ -9,7 +9,7 @@ import io.vertx.ext.web.Route;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 
-import static com.uid2.admin.auth.AuthUtils.isAuthDisabled;
+import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 
 public class GithubAuthFactory implements AuthFactory {
     private final JsonObject config;

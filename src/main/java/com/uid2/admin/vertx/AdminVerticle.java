@@ -7,7 +7,6 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -21,7 +20,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
-import static com.uid2.admin.auth.AuthUtils.isAuthDisabled;
+import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
