@@ -31,7 +31,7 @@ public class ClientKeyStoreTest {
     @Nested
     class WithGlobalScope {
         @Test
-        void uploadsClients() throws Exception {
+        public void uploadsClients() throws Exception {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
             writer.upload(oneClient, null);
@@ -41,7 +41,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void overridesWithNewDataOnSubsequentUploads() throws Exception {
+        public void overridesWithNewDataOnSubsequentUploads() throws Exception {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
             writer.upload(oneClient, null);
@@ -52,7 +52,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void backsUpOldData() throws Exception {
+        public void backsUpOldData() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
@@ -68,7 +68,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void assignsNewVersionOnEveryWrite() throws Exception {
+        public void assignsNewVersionOnEveryWrite() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
@@ -86,7 +86,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void savesGlobalFilesToCorrectLocation() throws Exception {
+        public void savesGlobalFilesToCorrectLocation() throws Exception {
             ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
 
             writer.upload(oneClient, null);
@@ -104,7 +104,7 @@ public class ClientKeyStoreTest {
         private final SiteScope siteScope = new SiteScope(globalMetadataPath, siteInScope);
 
         @Test
-        void doesNotWriteToGlobalScope() throws Exception {
+        public void doesNotWriteToGlobalScope() throws Exception {
             ClientKeyStoreWriter globalWriter = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
             globalWriter.upload(Collections.emptyList(), null);
 
@@ -116,7 +116,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void writesToSiteScope() throws Exception {
+        public void writesToSiteScope() throws Exception {
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
 
             clientWriter.upload(oneClient, null);
@@ -126,7 +126,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
+        public void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
             clientWriter.upload(oneClient, null);
 
@@ -144,7 +144,7 @@ public class ClientKeyStoreTest {
         }
 
         @Test
-        void savesClientFilesToCorrectLocation() throws Exception {
+        public void savesClientFilesToCorrectLocation() throws Exception {
             ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
             clientWriter.upload(oneClient, null);
 
@@ -158,13 +158,13 @@ public class ClientKeyStoreTest {
         private RotatingClientKeyProvider clientStore;
 
         @BeforeEach
-        void setup() {
+        public void setup() {
             clientStore = new RotatingClientKeyProvider(cloudStorage, siteScope);
         }
     }
 
     @BeforeEach
-    void setup() {
+    public void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         fileManager = new FileManager(cloudStorage, fileStorage);

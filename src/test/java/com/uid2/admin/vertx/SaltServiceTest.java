@@ -54,7 +54,7 @@ public class SaltServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listSaltSnapshotsNoSnapshots(Vertx vertx, VertxTestContext testContext) {
+    public void listSaltSnapshotsNoSnapshots(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
         get(vertx, "api/salt/snapshots", ar -> {
@@ -67,7 +67,7 @@ public class SaltServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listSaltSnapshotsWithSnapshots(Vertx vertx, VertxTestContext testContext) {
+    public void listSaltSnapshotsWithSnapshots(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
         final RotatingSaltProvider.SaltSnapshot[] snapshots = {
@@ -87,7 +87,7 @@ public class SaltServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSalts(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSalts(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final RotatingSaltProvider.SaltSnapshot[] snapshots = {
@@ -117,7 +117,7 @@ public class SaltServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSaltsNoNewSnapshot(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSaltsNoNewSnapshot(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final RotatingSaltProvider.SaltSnapshot[] snapshots = {

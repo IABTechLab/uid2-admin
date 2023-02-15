@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 public class EpochVersionGeneratorTest {
     @Test
-    void getVersion() {
+    public void getVersion() {
         Clock clock = mock(Clock.class);
         when(clock.getEpochMillis()).thenReturn(500L);
         EpochVersionGenerator generator = new EpochVersionGenerator(clock);

@@ -52,7 +52,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
+    public void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         get(vertx, "api/site/list", ar -> {
@@ -65,7 +65,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listSitesHaveSites(Vertx vertx, VertxTestContext testContext) {
+    public void listSitesHaveSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
@@ -85,7 +85,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listSitesWithKeys(Vertx vertx, VertxTestContext testContext) {
+    public void listSitesWithKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
@@ -118,7 +118,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addSiteNoExistingSites(Vertx vertx, VertxTestContext testContext) {
+    public void addSiteNoExistingSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
@@ -146,7 +146,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addSiteExistingSites(Vertx vertx, VertxTestContext testContext) {
+    public void addSiteExistingSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
@@ -175,7 +175,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addSiteEnabled(Vertx vertx, VertxTestContext testContext) {
+    public void addSiteEnabled(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
@@ -203,28 +203,28 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addSiteExistingName(Vertx vertx, VertxTestContext testContext) {
+    public void addSiteExistingName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/add?name=test_site", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void addSiteEmptyName(Vertx vertx, VertxTestContext testContext) {
+    public void addSiteEmptyName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/add?name=", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void addSiteWhitespaceName(Vertx vertx, VertxTestContext testContext) {
+    public void addSiteWhitespaceName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/add?name=%20", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void enableSite(Vertx vertx, VertxTestContext testContext) {
+    public void enableSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
@@ -253,7 +253,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void disableSite(Vertx vertx, VertxTestContext testContext) {
+    public void disableSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
@@ -282,7 +282,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void enableSiteAlreadyEnabled(Vertx vertx, VertxTestContext testContext) {
+    public void enableSiteAlreadyEnabled(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
@@ -311,21 +311,21 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void enableSiteUnknownSite(Vertx vertx, VertxTestContext testContext) {
+    public void enableSiteUnknownSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/enable?id=5&enabled=true", "", expectHttpError(testContext, 404));
     }
 
     @Test
-    void enableSiteSpecialSite1(Vertx vertx, VertxTestContext testContext) {
+    public void enableSiteSpecialSite1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
         post(vertx, "api/site/enable?id=1&enabled=true", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void enableSiteSpecialSite2(Vertx vertx, VertxTestContext testContext) {
+    public void enableSiteSpecialSite2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
         post(vertx, "api/site/enable?id=2&enabled=true", "", expectHttpError(testContext, 400));

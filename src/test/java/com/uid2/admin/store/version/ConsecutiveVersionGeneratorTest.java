@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 public class ConsecutiveVersionGeneratorTest {
     @Test
-    void incrementsPreviousVersion() throws Exception {
+    public void incrementsPreviousVersion() throws Exception {
         JsonObject metadata = new JsonObject();
         metadata.put("version", 5);
         IMetadataVersionedStore mockStore = mock(IMetadataVersionedStore.class);

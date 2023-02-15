@@ -40,7 +40,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private EncryptionKeyService keyService = null;
 
     @BeforeEach
-    void setup() {
+    public void setup() {
         // seconds since epoch, DO NOT set this to small number as it will make the time before 1970-00-00 and overflow.
         // set it to be key creation timestamp + 10days because we need to filter out expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI));
@@ -108,7 +108,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addSiteKey() throws Exception {
+    public void addSiteKey() throws Exception {
         setEncryptionKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
         verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
@@ -116,7 +116,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
+    public void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
         get(vertx, "api/key/list", ar -> {
@@ -129,7 +129,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listKeysWithKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void listKeysWithKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -150,7 +150,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateMasterKey(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateMasterKey(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -176,7 +176,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateRefreshKey(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateRefreshKey(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -202,7 +202,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutMasterKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void filterOutMasterKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
         this.config.put("filter_key_over_cut_off_days", true);
         IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
         AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
@@ -234,7 +234,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutMasterKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void filterOutMasterKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
@@ -262,7 +262,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutRefreshKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void filterOutRefreshKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
         this.config.put("filter_key_over_cut_off_days", true);
         IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
         AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
@@ -294,7 +294,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutRefreshKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void filterOutRefreshKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
@@ -322,7 +322,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateMasterKeyNewEnough(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateMasterKeyNewEnough(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -348,7 +348,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateMasterKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateMasterKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -374,7 +374,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateRefreshKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateRefreshKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -400,7 +400,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKey(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKey(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -426,7 +426,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKeyNewEnough(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKeyNewEnough(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -450,7 +450,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -476,7 +476,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKeyNoSiteKey(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKeyNoSiteKey(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         setEncryptionKeys(MAX_KEY_ID);
@@ -486,7 +486,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKeyMasterSite(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKeyMasterSite(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -500,7 +500,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKeySpecialSite1(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKeySpecialSite1(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -513,7 +513,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSiteKeySpecialSite2(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateSiteKeySpecialSite2(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -538,7 +538,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutSiteKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void filterOutSiteKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
         this.config.put("filter_key_over_cut_off_days", true);
         IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
         AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
@@ -569,7 +569,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutSiteKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void filterOutSiteKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
@@ -596,7 +596,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateAllSiteKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateAllSiteKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -626,7 +626,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateAllSiteKeysWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateAllSiteKeysWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -656,7 +656,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateAllSiteKeysAllUpToDate(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateAllSiteKeysAllUpToDate(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         final EncryptionKey[] keys = {
@@ -680,7 +680,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateAllSiteKeysNoSiteKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void rotateAllSiteKeysNoSiteKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SECRET_MANAGER);
 
         setEncryptionKeys(MAX_KEY_ID);

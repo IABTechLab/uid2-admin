@@ -45,7 +45,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void clientAdd(Vertx vertx, VertxTestContext testContext) {
+    public void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         ClientKey[] expectedClients = {
@@ -69,25 +69,25 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void clientAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
+    public void clientAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=5", "", expectHttpError(testContext, 404));
     }
 
     @Test
-    void clientAddSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
+    public void clientAddSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=1", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void clientAddSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
+    public void clientAddSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=2", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void clientUpdate(Vertx vertx, VertxTestContext testContext) {
+    public void clientUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
@@ -112,28 +112,28 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
+    public void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         post(vertx, "api/client/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
     }
 
     @Test
-    void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
+    public void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
     }
 
     @Test
-    void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
+    public void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=1", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
+    public void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=2", "", expectHttpError(testContext, 400));

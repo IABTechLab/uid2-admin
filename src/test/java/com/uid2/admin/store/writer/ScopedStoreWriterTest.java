@@ -31,7 +31,7 @@ public class ScopedStoreWriterTest {
     @Nested
     class WithGlobalScope {
         @Test
-        void uploadsContent() throws Exception {
+        public void uploadsContent() throws Exception {
             ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
 
             writer.upload(jsonWriter.writeValueAsString(oneSite));
@@ -41,7 +41,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void overridesWithNewDataOnSubsequentUploads() throws Exception {
+        public void overridesWithNewDataOnSubsequentUploads() throws Exception {
             ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
 
             writer.upload(jsonWriter.writeValueAsString(oneSite));
@@ -52,7 +52,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void backsUpOldData() throws Exception {
+        public void backsUpOldData() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
@@ -68,7 +68,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void assignsNewVersionOnEveryWrite() throws Exception {
+        public void assignsNewVersionOnEveryWrite() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
@@ -86,7 +86,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void savesGlobalFilesToCorrectLocation() throws Exception {
+        public void savesGlobalFilesToCorrectLocation() throws Exception {
             ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
 
             writer.upload(jsonWriter.writeValueAsString(oneSite));
@@ -98,7 +98,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void addsExtraMetadata() throws Exception {
+        public void addsExtraMetadata() throws Exception {
             ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
             JsonObject extraMeta = new JsonObject();
             String expected = "extraValue1";
@@ -118,7 +118,7 @@ public class ScopedStoreWriterTest {
         private final SiteScope siteScope = new SiteScope(globalMetadataPath, siteInScope);
 
         @Test
-        void doesNotWriteToGlobalScope() throws Exception {
+        public void doesNotWriteToGlobalScope() throws Exception {
             ScopedStoreWriter globalWriter = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
             globalWriter.upload(jsonWriter.writeValueAsString(Collections.emptyList()));
 
@@ -130,7 +130,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void writesToSiteScope() throws Exception {
+        public void writesToSiteScope() throws Exception {
             ScopedStoreWriter siteWriter = new ScopedStoreWriter(siteStore, fileManager, versionGenerator, clock, siteScope, dataFile, backupFile, dataType);
 
             siteWriter.upload(jsonWriter.writeValueAsString(oneSite));
@@ -140,7 +140,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
+        public void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
             ScopedStoreWriter siteWriter = new ScopedStoreWriter(siteStore, fileManager, versionGenerator, clock, siteScope, dataFile, backupFile, dataType);
             siteWriter.upload(jsonWriter.writeValueAsString(oneSite));
 
@@ -158,7 +158,7 @@ public class ScopedStoreWriterTest {
         }
 
         @Test
-        void savesSiteFilesToCorrectLocation() throws Exception {
+        public void savesSiteFilesToCorrectLocation() throws Exception {
             ScopedStoreWriter siteWriter = new ScopedStoreWriter(siteStore, fileManager, versionGenerator, clock, siteScope, dataFile, backupFile, dataType);
             siteWriter.upload(jsonWriter.writeValueAsString(oneSite));
 
@@ -172,14 +172,14 @@ public class ScopedStoreWriterTest {
         private RotatingSiteStore siteStore;
 
         @BeforeEach
-        void setup() {
+        public void setup() {
             siteStore = new RotatingSiteStore(cloudStorage, siteScope);
         }
     }
 
 
     @Test
-    void rewritesMetadata() throws Exception {
+    public void rewritesMetadata() throws Exception {
         ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
 
         String unchangedMetaField = "unchangedMetaField";
@@ -198,7 +198,7 @@ public class ScopedStoreWriterTest {
     }
 
     @Test
-    void ignoresMetadataRewritesWhenNoMetadata() throws Exception {
+    public void ignoresMetadataRewritesWhenNoMetadata() throws Exception {
         ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, backupFile, dataType);
 
         writer.rewriteMeta();
@@ -207,7 +207,7 @@ public class ScopedStoreWriterTest {
     }
 
     @BeforeEach
-    void setup() {
+    public void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         fileManager = new FileManager(cloudStorage, fileStorage);

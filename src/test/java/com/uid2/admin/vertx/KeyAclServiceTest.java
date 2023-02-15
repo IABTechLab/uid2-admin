@@ -44,7 +44,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listKeyAclsNoAcls(Vertx vertx, VertxTestContext testContext) {
+    public void listKeyAclsNoAcls(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         get(vertx, "api/keys_acl/list", ar -> {
@@ -57,7 +57,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listKeyAclsHaveAcls(Vertx vertx, VertxTestContext testContext) {
+    public void listKeyAclsHaveAcls(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -78,7 +78,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclResetNoAclToWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclResetNoAclToWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<>();
@@ -106,7 +106,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclResetNoAclToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclResetNoAclToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<>();
@@ -134,7 +134,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclResetWhitelistToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclResetWhitelistToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -164,7 +164,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclResetBlacklistToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclResetBlacklistToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -194,35 +194,35 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclResetUnknownSite(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclResetUnknownSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
         post(vertx, "api/keys_acl/reset?site_id=5&type=blacklist", "", expectHttpError(testContext, 404));
     }
 
     @Test
-    void keyAclResetSpecialSite1(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclResetSpecialSite1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
         post(vertx, "api/keys_acl/reset?site_id=1&type=blacklist", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void keyAclResetSpecialSite2(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclResetSpecialSite2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
         post(vertx, "api/keys_acl/reset?site_id=2&type=blacklist", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void keyAclResetUnknownListType(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclResetUnknownListType(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         post(vertx, "api/keys_acl/reset?site_id=2&type=unknown_list", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void keyAclUpdateNoChanges(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateNoChanges(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -252,7 +252,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddToWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateAddToWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(
                 new Site(5, "test_site", true),
@@ -284,7 +284,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateAddToBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(
                 new Site(5, "test_site", true),
@@ -316,7 +316,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateRemoveFromWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateRemoveFromWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -346,7 +346,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateRemoveFromBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateRemoveFromBlacklist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -376,7 +376,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddRemoveMultiple(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateAddRemoveMultiple(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(
                 new Site(5, "test_site", true),
@@ -409,7 +409,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateSiteWithoutAcl(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclUpdateSiteWithoutAcl(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(
                 new Site(5, "test_site", true),
@@ -418,7 +418,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddSpecialSite1(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclUpdateAddSpecialSite1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -429,7 +429,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddSpecialSite2(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclUpdateAddSpecialSite2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -440,7 +440,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddUnknownSite(Vertx vertx, VertxTestContext testContext) {
+    public void keyAclUpdateAddUnknownSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -451,7 +451,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateAddAlreadyListedSite(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateAddAlreadyListedSite(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(
                 new Site(5, "test_site", true),
@@ -483,7 +483,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateWhitelistOwnerSite(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateWhitelistOwnerSite(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -513,7 +513,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateBlacklistOwnerSite(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateBlacklistOwnerSite(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{
@@ -543,7 +543,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void keyAclUpdateRemoveUnlistedSite(Vertx vertx, VertxTestContext testContext) throws Exception {
+    public void keyAclUpdateRemoveUnlistedSite(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         Map<Integer, EncryptionKeyAcl> initialAcls = new HashMap<Integer, EncryptionKeyAcl>() {{

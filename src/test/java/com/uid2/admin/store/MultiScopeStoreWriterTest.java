@@ -47,7 +47,7 @@ public class MultiScopeStoreWriterTest {
     private FileManager fileManager;
 
     @BeforeEach
-    void setup() {
+    public void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
@@ -157,12 +157,12 @@ public class MultiScopeStoreWriterTest {
                 "evening", "Abend"
         );
         @Test
-        void whenSameObjectReturnsTrue() {
+        public void whenSameObjectReturnsTrue() {
             assertThat(MultiScopeStoreWriter.areMapsEqual(a, a)).isTrue();
         }
 
         @Test
-        void whenEqualReturnsTrue() {
+        public void whenEqualReturnsTrue() {
             Map<String, String> a1 = ImmutableMap.of(
                     "day", "giorno",
                     "evening", "sera"
@@ -172,7 +172,7 @@ public class MultiScopeStoreWriterTest {
         }
 
         @Test
-        void whenNotEqualReturnsFalse() {
+        public void whenNotEqualReturnsFalse() {
             assertThat(MultiScopeStoreWriter.areMapsEqual(a, b)).isFalse();
         }
     }
@@ -182,19 +182,19 @@ public class MultiScopeStoreWriterTest {
         Collection<TestData> a = ImmutableList.of(new TestData("day"), new TestData("evening"));
         Collection<TestData> b = ImmutableList.of(new TestData("morning"), new TestData("night"))  ;
         @Test
-        void whenSameObjectReturnsTrue() {
+        public void whenSameObjectReturnsTrue() {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, a)).isTrue();
         }
 
         @Test
-        void whenEqualReturnsTrue() {
+        public void whenEqualReturnsTrue() {
             Collection<TestData> a1 = ImmutableList.of(new TestData("day"), new TestData("evening"));
 
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, a1)).isTrue();
         }
 
         @Test
-        void whenNotEqualReturnsFalse() {
+        public void whenNotEqualReturnsFalse() {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, b)).isFalse();
         }
     }

@@ -52,7 +52,7 @@ public class SiteSyncJobTest {
     private FileManager fileManager;
 
     @BeforeEach
-    void setup() {
+    public void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();

@@ -27,7 +27,7 @@ public class SaltRotationTest {
     private SaltRotation saltRotation;
 
     @BeforeEach
-    void setup() throws Exception {
+    public void setup() throws Exception {
         mocks = MockitoAnnotations.openMocks(this);
 
         JsonObject config = new JsonObject();
@@ -68,7 +68,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsLastSnapshotIsUpToDate() throws Exception {
+    public void rotateSaltsLastSnapshotIsUpToDate() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
@@ -85,7 +85,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsAllSaltsUpToDate() throws Exception {
+    public void rotateSaltsAllSaltsUpToDate() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
@@ -101,7 +101,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsAllSaltsOld() throws Exception {
+    public void rotateSaltsAllSaltsOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
@@ -122,7 +122,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
+    public void rotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
@@ -149,7 +149,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
+    public void rotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
@@ -173,7 +173,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromBothBuckets() throws Exception {
+    public void rotateSaltsRotateSaltsFromBothBuckets() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
@@ -200,7 +200,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
+    public void rotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
         final Duration[] minAges = {
                 Duration.ofSeconds(100),
                 Duration.ofSeconds(200),
