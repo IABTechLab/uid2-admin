@@ -158,13 +158,13 @@ public class ClientKeyStoreTest {
         private RotatingClientKeyProvider clientStore;
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             clientStore = new RotatingClientKeyProvider(cloudStorage, siteScope);
         }
     }
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         fileManager = new FileManager(cloudStorage, fileStorage);

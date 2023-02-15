@@ -40,7 +40,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private EncryptionKeyService keyService = null;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         // seconds since epoch, DO NOT set this to small number as it will make the time before 1970-00-00 and overflow.
         // set it to be key creation timestamp + 10days because we need to filter out expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + TEN_DAYS_IN_MILLI));

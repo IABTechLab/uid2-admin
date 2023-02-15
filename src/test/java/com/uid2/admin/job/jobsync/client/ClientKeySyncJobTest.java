@@ -57,7 +57,7 @@ public class ClientKeySyncJobTest {
     private FileManager fileManager;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         InMemoryStorageMock cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();

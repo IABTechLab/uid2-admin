@@ -47,7 +47,7 @@ public class MultiScopeStoreWriterTest {
     private FileManager fileManager;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();

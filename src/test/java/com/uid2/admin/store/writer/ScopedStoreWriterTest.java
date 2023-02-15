@@ -172,7 +172,7 @@ public class ScopedStoreWriterTest {
         private RotatingSiteStore siteStore;
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             siteStore = new RotatingSiteStore(cloudStorage, siteScope);
         }
     }
@@ -207,7 +207,7 @@ public class ScopedStoreWriterTest {
     }
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         fileManager = new FileManager(cloudStorage, fileStorage);
