@@ -38,7 +38,6 @@ public class PrivateSiteUtilTest {
             .withType(OperatorType.PRIVATE)
             .thatIsEnabled()
             .build();
-    ;
 
     @Nested
     class Client {

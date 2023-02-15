@@ -8,8 +8,11 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.HashMap;
 
-public class ResponseUtil {
+public final class ResponseUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(ResponseUtil.class);
+
+    private ResponseUtil() {
+    }
 
     public static void error(RoutingContext ctx, int statusCode, String message) {
         LOGGER.error(message);

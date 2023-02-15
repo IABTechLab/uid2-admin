@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public final class MaxKeyUtil {
+    private MaxKeyUtil() {
+    }
+
     public static int getMaxKeyId(Collection<EncryptionKey> inputKeys, Integer oldMaxKeyId) throws Exception {
         final List<EncryptionKey> sortedKeys = inputKeys.stream()
                 .sorted(Comparator.comparingInt(EncryptionKey::getId))

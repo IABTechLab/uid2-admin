@@ -10,7 +10,10 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class RequestUtil {
+public final class RequestUtil {
+    private RequestUtil() {
+    }
+
     public static String getRolesSpec(Set<Role> roles) {
         return String.join(",", roles.stream().map(r -> r.toString()).collect(Collectors.toList()));
     }

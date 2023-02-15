@@ -7,7 +7,10 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-public class JsonUtil {
+public final class JsonUtil {
+    private JsonUtil() {
+    }
+
     public static ObjectWriter createJsonWriter() {
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
