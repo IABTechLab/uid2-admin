@@ -97,8 +97,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -125,8 +125,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -155,8 +155,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -185,8 +185,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -243,8 +243,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -275,8 +275,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -307,8 +307,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -337,8 +337,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -367,8 +367,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -400,8 +400,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager).addSiteKey(eq(5));
                 verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -474,8 +474,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -504,8 +504,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -534,8 +534,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -564,8 +564,8 @@ public class KeyAclServiceTest extends ServiceTestBase {
             try {
                 verify(keyManager, times(0)).addSiteKey(anyInt());
                 verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();

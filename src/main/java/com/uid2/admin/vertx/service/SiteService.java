@@ -136,8 +136,8 @@ public class SiteService implements IService {
             if (!enabledFlags.isEmpty()) {
                 try {
                     enabled = Boolean.valueOf(enabledFlags.get(0));
-                } catch (Exception ex) {
-                    ResponseUtil.error(ctx, 400, "unable to parse enabled " + ex.getMessage());
+                } catch (Exception e) {
+                    ResponseUtil.error(ctx, 400, "unable to parse enabled " + e.getMessage());
                     return;
                 }
             }
@@ -176,8 +176,8 @@ public class SiteService implements IService {
             if (!enabledFlags.isEmpty()) {
                 try {
                     enabled = Boolean.valueOf(enabledFlags.get(0));
-                } catch (Exception ex) {
-                    ResponseUtil.error(ctx, 400, "unable to parse enabled " + ex.getMessage());
+                } catch (Exception e) {
+                    ResponseUtil.error(ctx, 400, "unable to parse enabled " + e.getMessage());
                     return;
                 }
             }

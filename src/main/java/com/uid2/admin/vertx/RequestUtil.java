@@ -37,8 +37,8 @@ public class RequestUtil {
         int siteId;
         try {
             siteId = Integer.valueOf(siteIds.get(0));
-        } catch (Exception ex) {
-            ResponseUtil.error(ctx, 400, "unable to parse site id " + ex.getMessage());
+        } catch (Exception e) {
+            ResponseUtil.error(ctx, 400, "unable to parse site id " + e.getMessage());
             return null;
         }
 
@@ -66,8 +66,8 @@ public class RequestUtil {
         int siteId;
         try {
             return Optional.of(Integer.valueOf(siteIds.get(0)));
-        } catch (Exception ex) {
-            ResponseUtil.error(ctx, 400, "unable to parse site id " + ex.getMessage());
+        } catch (Exception e) {
+            ResponseUtil.error(ctx, 400, "unable to parse site id " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -81,8 +81,8 @@ public class RequestUtil {
                 if (aclType.equals("whitelist")) isWhitelist = true;
                 else if (aclType.equals("blacklist")) isWhitelist = false;
                 else throw new Exception("unsupported type: " + aclType);
-            } catch (Exception ex) {
-                ResponseUtil.error(ctx, 400, "unable to parse ACL type " + ex.getMessage());
+            } catch (Exception e) {
+                ResponseUtil.error(ctx, 400, "unable to parse ACL type " + e.getMessage());
                 return null;
             }
         } else {
@@ -120,8 +120,8 @@ public class RequestUtil {
                 final long seconds = Long.parseLong(values.get(0));
                 if (seconds < 1) throw new Exception("value is not positive");
                 return Duration.ofSeconds(seconds);
-            } catch (Exception ex) {
-                ResponseUtil.error(ctx, 400, paramName + " must be positive number of seconds: " + ex.getMessage());
+            } catch (Exception e) {
+                ResponseUtil.error(ctx, 400, paramName + " must be positive number of seconds: " + e.getMessage());
                 return null;
             }
         } else {
@@ -139,8 +139,8 @@ public class RequestUtil {
                         .toArray(Duration[]::new);
                 if (Arrays.stream(durations).anyMatch(d -> d.getSeconds() < 1)) throw new Exception("value is not positive");
                 return durations;
-            } catch (Exception ex) {
-                ResponseUtil.error(ctx, 400, paramName + " must be comma-separated list of seconds: " + ex.getMessage());
+            } catch (Exception e) {
+                ResponseUtil.error(ctx, 400, paramName + " must be comma-separated list of seconds: " + e.getMessage());
                 return null;
             }
         } else {
@@ -154,8 +154,8 @@ public class RequestUtil {
         if (values.isEmpty()) return Optional.of(defaultValue);
         try {
             return Optional.of(Boolean.valueOf(values.get(0)));
-        } catch (Exception ex) {
-            ResponseUtil.error(ctx, 400, "failed to parse " + paramName + ": " + ex.getMessage());
+        } catch (Exception e) {
+            ResponseUtil.error(ctx, 400, "failed to parse " + paramName + ": " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -167,8 +167,8 @@ public class RequestUtil {
         }
         try {
             return Optional.of(Double.valueOf(values.get(0)));
-        } catch (Exception ex) {
-            ResponseUtil.error(ctx, 400, "failed to parse " + paramName + ": " + ex.getMessage());
+        } catch (Exception e) {
+            ResponseUtil.error(ctx, 400, "failed to parse " + paramName + ": " + e.getMessage());
             return Optional.empty();
         }
     }

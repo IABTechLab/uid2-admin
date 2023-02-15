@@ -109,8 +109,8 @@ public class SaltServiceTest extends ServiceTestBase {
             checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
             try {
                 verify(saltStoreWriter).upload(any());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -138,8 +138,8 @@ public class SaltServiceTest extends ServiceTestBase {
             assertFalse(jo.containsKey("expires"));
             try {
                 verify(saltStoreWriter, times(0)).upload(any());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });

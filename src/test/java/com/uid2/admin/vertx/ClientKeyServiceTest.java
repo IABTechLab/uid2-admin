@@ -60,8 +60,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -103,8 +103,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();

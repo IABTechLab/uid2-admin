@@ -22,8 +22,8 @@ public class JobDispatcherService implements IService {
         router.get("/api/job-dispatcher/current-job").blockingHandler(auth.handle(ctx -> {
                     try {
                         ctx.response().end(jsonWriter.writeValueAsString(jobDispatcher.getExecutingJobInfo()));
-                    } catch (Exception ex) {
-                        ctx.fail(ex);
+                    } catch (Exception e) {
+                        ctx.fail(e);
                     }
                 },
                 //can be other role
@@ -32,8 +32,8 @@ public class JobDispatcherService implements IService {
         router.get("/api/job-dispatcher/job-queue").blockingHandler(auth.handle(ctx -> {
                     try {
                         ctx.response().end(jsonWriter.writeValueAsString(jobDispatcher.getJobQueueInfo()));
-                    } catch (Exception ex) {
-                        ctx.fail(ex);
+                    } catch (Exception e) {
+                        ctx.fail(e);
                     }
                 },
                 //can be other role

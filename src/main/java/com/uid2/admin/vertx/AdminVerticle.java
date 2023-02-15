@@ -143,8 +143,8 @@ public class AdminVerticle extends AbstractVerticle {
 
         try {
             ctx.response().end(jsonWriter.writeValueAsString(adminUser));
-        } catch (Exception ex) {
-            ctx.fail(ex);
+        } catch (Exception e) {
+            ctx.fail(e);
         }
     }
 }

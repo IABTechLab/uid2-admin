@@ -66,8 +66,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -98,8 +98,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -130,8 +130,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -155,8 +155,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -189,8 +189,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -216,8 +216,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(operatorKeyStoreWriter).upload(collectionOfSize(1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();

@@ -137,8 +137,8 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -166,8 +166,8 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -194,8 +194,8 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -244,8 +244,8 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -273,8 +273,8 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();
@@ -302,8 +302,8 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
 
             testContext.completeNow();

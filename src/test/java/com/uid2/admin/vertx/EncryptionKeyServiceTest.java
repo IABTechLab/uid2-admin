@@ -168,8 +168,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -194,8 +194,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -226,8 +226,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -254,8 +254,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(2), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -286,8 +286,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -314,8 +314,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(2), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -340,8 +340,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
                 verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -366,8 +366,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -392,8 +392,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -418,8 +418,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -442,8 +442,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
                 verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -468,8 +468,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -530,8 +530,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -561,8 +561,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -588,8 +588,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(2), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -618,8 +618,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -648,8 +648,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+4), eq(MAX_KEY_ID+4));
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -672,8 +672,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
                 verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
@@ -692,8 +692,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             assertEquals(0, response.bodyAsJsonArray().size());
             try {
                 verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
+            } catch (Exception e) {
+                fail(e);
             }
             testContext.completeNow();
         });
