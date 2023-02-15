@@ -113,27 +113,27 @@ public class ClientKeyService implements IService {
         }, Role.CLIENTKEY_ISSUER));
     }
 
-    private void handleRewriteMetadata(RoutingContext rc) {
+    private void handleRewriteMetadata(RoutingContext ctx) {
         try {
             storeWriter.rewriteMeta();
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientMetadata(RoutingContext rc) {
+    private void handleClientMetadata(RoutingContext ctx) {
         try {
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(clientKeyProvider.getMetadata().encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientList(RoutingContext rc) {
+    private void handleClientList(RoutingContext ctx) {
         try {
             JsonArray ja = new JsonArray();
             Collection<ClientKey> collection = this.clientKeyProvider.getAll();
@@ -149,54 +149,54 @@ public class ClientKeyService implements IService {
                 jo.put("disabled", c.isDisabled());
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientReveal(RoutingContext rc) {
+    private void handleClientReveal(RoutingContext ctx) {
         try {
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client not found");
+                ResponseUtil.error(ctx, 404, "client not found");
                 return;
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(existingClient.get()));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientAdd(RoutingContext rc) {
+    private void handleClientAdd(RoutingContext ctx) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingClient.isPresent()) {
-                ResponseUtil.error(rc, 400, "key existed");
+                ResponseUtil.error(ctx, 400, "key existed");
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             if (roles == null) {
-                ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                ResponseUtil.error(ctx, 400, "incorrect or none roles specified");
                 return;
             }
 
-            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+            final Site site = RequestUtil.getSite(ctx, "site_id", this.siteProvider);
             if (site == null) return;
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
@@ -216,7 +216,7 @@ public class ClientKeyService implements IService {
                     .withSiteId(site.getId())
                     .withRoles(roles);
             if (!newClient.hasValidSiteId()) {
-                ResponseUtil.error(rc, 400, "invalid site id");
+                ResponseUtil.error(ctx, 400, "invalid site id");
                 return;
             }
 
@@ -227,23 +227,23 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // respond with new client created
-            rc.response().end(jsonWriter.writeValueAsString(newClient));
+            ctx.response().end(jsonWriter.writeValueAsString(newClient));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientDel(RoutingContext rc) {
+    private void handleClientDel(RoutingContext ctx) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client key not found");
+                ResponseUtil.error(ctx, 404, "client key not found");
                 return;
             }
 
@@ -259,27 +259,27 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // respond with client deleted
-            rc.response().end(jsonWriter.writeValueAsString(c));
+            ctx.response().end(jsonWriter.writeValueAsString(c));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientUpdate(RoutingContext rc) {
+    private void handleClientUpdate(RoutingContext ctx) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             final ClientKey existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst().orElse(null);
             if (existingClient == null) {
-                ResponseUtil.error(rc, 404, "client not found");
+                ResponseUtil.error(ctx, 404, "client not found");
                 return;
             }
 
-            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+            final Site site = RequestUtil.getSite(ctx, "site_id", this.siteProvider);
             if (site == null) return;
 
             existingClient.withSiteId(site.getId());
@@ -292,31 +292,31 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(existingClient));
+            ctx.response().end(jsonWriter.writeValueAsString(existingClient));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientDisable(RoutingContext rc) {
-        handleClientDisable(rc, true);
+    private void handleClientDisable(RoutingContext ctx) {
+        handleClientDisable(ctx, true);
     }
 
-    private void handleClientEnable(RoutingContext rc) {
-        handleClientDisable(rc, false);
+    private void handleClientEnable(RoutingContext ctx) {
+        handleClientDisable(ctx, false);
     }
 
-    private void handleClientDisable(RoutingContext rc, boolean disableFlag) {
+    private void handleClientDisable(RoutingContext ctx, boolean disableFlag) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client key not found");
+                ResponseUtil.error(ctx, 404, "client key not found");
                 return;
             }
 
@@ -326,7 +326,7 @@ public class ClientKeyService implements IService {
 
             ClientKey c = existingClient.get();
             if (c.isDisabled() == disableFlag) {
-                ResponseUtil.error(rc, 400, "no change needed");
+                ResponseUtil.error(ctx, 400, "no change needed");
                 return;
             }
 
@@ -342,23 +342,23 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // respond with client disabled/enabled
-            rc.response().end(response.encode());
+            ctx.response().end(response.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientRekey(RoutingContext rc) {
+    private void handleClientRekey(RoutingContext ctx) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client key not found");
+                ResponseUtil.error(ctx, 404, "client key not found");
                 return;
             }
 
@@ -378,29 +378,29 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(c));
+            ctx.response().end(jsonWriter.writeValueAsString(c));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleClientRoles(RoutingContext rc) {
+    private void handleClientRoles(RoutingContext ctx) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client not found");
+                ResponseUtil.error(ctx, 404, "client not found");
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             if (roles == null) {
-                ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                ResponseUtil.error(ctx, 400, "incorrect or none roles specified");
                 return;
             }
 
@@ -415,9 +415,9 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(c));
+            ctx.response().end(jsonWriter.writeValueAsString(c));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

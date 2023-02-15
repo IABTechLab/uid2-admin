@@ -55,26 +55,26 @@ public class SaltService implements IService {
         }, Role.SECRET_MANAGER));
     }
 
-    private void handleSaltSnapshots(RoutingContext rc) {
+    private void handleSaltSnapshots(RoutingContext ctx) {
         try {
             final JsonArray ja = new JsonArray();
             this.saltProvider.getSnapshots().stream()
                     .forEachOrdered(s -> ja.add(toJson(s)));
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleSaltRotate(RoutingContext rc) {
+    private void handleSaltRotate(RoutingContext ctx) {
         try {
-            final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
+            final Optional<Double> fraction = RequestUtil.getDouble(ctx, "fraction");
             if (!fraction.isPresent()) return;
-            final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
+            final Duration[] minAges = RequestUtil.getDurations(ctx, "min_ages_in_seconds");
             if (minAges == null) return;
 
             // force refresh
@@ -85,18 +85,18 @@ public class SaltService implements IService {
             final ISaltRotation.Result result = saltRotation.rotateSalts(
                     lastSnapshot, minAges, fraction.get());
             if (!result.hasSnapshot()) {
-                ResponseUtil.error(rc, 200, result.getReason());
+                ResponseUtil.error(ctx, 200, result.getReason());
                 return;
             }
 
             storageManager.upload(result.getSnapshot());
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(result.getSnapshot()).encode());
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 

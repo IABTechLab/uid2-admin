@@ -104,17 +104,17 @@ public class OperatorKeyService implements IService {
         }, Role.OPERATOR_MANAGER));
     }
 
-    private void handleOperatorMetadata(RoutingContext rc) {
+    private void handleOperatorMetadata(RoutingContext ctx) {
         try {
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(operatorKeyProvider.getMetadata().encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorList(RoutingContext rc) {
+    private void handleOperatorList(RoutingContext ctx) {
         try {
             final JsonArray ja = new JsonArray();
             final Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
@@ -132,94 +132,94 @@ public class OperatorKeyService implements IService {
                 jo.put("operator_type", o.getOperatorType());
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorReveal(RoutingContext rc) {
+    private void handleOperatorReveal(RoutingContext ctx) {
         try {
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator not exist");
+                ResponseUtil.error(ctx, 404, "operator not exist");
                 return;
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(existingOperator.get()));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorAdd(RoutingContext rc) {
+    private void handleOperatorAdd(RoutingContext ctx) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
-            if (!rc.queryParams().contains("name")) {
-                ResponseUtil.error(rc, 400, "no name specified");
+            if (!ctx.queryParams().contains("name")) {
+                ResponseUtil.error(ctx, 400, "no name specified");
                 return;
             }
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
 
             final Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 400, "key existed");
+                ResponseUtil.error(ctx, 400, "key existed");
                 return;
             }
 
-            final String protocol = rc.queryParams().contains("protocol")
-                    ? RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0))
+            final String protocol = ctx.queryParams().contains("protocol")
+                    ? RequestUtil.validateOperatorProtocol(ctx.queryParam("protocol").get(0))
                     : null;
             if (protocol == null) {
-                ResponseUtil.error(rc, 400, "no protocol specified");
+                ResponseUtil.error(ctx, 400, "no protocol specified");
                 return;
             }
             Set<Role> roles;
-            if (!rc.queryParams().contains("roles")) {
+            if (!ctx.queryParams().contains("roles")) {
                 roles = new HashSet<>();
             } else {
-                roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
+                roles = RequestUtil.getRoles(ctx.queryParam("roles").get(0)) == null
                     ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
-                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+                    : RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             }
             if (roles == null) {
-                ResponseUtil.error(rc, 400, "Incorrect roles specified");
+                ResponseUtil.error(ctx, 400, "Incorrect roles specified");
                 return;
             }
 
             Integer siteId;
             try {
-                siteId = rc.queryParam("site_id").get(0) == null ? null : Integer.parseInt(rc.queryParam("site_id").get(0));
+                siteId = ctx.queryParam("site_id").get(0) == null ? null : Integer.parseInt(ctx.queryParam("site_id").get(0));
             } catch (NumberFormatException e) {
                 LOGGER.error(e.getMessage(), e);
                 siteId = null;
             }
             if (siteId == null) {
-                ResponseUtil.error(rc, 400, "no site id specified");
+                ResponseUtil.error(ctx, 400, "no site id specified");
                 return;
             }
             Integer finalSiteId = siteId;
             if (this.siteProvider.getAllSites().stream().noneMatch(site -> site.getId() == finalSiteId)) {
-                ResponseUtil.error(rc, 400, "provided site id does not exist");
+                ResponseUtil.error(ctx, 400, "provided site id does not exist");
                 return;
             }
 
             OperatorType operatorType;
             try {
-                operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());
+                operatorType = OperatorType.valueOf(ctx.queryParam("operator_type").get(0).toUpperCase());
             } catch (Exception e) {
-                ResponseUtil.error(rc, 400, "Operator type must be either public or private");
+                ResponseUtil.error(ctx, 400, "Operator type must be either public or private");
                 return;
             }
 
@@ -242,23 +242,23 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with new key
-            rc.response().end(jsonWriter.writeValueAsString(newOperator));
+            ctx.response().end(jsonWriter.writeValueAsString(newOperator));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorDel(RoutingContext rc) {
+    private void handleOperatorDel(RoutingContext ctx) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator name not found");
+                ResponseUtil.error(ctx, 404, "operator name not found");
                 return;
             }
 
@@ -274,31 +274,31 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with client deleted
-            rc.response().end(jsonWriter.writeValueAsString(o));
+            ctx.response().end(jsonWriter.writeValueAsString(o));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorDisable(RoutingContext rc) {
-        handleOperatorDisable(rc, true);
+    private void handleOperatorDisable(RoutingContext ctx) {
+        handleOperatorDisable(ctx, true);
     }
 
-    private void handleOperatorEnable(RoutingContext rc) {
-        handleOperatorDisable(rc, false);
+    private void handleOperatorEnable(RoutingContext ctx) {
+        handleOperatorDisable(ctx, false);
     }
 
-    private void handleOperatorDisable(RoutingContext rc, boolean disableFlag) {
+    private void handleOperatorDisable(RoutingContext ctx, boolean disableFlag) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator name not found");
+                ResponseUtil.error(ctx, 404, "operator name not found");
                 return;
             }
 
@@ -308,7 +308,7 @@ public class OperatorKeyService implements IService {
 
             OperatorKey operator = existingOperator.get();
             if (operator.isDisabled() == disableFlag) {
-                ResponseUtil.error(rc, 400, "no change needed");
+                ResponseUtil.error(ctx, 400, "no change needed");
                 return;
             }
 
@@ -327,43 +327,43 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with operator disabled/enabled
-            rc.response().end(response.encode());
+            ctx.response().end(response.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorUpdate(RoutingContext rc) {
+    private void handleOperatorUpdate(RoutingContext ctx) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             OperatorKey existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst().orElse(null);
             if (existingOperator == null) {
-                ResponseUtil.error(rc, 404, "operator name not found");
+                ResponseUtil.error(ctx, 404, "operator name not found");
                 return;
             }
 
-            if (!rc.queryParam("site_id").isEmpty())
+            if (!ctx.queryParam("site_id").isEmpty())
             {
-                final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+                final Site site = RequestUtil.getSite(ctx, "site_id", this.siteProvider);
                 if (site == null) {
-                    ResponseUtil.error(rc, 404, "site id not found");
+                    ResponseUtil.error(ctx, 404, "site id not found");
                     return;
                 }
                 existingOperator.setSiteId(site.getId());
             }
 
-            if (!rc.queryParam("operator_type").isEmpty() && rc.queryParam("operator_type").get(0) != null)
+            if (!ctx.queryParam("operator_type").isEmpty() && ctx.queryParam("operator_type").get(0) != null)
             {
                 OperatorType operatorType;
                 try {
-                    operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());
+                    operatorType = OperatorType.valueOf(ctx.queryParam("operator_type").get(0).toUpperCase());
                 } catch (Exception e) {
-                    ResponseUtil.error(rc, 400, "Operator type can only be either public or private");
+                    ResponseUtil.error(ctx, 400, "Operator type can only be either public or private");
                     return;
                 }
 
@@ -378,23 +378,23 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(existingOperator));
+            ctx.response().end(jsonWriter.writeValueAsString(existingOperator));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorRekey(RoutingContext rc) {
+    private void handleOperatorRekey(RoutingContext ctx) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator key not found");
+                ResponseUtil.error(ctx, 404, "operator key not found");
                 return;
             }
 
@@ -411,32 +411,32 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(o));
+            ctx.response().end(jsonWriter.writeValueAsString(o));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleOperatorRoles(RoutingContext rc) {
+    private void handleOperatorRoles(RoutingContext ctx) {
         try {
             // refresh manually
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
             if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator key not found");
+                ResponseUtil.error(ctx, 404, "operator key not found");
                 return;
             }
 
-            Set<Role> roles = !rc.queryParams().contains("roles")
-                    || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
+            Set<Role> roles = !ctx.queryParams().contains("roles")
+                    || RequestUtil.getRoles(ctx.queryParam("roles").get(0)) == null
                         ? null
-                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+                        : RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             if (roles == null) {
-                ResponseUtil.error(rc, 400, "No roles or incorrect roles specified");
+                ResponseUtil.error(ctx, 400, "No roles or incorrect roles specified");
                 return;
             }
 
@@ -451,9 +451,9 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(o));
+            ctx.response().end(jsonWriter.writeValueAsString(o));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

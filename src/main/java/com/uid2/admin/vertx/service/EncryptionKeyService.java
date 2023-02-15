@@ -130,13 +130,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     }
 
 
-    private void handleRewriteMetadata(RoutingContext rc) {
+    private void handleRewriteMetadata(RoutingContext ctx) {
         try {
             storeWriter.rewriteMeta();
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
@@ -152,38 +152,38 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         return addSiteKeys(Arrays.asList(siteId), activatesIn, siteKeyExpiresAfter, false).get(0);
     }
 
-    private void handleKeyList(RoutingContext rc) {
+    private void handleKeyList(RoutingContext ctx) {
         try {
             final JsonArray ja = new JsonArray();
             this.keyProvider.getSnapshot().getActiveKeySet().stream()
                     .sorted(Comparator.comparingInt(EncryptionKey::getSiteId).thenComparing(EncryptionKey::getActivates))
                     .forEachOrdered(k -> ja.add(toJson(k)));
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleRotateMasterKey(RoutingContext rc) {
+    private void handleRotateMasterKey(RoutingContext ctx) {
         try {
-            final RotationResult masterKeyResult = rotateKeys(rc, masterKeyActivatesIn, masterKeyExpiresAfter,
+            final RotationResult masterKeyResult = rotateKeys(ctx, masterKeyActivatesIn, masterKeyExpiresAfter,
                 s -> s == Const.Data.MasterKeySiteId || s == Const.Data.RefreshKeySiteId);
 
             final JsonArray ja = new JsonArray();
             masterKeyResult.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAddSiteKey(RoutingContext rc) {
-        final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
+    private void handleAddSiteKey(RoutingContext ctx) {
+        final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(ctx, "site_id");
         if (!siteIdOpt.isPresent()) {
             return;
         }
@@ -191,7 +191,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         final int siteId = siteIdOpt.get();
 
         if (!SiteUtil.isValidSiteId(siteId)) {
-            ResponseUtil.error(rc, 400, "must specify a valid site id");
+            ResponseUtil.error(ctx, 400, "must specify a valid site id");
             return;
         }
 
@@ -201,11 +201,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
                 .anyMatch(key -> key.getSiteId() == siteId);
 
         if (siteKeyExists) {
-            ResponseUtil.error(rc, 400, "Key already exists for specified site id: " + siteId);
+            ResponseUtil.error(ctx, 400, "Key already exists for specified site id: " + siteId);
             return;
         }
 
-        final Optional<String> activatesQueryParam = rc.queryParam("activates_in_seconds")
+        final Optional<String> activatesQueryParam = ctx.queryParam("activates_in_seconds")
                 .stream()
                 .findFirst();
 
@@ -216,7 +216,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
             try {
                 seconds = Long.parseUnsignedLong(activatesQueryParam.get());
             } catch (NumberFormatException e) {
-                ResponseUtil.error(rc, 400, "activates_in_seconds must be a non-negative number of seconds");
+                ResponseUtil.error(ctx, 400, "activates_in_seconds must be a non-negative number of seconds");
                 return;
             }
 
@@ -227,67 +227,67 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         try {
             siteKey = addSiteKey(siteId, activatesInSeconds.orElse(siteKeyActivatesIn));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
             return;
         }
 
         final JsonObject json = toJson(siteKey);
-        rc.response()
+        ctx.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
 
-    private void handleRotateSiteKey(RoutingContext rc) {
+    private void handleRotateSiteKey(RoutingContext ctx) {
         try {
-            final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
+            final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(ctx, "site_id");
             if (!siteIdOpt.isPresent()) return;
             final int siteId = siteIdOpt.get();
 
             if (siteId != Const.Data.AdvertisingTokenSiteId && !SiteUtil.isValidSiteId(siteId)) {
-                ResponseUtil.error(rc, 400, "must specify a valid site id");
+                ResponseUtil.error(ctx, 400, "must specify a valid site id");
                 return;
             }
 
-            final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> s == siteId);
+            final RotationResult result = rotateKeys(ctx, siteKeyActivatesIn, siteKeyExpiresAfter, s -> s == siteId);
             if (result == null) {
                 return;
             } else if (!result.siteIds.contains(siteId)) {
-                ResponseUtil.error(rc, 404, "No keys found for the specified site id: " + siteId);
+                ResponseUtil.error(ctx, 404, "No keys found for the specified site id: " + siteId);
                 return;
             }
 
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleRotateAllSiteKeys(RoutingContext rc) {
+    private void handleRotateAllSiteKeys(RoutingContext ctx) {
         try {
-            final RotationResult result = rotateKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> SiteUtil.isValidSiteId(s) || s == Const.Data.AdvertisingTokenSiteId);
+            final RotationResult result = rotateKeys(ctx, siteKeyActivatesIn, siteKeyExpiresAfter, s -> SiteUtil.isValidSiteId(s) || s == Const.Data.AdvertisingTokenSiteId);
             if (result == null) {
                 return;
             }
 
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private RotationResult rotateKeys(RoutingContext rc, Duration activatesIn, Duration expiresAfter, Predicate<Integer> siteSelector)
+    private RotationResult rotateKeys(RoutingContext ctx, Duration activatesIn, Duration expiresAfter, Predicate<Integer> siteSelector)
             throws Exception {
-        final Duration minAge = RequestUtil.getDuration(rc, "min_age_seconds");
+        final Duration minAge = RequestUtil.getDuration(ctx, "min_age_seconds");
         if (minAge == null) return null;
-        final Optional<Boolean> force = RequestUtil.getBoolean(rc, "force", false);
+        final Optional<Boolean> force = RequestUtil.getBoolean(ctx, "force", false);
         if (!force.isPresent()) return null;
 
         return rotateKeys(siteSelector, minAge, activatesIn, expiresAfter, force.get());

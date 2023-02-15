@@ -67,17 +67,17 @@ public class SiteService implements IService {
         }, Role.CLIENTKEY_ISSUER));
     }
 
-    private void handleRewriteMetadata(RoutingContext rc) {
+    private void handleRewriteMetadata(RoutingContext ctx) {
         try {
             storeWriter.rewriteMeta();
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleSiteList(RoutingContext rc) {
+    private void handleSiteList(RoutingContext ctx) {
         try {
             JsonArray ja = new JsonArray();
             final Collection<Site> sites = this.siteProvider.getAllSites().stream()
@@ -104,22 +104,22 @@ public class SiteService implements IService {
                 jo.put("client_count", clients.size());
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleSiteAdd(RoutingContext rc) {
+    private void handleSiteAdd(RoutingContext ctx) {
         try {
             // refresh manually
             siteProvider.loadContent();
 
-            final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
+            final String name = ctx.queryParam("name").isEmpty() ? "" : ctx.queryParam("name").get(0).trim();
             if (name == null || name.isEmpty()) {
-                ResponseUtil.error(rc, 400, "must specify a valid site name");
+                ResponseUtil.error(ctx, 400, "must specify a valid site name");
                 return;
             }
 
@@ -127,17 +127,17 @@ public class SiteService implements IService {
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingSite.isPresent()) {
-                ResponseUtil.error(rc, 400, "site existed");
+                ResponseUtil.error(ctx, 400, "site existed");
                 return;
             }
 
             boolean enabled = false;
-            List<String> enabledFlags = rc.queryParam("enabled");
+            List<String> enabledFlags = ctx.queryParam("enabled");
             if (!enabledFlags.isEmpty()) {
                 try {
                     enabled = Boolean.valueOf(enabledFlags.get(0));
                 } catch (Exception ex) {
-                    ResponseUtil.error(rc, 400, "unable to parse enabled " + ex.getMessage());
+                    ResponseUtil.error(ctx, 400, "unable to parse enabled " + ex.getMessage());
                     return;
                 }
             }
@@ -155,29 +155,29 @@ public class SiteService implements IService {
             storeWriter.upload(sites, null);
 
             // respond with new client created
-            rc.response().end(jsonWriter.writeValueAsString(newSite));
+            ctx.response().end(jsonWriter.writeValueAsString(newSite));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleSiteEnable(RoutingContext rc) {
+    private void handleSiteEnable(RoutingContext ctx) {
         try {
             // refresh manually
             siteProvider.loadContent();
 
-            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            final Site existingSite = RequestUtil.getSite(ctx, "id", siteProvider);
             if (existingSite == null) {
                 return;
             }
 
             Boolean enabled = false;
-            List<String> enabledFlags = rc.queryParam("enabled");
+            List<String> enabledFlags = ctx.queryParam("enabled");
             if (!enabledFlags.isEmpty()) {
                 try {
                     enabled = Boolean.valueOf(enabledFlags.get(0));
                 } catch (Exception ex) {
-                    ResponseUtil.error(rc, 400, "unable to parse enabled " + ex.getMessage());
+                    ResponseUtil.error(ctx, 400, "unable to parse enabled " + ex.getMessage());
                     return;
                 }
             }
@@ -191,9 +191,9 @@ public class SiteService implements IService {
                 storeWriter.upload(sites, null);
             }
 
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            ctx.response().end(jsonWriter.writeValueAsString(existingSite));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

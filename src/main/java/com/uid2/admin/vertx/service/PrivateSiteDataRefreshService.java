@@ -51,26 +51,26 @@ public class PrivateSiteDataRefreshService implements IService {
                 Role.ADMINISTRATOR, Role.SECRET_MANAGER));
     }
 
-    private void handlePrivateSiteDataGenerate(RoutingContext rc) {
+    private void handlePrivateSiteDataGenerate(RoutingContext ctx) {
         try {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handlePrivateSiteDataGenerateNow(RoutingContext rc) {
+    private void handlePrivateSiteDataGenerateNow(RoutingContext ctx) {
         try {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

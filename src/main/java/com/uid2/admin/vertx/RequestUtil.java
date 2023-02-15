@@ -27,10 +27,10 @@ public class RequestUtil {
         }
     }
 
-    public static Site getSite(RoutingContext rc, String param, ISiteStore siteProvider) {
-        final List<String> siteIds = rc.queryParam(param);
+    public static Site getSite(RoutingContext ctx, String param, ISiteStore siteProvider) {
+        final List<String> siteIds = ctx.queryParam(param);
         if (siteIds.isEmpty()) {
-            ResponseUtil.error(rc, 400, "must specify site id");
+            ResponseUtil.error(ctx, 400, "must specify site id");
             return null;
         }
 
@@ -38,28 +38,28 @@ public class RequestUtil {
         try {
             siteId = Integer.valueOf(siteIds.get(0));
         } catch (Exception ex) {
-            ResponseUtil.error(rc, 400, "unable to parse site id " + ex.getMessage());
+            ResponseUtil.error(ctx, 400, "unable to parse site id " + ex.getMessage());
             return null;
         }
 
         if (!SiteUtil.isValidSiteId(siteId)) {
-            ResponseUtil.error(rc, 400, "must specify a valid site id");
+            ResponseUtil.error(ctx, 400, "must specify a valid site id");
             return null;
         }
 
         final Site site = siteProvider.getSite(siteId);
         if (site == null) {
-            ResponseUtil.error(rc, 404, "site not found");
+            ResponseUtil.error(ctx, 404, "site not found");
             return null;
         }
 
         return site;
     }
 
-    public static Optional<Integer> getSiteId(RoutingContext rc, String param) {
-        final List<String> siteIds = rc.queryParam(param);
+    public static Optional<Integer> getSiteId(RoutingContext ctx, String param) {
+        final List<String> siteIds = ctx.queryParam(param);
         if (siteIds.isEmpty()) {
-            ResponseUtil.error(rc, 400, "must specify site id");
+            ResponseUtil.error(ctx, 400, "must specify site id");
             return Optional.empty();
         }
 
@@ -67,14 +67,14 @@ public class RequestUtil {
         try {
             return Optional.of(Integer.valueOf(siteIds.get(0)));
         } catch (Exception ex) {
-            ResponseUtil.error(rc, 400, "unable to parse site id " + ex.getMessage());
+            ResponseUtil.error(ctx, 400, "unable to parse site id " + ex.getMessage());
             return Optional.empty();
         }
     }
 
-    public static Boolean getKeyAclType(RoutingContext rc) {
+    public static Boolean getKeyAclType(RoutingContext ctx) {
         boolean isWhitelist;
-        List<String> types = rc.queryParam("type");
+        List<String> types = ctx.queryParam("type");
         if (!types.isEmpty()) {
             try {
                 String aclType = types.get(0);
@@ -82,11 +82,11 @@ public class RequestUtil {
                 else if (aclType.equals("blacklist")) isWhitelist = false;
                 else throw new Exception("unsupported type: " + aclType);
             } catch (Exception ex) {
-                ResponseUtil.error(rc, 400, "unable to parse ACL type " + ex.getMessage());
+                ResponseUtil.error(ctx, 400, "unable to parse ACL type " + ex.getMessage());
                 return null;
             }
         } else {
-            ResponseUtil.error(rc, 400, "must specify ACL type");
+            ResponseUtil.error(ctx, 400, "must specify ACL type");
             return null;
         }
         return isWhitelist;
@@ -113,25 +113,25 @@ public class RequestUtil {
             return protocol;
     }
 
-    public static Duration getDuration(RoutingContext rc, String paramName) {
-        final List<String> values = rc.queryParam(paramName);
+    public static Duration getDuration(RoutingContext ctx, String paramName) {
+        final List<String> values = ctx.queryParam(paramName);
         if (!values.isEmpty()) {
             try {
                 final long seconds = Long.parseLong(values.get(0));
                 if (seconds < 1) throw new Exception("value is not positive");
                 return Duration.ofSeconds(seconds);
             } catch (Exception ex) {
-                ResponseUtil.error(rc, 400, paramName + " must be positive number of seconds: " + ex.getMessage());
+                ResponseUtil.error(ctx, 400, paramName + " must be positive number of seconds: " + ex.getMessage());
                 return null;
             }
         } else {
-            ResponseUtil.error(rc, 400, "must specify " + paramName);
+            ResponseUtil.error(ctx, 400, "must specify " + paramName);
             return null;
         }
     }
 
-    public static Duration[] getDurations(RoutingContext rc, String paramName) {
-        final List<String> values = rc.queryParam(paramName);
+    public static Duration[] getDurations(RoutingContext ctx, String paramName) {
+        final List<String> values = ctx.queryParam(paramName);
         if (!values.isEmpty()) {
             try {
                 final Duration[] durations = Arrays.stream(values.get(0).split(","))
@@ -140,35 +140,35 @@ public class RequestUtil {
                 if (Arrays.stream(durations).anyMatch(d -> d.getSeconds() < 1)) throw new Exception("value is not positive");
                 return durations;
             } catch (Exception ex) {
-                ResponseUtil.error(rc, 400, paramName + " must be comma-separated list of seconds: " + ex.getMessage());
+                ResponseUtil.error(ctx, 400, paramName + " must be comma-separated list of seconds: " + ex.getMessage());
                 return null;
             }
         } else {
-            ResponseUtil.error(rc, 400, "must specify " + paramName);
+            ResponseUtil.error(ctx, 400, "must specify " + paramName);
             return null;
         }
     }
 
-    public static Optional<Boolean> getBoolean(RoutingContext rc, String paramName, boolean defaultValue) {
-        final List<String> values = rc.queryParam(paramName);
+    public static Optional<Boolean> getBoolean(RoutingContext ctx, String paramName, boolean defaultValue) {
+        final List<String> values = ctx.queryParam(paramName);
         if (values.isEmpty()) return Optional.of(defaultValue);
         try {
             return Optional.of(Boolean.valueOf(values.get(0)));
         } catch (Exception ex) {
-            ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
+            ResponseUtil.error(ctx, 400, "failed to parse " + paramName + ": " + ex.getMessage());
             return Optional.empty();
         }
     }
 
-    public static Optional<Double> getDouble(RoutingContext rc, String paramName) {
-        final List<String> values = rc.queryParam(paramName);
+    public static Optional<Double> getDouble(RoutingContext ctx, String paramName) {
+        final List<String> values = ctx.queryParam(paramName);
         if (values.isEmpty()) {
             return Optional.empty();
         }
         try {
             return Optional.of(Double.valueOf(values.get(0)));
         } catch (Exception ex) {
-            ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
+            ResponseUtil.error(ctx, 400, "failed to parse " + paramName + ": " + ex.getMessage());
             return Optional.empty();
         }
     }

@@ -58,17 +58,17 @@ public class EnclaveIdService implements IService {
         }, Role.ADMINISTRATOR));
     }
 
-    private void handleEnclaveMetadata(RoutingContext rc) {
+    private void handleEnclaveMetadata(RoutingContext ctx) {
         try {
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(enclaveIdProvider.getMetadata().encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleEnclaveList(RoutingContext rc) {
+    private void handleEnclaveList(RoutingContext ctx) {
         try {
             JsonArray ja = new JsonArray();
             Collection<EnclaveIdentifier> collection = this.enclaveIdProvider.getAll();
@@ -82,37 +82,37 @@ public class EnclaveIdService implements IService {
                 jo.put("created", e.getCreated());
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(collection));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleEnclaveAdd(RoutingContext rc) {
+    private void handleEnclaveAdd(RoutingContext ctx) {
         try {
             // refresh manually
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<EnclaveIdentifier> existingEnclaveId = this.enclaveIdProvider.getAll()
                     .stream().filter(e -> e.getName().equals(name))
                     .findFirst();
             if (existingEnclaveId.isPresent()) {
-                ResponseUtil.error(rc, 400, "enclave existed");
+                ResponseUtil.error(ctx, 400, "enclave existed");
                 return;
             }
 
-            String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
+            String protocol = RequestUtil.validateOperatorProtocol(ctx.queryParam("protocol").get(0));
             if (protocol == null) {
-                ResponseUtil.error(rc, 400, "no protocol specified");
+                ResponseUtil.error(ctx, 400, "no protocol specified");
                 return;
             }
 
-            final String enclaveId = rc.queryParam("enclave_id").get(0);
+            final String enclaveId = ctx.queryParam("enclave_id").get(0);
             if (enclaveId == null) {
-                ResponseUtil.error(rc, 400, "enclave_id not specified");
+                ResponseUtil.error(ctx, 400, "enclave_id not specified");
                 return;
             }
 
@@ -131,23 +131,23 @@ public class EnclaveIdService implements IService {
             storeWriter.upload(enclaveIds);
 
             // respond with new enclave id
-            rc.response().end(jsonWriter.writeValueAsString(newEnclaveId));
+            ctx.response().end(jsonWriter.writeValueAsString(newEnclaveId));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleEnclaveDel(RoutingContext rc) {
+    private void handleEnclaveDel(RoutingContext ctx) {
         try {
             // refresh manually
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<EnclaveIdentifier> existingEnclaveId = this.enclaveIdProvider.getAll()
                     .stream().filter(e -> e.getName().equals(name))
                     .findFirst();
             if (!existingEnclaveId.isPresent()) {
-                ResponseUtil.error(rc, 404, "enclave id not found");
+                ResponseUtil.error(ctx, 404, "enclave id not found");
                 return;
             }
 
@@ -163,9 +163,9 @@ public class EnclaveIdService implements IService {
             storeWriter.upload(enclaveIds);
 
             // respond with the deleted enclave id
-            rc.response().end(jsonWriter.writeValueAsString(e));
+            ctx.response().end(jsonWriter.writeValueAsString(e));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

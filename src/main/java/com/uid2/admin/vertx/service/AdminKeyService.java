@@ -117,17 +117,17 @@ public class AdminKeyService implements IService {
         }, Role.ADMINISTRATOR));
     }
 
-    private void handleAdminMetadata(RoutingContext rc) {
+    private void handleAdminMetadata(RoutingContext ctx) {
         try {
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(adminUserProvider.getMetadata().encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminList(RoutingContext rc) {
+    private void handleAdminList(RoutingContext ctx) {
         try {
             JsonArray ja = new JsonArray();
             Collection<AdminUser> collection = this.adminUserProvider.getAll();
@@ -142,50 +142,50 @@ public class AdminKeyService implements IService {
                 jo.put("disabled", a.isDisabled());
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminReveal(RoutingContext rc) {
+    private void handleAdminReveal(RoutingContext ctx) {
         try {
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
             if (!existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 404, "admin not found");
+                ResponseUtil.error(ctx, 404, "admin not found");
                 return;
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(existingAdmin.get()));
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminAdd(RoutingContext rc) {
+    private void handleAdminAdd(RoutingContext ctx) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
             if (existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 400, "admin existed");
+                ResponseUtil.error(ctx, 400, "admin existed");
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             if (roles == null) {
-                ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                ResponseUtil.error(ctx, 400, "incorrect or none roles specified");
                 return;
             }
 
@@ -208,24 +208,24 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // respond with new admin created
-            rc.response().end(jsonWriter.writeValueAsString(newAdmin));
+            ctx.response().end(jsonWriter.writeValueAsString(newAdmin));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminDel(RoutingContext rc) {
+    private void handleAdminDel(RoutingContext ctx) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
             if (!existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 404, "admin not found");
+                ResponseUtil.error(ctx, 404, "admin not found");
                 return;
             }
 
@@ -241,32 +241,32 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // respond with admin deleted
-            rc.response().end(jsonWriter.writeValueAsString(a));
+            ctx.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminDisable(RoutingContext rc) {
-        handleAdminDisable(rc, true);
+    private void handleAdminDisable(RoutingContext ctx) {
+        handleAdminDisable(ctx, true);
     }
 
-    private void handleAdminEnable(RoutingContext rc) {
-        handleAdminDisable(rc, false);
+    private void handleAdminEnable(RoutingContext ctx) {
+        handleAdminDisable(ctx, false);
     }
 
-    private void handleAdminDisable(RoutingContext rc, boolean disableFlag) {
+    private void handleAdminDisable(RoutingContext ctx, boolean disableFlag) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
             if (!existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 404, "admin not found");
+                ResponseUtil.error(ctx, 404, "admin not found");
                 return;
             }
 
@@ -276,7 +276,7 @@ public class AdminKeyService implements IService {
 
             AdminUser a = existingAdmin.get();
             if (a.isDisabled() == disableFlag) {
-                rc.fail(400, new Exception("no change needed"));
+                ctx.fail(400, new Exception("no change needed"));
                 return;
             }
 
@@ -292,24 +292,24 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // respond with admin disabled/enabled
-            rc.response().end(response.encode());
+            ctx.response().end(response.encode());
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminRekey(RoutingContext rc) {
+    private void handleAdminRekey(RoutingContext ctx) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
             if (!existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 404, "admin not found");
+                ResponseUtil.error(ctx, 404, "admin not found");
                 return;
             }
 
@@ -326,30 +326,30 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // return admin with new key
-            rc.response().end(jsonWriter.writeValueAsString(a));
+            ctx.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleAdminRoles(RoutingContext rc) {
+    private void handleAdminRoles(RoutingContext ctx) {
         try {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = ctx.queryParam("name").get(0);
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
             if (!existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 404, "admin not found");
+                ResponseUtil.error(ctx, 404, "admin not found");
                 return;
             }
 
-            Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            Set<Role> roles = RequestUtil.getRoles(ctx.queryParam("roles").get(0));
             if (roles == null) {
-                ResponseUtil.error(rc, 400, "incorrect or none roles specified");
+                ResponseUtil.error(ctx, 400, "incorrect or none roles specified");
                 return;
             }
 
@@ -364,27 +364,27 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(a));
+            ctx.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleRewriteMetadata(RoutingContext rc) {
+    private void handleRewriteMetadata(RoutingContext ctx) {
         try {
             clientKeyStoreWriter.rewriteMeta();
             encryptionKeyStoreWriter.rewriteMeta();
             keyAclStoreWriter.rewriteMeta();
             JsonObject json = new JsonObject();
             json.put("Result", "Successfully rewrote global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs");
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jsonWriter.writeValueAsString(json));
 
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

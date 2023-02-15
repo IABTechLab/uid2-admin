@@ -84,67 +84,67 @@ public class AdminVerticle extends AbstractVerticle {
         return router;
     }
 
-    private void handleHealthCheck(RoutingContext rc) {
-        rc.response().end("OK");
+    private void handleHealthCheck(RoutingContext ctx) {
+        ctx.response().end("OK");
     }
 
-    private void handleTokenGet(RoutingContext rc, OAuth2Auth oauth2Provider) {
+    private void handleTokenGet(RoutingContext ctx, OAuth2Auth oauth2Provider) {
         if (isAuthDisabled(config)) {
-            respondWithTestAdminUser(rc);
+            respondWithTestAdminUser(ctx);
         } else {
-            respondWithRealUser(rc, oauth2Provider);
+            respondWithRealUser(ctx, oauth2Provider);
         }
     }
 
-    private void respondWithRealUser(RoutingContext rc, OAuth2Auth oauth2Provider) {
-        oauth2Provider.userInfo(rc.user())
+    private void respondWithRealUser(RoutingContext ctx, OAuth2Auth oauth2Provider) {
+        oauth2Provider.userInfo(ctx.user())
                 .onFailure(e -> {
-                    rc.session().destroy();
-                    rc.fail(e);
+                    ctx.session().destroy();
+                    ctx.fail(e);
                 })
                 .onSuccess(userInfo -> {
                     String contact = userInfo.getString("email");
                     if (contact == null) {
-                        WebClient.create(rc.vertx())
+                        WebClient.create(ctx.vertx())
                                 .getAbs("https://api.github.com/user/emails")
-                                .authentication(new TokenCredentials(rc.user().<String>get("access_token")))
+                                .authentication(new TokenCredentials(ctx.user().<String>get("access_token")))
                                 .as(BodyCodec.jsonArray())
                                 .send()
                                 .onFailure(e -> {
-                                    rc.session().destroy();
-                                    rc.fail(e);
+                                    ctx.session().destroy();
+                                    ctx.fail(e);
                                 })
                                 .onSuccess(res -> {
                                     JsonArray emails = res.body();
                                     if (emails.size() > 0) {
                                         final String publicEmail = emails.getJsonObject(0).getString("email");
-                                        handleEmailContactInfo(rc, publicEmail);
+                                        handleEmailContactInfo(ctx, publicEmail);
                                     } else {
                                         LOGGER.error("No public emails");
-                                        rc.fail(new Throwable("No public emails"));
+                                        ctx.fail(new Throwable("No public emails"));
                                     }
                                 });
                     } else {
-                        handleEmailContactInfo(rc, contact);
+                        handleEmailContactInfo(ctx, contact);
                     }
                 });
     }
 
-    private void respondWithTestAdminUser(RoutingContext rc) {
+    private void respondWithTestAdminUser(RoutingContext ctx) {
         // This test user is set up in localstack
-        handleEmailContactInfo(rc, "test.user@uidapi.com");
+        handleEmailContactInfo(ctx, "test.user@uidapi.com");
     }
 
-    private void handleEmailContactInfo(RoutingContext rc, String contact) {
+    private void handleEmailContactInfo(RoutingContext ctx, String contact) {
         AdminUser adminUser = adminUserProvider.getAdminUserByContact(contact);
         if (adminUser == null) {
             adminUser = AdminUser.unknown(contact);
         }
 
         try {
-            rc.response().end(jsonWriter.writeValueAsString(adminUser));
+            ctx.response().end(jsonWriter.writeValueAsString(adminUser));
         } catch (Exception ex) {
-            rc.fail(ex);
+            ctx.fail(ex);
         }
     }
 }

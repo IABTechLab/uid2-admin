@@ -68,17 +68,17 @@ public class KeyAclService implements IService {
         }, Role.CLIENTKEY_ISSUER));
     }
 
-    private void handleRewriteMetadata(RoutingContext rc) {
+    private void handleRewriteMetadata(RoutingContext ctx) {
         try {
             storeWriter.rewriteMeta();
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } catch (Exception e) {
             LOGGER.error("Could not rewrite metadata", e);
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleKeyAclList(RoutingContext rc) {
+    private void handleKeyAclList(RoutingContext ctx) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
@@ -86,23 +86,23 @@ public class KeyAclService implements IService {
                 ja.add(toJson(acl.getKey(), acl.getValue()));
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleKeyAclReset(RoutingContext rc) {
+    private void handleKeyAclReset(RoutingContext ctx) {
         try {
             // refresh manually
             keyAclProvider.loadContent();
 
-            final Site existingSite = RequestUtil.getSite(rc, "site_id", siteProvider);
+            final Site existingSite = RequestUtil.getSite(ctx, "site_id", siteProvider);
             if (existingSite == null) return;
 
-            Boolean isWhitelist = RequestUtil.getKeyAclType(rc);
+            Boolean isWhitelist = RequestUtil.getKeyAclType(ctx);
             if (isWhitelist == null) return;
 
             this.keyManager.addSiteKey(existingSite.getId());
@@ -113,38 +113,38 @@ public class KeyAclService implements IService {
 
             storeWriter.upload(collection, null);
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(existingSite.getId(), newAcl).encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handleKeyAclUpdate(RoutingContext rc) {
+    private void handleKeyAclUpdate(RoutingContext ctx) {
         try {
             // refresh manually
             keyAclProvider.loadContent();
 
-            final Site site = RequestUtil.getSite(rc, "site_id", siteProvider);
+            final Site site = RequestUtil.getSite(ctx, "site_id", siteProvider);
             if (site == null) return;
 
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
             final EncryptionKeyAcl acl = collection.get(site.getId());
             if (acl == null) {
-                ResponseUtil.error(rc, 404, "ACL not found");
+                ResponseUtil.error(ctx, 404, "ACL not found");
                 return;
             }
 
-            final Set<Integer> addedSites = RequestUtil.getIds(rc.queryParam("add"));
+            final Set<Integer> addedSites = RequestUtil.getIds(ctx.queryParam("add"));
             if (addedSites == null) {
-                ResponseUtil.error(rc, 400, "invalid added sites");
+                ResponseUtil.error(ctx, 400, "invalid added sites");
                 return;
             }
 
-            final Set<Integer> removedSites = RequestUtil.getIds(rc.queryParam("remove"));
+            final Set<Integer> removedSites = RequestUtil.getIds(ctx.queryParam("remove"));
             if (removedSites == null) {
-                ResponseUtil.error(rc, 400, "invalid removed sites");
+                ResponseUtil.error(ctx, 400, "invalid removed sites");
                 return;
             }
 
@@ -154,10 +154,10 @@ public class KeyAclService implements IService {
                 if (addedSiteId == site.getId()) {
                     continue;
                 } else if (!SiteUtil.isValidSiteId(addedSiteId)) {
-                    ResponseUtil.error(rc, 400, "invalid added site id: " + addedSiteId);
+                    ResponseUtil.error(ctx, 400, "invalid added site id: " + addedSiteId);
                     return;
                 } else if (this.siteProvider.getSite(addedSiteId) == null) {
-                    ResponseUtil.error(rc, 404, "unknown added site id: " + addedSiteId);
+                    ResponseUtil.error(ctx, 404, "unknown added site id: " + addedSiteId);
                     return;
                 } else if (acl.getAccessList().add(addedSiteId)) {
                     added = true;
@@ -179,11 +179,11 @@ public class KeyAclService implements IService {
                 storeWriter.upload(collection, null);
             }
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(toJson(site.getId(), acl).encode());
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 

@@ -38,34 +38,34 @@ public class PartnerConfigService implements IService {
         }, Role.ADMINISTRATOR));
     }
 
-    private void handlePartnerConfigGet(RoutingContext rc) {
+    private void handlePartnerConfigGet(RoutingContext ctx) {
         try {
             String config = this.partnerConfigProvider.getConfig();
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(config);
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 
-    private void handlePartnerConfigUpdate(RoutingContext rc) {
+    private void handlePartnerConfigUpdate(RoutingContext ctx) {
         try {
             // refresh manually
             this.partnerConfigProvider.loadContent();
-            JsonArray partners = rc.body().asJsonArray();
+            JsonArray partners = ctx.body().asJsonArray();
             if (partners == null) {
-                ResponseUtil.error(rc, 400, "Body must be none empty");
+                ResponseUtil.error(ctx, 400, "Body must be none empty");
                 return;
             }
 
             storageManager.upload(partners);
 
-            rc.response()
+            ctx.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end("\"success\"");
         } catch (Exception e) {
-            rc.fail(500, e);
+            ctx.fail(500, e);
         }
     }
 }

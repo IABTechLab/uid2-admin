@@ -11,7 +11,7 @@ import java.util.HashMap;
 public class ResponseUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(ResponseUtil.class);
 
-    public static void error(RoutingContext rc, int statusCode, String message) {
+    public static void error(RoutingContext ctx, int statusCode, String message) {
         LOGGER.error(message);
 
         final JsonObject json = new JsonObject(new HashMap<String, Object>() {
@@ -22,7 +22,7 @@ public class ResponseUtil {
         if (message != null) {
             json.put("message", message);
         }
-        rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        ctx.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
 }
