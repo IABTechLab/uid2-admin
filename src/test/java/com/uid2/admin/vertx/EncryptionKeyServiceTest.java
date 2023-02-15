@@ -205,7 +205,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void filterOutMasterKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
         this.config.put("filter_key_over_cut_off_days", true);
         IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
-        AdminVerticle verticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
+        AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
@@ -265,7 +265,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void filterOutRefreshKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
         this.config.put("filter_key_over_cut_off_days", true);
         IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
-        AdminVerticle verticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
+        AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
@@ -541,7 +541,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void filterOutSiteKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
         this.config.put("filter_key_over_cut_off_days", true);
         IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
-        AdminVerticle verticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
+        AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));

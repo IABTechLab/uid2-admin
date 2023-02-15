@@ -158,7 +158,7 @@ public class Main {
                     "admins", 10000, adminUserProvider);
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
+            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes

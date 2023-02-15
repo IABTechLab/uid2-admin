@@ -5,7 +5,6 @@ import com.uid2.admin.auth.*;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpHeaders;
@@ -36,7 +35,6 @@ public class AdminVerticle extends AbstractVerticle {
     public AdminVerticle(
             JsonObject config,
             AuthFactory authFactory,
-            AuthMiddleware auth,
             IAdminUserProvider adminUserProvider,
             IService[] services) {
         this.config = config;

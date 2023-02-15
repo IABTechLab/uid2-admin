@@ -96,7 +96,7 @@ public abstract class ServiceTestBase {
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
-        AdminVerticle verticle = new AdminVerticle(config, authFactory, auth, adminUserProvider, services);
+        AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
