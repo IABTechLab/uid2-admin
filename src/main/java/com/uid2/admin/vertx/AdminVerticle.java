@@ -13,9 +13,12 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.vertx.ext.auth.oauth2.AccessToken;
+import io.vertx.ext.auth.authentication.TokenCredentials;
+import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
@@ -26,7 +29,6 @@ public class AdminVerticle extends AbstractVerticle {
 
     private final JsonObject config;
     private final IAuthHandlerFactory authHandlerFactory;
-    private final AuthMiddleware auth;
     private final IAdminUserProvider adminUserProvider;
     private final IService[] services;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
@@ -39,46 +41,40 @@ public class AdminVerticle extends AbstractVerticle {
             IService[] services) {
         this.config = config;
         this.authHandlerFactory = authHandlerFactory;
-        this.auth = auth;
         this.adminUserProvider = adminUserProvider;
         this.services = services;
     }
 
-    @Override
     public void start(Promise<Void> startPromise) {
         final Router router = createRoutesSetup();
-
         final int portOffset = Utils.getPortOffset();
         final int port = Const.Port.ServicePortForAdmin + portOffset;
-
         vertx.createHttpServer()
-                .requestHandler(router::handle)
-                .listen(port, result -> {
-                    if (result.succeeded()) {
-                        startPromise.complete();
-                        LOGGER.info("admin verticle started");
-                    } else {
-                        startPromise.fail(result.cause());
-                    }
-                });
+                .requestHandler(router)
+                .listen(port)
+                .onSuccess(server -> {
+                    startPromise.complete();
+                    LOGGER.info("Admin verticle started on port: {}", server.actualPort());
+                })
+                .onFailure(startPromise::fail);
     }
 
     private Router createRoutesSetup() {
         final Router router = Router.router(vertx);
-
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
-        AuthHandler oauth2Handler = authHandlerFactory.createAuthHandler(vertx, router.route("/oauth2-callback"));
+
+        OAuth2Auth oauth2Provider = (OAuth2Auth) authHandlerFactory.createAuthProvider(vertx);
+        AuthenticationHandler authHandler = authHandlerFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
 
         // protect the resource under "/adm/*"
-        router.route("/adm/*").handler(oauth2Handler);
+        router.route("/adm/*").handler(authHandler);
 
         // login page requires oauth2
-        router.route("/login").handler(oauth2Handler);
-        router.get("/login").handler(ctx -> {
-            ctx.response().setStatusCode(302)
-                    .putHeader(HttpHeaders.LOCATION, "/")
-                    .end("Redirecting to /");
-        });
+        router.route("/login").handler(authHandler);
+        router.get("/login").handler(ctx ->
+                ctx.response().setStatusCode(302)
+                        .putHeader(HttpHeaders.LOCATION, "/")
+                        .end("Redirecting to /"));
 
         // logout
         router.get("/logout").handler(ctx -> {
@@ -88,26 +84,11 @@ public class AdminVerticle extends AbstractVerticle {
                     .end("Redirecting to /");
         });
 
-        // The protected resource
-        router.get("/protected").handler(ctx -> {
-            AccessToken user = (AccessToken) ctx.user();
-            // retrieve the user profile, this is a common feature but not from the official OAuth2 spec
-            user.userInfo(res -> {
-                if (res.failed()) {
-                    ctx.session().destroy();
-                    ctx.fail(res.cause());
-                } else {
-                    final JsonObject userInfo = res.result();
-                    ctx.response().end(userInfo.getString("email"));
-                }
-            });
-        });
-
         router.route().handler(BodyHandler.create());
 
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
 
-        router.get("/api/token/get").handler(this::handleTokenGet);
+        router.get("/api/token/get").handler(ctx -> handleTokenGet(ctx, oauth2Provider));
 
         for (IService service : this.services) {
             service.setupRoutes(router);
@@ -121,53 +102,54 @@ public class AdminVerticle extends AbstractVerticle {
         rc.response().end("OK");
     }
 
-    private void handleTokenGet(RoutingContext rc) {
+    private void handleTokenGet(RoutingContext rc, OAuth2Auth oauth2Provider) {
         if (isAuthDisabled(config)) {
             respondWithTestAdminUser(rc);
-        }
-        else {
-            respondWithRealUser(rc);
+        } else {
+            respondWithRealUser(rc, oauth2Provider);
         }
     }
 
-    private void respondWithRealUser(RoutingContext rc) {
-        AccessToken user = (AccessToken) rc.user();
-        // retrieve the user profile, this is a common feature but not from the official OAuth2 spec
-        user.userInfo(res -> {
-            if (res.failed()) {
-                rc.session().destroy();
-                rc.fail(res.cause());
-            } else {
-                final JsonObject userInfo = res.result();
-                String contact = userInfo.getString("email");
-                if (contact == null) {
-                    user.fetch("https://api.github.com/user/emails", rcEmail -> {
-                        if (rcEmail.failed()) {
-                            rc.session().destroy();
-                            rc.fail(res.cause());
-                        } else {
-                            JsonArray emails = rcEmail.result().jsonArray();
-                            if (emails.size() > 0) {
-                                final String publicEmail = emails.getJsonObject(0).getString("email");
-                                handleEmailContactInfo(publicEmail, rc);
-                            } else {
-                                rc.fail(new Throwable("No public emails"));
-                            }
-                        }
-                    });
-                } else {
-                    handleEmailContactInfo(contact, rc);
-                }
-            }
-        });
+    private void respondWithRealUser(RoutingContext rc, OAuth2Auth oauth2Provider) {
+        oauth2Provider.userInfo(rc.user())
+                .onFailure(e -> {
+                    rc.session().destroy();
+                    rc.fail(e);
+                })
+                .onSuccess(userInfo -> {
+                    String contact = userInfo.getString("email");
+                    if (contact == null) {
+                        WebClient.create(rc.vertx())
+                                .getAbs("https://api.github.com/user/emails")
+                                .authentication(new TokenCredentials(rc.user().<String>get("access_token")))
+                                .as(BodyCodec.jsonArray())
+                                .send()
+                                .onFailure(e -> {
+                                    rc.session().destroy();
+                                    rc.fail(e);
+                                })
+                                .onSuccess(res -> {
+                                    JsonArray emails = res.body();
+                                    if (emails.size() > 0) {
+                                        final String publicEmail = emails.getJsonObject(0).getString("email");
+                                        handleEmailContactInfo(rc, publicEmail);
+                                    } else {
+                                        LOGGER.error("No public emails");
+                                        rc.fail(new Throwable("No public emails"));
+                                    }
+                                });
+                    } else {
+                        handleEmailContactInfo(rc, contact);
+                    }
+                });
     }
 
     private void respondWithTestAdminUser(RoutingContext rc) {
-        // This test user is set up in src/main/resources/localstack/s3/admins/admins.json
-        handleEmailContactInfo("test.user@uidapi.com", rc);
+        // This test user is set up in localstack
+        handleEmailContactInfo(rc, "test.user@uidapi.com");
     }
 
-    private void handleEmailContactInfo(String contact, RoutingContext rc) {
+    private void handleEmailContactInfo(RoutingContext rc, String contact) {
         AdminUser adminUser = adminUserProvider.getAdminUserByContact(contact);
         if (adminUser == null) {
             adminUser = AdminUser.unknown(contact);
@@ -179,5 +161,4 @@ public class AdminVerticle extends AbstractVerticle {
             rc.fail(ex);
         }
     }
-
 }

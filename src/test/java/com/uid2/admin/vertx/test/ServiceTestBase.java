@@ -28,7 +28,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.handler.AuthHandler;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -57,7 +57,7 @@ public abstract class ServiceTestBase {
     protected final WriteLock writeLock = new WriteLock();
     protected AuthMiddleware auth;
 
-    @Mock protected AuthHandler authHandler;
+    @Mock protected AuthenticationHandler authHandler;
     @Mock protected IAuthHandlerFactory authHandlerFactory;
 
     @Mock protected FileManager fileManager;
@@ -86,7 +86,7 @@ public abstract class ServiceTestBase {
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         mocks = MockitoAnnotations.openMocks(this);
-        when(authHandlerFactory.createAuthHandler(any(), any())).thenReturn(authHandler);
+        when(authHandlerFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()

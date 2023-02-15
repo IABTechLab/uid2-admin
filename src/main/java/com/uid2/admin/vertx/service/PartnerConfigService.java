@@ -53,7 +53,7 @@ public class PartnerConfigService implements IService {
         try {
             // refresh manually
             this.partnerConfigProvider.loadContent();
-            JsonArray partners = rc.getBodyAsJsonArray();
+            JsonArray partners = rc.body().asJsonArray();
             if (partners == null) {
                 ResponseUtil.error(rc, 400, "Body must be none empty");
                 return;

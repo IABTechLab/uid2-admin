@@ -1,6 +1,5 @@
 package com.uid2.admin.auth;
 
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.IRoleAuthorizable;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.Roles;
@@ -22,7 +21,7 @@ public class AdminUser implements IRoleAuthorizable<Role> {
 
     public static AdminUser unknown(String unkownUser) {
         return new AdminUser(unkownUser, unkownUser, unkownUser,
-                Instant.now().getEpochSecond(), Collections.<Role>emptySet(), false);
+                Instant.now().getEpochSecond(), Collections.emptySet(), false);
     }
 
     public AdminUser(String key, String name, String contact, long created, Set<Role> roles, boolean disabled) {
@@ -55,6 +54,11 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     @Override
     public String getContact() {
         return contact;
+    }
+
+    @Override
+    public Integer getSiteId() {
+        return null;
     }
 
     @Override
