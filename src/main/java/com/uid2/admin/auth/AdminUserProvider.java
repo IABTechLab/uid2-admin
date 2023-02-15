@@ -17,14 +17,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AdminUserProvider implements IAdminUserProvider, IMetadataVersionedStore {
     public static final String ADMINS_METADATA_PATH = "admins_metadata_path";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminUserProvider.class);
 
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage contentStreamProvider;
     private final String metadataPath;
-    private final AtomicReference<Map<String, AdminUser>> latestSnapshot = new AtomicReference<Map<String, AdminUser>>(null);
-
-    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact = new AtomicReference<Map<String, AdminUser>>(null);
+    private final AtomicReference<Map<String, AdminUser>> latestSnapshot = new AtomicReference<>(null);
+    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact = new AtomicReference<>(null);
 
     public AdminUserProvider(ICloudStorage cloudStorage, String metadataPath) {
         this.metadataStreamProvider = cloudStorage;
