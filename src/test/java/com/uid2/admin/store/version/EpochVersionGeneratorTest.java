@@ -8,7 +8,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class EpochVersionGeneratorTest {
-
     @Test
     void getVersion() {
         Clock clock = mock(Clock.class);

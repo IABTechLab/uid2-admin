@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
  * Note: only generate Private Site data for each site that has at least 1 private operator
  */
 public final class PrivateSiteUtil {
-
     private PrivateSiteUtil() {
     }
 
@@ -231,5 +230,4 @@ public final class PrivateSiteUtil {
             });
         }
     }
-
 }
