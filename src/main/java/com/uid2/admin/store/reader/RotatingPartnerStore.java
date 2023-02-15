@@ -5,8 +5,8 @@ import com.uid2.shared.attest.UidCoreClient;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 

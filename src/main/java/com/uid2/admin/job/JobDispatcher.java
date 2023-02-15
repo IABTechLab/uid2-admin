@@ -5,8 +5,8 @@ import com.uid2.admin.job.model.JobInfo;
 import com.uid2.admin.store.Clock;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.temporal.ChronoUnit;
 import java.util.*;

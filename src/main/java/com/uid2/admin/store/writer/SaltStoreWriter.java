@@ -9,8 +9,8 @@ import com.uid2.admin.store.FileName;
 import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.nio.file.Files;
