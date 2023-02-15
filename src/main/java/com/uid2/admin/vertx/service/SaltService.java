@@ -48,7 +48,7 @@ public class SaltService implements IService {
         router.get("/api/salt/snapshots").handler(
                 auth.handle(this::handleSaltSnapshots, Role.SECRET_MANAGER));
 
-        router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/salt/rotate").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSaltRotate(ctx);
             }

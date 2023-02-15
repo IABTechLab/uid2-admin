@@ -61,43 +61,43 @@ public class OperatorKeyService implements IService {
         router.get("/api/operator/reveal").handler(
                 auth.handle(this::handleOperatorReveal, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
         }, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/del").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorDel(ctx);
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/operator/disable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/disable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorDisable(ctx);
             }
         }, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/enable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
         }, Role.OPERATOR_MANAGER));
 
-        router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/update").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorUpdate(ctx);
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/operator/rekey").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/rekey").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorRekey(ctx);
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/operator/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
             }

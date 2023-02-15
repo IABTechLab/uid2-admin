@@ -46,12 +46,12 @@ public class EnclaveIdService implements IService {
         router.get("/api/enclave/list").handler(
                 auth.handle(this::handleEnclaveList, Role.OPERATOR_MANAGER));
 
-        router.post("/api/enclave/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/enclave/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleEnclaveAdd(ctx);
             }
         }, Role.OPERATOR_MANAGER));
-        router.post("/api/enclave/del").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/enclave/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleEnclaveDel(ctx);
             }

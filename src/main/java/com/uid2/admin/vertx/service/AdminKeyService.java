@@ -75,13 +75,13 @@ public class AdminKeyService implements IService {
         router.get("/api/admin/reveal").handler(
                 auth.handle(this::handleAdminReveal, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/admin/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleAdminAdd(ctx);
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/del").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/admin/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleAdminDel(ctx);
             }

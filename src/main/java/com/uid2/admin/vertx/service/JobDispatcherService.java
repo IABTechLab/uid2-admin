@@ -19,7 +19,7 @@ public class JobDispatcherService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/job-dispatcher/current-job").blockingHandler(auth.handle((ctx) -> {
+        router.get("/api/job-dispatcher/current-job").blockingHandler(auth.handle(ctx -> {
                     try {
                         ctx.response().end(jsonWriter.writeValueAsString(jobDispatcher.getExecutingJobInfo()));
                     } catch (Exception ex) {
@@ -29,7 +29,7 @@ public class JobDispatcherService implements IService {
                 //can be other role
                 Role.ADMINISTRATOR, Role.SECRET_MANAGER));
 
-        router.get("/api/job-dispatcher/job-queue").blockingHandler(auth.handle((ctx) -> {
+        router.get("/api/job-dispatcher/job-queue").blockingHandler(auth.handle(ctx -> {
                     try {
                         ctx.response().end(jsonWriter.writeValueAsString(jobDispatcher.getJobQueueInfo()));
                     } catch (Exception ex) {

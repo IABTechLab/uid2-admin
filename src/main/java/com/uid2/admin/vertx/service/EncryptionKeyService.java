@@ -99,30 +99,30 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
         router.get("/api/key/list").handler(
                 auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
 
-        router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
         }, Role.SECRET_MANAGER));
 
-        router.post("/api/key/rotate_master").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/rotate_master").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRotateMasterKey(ctx);
             }
         }, Role.SECRET_MANAGER));
 
-        router.post("/api/key/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleAddSiteKey(ctx);
             }
         }, Role.SECRET_MANAGER));
 
-        router.post("/api/key/rotate_site").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/rotate_site").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRotateSiteKey(ctx);
             }
         }, Role.SECRET_MANAGER));
-        router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRotateAllSiteKeys(ctx);
             }

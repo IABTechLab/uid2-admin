@@ -47,7 +47,7 @@ public class SiteService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/site/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/site/rewrite_metadata").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
@@ -55,12 +55,12 @@ public class SiteService implements IService {
 
         router.get("/api/site/list").handler(
                 auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER));
-        router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/site/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
-        router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/site/enable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);
             }

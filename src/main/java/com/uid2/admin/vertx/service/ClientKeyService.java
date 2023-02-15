@@ -60,7 +60,7 @@ public class ClientKeyService implements IService {
     public void setupRoutes(Router router) {
         router.get("/api/client/metadata").handler(
                 auth.handle(this::handleClientMetadata, Role.CLIENTKEY_ISSUER));
-        router.post("/api/client/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/rewrite_metadata").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
@@ -70,43 +70,43 @@ public class ClientKeyService implements IService {
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/add").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/add").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/del").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/del").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientDel(ctx);
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/client/update").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/update").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientUpdate(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/disable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/disable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientDisable(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/enable").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientEnable(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/rekey").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/rekey").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientRekey(ctx);
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/client/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
             }

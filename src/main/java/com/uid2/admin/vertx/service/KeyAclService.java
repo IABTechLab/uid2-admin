@@ -50,18 +50,18 @@ public class KeyAclService implements IService {
         router.get("/api/keys_acl/list").handler(
                 auth.handle(this::handleKeyAclList, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/keys_acl/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/keys_acl/rewrite_metadata").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/keys_acl/reset").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleKeyAclReset(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
-        router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/keys_acl/update").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleKeyAclUpdate(ctx);
             }
