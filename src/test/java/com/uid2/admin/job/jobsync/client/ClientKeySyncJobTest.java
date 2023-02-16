@@ -95,5 +95,4 @@ public class ClientKeySyncJobTest {
         Long newVersion = reader.getMetadata().getLong("version");
         assertThat(newVersion).isEqualTo(oldVersion);
     }
-
 }

@@ -347,8 +347,7 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            if (!ctx.queryParam("site_id").isEmpty())
-            {
+            if (!ctx.queryParam("site_id").isEmpty()) {
                 final Site site = RequestUtil.getSite(ctx, "site_id", this.siteProvider);
                 if (site == null) {
                     ResponseUtil.error(ctx, 404, "site id not found");
@@ -357,8 +356,7 @@ public class OperatorKeyService implements IService {
                 existingOperator.setSiteId(site.getId());
             }
 
-            if (!ctx.queryParam("operator_type").isEmpty() && ctx.queryParam("operator_type").get(0) != null)
-            {
+            if (!ctx.queryParam("operator_type").isEmpty() && ctx.queryParam("operator_type").get(0) != null) {
                 OperatorType operatorType;
                 try {
                     operatorType = OperatorType.valueOf(ctx.queryParam("operator_type").get(0).toUpperCase());

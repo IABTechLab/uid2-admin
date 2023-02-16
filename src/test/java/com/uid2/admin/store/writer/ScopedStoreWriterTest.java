@@ -231,5 +231,4 @@ public class ScopedStoreWriterTest {
     private final FileName dataFile = new FileName("sites", ".json");
     private final FileName backupFile = new FileName("sites-old", ".json");
     private final String dataType = "sites";
-
 }

@@ -39,5 +39,4 @@ public class Metadata {
         locationContainer.put("location", location.toString());
         metadata.put(dataType, locationContainer);
     }
-
 }
