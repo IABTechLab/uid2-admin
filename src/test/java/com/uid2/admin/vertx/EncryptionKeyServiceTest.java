@@ -116,10 +116,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void ensureSiteKeyExistsCreatesKeyWhenNoKeyWithSiteIdExists() throws Exception {
+    void createSiteKeyIfNoneExistsCreatesKeyWhenNoKeyWithSiteIdExists() throws Exception {
         setEncryptionKeys(123);
 
-        final EncryptionKey key = keyService.ensureSiteKeyExists(5);
+        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
 
         verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
         verifyNoMoreInteractions(encryptionKeyStoreWriter);
@@ -128,10 +128,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void ensureSiteKeyExistsDoesNotCreateKeyWhenKeyWithSiteIdExists() throws Exception {
+    void createSiteKeyIfNoneExistsDoesNotCreateKeyWhenKeyWithSiteIdExists() throws Exception {
         setEncryptionKeys(123, new EncryptionKey(11, null, null, null, null, 5));
 
-        final EncryptionKey key = keyService.ensureSiteKeyExists(5);
+        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
 
         assertNull(key);
         verifyNoInteractions(encryptionKeyStoreWriter);

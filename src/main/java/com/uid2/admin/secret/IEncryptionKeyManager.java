@@ -8,5 +8,5 @@ public interface IEncryptionKeyManager {
     /**
      * Creates a site key, if none exists. If created, the key is active immediately.
      */
-    EncryptionKey ensureSiteKeyExists(int siteId) throws Exception;
+    EncryptionKey createSiteKeyIfNoneExists(int siteId) throws Exception;
 }

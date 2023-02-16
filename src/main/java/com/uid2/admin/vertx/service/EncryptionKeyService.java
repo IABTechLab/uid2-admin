@@ -153,7 +153,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     }
 
     @Override
-    public EncryptionKey ensureSiteKeyExists(int siteId) throws Exception {
+    public EncryptionKey createSiteKeyIfNoneExists(int siteId) throws Exception {
         // force refresh manually
         this.keyProvider.loadContent();
 

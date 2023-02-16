@@ -75,8 +75,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("ensureSiteKeyExistsTestData")
-    void clientAddEnsuresSiteKeyExists(Set<Role> roles, boolean ensureSiteKeyExists, Vertx vertx, VertxTestContext testContext) {
+    @MethodSource("createSiteKeyIfNoneExistsTestData")
+    void clientAddCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
 
@@ -85,14 +85,16 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         post(vertx, endpoint, "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
 
-            verify(keyManager, ensureSiteKeyExists ? times(1) : never()).ensureSiteKeyExists(eq(5));
+            if (siteKeyShouldBeCreatedIfNoneExists) {
+                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+            }
             verifyNoMoreInteractions(keyManager);
 
             testContext.completeNow();
         })));
     }
 
-    static Stream<Arguments> ensureSiteKeyExistsTestData() {
+    static Stream<Arguments> createSiteKeyIfNoneExistsTestData() {
         return Stream.of(
             Arguments.of(Sets.set(Role.GENERATOR), true),
             Arguments.of(Sets.set(Role.ID_READER), false),
@@ -144,8 +146,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("ensureSiteKeyExistsTestData")
-    void clientUpdateEnsuresSiteKeyExists(Set<Role> roles, boolean ensureSiteKeyExists, Vertx vertx, VertxTestContext testContext) {
+    @MethodSource("createSiteKeyIfNoneExistsTestData")
+    void clientUpdateCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         setClientKeys(new ClientKey("", "","test_client")
@@ -155,7 +157,9 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         post(vertx, "api/client/update?name=test_client&site_id=5", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
 
-            verify(keyManager, ensureSiteKeyExists ? times(1) : never()).ensureSiteKeyExists(eq(5));
+            if (siteKeyShouldBeCreatedIfNoneExists) {
+                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+            }
             verifyNoMoreInteractions(keyManager);
 
             testContext.completeNow();
@@ -191,8 +195,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("ensureSiteKeyExistsTestData")
-    void clientRolesEnsuresSiteKeyExists(Set<Role> roles, boolean ensureSiteKeyExists, Vertx vertx, VertxTestContext testContext) {
+    @MethodSource("createSiteKeyIfNoneExistsTestData")
+    void clientRolesCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
 
@@ -201,7 +205,9 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         post(vertx, endpoint, "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
 
-            verify(keyManager, ensureSiteKeyExists ? times(1) : never()).ensureSiteKeyExists(eq(5));
+            if (siteKeyShouldBeCreatedIfNoneExists) {
+                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+            }
             verifyNoMoreInteractions(keyManager);
 
             testContext.completeNow();

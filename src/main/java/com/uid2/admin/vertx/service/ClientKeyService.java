@@ -230,7 +230,7 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
-            ensurePublisherSiteKeyExists(newClient);
+            createPublisherSiteKeyIfNoneExists(newClient);
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newClient));
@@ -297,7 +297,7 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
-            ensurePublisherSiteKeyExists(existingClient);
+            createPublisherSiteKeyIfNoneExists(existingClient);
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
@@ -422,7 +422,7 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
-            ensurePublisherSiteKeyExists(c);
+            createPublisherSiteKeyIfNoneExists(c);
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
@@ -431,9 +431,9 @@ public class ClientKeyService implements IService {
         }
     }
 
-    private void ensurePublisherSiteKeyExists(ClientKey clientKey) throws Exception {
+    private void createPublisherSiteKeyIfNoneExists(ClientKey clientKey) throws Exception {
         if (clientKey.hasRole(Role.GENERATOR)) {
-            this.encryptionKeyManager.ensureSiteKeyExists(clientKey.getSiteId());
+            this.encryptionKeyManager.createSiteKeyIfNoneExists(clientKey.getSiteId());
         }
     }
 }
