@@ -31,12 +31,11 @@ public class SaltService implements IService {
     private final RotatingSaltProvider saltProvider;
     private final ISaltRotation saltRotation;
 
-    public SaltService(
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            SaltStoreWriter storageManager,
-            RotatingSaltProvider saltProvider,
-            ISaltRotation saltRotation) {
+    public SaltService(AuthMiddleware auth,
+                       WriteLock writeLock,
+                       SaltStoreWriter storageManager,
+                       RotatingSaltProvider saltProvider,
+                       ISaltRotation saltRotation) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;

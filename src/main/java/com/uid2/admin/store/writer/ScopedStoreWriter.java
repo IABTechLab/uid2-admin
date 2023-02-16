@@ -19,15 +19,14 @@ public class ScopedStoreWriter {
     private final FileName backupFile;
     private final String dataType;
 
-    public ScopedStoreWriter(
-            IMetadataVersionedStore provider,
-            FileManager fileManager,
-            VersionGenerator versionGenerator,
-            Clock clock,
-            StoreScope scope,
-            FileName dataFile,
-            FileName backupFile,
-            String dataType
+    public ScopedStoreWriter(IMetadataVersionedStore provider,
+                             FileManager fileManager,
+                             VersionGenerator versionGenerator,
+                             Clock clock,
+                             StoreScope scope,
+                             FileName dataFile,
+                             FileName backupFile,
+                             String dataType
     ) {
         this.provider = provider;
         this.fileManager = fileManager;

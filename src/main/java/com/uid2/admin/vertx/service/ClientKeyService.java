@@ -40,14 +40,13 @@ public class ClientKeyService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String clientKeyPrefix;
 
-    public ClientKeyService(
-            JsonObject config,
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            ClientKeyStoreWriter storeWriter,
-            RotatingClientKeyProvider clientKeyProvider,
-            ISiteStore siteProvider,
-            IKeyGenerator keyGenerator) {
+    public ClientKeyService(JsonObject config,
+                            AuthMiddleware auth,
+                            WriteLock writeLock,
+                            ClientKeyStoreWriter storeWriter,
+                            RotatingClientKeyProvider clientKeyProvider,
+                            ISiteStore siteProvider,
+                            IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

@@ -19,11 +19,10 @@ public class PrivateSiteDataRefreshService implements IService {
     private final WriteLock writeLock;
     private final JsonObject config;
 
-    public PrivateSiteDataRefreshService(
-            AuthMiddleware auth,
-            JobDispatcher jobDispatcher,
-            WriteLock writeLock,
-            JsonObject config) {
+    public PrivateSiteDataRefreshService(AuthMiddleware auth,
+                                         JobDispatcher jobDispatcher,
+                                         WriteLock writeLock,
+                                         JsonObject config) {
         this.auth = auth;
         this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;

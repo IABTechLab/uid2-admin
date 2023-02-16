@@ -32,13 +32,12 @@ public class KeyAclService implements IService {
     private final ISiteStore siteProvider;
     private final IEncryptionKeyManager keyManager;
 
-    public KeyAclService(
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            KeyAclStoreWriter storeWriter,
-            RotatingKeyAclProvider keyAclProvider,
-            ISiteStore siteProvider,
-            IEncryptionKeyManager keyManager) {
+    public KeyAclService(AuthMiddleware auth,
+                         WriteLock writeLock,
+                         KeyAclStoreWriter storeWriter,
+                         RotatingKeyAclProvider keyAclProvider,
+                         ISiteStore siteProvider,
+                         IEncryptionKeyManager keyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

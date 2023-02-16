@@ -16,10 +16,9 @@ public class KeyAclSyncJob extends Job {
     private final Map<Integer, EncryptionKeyAcl> globalAcls;
     private final MultiScopeStoreWriter<Map<Integer, EncryptionKeyAcl>> multiScopeStoreWriter;
 
-    public KeyAclSyncJob(
-            MultiScopeStoreWriter<Map<Integer, EncryptionKeyAcl>> multiScopeStoreWriter,
-            Collection<OperatorKey> globalOperators,
-            Map<Integer, EncryptionKeyAcl> globalAcls) {
+    public KeyAclSyncJob(MultiScopeStoreWriter<Map<Integer, EncryptionKeyAcl>> multiScopeStoreWriter,
+                         Collection<OperatorKey> globalOperators,
+                         Map<Integer, EncryptionKeyAcl> globalAcls) {
         this.globalOperators = globalOperators;
         this.globalAcls = globalAcls;
         this.multiScopeStoreWriter = multiScopeStoreWriter;

@@ -34,12 +34,11 @@ public class SiteService implements IService {
     private final IClientKeyProvider clientKeyProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public SiteService(
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            StoreWriter<Collection<Site>> storeWriter,
-            RotatingSiteStore siteProvider,
-            IClientKeyProvider clientKeyProvider) {
+    public SiteService(AuthMiddleware auth,
+                       WriteLock writeLock,
+                       StoreWriter<Collection<Site>> storeWriter,
+                       RotatingSiteStore siteProvider,
+                       IClientKeyProvider clientKeyProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

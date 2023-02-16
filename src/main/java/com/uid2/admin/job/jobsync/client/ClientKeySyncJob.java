@@ -15,10 +15,9 @@ public class ClientKeySyncJob extends Job {
     private final Collection<ClientKey> globalClientKeys;
     private final MultiScopeStoreWriter<Collection<ClientKey>> multiScopeStoreWriter;
 
-    public ClientKeySyncJob(
-            MultiScopeStoreWriter<Collection<ClientKey>> multiScopeStoreWriter,
-            Collection<ClientKey> globalClientKeys,
-            Collection<OperatorKey> globalOperators) {
+    public ClientKeySyncJob(MultiScopeStoreWriter<Collection<ClientKey>> multiScopeStoreWriter,
+                            Collection<ClientKey> globalClientKeys,
+                            Collection<OperatorKey> globalOperators) {
         this.globalClientKeys = globalClientKeys;
         this.globalOperators = globalOperators;
         this.multiScopeStoreWriter = multiScopeStoreWriter;

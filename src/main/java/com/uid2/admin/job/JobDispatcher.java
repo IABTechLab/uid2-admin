@@ -29,11 +29,10 @@ public class JobDispatcher {
     private Job currentJob = null;
     private ScheduledExecutorService scheduler;
 
-    public JobDispatcher(
-            String id,
-            int intervalMs,
-            int maxRetries,
-            Clock clock) {
+    public JobDispatcher(String id,
+                         int intervalMs,
+                         int maxRetries,
+                         Clock clock) {
         this.id = id;
         this.intervalMs = intervalMs;
         this.maxRetries = maxRetries;

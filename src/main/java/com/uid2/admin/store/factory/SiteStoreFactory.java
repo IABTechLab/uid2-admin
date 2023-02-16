@@ -26,13 +26,12 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     private final RotatingSiteStore globalReader;
     private final SiteStoreWriter globalWriter;
 
-    public SiteStoreFactory(
-            ICloudStorage fileStreamProvider,
-            CloudPath rootMetadataPath,
-            ObjectWriter objectWriter,
-            VersionGenerator versionGenerator,
-            Clock clock,
-            FileManager fileManager) {
+    public SiteStoreFactory(ICloudStorage fileStreamProvider,
+                            CloudPath rootMetadataPath,
+                            ObjectWriter objectWriter,
+                            VersionGenerator versionGenerator,
+                            Clock clock,
+                            FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;

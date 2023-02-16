@@ -63,14 +63,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager {
     private final Duration refreshKeyRotationCutOffTime;
     private final boolean filterKeyOverCutOffTime;
 
-    public EncryptionKeyService(
-            JsonObject config,
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            EncryptionKeyStoreWriter storeWriter,
-            RotatingKeyStore keyProvider,
-            IKeyGenerator keyGenerator,
-            Clock clock) {
+    public EncryptionKeyService(JsonObject config,
+                                AuthMiddleware auth,
+                                WriteLock writeLock,
+                                EncryptionKeyStoreWriter storeWriter,
+                                RotatingKeyStore keyProvider,
+                                IKeyGenerator keyGenerator,
+                                Clock clock) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

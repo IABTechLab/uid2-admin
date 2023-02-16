@@ -23,13 +23,12 @@ public class EncryptionKeySyncJob extends Job {
 
     private final MultiScopeStoreWriter<Collection<EncryptionKey>> multiScopeStoreWriter;
 
-    public EncryptionKeySyncJob(
-            Collection<EncryptionKey> globalEncryptionKeys,
-            Collection<ClientKey> globalClientKeys,
-            Collection<OperatorKey> globalOperators,
-            Map<Integer, EncryptionKeyAcl> globalAcls,
-            Integer globalMaxKeyId,
-            MultiScopeStoreWriter<Collection<EncryptionKey>> multiScopeStoreWriter) {
+    public EncryptionKeySyncJob(Collection<EncryptionKey> globalEncryptionKeys,
+                                Collection<ClientKey> globalClientKeys,
+                                Collection<OperatorKey> globalOperators,
+                                Map<Integer, EncryptionKeyAcl> globalAcls,
+                                Integer globalMaxKeyId,
+                                MultiScopeStoreWriter<Collection<EncryptionKey>> multiScopeStoreWriter) {
         this.globalEncryptionKeys = globalEncryptionKeys;
         this.globalClientKeys = globalClientKeys;
         this.globalOperators = globalOperators;

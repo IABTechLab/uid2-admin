@@ -35,14 +35,13 @@ public class OperatorKeyService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String operatorKeyPrefix;
 
-    public OperatorKeyService(
-            JsonObject config,
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            OperatorKeyStoreWriter operatorKeyStoreWriter,
-            RotatingOperatorKeyProvider operatorKeyProvider,
-            RotatingSiteStore siteProvider,
-            IKeyGenerator keyGenerator) {
+    public OperatorKeyService(JsonObject config,
+                              AuthMiddleware auth,
+                              WriteLock writeLock,
+                              OperatorKeyStoreWriter operatorKeyStoreWriter,
+                              RotatingOperatorKeyProvider operatorKeyProvider,
+                              RotatingSiteStore siteProvider,
+                              IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.operatorKeyStoreWriter = operatorKeyStoreWriter;

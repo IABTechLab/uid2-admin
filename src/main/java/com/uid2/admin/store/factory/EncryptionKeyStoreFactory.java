@@ -21,12 +21,11 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
     private final FileManager fileManager;
     private final RotatingKeyStore globalReader;
 
-    public EncryptionKeyStoreFactory(
-            ICloudStorage fileStreamProvider,
-            CloudPath rootMetadataPath,
-            VersionGenerator versionGenerator,
-            Clock clock,
-            FileManager fileManager) {
+    public EncryptionKeyStoreFactory(ICloudStorage fileStreamProvider,
+                                     CloudPath rootMetadataPath,
+                                     VersionGenerator versionGenerator,
+                                     Clock clock,
+                                     FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.versionGenerator = versionGenerator;

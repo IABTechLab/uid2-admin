@@ -43,16 +43,15 @@ public class AdminKeyService implements IService {
     private final EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     private final KeyAclStoreWriter keyAclStoreWriter;
 
-    public AdminKeyService(
-            JsonObject config,
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            AdminUserStoreWriter storeWriter,
-            AdminUserProvider adminUserProvider,
-            IKeyGenerator keyGenerator,
-            ClientKeyStoreWriter clientKeyStoreWriter,
-            EncryptionKeyStoreWriter encryptionKeyStoreWriter,
-            KeyAclStoreWriter keyAclStoreWriter) {
+    public AdminKeyService(JsonObject config,
+                           AuthMiddleware auth,
+                           WriteLock writeLock,
+                           AdminUserStoreWriter storeWriter,
+                           AdminUserProvider adminUserProvider,
+                           IKeyGenerator keyGenerator,
+                           ClientKeyStoreWriter clientKeyStoreWriter,
+                           EncryptionKeyStoreWriter encryptionKeyStoreWriter,
+                           KeyAclStoreWriter keyAclStoreWriter) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

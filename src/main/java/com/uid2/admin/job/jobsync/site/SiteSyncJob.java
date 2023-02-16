@@ -15,9 +15,8 @@ public class SiteSyncJob extends Job {
     private final Collection<Site> globalSites;
     private final MultiScopeStoreWriter<Collection<Site>> multiScopeStoreWriter;
 
-    public SiteSyncJob(
-            MultiScopeStoreWriter<Collection<Site>> multiScopeStoreWriter, Collection<Site> globalSites,
-            Collection<OperatorKey> globalOperators) {
+    public SiteSyncJob(MultiScopeStoreWriter<Collection<Site>> multiScopeStoreWriter, Collection<Site> globalSites,
+                       Collection<OperatorKey> globalOperators) {
         this.globalSites = globalSites;
         this.globalOperators = globalOperators;
         this.multiScopeStoreWriter = multiScopeStoreWriter;

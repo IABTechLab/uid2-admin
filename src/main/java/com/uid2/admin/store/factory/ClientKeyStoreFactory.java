@@ -25,13 +25,12 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>
     private final RotatingClientKeyProvider globalReader;
     private final ClientKeyStoreWriter globalWriter;
 
-    public ClientKeyStoreFactory(
-            ICloudStorage fileStreamProvider,
-            CloudPath rootMetadataPath,
-            ObjectWriter objectWriter,
-            VersionGenerator versionGenerator,
-            Clock clock,
-            FileManager fileManager)  {
+    public ClientKeyStoreFactory(ICloudStorage fileStreamProvider,
+                                 CloudPath rootMetadataPath,
+                                 ObjectWriter objectWriter,
+                                 VersionGenerator versionGenerator,
+                                 Clock clock,
+                                 FileManager fileManager)  {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;

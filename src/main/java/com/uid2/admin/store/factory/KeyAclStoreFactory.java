@@ -25,13 +25,12 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
     private final FileManager fileManager;
     private final RotatingKeyAclProvider globalReader;
 
-    public KeyAclStoreFactory(
-            ICloudStorage fileStreamProvider,
-            CloudPath rootMetadataPath,
-            ObjectWriter objectWriter,
-            VersionGenerator versionGenerator,
-            Clock clock,
-            FileManager fileManager) {
+    public KeyAclStoreFactory(ICloudStorage fileStreamProvider,
+                              CloudPath rootMetadataPath,
+                              ObjectWriter objectWriter,
+                              VersionGenerator versionGenerator,
+                              Clock clock,
+                              FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
