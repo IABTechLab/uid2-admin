@@ -35,7 +35,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     private static final long A_HUNDRED_DAYS_IN_MILLI = 86400000000L;
     private static final long A_HUNDRED_DAYS_IN_SECONDS = 8640000L;
     private static final int MAX_KEY_ID = 777;
-    private static final boolean FILTER_KEY_OVER_CUT_OFF_DAYS = false;
+    private static final boolean FILTER_KEY_OVER_CUT_OFF_DAYS = true;
     private Clock clock = mock(Clock.class);
     private EncryptionKeyService keyService = null;
 
@@ -202,11 +202,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutMasterKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
-        this.config.put("filter_key_over_cut_off_days", true);
-        IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
-        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
-        vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
+    void filterOutMasterKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
@@ -234,39 +230,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutMasterKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
-        // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
-        fakeAuth(Role.SECRET_MANAGER);
-
-        final EncryptionKey[] keys = {
-                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
-        };
-
-        setEncryptionKeys(MAX_KEY_ID, keys);
-
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, },
-                    MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
-                    response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(2), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void filterOutRefreshKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
-        this.config.put("filter_key_over_cut_off_days", true);
-        IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
-        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
-        vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
+    void filterOutRefreshKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
@@ -286,34 +250,6 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void filterOutRefreshKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
-        // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
-        fakeAuth(Role.SECRET_MANAGER);
-
-        final EncryptionKey[] keys = {
-                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
-        };
-
-        setEncryptionKeys(MAX_KEY_ID, keys);
-
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
-                    MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
-                    response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(2), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -538,11 +474,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void filterOutSiteKeysOverCutoffTimeWithFlagOn(Vertx vertx, VertxTestContext testContext) throws Exception {
-        this.config.put("filter_key_over_cut_off_days", true);
-        IService[] services = {new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keyProvider, keyGenerator, clock)};
-        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
-        vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
+    void filterOutSiteKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
         fakeAuth(Role.SECRET_MANAGER);
@@ -561,33 +493,6 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void filterOutSiteKeysOverCutoffTimeWithFlagOff(Vertx vertx, VertxTestContext testContext) throws Exception {
-        // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
-        when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
-        fakeAuth(Role.SECRET_MANAGER);
-
-        final EncryptionKey[] keys = {
-                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
-        };
-        setEncryptionKeys(MAX_KEY_ID, keys);
-
-        post(vertx, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 2 },
-                    SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
-                    response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(2), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
