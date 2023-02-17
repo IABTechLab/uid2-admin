@@ -2,6 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
+import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
@@ -34,6 +35,7 @@ public class ClientKeyService implements IService {
     private final ClientKeyStoreWriter storeWriter;
     private final RotatingClientKeyProvider clientKeyProvider;
     private final ISiteStore siteProvider;
+    private final IEncryptionKeyManager encryptionKeyManager;
     private final IKeyGenerator keyGenerator;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final String clientKeyPrefix;
@@ -45,12 +47,14 @@ public class ClientKeyService implements IService {
                             ClientKeyStoreWriter storeWriter,
                             RotatingClientKeyProvider clientKeyProvider,
                             ISiteStore siteProvider,
+                            IEncryptionKeyManager encryptionKeyManager,
                             IKeyGenerator keyGenerator) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.clientKeyProvider = clientKeyProvider;
         this.siteProvider = siteProvider;
+        this.encryptionKeyManager = encryptionKeyManager;
         this.keyGenerator = keyGenerator;
 
         this.clientKeyPrefix = config.getString("client_key_prefix");
@@ -226,6 +230,8 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
+            createPublisherSiteKeyIfNoneExists(newClient);
+
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newClient));
         } catch (Exception e) {
@@ -290,6 +296,8 @@ public class ClientKeyService implements IService {
 
             // upload to storage
             storeWriter.upload(clients, null);
+
+            createPublisherSiteKeyIfNoneExists(existingClient);
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
@@ -414,10 +422,18 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
+            createPublisherSiteKeyIfNoneExists(c);
+
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
         } catch (Exception e) {
             rc.fail(500, e);
+        }
+    }
+
+    private void createPublisherSiteKeyIfNoneExists(ClientKey clientKey) throws Exception {
+        if (clientKey.hasRole(Role.GENERATOR)) {
+            this.encryptionKeyManager.createSiteKeyIfNoneExists(clientKey.getSiteId());
         }
     }
 }

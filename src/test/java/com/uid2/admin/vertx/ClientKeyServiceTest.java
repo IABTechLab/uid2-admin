@@ -10,10 +10,16 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
+import org.assertj.core.util.Sets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -21,7 +27,7 @@ import static org.mockito.Mockito.*;
 public class ClientKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyGenerator);
+        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyManager, keyGenerator);
     }
 
     private void checkClientKeyResponse(ClientKey[] expectedClients, Object[] actualClients) {
@@ -68,6 +74,34 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         });
     }
 
+    @ParameterizedTest
+    @MethodSource("createSiteKeyIfNoneExistsTestData")
+    void clientAddCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites(new Site(5, "test_site", true));
+
+        final String endpoint = String.format("api/client/add?name=test_client&site_id=5&roles=%s", RequestUtil.getRolesSpec(roles));
+
+        post(vertx, endpoint, "", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+
+            if (siteKeyShouldBeCreatedIfNoneExists) {
+                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+            }
+            verifyNoMoreInteractions(keyManager);
+
+            testContext.completeNow();
+        })));
+    }
+
+    static Stream<Arguments> createSiteKeyIfNoneExistsTestData() {
+        return Stream.of(
+            Arguments.of(Sets.set(Role.GENERATOR), true),
+            Arguments.of(Sets.set(Role.ID_READER), false),
+            Arguments.of(Sets.set(Role.ID_READER, Role.GENERATOR), true)
+        );
+    }
+
     @Test
     void clientAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
@@ -111,6 +145,27 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         });
     }
 
+    @ParameterizedTest
+    @MethodSource("createSiteKeyIfNoneExistsTestData")
+    void clientUpdateCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites(new Site(5, "test_site", true));
+        setClientKeys(new ClientKey("", "","test_client")
+                .withRoles(roles)
+                .withSiteId(4));
+
+        post(vertx, "api/client/update?name=test_client&site_id=5", "", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+
+            if (siteKeyShouldBeCreatedIfNoneExists) {
+                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+            }
+            verifyNoMoreInteractions(keyManager);
+
+            testContext.completeNow();
+        })));
+    }
+
     @Test
     void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
@@ -137,5 +192,25 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=2", "", expectHttpError(testContext, 400));
+    }
+
+    @ParameterizedTest
+    @MethodSource("createSiteKeyIfNoneExistsTestData")
+    void clientRolesCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
+
+        final String endpoint = String.format("api/client/roles?name=test_client&roles=%s", RequestUtil.getRolesSpec(roles));
+
+        post(vertx, endpoint, "", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+
+            if (siteKeyShouldBeCreatedIfNoneExists) {
+                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+            }
+            verifyNoMoreInteractions(keyManager);
+
+            testContext.completeNow();
+        })));
     }
 }

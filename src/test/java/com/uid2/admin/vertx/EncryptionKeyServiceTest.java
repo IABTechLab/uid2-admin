@@ -116,6 +116,28 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void createSiteKeyIfNoneExistsCreatesKeyWhenNoKeyWithSiteIdExists() throws Exception {
+        setEncryptionKeys(123);
+
+        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
+
+        verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
+        verifyNoMoreInteractions(encryptionKeyStoreWriter);
+        assertKeyActivation(clock.now(), 0, SITE_KEY_EXPIRES_AFTER_SECONDS,
+                key.getCreated(), key.getActivates(), key.getExpires());
+    }
+
+    @Test
+    void createSiteKeyIfNoneExistsDoesNotCreateKeyWhenKeyWithSiteIdExists() throws Exception {
+        setEncryptionKeys(123, new EncryptionKey(11, null, null, null, null, 5));
+
+        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
+
+        assertNull(key);
+        verifyNoInteractions(encryptionKeyStoreWriter);
+    }
+
+    @Test
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
