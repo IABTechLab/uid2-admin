@@ -167,7 +167,7 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
         } catch (Exception e) {
-            LOGGER.error("failed to initialize core verticle", e);
+            LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
         }
     }
