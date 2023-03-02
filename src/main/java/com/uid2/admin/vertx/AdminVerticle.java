@@ -7,7 +7,6 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -62,9 +61,7 @@ public class AdminVerticle extends AbstractVerticle {
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
 
         final OAuth2Auth oauth2Provider = (OAuth2Auth) authFactory.createAuthProvider(vertx);
-
         final AuthenticationHandler authHandler = authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
-        final RedirectToRootHandler redirectToRootHandler = new RedirectToRootHandler();
 
         router.route().handler(BodyHandler.create());
         router.route().handler(StaticHandler.create("webroot"));
@@ -72,10 +69,11 @@ public class AdminVerticle extends AbstractVerticle {
         router.route("/login").handler(authHandler);
         router.route("/adm/*").handler(authHandler);
 
-        router.get("/login").handler(redirectToRootHandler);
-        router.get("/logout").handler(redirectToRootHandler);
+        router.get("/login").handler(new RedirectToRootHandler(false));
+        router.get("/logout").handler(new RedirectToRootHandler(true));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
         router.get("/api/token/get").handler(ctx -> handleTokenGet(ctx, oauth2Provider));
+        router.get("/protected").handler(this::handleProtected);
 
         for (IService service : this.services) {
             service.setupRoutes(router);
@@ -145,6 +143,16 @@ public class AdminVerticle extends AbstractVerticle {
             rc.response().end(jsonWriter.writeValueAsString(adminUser));
         } catch (Exception ex) {
             rc.fail(ex);
+        }
+    }
+
+    private void handleProtected(RoutingContext rc) {
+        if (rc.failed()) {
+            rc.session().destroy();
+            rc.fail(rc.failure());
+        } else {
+            final String email = rc.user().get("email");
+            rc.response().end(email);
         }
     }
 }
