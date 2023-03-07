@@ -24,5 +24,8 @@
   "site_key_expires_after_seconds": 90000,
   "salt_snapshot_activates_in_seconds": 180,
   "salt_snapshot_expires_after_seconds": 180000,
-  "is_auth_disabled": true
+  "is_auth_disabled": true,
+  "oauth2_callback_url": "http://localhost:8089/oauth2-callback",
+  "github_client_id": "generate client id",
+  "github_client_secret": "generate client secret"
 }

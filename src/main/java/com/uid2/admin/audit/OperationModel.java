@@ -7,7 +7,6 @@ package com.uid2.admin.audit;
  * itself is sensitive information.
  */
 public class OperationModel {
-
     public final Type itemType;
     public final String itemKey;
     public final Actions actionTaken;

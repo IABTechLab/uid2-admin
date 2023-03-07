@@ -10,6 +10,7 @@ import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Base64;
 import java.util.Collection;
 
 public class EncryptionKeyStoreWriter implements StoreWriter<Collection<EncryptionKey>> {
@@ -32,7 +33,7 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
             json.put("created", key.getCreated().getEpochSecond());
             json.put("activates", key.getActivates().getEpochSecond());
             json.put("expires", key.getExpires().getEpochSecond());
-            json.put("secret", key.getKeyBytes());
+            json.put("secret", Base64.getEncoder().encodeToString(key.getKeyBytes()));
             jsonKeys.add(json);
         }
         String content = jsonKeys.encodePrettily();

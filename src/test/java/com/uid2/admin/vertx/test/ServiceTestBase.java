@@ -2,7 +2,7 @@ package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.admin.auth.IAuthHandlerFactory;
+import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
@@ -28,7 +28,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.handler.AuthHandler;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -57,8 +57,8 @@ public abstract class ServiceTestBase {
     protected final WriteLock writeLock = new WriteLock();
     protected AuthMiddleware auth;
 
-    @Mock protected AuthHandler authHandler;
-    @Mock protected IAuthHandlerFactory authHandlerFactory;
+    @Mock protected AuthenticationHandler authHandler;
+    @Mock protected AuthFactory authFactory;
 
     @Mock protected FileManager fileManager;
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
@@ -86,7 +86,7 @@ public abstract class ServiceTestBase {
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         mocks = MockitoAnnotations.openMocks(this);
-        when(authHandlerFactory.createAuthHandler(any(), any())).thenReturn(authHandler);
+        when(authFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
@@ -96,7 +96,7 @@ public abstract class ServiceTestBase {
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
-        AdminVerticle verticle = new AdminVerticle(config, authHandlerFactory, auth, adminUserProvider, services);
+        AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
