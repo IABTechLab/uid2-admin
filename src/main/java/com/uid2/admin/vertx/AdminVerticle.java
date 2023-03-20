@@ -48,15 +48,13 @@ public class AdminVerticle extends AbstractVerticle {
         final int port = Const.Port.ServicePortForAdmin + portOffset;
         vertx.createHttpServer()
                 .requestHandler(router)
+                .exceptionHandler(error -> LOGGER.error("Error in AdminVerticle", error))
                 .listen(port)
                 .onSuccess(server -> {
                     startPromise.complete();
-                    LOGGER.info("Admin verticle started on port: {}", server.actualPort());
+                    LOGGER.info("AdminVerticle instance started on HTTP port: {}", server.actualPort());
                 })
-                .onFailure(error -> {
-                    startPromise.fail("Failed to start the server");
-                    LOGGER.error("Failed to start the http server: {}", error.getMessage());
-                });
+                .onFailure(startPromise::fail);
     }
 
     private Router createRoutesSetup() {
