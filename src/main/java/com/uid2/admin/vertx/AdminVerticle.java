@@ -98,37 +98,41 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void respondWithRealUser(RoutingContext rc, OAuth2Auth oauth2Provider) {
-        oauth2Provider.userInfo(rc.user())
-                .onFailure(e -> {
-                    rc.session().destroy();
-                    rc.fail(e);
-                })
-                .onSuccess(userInfo -> {
-                    String contact = userInfo.getString("email");
-                    if (contact == null) {
-                        WebClient.create(rc.vertx())
-                                .getAbs("https://api.github.com/user/emails")
-                                .authentication(new TokenCredentials(rc.user().<String>get("access_token")))
-                                .as(BodyCodec.jsonArray())
-                                .send()
-                                .onFailure(e -> {
-                                    rc.session().destroy();
-                                    rc.fail(e);
-                                })
-                                .onSuccess(res -> {
-                                    JsonArray emails = res.body();
-                                    if (emails.size() > 0) {
-                                        final String publicEmail = emails.getJsonObject(0).getString("email");
-                                        handleEmailContactInfo(rc, publicEmail);
-                                    } else {
-                                        LOGGER.error("No public emails");
-                                        rc.fail(new Throwable("No public emails"));
-                                    }
-                                });
-                    } else {
-                        handleEmailContactInfo(rc, contact);
-                    }
-                });
+        if (rc.user() != null) {
+            oauth2Provider.userInfo(rc.user())
+                    .onFailure(e -> {
+                        rc.session().destroy();
+                        rc.fail(e);
+                    })
+                    .onSuccess(userInfo -> {
+                        String contact = userInfo.getString("email");
+                        if (contact == null) {
+                            WebClient.create(rc.vertx())
+                                    .getAbs("https://api.github.com/user/emails")
+                                    .authentication(new TokenCredentials(rc.user().<String>get("access_token")))
+                                    .as(BodyCodec.jsonArray())
+                                    .send()
+                                    .onFailure(e -> {
+                                        rc.session().destroy();
+                                        rc.fail(e);
+                                    })
+                                    .onSuccess(res -> {
+                                        JsonArray emails = res.body();
+                                        if (emails.size() > 0) {
+                                            final String publicEmail = emails.getJsonObject(0).getString("email");
+                                            handleEmailContactInfo(rc, publicEmail);
+                                        } else {
+                                            LOGGER.error("No public emails");
+                                            rc.fail(new Throwable("No public emails"));
+                                        }
+                                    });
+                        } else {
+                            handleEmailContactInfo(rc, contact);
+                        }
+                    });
+        } else {
+            rc.response().setStatusCode(401).end("Not logged in");
+        }
     }
 
     private void respondWithTestAdminUser(RoutingContext rc) {
