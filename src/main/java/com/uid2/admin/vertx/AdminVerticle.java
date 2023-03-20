@@ -53,7 +53,10 @@ public class AdminVerticle extends AbstractVerticle {
                     startPromise.complete();
                     LOGGER.info("Admin verticle started on port: {}", server.actualPort());
                 })
-                .onFailure(startPromise::fail);
+                .onFailure(error -> {
+                    startPromise.fail("Failed to start the server");
+                    LOGGER.error("Failed to start the http server: {}", error.getMessage());
+                });
     }
 
     private Router createRoutesSetup() {
