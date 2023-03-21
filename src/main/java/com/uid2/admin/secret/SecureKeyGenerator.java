@@ -8,7 +8,7 @@ public class SecureKeyGenerator implements IKeyGenerator {
     public SecureKeyGenerator() {}
 
     @Override
-    public byte[] generateRandomKey(int keyLen) throws Exception {
+    public byte[] generateRandomKey(int keyLen) {
         final SecureRandom random = new SecureRandom();
         final byte[] bytes = new byte[keyLen];
         random.nextBytes(bytes);
@@ -16,7 +16,7 @@ public class SecureKeyGenerator implements IKeyGenerator {
     }
 
     @Override
-    public String generateRandomKeyString(int keyLen) throws Exception {
+    public String generateRandomKeyString(int keyLen) {
         return Utils.toBase64String(generateRandomKey(keyLen));
     }
 }

@@ -14,7 +14,7 @@ public class ResponseUtil {
     public static void error(RoutingContext rc, int statusCode, String message) {
         LOGGER.error(message);
 
-        final JsonObject json = new JsonObject(new HashMap<String, Object>() {
+        final JsonObject json = new JsonObject(new HashMap<>() {
             {
                 put("status", "error");
             }

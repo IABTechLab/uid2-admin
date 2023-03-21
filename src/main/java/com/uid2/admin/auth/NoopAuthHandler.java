@@ -9,4 +9,3 @@ public class NoopAuthHandler implements AuthenticationHandler {
         routingContext.next();
     }
 }
-
