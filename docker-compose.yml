@@ -10,4 +10,3 @@ services:
       - "./src/main/resources/localstack/s3:/s3"
     environment:
       - EDGE_PORT=5001
-
