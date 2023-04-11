@@ -19,8 +19,8 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     private Set<Role> roles;
     private boolean disabled;
 
-    public static AdminUser unknown(String unkownUser) {
-        return new AdminUser(unkownUser, unkownUser, unkownUser,
+    public static AdminUser unknown(String unknown) {
+        return new AdminUser(unknown, unknown, unknown,
                 Instant.now().getEpochSecond(), Collections.emptySet(), false);
     }
 
