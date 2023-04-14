@@ -15,4 +15,6 @@ When running locally, GitHub OAuth 2.0 is disabled and users are logged in as *t
 `is_auth_disabled` flag. The user has all the rights available. To change the user rights, make changes to 
 `src/main/resources/localstack/s3/admins/admins.json` and `docker-compose restart`.
 
+
+
 If you want to test with GitHub OAuth 2.0, you will need to create an OAuth application on GitHub with `http://localhost:8089/oauth2-callback` as the callback URL, then generate a client ID/secret. Once generated, set the `is_auth_disabled` flag to `false`, and copy the client ID/secret into `github_client_id` and `github_client_secret`.
