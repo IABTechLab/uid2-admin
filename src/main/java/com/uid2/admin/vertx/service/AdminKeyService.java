@@ -23,10 +23,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
@@ -43,16 +40,15 @@ public class AdminKeyService implements IService {
     private final EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     private final KeyAclStoreWriter keyAclStoreWriter;
 
-    public AdminKeyService(
-            JsonObject config,
-            AuthMiddleware auth,
-            WriteLock writeLock,
-            AdminUserStoreWriter storeWriter,
-            AdminUserProvider adminUserProvider,
-            IKeyGenerator keyGenerator,
-            ClientKeyStoreWriter clientKeyStoreWriter,
-            EncryptionKeyStoreWriter encryptionKeyStoreWriter,
-            KeyAclStoreWriter keyAclStoreWriter) {
+    public AdminKeyService(JsonObject config,
+                           AuthMiddleware auth,
+                           WriteLock writeLock,
+                           AdminUserStoreWriter storeWriter,
+                           AdminUserProvider adminUserProvider,
+                           IKeyGenerator keyGenerator,
+                           ClientKeyStoreWriter clientKeyStoreWriter,
+                           EncryptionKeyStoreWriter encryptionKeyStoreWriter,
+                           KeyAclStoreWriter keyAclStoreWriter) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -174,7 +170,12 @@ public class AdminKeyService implements IService {
             // refresh manually
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
+            if (name == null || name.isEmpty()) {
+                ResponseUtil.error(rc, 400, "must specify a valid admin name");
+                return;
+            }
+
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
@@ -190,7 +191,7 @@ public class AdminKeyService implements IService {
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .stream().sorted(Comparator.comparing(AdminUser::getCreated))
                     .collect(Collectors.toList());
 
             // create a random key
@@ -314,7 +315,7 @@ public class AdminKeyService implements IService {
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .stream().sorted(Comparator.comparing(AdminUser::getCreated))
                     .collect(Collectors.toList());
 
             AdminUser a = existingAdmin.get();
@@ -354,7 +355,7 @@ public class AdminKeyService implements IService {
             }
 
             List<AdminUser> admins = this.adminUserProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .stream().sorted(Comparator.comparing(AdminUser::getCreated))
                     .collect(Collectors.toList());
 
             AdminUser a = existingAdmin.get();

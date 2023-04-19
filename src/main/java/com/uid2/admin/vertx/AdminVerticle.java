@@ -20,7 +20,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
-import static com.uid2.admin.auth.AuthUtils.isAuthDisabled;
+import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
@@ -31,11 +31,10 @@ public class AdminVerticle extends AbstractVerticle {
     private final IService[] services;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public AdminVerticle(
-            JsonObject config,
-            AuthFactory authFactory,
-            IAdminUserProvider adminUserProvider,
-            IService[] services) {
+    public AdminVerticle(JsonObject config,
+                         AuthFactory authFactory,
+                         IAdminUserProvider adminUserProvider,
+                         IService[] services) {
         this.config = config;
         this.authFactory = authFactory;
         this.adminUserProvider = adminUserProvider;
@@ -48,7 +47,6 @@ public class AdminVerticle extends AbstractVerticle {
         final int port = Const.Port.ServicePortForAdmin + portOffset;
         vertx.createHttpServer()
                 .requestHandler(router)
-                .exceptionHandler(error -> LOGGER.error("Error in AdminVerticle", error))
                 .listen(port)
                 .onSuccess(server -> {
                     startPromise.complete();
