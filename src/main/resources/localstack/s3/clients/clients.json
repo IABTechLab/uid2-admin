@@ -8,7 +8,9 @@
     "roles": [
       "MAPPER",
       "GENERATOR",
-      "ID_READER"
+      "ID_READER",
+      "SHARER",
+      "OPTOUT"
     ],
     "disabled": false,
     "site_id": 123
