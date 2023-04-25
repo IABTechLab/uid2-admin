@@ -7,7 +7,10 @@
     "created": 1609459200,
     "roles": [
       "MAPPER",
-      "GENERATOR"
+      "GENERATOR",
+      "ID_READER",
+      "SHARER",
+      "OPTOUT"
     ],
     "disabled": false,
     "site_id": 123
@@ -19,6 +22,8 @@
     "contact": "MegaTest Client 2",
     "created": 1609459200,
     "roles": [
+      "MAPPER",
+      "GENERATOR",
       "ID_READER"
     ],
     "disabled": true,
