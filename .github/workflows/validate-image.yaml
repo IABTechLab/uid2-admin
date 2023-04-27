@@ -18,7 +18,7 @@ jobs:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-validate-image.yaml@main
     with: 
       failure_severity: ${{ inputs.failure_severity || 'CRITICAL'}}
-      fail_on_error: ${{ inputs.fail_on_error || false }}
+      fail_on_error: ${{ inputs.fail_on_error || true }}
       cloud_provider: 'default'
     secrets: inherit
   build-publish-docker-aws:
