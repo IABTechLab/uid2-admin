@@ -22,7 +22,7 @@ jobs:
     - name: scan
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: 'ghcr.io/iabtechlab/uid2-admin:2.1.4-e44c5584bd-b1bb5c6-gcp'
+        image-ref: 'ghcr.io/iabtechlab/uid2-admin:2.1.4-e44c5584bd-default'
         format: 'table'
         exit-code: '1'
         ignore-unfixed: true
