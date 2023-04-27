@@ -5,11 +5,10 @@ on:
         description: 'Must be one of CRITICAL, HIGH, MEDIUM'
         required: false
         default: 'CRITICAL'
-        type: string
       fail_on_error:
         description: 'If true, will fail the build if vulnerabilities are found'
         required: true
-        type: boolean
+        default: 'false'
   schedule:
     - cron: '0 20 * * *' #every day at 20:00
 
@@ -18,7 +17,7 @@ jobs:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-validate-image.yaml@main
     with: 
       failure_severity: ${{ inputs.failure_severity || 'CRITICAL'}}
-      fail_on_error: ${{ inputs.fail_on_error || true }}
+      fail_on_error: ${{ inputs.fail_on_error || false }}
       cloud_provider: 'default'
     secrets: inherit
   build-publish-docker-aws:
