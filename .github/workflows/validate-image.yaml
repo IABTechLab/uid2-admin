@@ -5,7 +5,6 @@ on:
         description: 'Must be one of CRITICAL, HIGH, MEDIUM'
         required: false
         default: 'CRITICAL'
-        fail_on_error: false
         type: string
       fail_on_error:
         description: 'If true, will fail the build if vulnerabilities are found'
