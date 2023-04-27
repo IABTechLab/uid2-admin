@@ -1,0 +1,30 @@
+name: test
+on:
+  workflow_dispatch:
+      failure_severity:
+        description: 'Must be one of CRITICAL, HIGH, MEDIUM'
+        required: false
+        default: 'CRITICAL'
+        type: string
+
+jobs:
+  test-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: 'ghcr.io'
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ghcr.io/iabtechlab/uid2-admin:2.1.4-e44c5584bd-b1bb5c6-gcp'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: ${{ inputs.failure_severity }}
+        hide-progress: true
