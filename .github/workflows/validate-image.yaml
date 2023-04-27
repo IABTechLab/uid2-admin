@@ -5,6 +5,7 @@ on:
         description: 'Must be one of CRITICAL, HIGH, MEDIUM'
         required: false
         default: 'CRITICAL'
+        fail_on_error: false
         type: string
   schedule:
     - cron: '0 20 * * *' #every day at 20:00
@@ -14,12 +15,14 @@ jobs:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-validate-image.yaml@main
     with: 
       failure_severity: ${{ inputs.failure_severity || 'CRITICAL'}}
+      fail_on_error: ${{ inputs.fail_on_error || false }}
       cloud_provider: 'default'
     secrets: inherit
   build-publish-docker-aws:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-validate-image.yaml@main
     with: 
       failure_severity: ${{ inputs.failure_severity || 'CRITICAL'}}
+      fail_on_error: ${{ inputs.fail_on_error || false }}
       cloud_provider: 'aws'
     secrets: inherit
     needs: [build-publish-docker-default]
@@ -27,6 +30,7 @@ jobs:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-validate-image.yaml@main
     with: 
       failure_severity: ${{ inputs.failure_severity || 'CRITICAL'}}
+      fail_on_error: ${{ inputs.fail_on_error || false }}
       cloud_provider: 'gcp'
     secrets: inherit
     needs: [build-publish-docker-aws]
