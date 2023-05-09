@@ -41,6 +41,9 @@ public class SharingService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
+        router.get("/api/sharing/list/get").handler(
+                auth.handle(this::handleKeyAclListAll, Role.SHARING_PORTAL)
+        );
         router.get("/api/sharing/list/:siteId/get").handler(
                 auth.handle(this::handleKeyAclList, Role.SHARING_PORTAL)
         );
@@ -84,6 +87,29 @@ public class SharingService implements IService {
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(jo.encode());
+    }
+
+    private void handleKeyAclListAll(RoutingContext rc) {
+        try {
+            JsonArray ja = new JsonArray();
+            Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
+            for (Map.Entry<Integer, EncryptionKeyAcl> acl : collection.entrySet()) {
+                JsonArray listedSites = new JsonArray();
+                acl.getValue().getAccessList().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
+
+                JsonObject jo = new JsonObject();
+                jo.put("site_id", acl.getKey());
+                jo.put("whitelist", listedSites);
+                jo.put("whitelist_hash", computeWhitelistHash(acl.getValue().getAccessList()));
+                ja.add(jo);
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(ja.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
     }
 
     private void handleKeyAclSet(RoutingContext rc) {
