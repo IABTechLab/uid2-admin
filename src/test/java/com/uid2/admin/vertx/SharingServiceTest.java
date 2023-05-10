@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider);
+        return new SharingService(auth, writeLock, keyAclStoreWriter, keyAclProvider);
     }
 
     private void compareAclToResult(EncryptionKeyAcl expectedAcl, JsonArray actualAcl) {
@@ -43,7 +43,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setEncryptionKeyAcls(acls);
-        get(vertx, "api/sharing/list/5/get", ar -> {
+        get(vertx, "api/sharing/list/5", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -68,7 +68,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setEncryptionKeyAcls(acls);
-        get(vertx, "api/sharing/list/42/get", ar -> {
+        get(vertx, "api/sharing/list/42", ar -> {
             HttpResponse response = ar.result();
             assertEquals(404, response.statusCode());
 
@@ -97,7 +97,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"whitelist_hash\": 48\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5/set", body, ar -> {
+        post(vertx, "api/sharing/list/5", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -131,7 +131,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"whitelist_hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/8/set", body, ar -> {
+        post(vertx, "api/sharing/list/8", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -174,7 +174,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"whitelist_hash\": 48\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5/set", body1, ar -> {
+        post(vertx, "api/sharing/list/5", body1, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -186,7 +186,7 @@ public class SharingServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
 
-        post(vertx, "api/sharing/list/5/set", body2, ar -> {
+        post(vertx, "api/sharing/list/5", body2, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(409, response.statusCode());
@@ -206,7 +206,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setEncryptionKeyAcls(acls);
-        get(vertx, "api/sharing/list/get", ar -> {
+        get(vertx, "api/sharing/lists", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());

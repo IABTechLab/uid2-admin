@@ -24,30 +24,27 @@ public class SharingService implements IService {
     private final WriteLock writeLock;
     private final KeyAclStoreWriter storeWriter;
     private final RotatingKeyAclProvider keyAclProvider;
-    private final ISiteStore siteProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
                           KeyAclStoreWriter storeWriter,
-                          RotatingKeyAclProvider keyAclProvider,
-                          ISiteStore siteProvider) {
+                          RotatingKeyAclProvider keyAclProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keyAclProvider = keyAclProvider;
-        this.siteProvider = siteProvider;
     }
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/sharing/list/get").handler(
+        router.get("/api/sharing/lists").handler(
                 auth.handle(this::handleKeyAclListAll, Role.SHARING_PORTAL)
         );
-        router.get("/api/sharing/list/:siteId/get").handler(
+        router.get("/api/sharing/list/:siteId").handler(
                 auth.handle(this::handleKeyAclList, Role.SHARING_PORTAL)
         );
-        router.post("/api/sharing/list/:siteId/set").handler(
+        router.post("/api/sharing/list/:siteId").handler(
                 auth.handle(this::handleKeyAclSet, Role.SHARING_PORTAL)
         );
     }
@@ -63,14 +60,7 @@ public class SharingService implements IService {
             return;
         }
 
-        EncryptionKeyAcl acl;
-        try {
-            acl = this.keyAclProvider.getSnapshot().getAllAcls().get(site_id);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to find acl for site id: " + site_id, e);
-            rc.fail(404, e);
-            return;
-        }
+        EncryptionKeyAcl acl = this.keyAclProvider.getSnapshot().getAllAcls().get(site_id);
 
         if (acl == null) {
             LOGGER.warn("Failed to find acl for site id: " + site_id);
@@ -113,71 +103,65 @@ public class SharingService implements IService {
     }
 
     private void handleKeyAclSet(RoutingContext rc) {
-        int site_id;
-        try {
-            site_id = Integer.parseInt(rc.pathParam("siteId"));
-        } catch (Exception e) {
-            LOGGER.warn("Failed to parse a site id from list request", e);
-            rc.fail(400, e);
-            return;
+        synchronized (writeLock) {
+           int site_id;
+           try {
+               site_id = Integer.parseInt(rc.pathParam("siteId"));
+           } catch (Exception e) {
+               LOGGER.warn("Failed to parse a site id from list request", e);
+               rc.fail(400, e);
+               return;
+           }
+
+           try {
+               keyAclProvider.loadContent();
+           } catch (Exception e) {
+               LOGGER.error("Failed to load key acls");
+               rc.fail(500);
+           }
+
+
+           final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
+           EncryptionKeyAcl acl = collection.get(site_id);
+
+           final JsonObject body = rc.body().asJsonObject();
+
+           final JsonArray whitelist = body.getJsonArray("whitelist");
+           final int whitelist_hash = body.getInteger("whitelist_hash");
+
+
+           Set<Integer> old_list;
+           if (acl != null) {
+               old_list = acl.getAccessList();
+           } else {
+               old_list = new HashSet<>();
+           }
+
+           if (acl != null && whitelist_hash != computeWhitelistHash(old_list)) {
+               rc.fail(409);
+               return;
+           }
+
+           final EncryptionKeyAcl newAcl = new EncryptionKeyAcl(true, whitelist.stream()
+                   .map(s -> (Integer) s)
+                   .collect(Collectors.toSet()));
+
+           collection.put(site_id, newAcl);
+           try {
+               storeWriter.upload(collection, null);
+           } catch (Exception e) {
+               rc.fail(500, e);
+               return;
+           }
+
+           JsonObject jo = new JsonObject();
+           jo.put("whitelist", whitelist);
+           jo.put("whitelist_hash", whitelist_hash);
+
+           rc.response()
+                   .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                   .end(jo.encode());
         }
-
-        try {
-            keyAclProvider.loadContent();
-        } catch (Exception e) {
-            LOGGER.error("Failed to load key acls");
-            rc.fail(500);
-        }
-
-
-        final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
-        EncryptionKeyAcl acl;
-        try {
-            acl = collection.get(site_id);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to find acl for site id: " + site_id, e);
-            rc.fail(404, e);
-            return;
-        }
-
-        final JsonObject body = new JsonObject(rc.body().asString());
-
-        final JsonArray whitelist = body.getJsonArray("whitelist");
-        final int whitelist_hash = body.getInteger("whitelist_hash");
-
-
-        Set<Integer> old_list;
-        if (acl != null) {
-            old_list = acl.getAccessList();
-        } else {
-            old_list = new HashSet<>();
-        }
-
-        if(acl != null && whitelist_hash != computeWhitelistHash(old_list)) {
-            rc.fail(409);
-            return;
-        }
-
-        final EncryptionKeyAcl newAcl = new EncryptionKeyAcl(true, whitelist.stream()
-                .map(s -> (Integer) s)
-                .collect(Collectors.toSet()));
-
-        collection.put(site_id, newAcl);
-        try {
-            storeWriter.upload(collection, null);
-        } catch (Exception e) {
-            rc.fail(500, e);
-            return;
-        }
-
-        JsonObject jo = new JsonObject();
-        jo.put("whitelist", whitelist);
-        jo.put("whitelist_hash", whitelist_hash);
-
-        rc.response()
-                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(jo.encode());
-
     }
 
     private int computeWhitelistHash(Set<Integer> list)
