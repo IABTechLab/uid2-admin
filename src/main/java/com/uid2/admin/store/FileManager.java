@@ -7,7 +7,6 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 public class FileManager {
@@ -22,13 +21,6 @@ public class FileManager {
     public void uploadFile(CloudPath location, FileName fileName, String content) throws IOException, CloudStorageException {
         String newFile = fileStorage.create(fileName, content);
         cloudStorage.upload(newFile, location.toString());
-    }
-
-    public void backupFile(CloudPath path, FileName fileName, long timestamp) throws IOException, CloudStorageException {
-        InputStream download = cloudStorage.download(path.toString());
-        String localTemp = fileStorage.create(fileName, download);
-        cloudStorage.upload(localTemp, path + ".bak");
-        cloudStorage.upload(localTemp, path + "." + timestamp + ".bak");
     }
 
     public void uploadMetadata(JsonObject metadata, String name, CloudPath location) throws Exception {

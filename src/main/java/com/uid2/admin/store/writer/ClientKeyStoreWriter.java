@@ -19,9 +19,8 @@ public class ClientKeyStoreWriter implements StoreWriter<Collection<ClientKey>> 
     public ClientKeyStoreWriter(RotatingClientKeyProvider provider, FileManager fileManager, ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("clients", ".json");
-        FileName backupFile = new FileName("clients-old", ".json");
         String dataType = "client_keys";
-        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
+        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
     @Override

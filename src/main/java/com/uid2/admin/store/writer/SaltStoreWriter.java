@@ -41,10 +41,6 @@ public class SaltStoreWriter {
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
 
-        FileName backupFile = new FileName("salts-old", ".json");
-
-        fileManager.backupFile(new CloudPath(provider.getMetadataPath()), backupFile, generated);
-
         final JsonObject metadata = provider.getMetadata();
         // bump up metadata version
         metadata.put("version", versionGenerator.getVersion());

@@ -28,7 +28,6 @@ public class OperatorKeyStoreWriter {
     public void upload(Collection<OperatorKey> data) throws Exception {
         long generated = Instant.now().getEpochSecond();
         FileName dataFile = new FileName("operators", ".json");
-        FileName backupFile = new FileName("operators-old", ".json");
 
         JsonObject metadata = provider.getMetadata();
         // bump up metadata version
@@ -37,8 +36,6 @@ public class OperatorKeyStoreWriter {
 
         // get location to upload
         CloudPath location = new CloudPath(metadata.getJsonObject("operators").getString("location"));
-
-        fileManager.backupFile(location, backupFile, generated);
 
         // generate new operators
         String content = jsonWriter.writeValueAsString(data);

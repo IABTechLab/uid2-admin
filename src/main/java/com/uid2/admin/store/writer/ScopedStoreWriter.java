@@ -16,7 +16,6 @@ public class ScopedStoreWriter {
     private final Clock clock;
     private final StoreScope scope;
     private final FileName dataFile;
-    private final FileName backupFile;
     private final String dataType;
 
     public ScopedStoreWriter(
@@ -26,7 +25,6 @@ public class ScopedStoreWriter {
             Clock clock,
             StoreScope scope,
             FileName dataFile,
-            FileName backupFile,
             String dataType
     ) {
         this.provider = provider;
@@ -35,7 +33,6 @@ public class ScopedStoreWriter {
         this.clock = clock;
         this.scope = scope;
         this.dataFile = dataFile;
-        this.backupFile = backupFile;
         this.dataType = dataType;
     }
 
@@ -57,10 +54,6 @@ public class ScopedStoreWriter {
         metadata.setGenerated(generated);
         if (extraMeta != null) {
             metadata.addExtra(extraMeta);
-        }
-
-        if (!isFirstWrite) {
-            fileManager.backupFile(location, backupFile, generated);
         }
 
         fileManager.uploadFile(location, dataFile, data);

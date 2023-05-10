@@ -19,9 +19,8 @@ public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
     public SiteStoreWriter(IMetadataVersionedStore reader, FileManager fileManager, ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("sites", ".json");
-        FileName backupFile = new FileName("sites-old", ".json");
         String dataType = "sites";
-        writer = new ScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
+        writer = new ScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
     @Override
