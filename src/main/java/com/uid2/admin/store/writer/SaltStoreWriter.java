@@ -2,7 +2,7 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.store.FileName;
@@ -17,7 +17,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,9 +30,9 @@ public class SaltStoreWriter {
     private final String saltSnapshotLocationPrefix;
     private final VersionGenerator versionGenerator;
 
-    private final ICloudStorage cloudStorage;
+    private final TaggableCloudStorage cloudStorage;
 
-    public SaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager, ICloudStorage cloudStorage, VersionGenerator versionGenerator) {
+    public SaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager, TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator) {
         this.provider = provider;
         this.fileManager = fileManager;
         this.cloudStorage = cloudStorage;
@@ -103,5 +105,6 @@ public class SaltStoreWriter {
         }
 
         cloudStorage.upload(newSaltsFile.toString(), location);
+        cloudStorage.setTags(location, Map.of("status", "current"));
     }
 }
