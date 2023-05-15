@@ -2,10 +2,10 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.admin.store.FileName;
 import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +38,7 @@ public class SaltStoreWriter {
         this.saltSnapshotLocationPrefix = config.getString("salt_snapshot_location_prefix");
         this.versionGenerator = versionGenerator;
     }
+
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
@@ -89,13 +89,36 @@ public class SaltStoreWriter {
         provider.loadContent();
     }
 
+    /**
+     * reads the metadata file, and marks each referenced file as ready for archiving
+     */
+    public void archiveSaltLocations() throws Exception {
+        final JsonObject metadata = provider.getMetadata();
+
+        metadata.getJsonArray("salts").forEach(instance -> {
+            try {
+                JsonObject salt = (JsonObject) instance;
+                String location = salt.getString("location", "");
+                if (!location.isBlank()) {
+                    this.setStatusTagToObsolete(location);
+                }
+            } catch (Exception ex) {
+                LOGGER.error("Error marking object as ready for archiving", ex);
+            }
+        });
+    }
+
     private String getSaltSnapshotLocation(RotatingSaltProvider.SaltSnapshot snapshot) {
         return saltSnapshotLocationPrefix + snapshot.getEffective().toEpochMilli();
     }
 
     private void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         // do not overwrite existing files
-        if (!cloudStorage.list(location).isEmpty()) return;
+        if (!cloudStorage.list(location).isEmpty()) {
+            // update the tags on the file to ensure it is still marked as current
+            this.setStatusTagToCurrent(location);
+            return;
+        }
 
         final Path newSaltsFile = Files.createTempFile("operators", ".txt");
         try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
@@ -104,7 +127,22 @@ public class SaltStoreWriter {
             }
         }
 
-        cloudStorage.upload(newSaltsFile.toString(), location);
-        cloudStorage.setTags(location, Map.of("status", "current"));
+        cloudStorage.upload(newSaltsFile.toString(), location, getCurrentTags());
+    }
+
+    private void setStatusTagToCurrent(String location) throws CloudStorageException {
+        this.cloudStorage.setTags(location, this.getCurrentTags());
+    }
+
+    private void setStatusTagToObsolete(String location) throws CloudStorageException {
+        this.cloudStorage.setTags(location, getObsoleteTags());
+    }
+
+    private Map<String, String> getCurrentTags(){
+        return Map.of("status", "current");
+    }
+
+    private Map<String, String> getObsoleteTags() {
+        return Map.of("status", "obsolete");
     }
 }

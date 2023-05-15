@@ -109,6 +109,7 @@ public class SaltServiceTest extends ServiceTestBase {
             checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
             try {
                 verify(saltStoreWriter).upload(any());
+                verify(saltStoreWriter, times(1)).archiveSaltLocations();
             } catch (Exception ex) {
                 fail(ex);
             }
