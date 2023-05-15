@@ -53,7 +53,7 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void backsUpOldData() throws Exception {
+        void doesNotBackUpOldData() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
@@ -65,7 +65,11 @@ class ClientKeyStoreTest {
             List<String> files = cloudStorage.list(rootDir);
             String datedBackup = "this-test-data-type/clients.json." + now + ".bak";
             String latestBackup = "this-test-data-type/clients.json.bak";
-            assertThat(files).contains(datedBackup, latestBackup);
+            assertThat(files).doesNotContain(datedBackup, latestBackup);
+
+            String metaDataFile = "this-test-data-type/test-metadata.json";
+            String clientFile = "this-test-data-type/clients.json";
+            assertThat(files).contains(metaDataFile, clientFile);
         }
 
         @Test
