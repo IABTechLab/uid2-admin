@@ -31,6 +31,9 @@ public class SaltStoreWriter {
 
     private final TaggableCloudStorage cloudStorage;
 
+    private final Map<String, String> currentTags = Map.of("status", "current");
+    private final Map<String, String> obsoleteTags = Map.of("status", "obsolete");
+
     public SaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager, TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator) {
         this.provider = provider;
         this.fileManager = fileManager;
@@ -127,22 +130,14 @@ public class SaltStoreWriter {
             }
         }
 
-        cloudStorage.upload(newSaltsFile.toString(), location, getCurrentTags());
+        cloudStorage.upload(newSaltsFile.toString(), location, this.currentTags);
     }
 
     private void setStatusTagToCurrent(String location) throws CloudStorageException {
-        this.cloudStorage.setTags(location, this.getCurrentTags());
+        this.cloudStorage.setTags(location, this.currentTags);
     }
 
     private void setStatusTagToObsolete(String location) throws CloudStorageException {
-        this.cloudStorage.setTags(location, getObsoleteTags());
-    }
-
-    private Map<String, String> getCurrentTags(){
-        return Map.of("status", "current");
-    }
-
-    private Map<String, String> getObsoleteTags() {
-        return Map.of("status", "obsolete");
+        this.cloudStorage.setTags(location, this.obsoleteTags);
     }
 }
