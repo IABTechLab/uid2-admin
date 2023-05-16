@@ -9,7 +9,7 @@
   "keys_metadata_path": "keys/metadata.json",
   "keys_acl_metadata_path": "keys_acl/metadata.json",
   "salts_metadata_path": "salts/metadata.json",
-  "salt_snapshot_location_prefix": "salts/salts.txt",
+  "salt_snapshot_location_prefix": "salts/salts.txt.",
   "operators_metadata_path": "operators/metadata.json",
   "enclaves_metadata_path": "enclaves/metadata.json",
   "partners_metadata_path": "partners/metadata.json",

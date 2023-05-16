@@ -19,9 +19,8 @@ public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKey
 
     public KeyAclStoreWriter(StoreReader<Map<Integer, EncryptionKeyAcl>> provider, FileManager fileManager, ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
         FileName dataFile = new FileName("keys_acl", ".json");
-        FileName backupFile = new FileName("keys_acl-old", ".json");
         String dataType = "keys_acl";
-        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
+        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
     @Override

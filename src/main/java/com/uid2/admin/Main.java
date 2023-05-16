@@ -26,7 +26,7 @@ import com.uid2.shared.Utils;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
-import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.store.CloudPath;
@@ -75,7 +75,7 @@ public class Main {
     public void run() {
         try {
             AuthFactory authFactory = new GithubAuthFactory(config);
-            ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+            TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
             ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
             FileManager fileManager = new FileManager(cloudStorage, fileStorage);

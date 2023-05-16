@@ -24,7 +24,6 @@ public class PartnerStoreWriter {
 
     public void upload(JsonArray partners) throws Exception {
         long generated = Instant.now().getEpochSecond();
-        FileName backupFile = new FileName("partners-old", ".json");
         FileName dataFile = new FileName("partners", ".json");
 
         JsonObject metadata = provider.getMetadata();
@@ -34,8 +33,6 @@ public class PartnerStoreWriter {
 
         // get location to upload
         CloudPath location = new CloudPath(metadata.getJsonObject("partners").getString("location"));
-
-        fileManager.backupFile(location, backupFile, generated);
 
         // generate new partners
         String content = partners.encodePrettily();

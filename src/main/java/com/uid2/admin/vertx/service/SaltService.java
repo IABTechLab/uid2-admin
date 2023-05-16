@@ -80,6 +80,9 @@ public class SaltService implements IService {
             // force refresh
             this.saltProvider.loadContent();
 
+            // mark all the referenced files as ready to archive
+            storageManager.archiveSaltLocations();
+
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
             final ISaltRotation.Result result = saltRotation.rotateSalts(

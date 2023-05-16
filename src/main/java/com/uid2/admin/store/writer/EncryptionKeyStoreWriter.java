@@ -18,9 +18,8 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
 
     public EncryptionKeyStoreWriter(RotatingKeyStore provider, FileManager fileManager, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
         FileName dataFile = new FileName("keys", ".json");
-        FileName backupFile = new FileName("keys-old", ".json");
         String dataType = "keys";
-        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, backupFile, dataType);
+        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
     @Override
