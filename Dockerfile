@@ -1,4 +1,4 @@
-FROM openjdk:11
+FROM eclipse-temurin@sha256:d19c17f59e768549cd3d26f577be73b5e26e652dd66210d91a6738a355aa1dfe
 
 WORKDIR /app
 EXPOSE 8089
