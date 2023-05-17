@@ -9,7 +9,8 @@ on:
       fail_on_error:
         description: 'If true, will fail the build if vulnerabilities are found'
         required: true
-        default: 'true'
+        type: boolean
+        default: true
   schedule:
     - cron: '0 20 * * *' #every day at 20:00
 
