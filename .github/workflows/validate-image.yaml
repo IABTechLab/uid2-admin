@@ -1,6 +1,7 @@
 name: Validate Docker Image
 on:
   workflow_dispatch:
+    inputs:
       failure_severity:
         description: 'Must be one of CRITICAL, HIGH, MEDIUM'
         required: false
