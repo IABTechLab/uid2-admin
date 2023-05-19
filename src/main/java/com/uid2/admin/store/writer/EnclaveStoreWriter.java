@@ -27,15 +27,12 @@ public class EnclaveStoreWriter {
 
     public void upload(Collection<EnclaveIdentifier> data) throws Exception {
         long generated = Instant.now().getEpochSecond();
-        FileName backupFile = new FileName("enclaves-old", ".json");
         FileName dataFile = new FileName("enclaves", ".json");
         JsonObject metadata = provider.getMetadata();
 
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
         CloudPath location = new CloudPath(metadata.getJsonObject("enclaves").getString("location"));
-
-        fileManager.backupFile(location, backupFile, generated);
 
         // generate new clients
         String content = jsonWriter.writeValueAsString(data);

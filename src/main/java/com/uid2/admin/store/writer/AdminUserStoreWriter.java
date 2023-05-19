@@ -28,7 +28,6 @@ public class AdminUserStoreWriter {
 
     public void upload(Collection<AdminUser> data) throws Exception {
         long generated = Instant.now().getEpochSecond();
-        FileName backupFile = new FileName("admins-old", ".json");
         FileName dataFile = new FileName("admins", ".json");
 
         JsonObject metadata = provider.getMetadata();
@@ -38,8 +37,6 @@ public class AdminUserStoreWriter {
 
         // get location to upload
         CloudPath location = new CloudPath(metadata.getJsonObject("admins").getString("location"));
-
-        fileManager.backupFile(location, backupFile, generated);
 
         // generate new admins
         String content = jsonWriter.writeValueAsString(data);
