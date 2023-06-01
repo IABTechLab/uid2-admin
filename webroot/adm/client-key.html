@@ -19,7 +19,15 @@
 <input type="text" id="roles" name="roles">
 <label for="siteId">Site Id:</label>
 <input type="text" id="siteId" name="siteId" value="1">
-
+<div id="oldClientName"  style="display: none;">
+    <label for="oldClientName">Old Client Name:</label>
+    <input type="text" id="oldClientNameInput" name="oldClientName">
+</div>
+<div id="newClientName" style="display: none;">
+    <label for="newClientName">New Client Name:</label>
+    <input type="text" id="newClientNameInput" name="newClientName">
+</div>
+<div id="renameSubmit" style="display: none"><a href="#" id="doRenameSubmit">Submit</a></div>
 <br>
 <br>
 
@@ -36,6 +44,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doRename">Rename Client Key (Click to enter new and old names)</a></li>
 </ul>
 
 <br>
@@ -115,6 +124,20 @@
             var url = '/api/client/enable?name=' + clientName;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRename').on('click', function () {
+            $('#oldClientName, #newClientName, #renameSubmit').toggle();
+        });
+
+        $('#doRenameSubmit').on('click', function () {
+            var oldClientName = encodeURIComponent($('#oldClientNameInput').val());
+            var newClientName = encodeURIComponent($('#newClientNameInput').val());
+            var url = '/api/client/rename?oldName=' + oldClientName + '&newName=' + newClientName;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+
+            $('#oldClientName, #newClientName, #renameSubmit').toggle();
         });
     });
 </script>
