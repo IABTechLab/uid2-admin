@@ -451,6 +451,13 @@ public class ClientKeyService implements IService {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;
             }
+            final ClientKey existingClientWithNewName = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getName().equals(newName))
+                    .findFirst().orElse(null);
+            if (existingClientWithNewName != null) {
+                ResponseUtil.error(rc, 400, "already exist a client with name " + newName);
+                return;
+            }
 
             existingClient.withNameAndContact(newName);
 
