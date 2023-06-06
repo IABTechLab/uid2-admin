@@ -51,6 +51,51 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void clientRename(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites(new Site(5, "test_site", true));
+        setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
+        ClientKey[] expectedClients = {
+                new ClientKey("", "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
+        };
+
+        post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void clientRenameWithExistingName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites(new Site(5, "test_site", true));
+        setClientKeys(
+                new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5),
+                new ClientKey("", "","test_client1").withRoles(Role.GENERATOR).withSiteId(5));
+        ClientKey[] expectedClients = {
+                new ClientKey("", "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
+        };
+
+        post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));

@@ -19,7 +19,6 @@
 <input type="text" id="roles" name="roles">
 <label for="siteId">Site Id:</label>
 <input type="text" id="siteId" name="siteId" value="1">
-
 <br>
 <br>
 
@@ -36,6 +35,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doRename">Rename Client Key (Click to enter new client name)</a></li>
 </ul>
 
 <br>
@@ -114,6 +114,13 @@
             var clientName = encodeURIComponent($('#clientName').val());
             var url = '/api/client/enable?name=' + clientName;
 
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRename').on('click', function () {
+            var newClientName = prompt("Enter the new client name", "new client name here");
+            var oldClientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/rename?oldName=' + oldClientName + '&newName=' + newClientName;
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
     });

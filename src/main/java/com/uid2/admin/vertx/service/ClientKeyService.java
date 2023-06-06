@@ -115,6 +115,12 @@ public class ClientKeyService implements IService {
                 this.handleClientRoles(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+
+        router.post("/api/client/rename").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleClientRename(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -426,6 +432,44 @@ public class ClientKeyService implements IService {
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleClientRename(RoutingContext rc) {
+        try {
+            // refresh manually
+            clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
+
+            final String oldName = rc.queryParam("oldName").get(0);
+            final String newName = rc.queryParam("newName").get(0);
+            final ClientKey existingClient = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getName().equals(oldName))
+                    .findFirst().orElse(null);
+            if (existingClient == null) {
+                ResponseUtil.error(rc, 404, "client not found");
+                return;
+            }
+            final ClientKey existingClientWithNewName = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getName().equals(newName))
+                    .findFirst().orElse(null);
+            if (existingClientWithNewName != null) {
+                ResponseUtil.error(rc, 400, "already exist a client with name " + newName);
+                return;
+            }
+
+            existingClient.withNameAndContact(newName);
+
+            List<ClientKey> clients = this.clientKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
+
+            // upload to storage
+            storeWriter.upload(clients, null);
+
+            // return the updated client
+            rc.response().end(jsonWriter.writeValueAsString(existingClient));
         } catch (Exception e) {
             rc.fail(500, e);
         }
