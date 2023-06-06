@@ -468,8 +468,6 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
-            createPublisherSiteKeyIfNoneExists(existingClient);
-
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingClient));
         } catch (Exception e) {
