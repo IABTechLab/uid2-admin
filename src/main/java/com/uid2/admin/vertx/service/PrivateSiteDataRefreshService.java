@@ -32,8 +32,7 @@ public class PrivateSiteDataRefreshService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        // this can be called by a k8s cronjob setup such as
-        // https://gitlab.adsrvr.org/uid2/k8-deployment/-/tree/master/uid2
+        // this can be called by a scheduled task
         router.post("/api/private-sites/refresh").blockingHandler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
                         this.handlePrivateSiteDataGenerate(ctx);
