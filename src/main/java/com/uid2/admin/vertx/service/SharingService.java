@@ -156,6 +156,7 @@ public class SharingService implements IService {
 
            JsonObject jo = new JsonObject();
            jo.put("whitelist", whitelist);
+           //BUG wrong hash
            jo.put("whitelist_hash", whitelist_hash);
 
            rc.response()
