@@ -1,6 +1,6 @@
 [
   {
-    "key": "INTEGfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
+    "key": "LOCALfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
     "secret": "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=",
     "name": "MegaTest Client",
     "contact": "MegaTest Client",
@@ -16,7 +16,7 @@
     "site_id": 123
   },
   {
-    "key": "INTEGt32pCM5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
+    "key": "LOCALt32pCM5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
     "secret": "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=",
     "name": "MegaTest Client 2",
     "contact": "MegaTest Client 2",
@@ -30,7 +30,7 @@
     "site_id": 123
   },
   {
-    "key": "INTEGH8VwqXl2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
+    "key": "LOCALH8VwqXl2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
     "secret": "NcMgi6Y8C80SlxvV7pYlfcvEIo+2b0508tYQ3pKK8HM=",
     "name": "TestCorp Client",
     "contact": "TestCorp Client",
@@ -44,7 +44,7 @@
     "site_id": 124
   },
   {
-    "key": "INTEGE5w9L8T5og45yFqQeoj4ubh9IVqXcaSVwk7A5XyG958=",
+    "key": "LOCALE5w9L8T5og45yFqQeoj4ubh9IVqXcaSVwk7A5XyG958=",
     "secret": "3YAgjckHGQyBgSFj64ZsLf8WlUnvrQhLKuG7rljp6W4=",
     "name": "LoremTestIpsum Client",
     "contact": "LoremTestIpsum Client",
