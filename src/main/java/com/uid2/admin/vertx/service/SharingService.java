@@ -2,11 +2,14 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.admin.store.writer.KeyAclStoreWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.EncryptionKeyAcl;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
+import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -15,6 +18,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,18 +26,18 @@ public class SharingService implements IService {
     private final AuthMiddleware auth;
 
     private final WriteLock writeLock;
-    private final KeyAclStoreWriter storeWriter;
-    private final RotatingKeyAclProvider keyAclProvider;
+    private final KeysetStoreWriter storeWriter;
+    private final RotatingKeysetProvider keysetProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
-                          KeyAclStoreWriter storeWriter,
-                          RotatingKeyAclProvider keyAclProvider) {
+                          KeysetStoreWriter storeWriter,
+                          RotatingKeysetProvider keysetProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
-        this.keyAclProvider = keyAclProvider;
+        this.keysetProvider = keysetProvider;
     }
 
     @Override
@@ -49,30 +53,38 @@ public class SharingService implements IService {
         );
     }
 
+    private Keyset getDefaultKeyset(Map<Integer, Keyset> keysets, Integer siteId) {
+           for(Keyset keyset: keysets.values()) {
+               if(keyset.getSiteId() == siteId && keyset.isDefault()) {
+                   return keyset;
+               }
+           }
+           return null;
+    }
 
     private void handleKeyAclList(RoutingContext rc) {
-        int site_id;
+        int siteId;
         try {
-            site_id = Integer.parseInt(rc.pathParam("siteId"));
+            siteId = Integer.parseInt(rc.pathParam("siteId"));
         } catch (Exception e) {
             LOGGER.warn("Failed to parse a site id from list request", e);
             rc.fail(400, e);
             return;
         }
 
-        EncryptionKeyAcl acl = this.keyAclProvider.getSnapshot().getAllAcls().get(site_id);
+        Keyset keyset = getDefaultKeyset(this.keysetProvider.getSnapshot().getAllKeysets(), siteId);
 
-        if (acl == null) {
-            LOGGER.warn("Failed to find acl for site id: " + site_id);
+        if (keyset == null) {
+            LOGGER.warn("Failed to find keyset for site id: " + siteId);
             rc.fail(404);
             return;
         }
 
         JsonArray listedSites = new JsonArray();
-        acl.getAccessList().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
+        keyset.getAllowedSites().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
         JsonObject jo = new JsonObject();
-        jo.put("whitelist", listedSites);
-        jo.put("whitelist_hash", computeWhitelistHash(acl.getAccessList()));
+        jo.put("allowlist", listedSites);
+        jo.put("hash", keyset.hashCode());
 
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -82,15 +94,16 @@ public class SharingService implements IService {
     private void handleKeyAclListAll(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
-            Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
-            for (Map.Entry<Integer, EncryptionKeyAcl> acl : collection.entrySet()) {
+            Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
                 JsonArray listedSites = new JsonArray();
-                acl.getValue().getAccessList().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
+                keyset.getValue().getAllowedSites().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
 
                 JsonObject jo = new JsonObject();
-                jo.put("site_id", acl.getKey());
-                jo.put("whitelist", listedSites);
-                jo.put("whitelist_hash", computeWhitelistHash(acl.getValue().getAccessList()));
+                jo.put("site_id", keyset.getValue().getSiteId());
+                jo.put("keyset_id", keyset.getValue().getKeysetId());
+                jo.put("allowlist", listedSites);
+                jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);
             }
 
@@ -104,9 +117,9 @@ public class SharingService implements IService {
 
     private void handleKeyAclSet(RoutingContext rc) {
         synchronized (writeLock) {
-           int site_id;
+           int siteId;
            try {
-               site_id = Integer.parseInt(rc.pathParam("siteId"));
+               siteId = Integer.parseInt(rc.pathParam("siteId"));
            } catch (Exception e) {
                LOGGER.warn("Failed to parse a site id from list request", e);
                rc.fail(400, e);
@@ -114,50 +127,63 @@ public class SharingService implements IService {
            }
 
            try {
-               keyAclProvider.loadContent();
+               keysetProvider.loadContent();
            } catch (Exception e) {
                LOGGER.error("Failed to load key acls");
                rc.fail(500);
            }
 
 
-           final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
-           EncryptionKeyAcl acl = collection.get(site_id);
+           final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+           Keyset keyset = getDefaultKeyset(collection, siteId);
 
            final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("whitelist");
-           final int whitelist_hash = body.getInteger("whitelist_hash");
+           final JsonArray whitelist = body.getJsonArray("allowlist");
+           final int whitelist_hash = body.getInteger("hash");
 
 
            Set<Integer> old_list;
-           if (acl != null) {
-               old_list = acl.getAccessList();
+           if (keyset != null) {
+               old_list = keyset.getAllowedSites();
            } else {
                old_list = new HashSet<>();
            }
 
-           if (acl != null && whitelist_hash != computeWhitelistHash(old_list)) {
+           if (keyset != null && whitelist_hash != keyset.hashCode()) {
                rc.fail(409);
                return;
            }
 
-           final EncryptionKeyAcl newAcl = new EncryptionKeyAcl(true, whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet()));
+           Integer keysetId;
+           String name;
 
-           collection.put(site_id, newAcl);
+           if (keyset == null) {
+               keysetId = Collections.max(collection.keySet()) + 1;
+               name = "";
+           } else {
+               keysetId = keyset.getKeysetId();
+               name = keyset.getName();
+           }
+
+           final Set<Integer> newlist = whitelist.stream()
+                   .map(s -> (Integer) s)
+                   .collect(Collectors.toSet());
+
+           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                   newlist, Instant.now().getEpochSecond(), true, true);
+
+           collection.put(keysetId, newKeyset);
            try {
-               storeWriter.upload(collection, null);
+               storeWriter.upload(collection.values(), null);
            } catch (Exception e) {
                rc.fail(500, e);
                return;
            }
 
            JsonObject jo = new JsonObject();
-           jo.put("whitelist", whitelist);
-           //BUG wrong hash
-           jo.put("whitelist_hash", whitelist_hash);
+           jo.put("allowlist", whitelist);
+           jo.put("hash", newKeyset.hashCode());
 
            rc.response()
                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")

@@ -21,6 +21,7 @@ import com.uid2.shared.store.IKeyStore;
 import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
+import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -66,6 +67,7 @@ public abstract class ServiceTestBase {
     @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeyAclStoreWriter keyAclStoreWriter;
+    @Mock protected KeysetStoreWriter keysetStoreWriter;
     @Mock protected OperatorKeyStoreWriter operatorKeyStoreWriter;
     @Mock protected EnclaveStoreWriter enclaveStoreWriter;
     @Mock protected SaltStoreWriter saltStoreWriter;
@@ -78,6 +80,8 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
     @Mock protected RotatingKeyAclProvider keyAclProvider;
+    @Mock protected RotatingKeysetProvider keysetProvider;
+    @Mock protected KeysetSnapshot keysetSnapshot;
     @Mock protected AclSnapshot keyAclProviderSnapshot;
     @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
@@ -89,6 +93,7 @@ public abstract class ServiceTestBase {
         when(authFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
+        when(keysetProvider.getSnapshot()).thenReturn(keysetSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});

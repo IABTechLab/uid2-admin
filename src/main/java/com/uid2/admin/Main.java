@@ -34,6 +34,7 @@ import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.store.reader.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
@@ -111,6 +112,12 @@ public class Main {
             keyAclProvider.loadContent();
             KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, versionGenerator, clock, keyAclGlobalScope);
 
+            CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
+            GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
+            RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
+            keyAclProvider.loadContent();
+            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
+
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
             GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
             RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -148,7 +155,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
-                    new SharingService(auth, writeLock, keyAclStoreWriter, keyAclProvider),
+                    new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
