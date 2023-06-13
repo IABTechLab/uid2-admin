@@ -110,8 +110,4 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     public void setRoles(Set<Role> newRoles) {
         this.roles = newRoles;
     }
-
-    public void setKey(String newKey) {
-        this.key = newKey;
-    }
 }
