@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class AdminUser implements IRoleAuthorizable<Role> {
-    private String key;
+    private final String key;
     private final String name;
     private final String contact;
     // epochSeconds
