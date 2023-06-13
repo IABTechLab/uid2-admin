@@ -91,12 +91,6 @@ public class OperatorKeyService implements IService {
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/operator/rekey").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleOperatorRekey(ctx);
-            }
-        }, Role.ADMINISTRATOR));
-
         router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
@@ -379,39 +373,6 @@ public class OperatorKeyService implements IService {
 
             // return the updated client
             rc.response().end(jsonWriter.writeValueAsString(existingOperator));
-        } catch (Exception e) {
-            rc.fail(500, e);
-        }
-    }
-
-    private void handleOperatorRekey(RoutingContext rc) {
-        try {
-            // refresh manually
-            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-
-            final String name = rc.queryParam("name").get(0);
-            Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
-                    .stream().filter(o -> o.getName().equals(name))
-                    .findFirst();
-            if (!existingOperator.isPresent()) {
-                ResponseUtil.error(rc, 404, "operator key not found");
-                return;
-            }
-
-            List<OperatorKey> operators = this.operatorKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
-
-            OperatorKey o = existingOperator.get();
-            String newKey = keyGenerator.generateRandomKeyString(32);
-            if (this.operatorKeyPrefix != null) newKey = this.operatorKeyPrefix + newKey;
-            o.setKey(newKey);
-
-            // upload to storage
-            operatorKeyStoreWriter.upload(operators);
-
-            // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(o));
         } catch (Exception e) {
             rc.fail(500, e);
         }

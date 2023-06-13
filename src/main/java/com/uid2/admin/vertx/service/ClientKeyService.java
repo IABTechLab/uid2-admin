@@ -104,12 +104,6 @@ public class ClientKeyService implements IService {
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/rekey").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientRekey(ctx);
-            }
-        }, Role.ADMINISTRATOR));
-
         router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
@@ -357,42 +351,6 @@ public class ClientKeyService implements IService {
 
             // respond with client disabled/enabled
             rc.response().end(response.encode());
-        } catch (Exception e) {
-            rc.fail(500, e);
-        }
-    }
-
-    private void handleClientRekey(RoutingContext rc) {
-        try {
-            // refresh manually
-            clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
-
-            final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
-                    .findFirst();
-            if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client key not found");
-                return;
-            }
-
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
-
-            ClientKey c = existingClient.get();
-            String newKey = keyGenerator.generateRandomKeyString(32);
-            if (this.clientKeyPrefix != null) newKey = this.clientKeyPrefix + newKey;
-
-            c.setKey(newKey);
-
-            c.setSecret(keyGenerator.generateRandomKeyString(32));
-
-            // upload to storage
-            storeWriter.upload(clients, null);
-
-            // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(c));
         } catch (Exception e) {
             rc.fail(500, e);
         }

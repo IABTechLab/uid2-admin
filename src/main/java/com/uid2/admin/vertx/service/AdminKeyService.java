@@ -95,12 +95,6 @@ public class AdminKeyService implements IService {
             }
         }, Role.ADMINISTRATOR));
 
-        router.post("/api/admin/rekey").blockingHandler(auth.handle(ctx -> {
-            synchronized (writeLock) {
-                this.handleAdminRekey(ctx);
-            }
-        }, Role.ADMINISTRATOR));
-
         router.post("/api/admin/roles").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleAdminRoles(ctx);
@@ -294,40 +288,6 @@ public class AdminKeyService implements IService {
 
             // respond with admin disabled/enabled
             rc.response().end(response.encode());
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-            rc.fail(500, e);
-        }
-    }
-
-    private void handleAdminRekey(RoutingContext rc) {
-        try {
-            // refresh manually
-            adminUserProvider.loadContent(adminUserProvider.getMetadata());
-
-            final String name = rc.queryParam("name").get(0);
-            Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
-                    .stream().filter(a -> a.getName().equals(name))
-                    .findFirst();
-            if (!existingAdmin.isPresent()) {
-                ResponseUtil.error(rc, 404, "admin not found");
-                return;
-            }
-
-            List<AdminUser> admins = this.adminUserProvider.getAll()
-                    .stream().sorted(Comparator.comparing(AdminUser::getCreated))
-                    .collect(Collectors.toList());
-
-            AdminUser a = existingAdmin.get();
-            String newKey = keyGenerator.generateRandomKeyString(32);
-            if (this.adminKeyPrefix != null) newKey = this.adminKeyPrefix + newKey;
-            a.setKey(newKey);
-
-            // upload to storage
-            storeWriter.upload(admins);
-
-            // return admin with new key
-            rc.response().end(jsonWriter.writeValueAsString(a));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);

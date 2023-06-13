@@ -31,7 +31,6 @@
     <li class="ro-adm" style="display: none"><a href="#" id="doDisable">Disable Admin User</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doEnable">Enable Admin User</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
-    <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Admin User</a></li>
     <br/><br/>
         <li class="ro-adm" style="display: none"><a href="#" id="doRewriteMetadata">Rewrite</a> global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs (no underlying data change). </li>
@@ -95,13 +94,6 @@
             var email = encodeURIComponent($('#email').val());
             var roles = encodeURIComponent($('#roles').val());
             var url = '/api/admin/roles?name=' + email + '&roles=' + roles;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRekey').on('click', function () {
-            var email = encodeURIComponent($('#email').val());
-            var url = '/api/admin/rekey?name=' + email;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
