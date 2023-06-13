@@ -42,7 +42,7 @@ class ClientKeySyncJobTest {
                     1618873215,
                     false,
                     scopedSiteId,
-                    new HashSet<>(Collections.singletonList(Role.ID_READER)),
+                    new HashSet<>(Collections.singletonList(Role.OPERATOR)),
                     OperatorType.PRIVATE));
     private final ClientKey client = new ClientKey(
             "key",
@@ -50,7 +50,7 @@ class ClientKeySyncJobTest {
             "name",
             "contact",
             Instant.MIN,
-            ImmutableSet.of(Role.ID_READER),
+            ImmutableSet.of(Role.OPERATOR),
             scopedSiteId,
             false);
     private ClientKeyStoreFactory clientKeyStoreFactory;

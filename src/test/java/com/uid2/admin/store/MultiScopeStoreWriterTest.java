@@ -40,7 +40,7 @@ class MultiScopeStoreWriterTest {
                     1618873215,
                     false,
                     scopedSiteId,
-                    new HashSet<>(Collections.singletonList(Role.ID_READER)),
+                    new HashSet<>(Collections.singletonList(Role.OPERATOR)),
                     OperatorType.PRIVATE));
 
     Site site = new Site(scopedSiteId, "site 1", true);
