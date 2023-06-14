@@ -237,7 +237,7 @@ public class OperatorKeyService implements IService {
             try {
                 newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
             } catch (InvalidRoleException e) {
-                rc.fail(400, e);
+                ResponseUtil.error(rc, 400, e.getMessage());
                 return;
             }
 
@@ -451,7 +451,12 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             OperatorKey o = existingOperator.get();
-            o.setRoles(roles);
+            try {
+                o.setRoles(roles);
+            } catch (InvalidRoleException e) {
+                ResponseUtil.error(rc, 400, e.getMessage());
+                return;
+            }
 
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
