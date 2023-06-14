@@ -13,6 +13,7 @@
   "operators_metadata_path": "operators/metadata.json",
   "enclaves_metadata_path": "enclaves/metadata.json",
   "partners_metadata_path": "partners/metadata.json",
+  "keysets_metadata_path": "keysets/metadata.json",
   "aws_access_key_id": "no access key needed for test",
   "aws_secret_access_key": "no secret key needed for test",
   "client_key_prefix": "INTEG",

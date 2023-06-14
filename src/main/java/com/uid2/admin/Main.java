@@ -115,7 +115,7 @@ public class Main {
             CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
-            keyAclProvider.loadContent();
+            keysetProvider.loadContent();
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
 
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
