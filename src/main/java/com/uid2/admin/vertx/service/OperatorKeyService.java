@@ -190,8 +190,8 @@ public class OperatorKeyService implements IService {
                 roles = new HashSet<>();
             } else {
                 roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
-                    ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
-                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+                        ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
+                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
             }
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "Incorrect roles specified");
@@ -231,9 +231,15 @@ public class OperatorKeyService implements IService {
             String key = keyGenerator.generateRandomKeyString(32);
             if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + key;
 
-            // add new client to array
+            // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator;
+            try {
+                newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
+            } catch (InvalidRoleException e) {
+                rc.fail(400, e);
+                return;
+            }
 
             // add client to the array
             operators.add(newOperator);
@@ -433,8 +439,8 @@ public class OperatorKeyService implements IService {
 
             Set<Role> roles = !rc.queryParams().contains("roles")
                     || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
-                        ? null
-                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+                    ? null
+                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
                 ResponseUtil.error(rc, 400, "No roles or incorrect roles specified");
                 return;
