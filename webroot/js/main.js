@@ -1,4 +1,4 @@
-function doApiCall(method, url, outputDiv, errorDiv) {
+function doApiCall(method, url, outputDiv, errorDiv, body) {
     $(outputDiv).html('');
     $(errorDiv).html('');
 
@@ -11,12 +11,33 @@ function doApiCall(method, url, outputDiv, errorDiv) {
         headers: {
             "Authorization": authHeader
         },
+        data : body,
         success: function (text) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).html(pretty);
         },
         error: function (err) {
             $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText);
+        }
+    });
+}
+
+function doApiCallWithCallback(method, url, onSuccess, onError, body) {
+    authHeader = "Bearer " + window.__uid2_admin_token;
+
+    $.ajax({
+        type: method,
+        url: url,
+        dataType: 'text',
+        headers: {
+            "Authorization": authHeader
+        },
+        data : body,
+        success: function (text) {
+            onSuccess(text);
+        },
+        error: function (err) {
+            onError(err);
         }
     });
 }
