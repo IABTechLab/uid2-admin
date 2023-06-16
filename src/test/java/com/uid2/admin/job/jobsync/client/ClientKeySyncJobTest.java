@@ -12,10 +12,7 @@ import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
-import com.uid2.shared.auth.ClientKey;
-import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.OperatorType;
-import com.uid2.shared.auth.Role;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.StoreReader;
@@ -42,7 +39,7 @@ class ClientKeySyncJobTest {
                     1618873215,
                     false,
                     scopedSiteId,
-                    new HashSet<>(Collections.singletonList(Role.ID_READER)),
+                    new HashSet<>(Collections.singletonList(Role.OPERATOR)),
                     OperatorType.PRIVATE));
     private final ClientKey client = new ClientKey(
             "key",
@@ -50,11 +47,14 @@ class ClientKeySyncJobTest {
             "name",
             "contact",
             Instant.MIN,
-            ImmutableSet.of(Role.ID_READER),
+            ImmutableSet.of(Role.OPERATOR),
             scopedSiteId,
             false);
     private ClientKeyStoreFactory clientKeyStoreFactory;
     private FileManager fileManager;
+
+    ClientKeySyncJobTest() throws InvalidRoleException {
+    }
 
     @BeforeEach
     void setUp() {
