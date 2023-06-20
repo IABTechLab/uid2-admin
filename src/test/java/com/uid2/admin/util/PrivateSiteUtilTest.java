@@ -39,7 +39,7 @@ public class PrivateSiteUtilTest {
             .thatIsEnabled()
             .build();
 
-    public PrivateSiteUtilTest() throws InvalidRoleException {
+    public PrivateSiteUtilTest() {
     }
 
     @Nested
@@ -90,7 +90,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
+        public void ignoresSitesWithOnlyPublicOperators() {
             List<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
                             .withSiteId(siteId1)
@@ -120,7 +120,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
+        public void ignoresSitesWithOnlyPublicOperators() {
             PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<>();
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
@@ -310,7 +310,7 @@ public class PrivateSiteUtilTest {
 
 
         @Test
-        public void testGenerateEncryptionKeyData() throws InvalidRoleException {
+        public void testGenerateEncryptionKeyData() {
             final Set<Role> readerRole = new HashSet<>();
             readerRole.add(Role.ID_READER);
 
@@ -389,7 +389,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
+        public void ignoresSitesWithOnlyPublicOperators() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
                             .withSiteId(siteId1)
@@ -514,7 +514,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void testGenerateEncryptionKeyAclData() throws InvalidRoleException {
+        public void testGenerateEncryptionKeyAclData() {
             final OperatorKey[] operatorKeys = {
                     new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
                     new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
@@ -549,7 +549,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void testGenerateEncryptionKeyAclDataForEachSite() throws InvalidRoleException {
+        public void testGenerateEncryptionKeyAclDataForEachSite() {
             final OperatorKey[] operatorKeys = {
                     new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
                     new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
@@ -602,7 +602,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
+        public void ignoresSitesWithOnlyPublicOperators() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
                             .withSiteId(siteId1)
@@ -660,7 +660,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void testGenerateSiteData() throws InvalidRoleException {
+        public void testGenerateSiteData() {
             final Site[] sites = {
                     new Site(Const.Data.AdvertisingTokenSiteId, "1", true),
                     new Site(3, "2", true),
@@ -706,7 +706,7 @@ public class PrivateSiteUtilTest {
     static class OperatorBuilder {
         private final OperatorKey operator = new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
 
-        OperatorBuilder() throws InvalidRoleException {
+        OperatorBuilder() {
         }
 
         public OperatorBuilder withSiteId(int siteId) {
