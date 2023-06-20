@@ -38,7 +38,9 @@ public class PrivateSiteUtilTest {
             .withType(OperatorType.PRIVATE)
             .thatIsEnabled()
             .build();
-    ;
+
+    public PrivateSiteUtilTest() throws InvalidRoleException {
+    }
 
     @Nested
     class Client {
@@ -88,7 +90,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() {
+        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
             List<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
                             .withSiteId(siteId1)
@@ -118,7 +120,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() {
+        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
             PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<>();
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
@@ -308,7 +310,7 @@ public class PrivateSiteUtilTest {
 
 
         @Test
-        public void testGenerateEncryptionKeyData() {
+        public void testGenerateEncryptionKeyData() throws InvalidRoleException {
             final Set<Role> readerRole = new HashSet<>();
             readerRole.add(Role.ID_READER);
 
@@ -387,7 +389,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() {
+        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
                             .withSiteId(siteId1)
@@ -512,7 +514,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void testGenerateEncryptionKeyAclData() {
+        public void testGenerateEncryptionKeyAclData() throws InvalidRoleException {
             final OperatorKey[] operatorKeys = {
                     new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
                     new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
@@ -547,7 +549,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void testGenerateEncryptionKeyAclDataForEachSite() {
+        public void testGenerateEncryptionKeyAclDataForEachSite() throws InvalidRoleException {
             final OperatorKey[] operatorKeys = {
                     new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
                     new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
@@ -600,7 +602,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void ignoresSitesWithOnlyPublicOperators() {
+        public void ignoresSitesWithOnlyPublicOperators() throws InvalidRoleException {
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
                             .withSiteId(siteId1)
@@ -658,7 +660,7 @@ public class PrivateSiteUtilTest {
         }
 
         @Test
-        public void testGenerateSiteData() {
+        public void testGenerateSiteData() throws InvalidRoleException {
             final Site[] sites = {
                     new Site(Const.Data.AdvertisingTokenSiteId, "1", true),
                     new Site(3, "2", true),
@@ -703,6 +705,9 @@ public class PrivateSiteUtilTest {
 
     static class OperatorBuilder {
         private final OperatorKey operator = new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
+
+        OperatorBuilder() throws InvalidRoleException {
+        }
 
         public OperatorBuilder withSiteId(int siteId) {
             this.operator.setSiteId(siteId);
@@ -754,7 +759,6 @@ public class PrivateSiteUtilTest {
             roles.add(Role.ID_READER);
             return this;
         }
-
 
         public ClientKey build() {
             return new ClientKey("key3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);

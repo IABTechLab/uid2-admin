@@ -4,6 +4,7 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
+import com.uid2.shared.auth.InvalidRoleException;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
@@ -48,7 +49,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorAdd(Vertx vertx, VertxTestContext testContext) {
+    void operatorAdd(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPTOUT);
@@ -81,7 +82,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorKeyAddEmptyRole(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeyAddEmptyRole(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
@@ -113,7 +114,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorKeyAddWithoutRole(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeyAddWithoutRole(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
@@ -139,7 +140,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
+    void operatorUpdate(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.ADMINISTRATOR);
         setSites(new Site(5, "test_site", true));
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)), OperatorType.PRIVATE));
@@ -172,7 +173,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     //update Public Operator Status to Private
     @Test
-    void operatorFlipPublicOperatorStatusViaUpdate(Vertx vertx, VertxTestContext testContext) {
+    void operatorFlipPublicOperatorStatusViaUpdate(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.ADMINISTRATOR);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
@@ -198,7 +199,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorKeySetRole(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeySetRole(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPTOUT);
@@ -225,21 +226,21 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorKeySetInvalidRole(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeySetInvalidRole(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
         post(vertx, "api/operator/roles?name=test_operator&roles=operator,role", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void operatorKeySetEmptyRole(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeySetEmptyRole(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
         post(vertx, "api/operator/roles?name=test_operator&roles=", "", expectHttpError(testContext, 400));
     }
 
     @Test
-    void operatorKeySetRoleWithoutRoleParam(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeySetRoleWithoutRoleParam(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
         post(vertx, "api/operator/roles?name=test_operator", "", expectHttpError(testContext, 400));

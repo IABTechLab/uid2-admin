@@ -13,6 +13,7 @@ import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.shared.auth.InvalidRoleException;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
@@ -44,12 +45,15 @@ public class SiteSyncJobTest {
                     1618873215,
                     false,
                     scopedSiteId,
-                    new HashSet<>(Collections.singletonList(Role.ID_READER)),
+                    new HashSet<>(Collections.singletonList(Role.OPERATOR)),
                     OperatorType.PRIVATE));
 
     Site site = new Site(scopedSiteId, "site 1", true);
     private SiteStoreFactory siteStoreFactory;
     private FileManager fileManager;
+
+    public SiteSyncJobTest() throws InvalidRoleException {
+    }
 
     @BeforeEach
     void setUp() {

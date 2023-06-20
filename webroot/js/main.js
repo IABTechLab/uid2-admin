@@ -16,9 +16,18 @@ function doApiCall(method, url, outputDiv, errorDiv) {
             $(outputDiv).html(pretty);
         },
         error: function (err) {
-            $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText + ', Message: ' + err.responseText);
+            $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
         }
     });
+}
+
+function isJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
 
 function init() {
@@ -50,7 +59,7 @@ function init() {
             window.__uid2_admin_token = window.__uid2_admin_user.key;
         },
         error: function (err) {
-            // alert('Error: ' + err.status + ': ' + err.statusText);
+            // alert('Error: ' + err.status + ': ' + JSON.parse(err).message);
             $('.notauthed').show();
         }
     });
