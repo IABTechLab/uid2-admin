@@ -1,9 +1,11 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SearchService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.ClientKey;
+import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -14,9 +16,11 @@ import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,11 +33,11 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        return new SearchService(auth, clientKeyProvider);
+        return new SearchService(auth, clientKeyProvider, operatorKeyProvider, adminUserProvider);
     }
 
     @ParameterizedTest
-    @MethodSource("nonAdminRolesTestData")
+    @EnumSource(value = Role.class, names = {"ADMINISTRATOR"}, mode = EnumSource.Mode.EXCLUDE)
     void searchAsNonAdminFails(Role role, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(role);
         get(vertx, searchUrl, expectHttpError(testContext, 401));
@@ -82,6 +86,17 @@ public class SearchServiceTest extends ServiceTestBase {
         });
     }
 
+    private static Stream<Arguments> shortParameterValues() {
+        return Stream.of(
+                Arguments.of("a"),
+                Arguments.of("aa"),
+                Arguments.of("aaa"),
+                Arguments.of("aaaa"),
+                Arguments.of("aaaaa"),
+                Arguments.of("aaaaaa")
+        );
+    }
+
     @Test
     void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
         fakeAuth(Role.ADMINISTRATOR);
@@ -101,22 +116,28 @@ public class SearchServiceTest extends ServiceTestBase {
 
         setClientKeys(clientKeys);
         get(vertx, searchUrl + "fCXrMMfs", response -> {
-            assertTrue(response.succeeded());
-            HttpResponse httpResponse = response.result();
-            JsonArray result = httpResponse.bodyAsJsonArray();
-            assertEquals(1, result.size());
-            JsonObject client = result.getJsonObject(0);
-            AssertClientKey(clientKeys[0], client);
-            testContext.completeNow();
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(1, result.size());
+                JsonObject client = result.getJsonObject(0);
+                assertClientKey(clientKeys[0], client);
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
         });
     }
 
     @ParameterizedTest
-    @MethodSource("clientsToFindBySearchString")
-    void searchClientKeyFindsKeyNew(ClientKey[] clientKeys, String searchString, Vertx vertx, VertxTestContext testContext) {
+    @MethodSource("searchByClientKey")
+    void searchByClientKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
 
         get(vertx, searchUrl + searchString, response -> {
             try {
@@ -125,7 +146,7 @@ public class SearchServiceTest extends ServiceTestBase {
                 JsonArray result = httpResponse.bodyAsJsonArray();
                 assertEquals(1, result.size());
                 JsonObject client = result.getJsonObject(0);
-                AssertClientKey(clientKeys[1], client);
+                assertClientKey(clientKeys[1], client);
                 testContext.completeNow();
             } catch (Throwable ex) {
                 testContext.failNow(ex);
@@ -133,23 +154,29 @@ public class SearchServiceTest extends ServiceTestBase {
         });
     }
 
-    private static Stream<Arguments> clientsToFindBySearchString() {
+
+    private static Stream<Arguments> searchByClientKey() {
         ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
+
         String key = clientKeys[1].getKey();
         return Stream.of(
-                Arguments.of(clientKeys, key.substring(0, 8)),
-                Arguments.of(clientKeys, key.substring(key.length() - 8, key.length())),
-                Arguments.of(clientKeys, key.substring(10, 20)),
-                Arguments.of(clientKeys, key)
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(0, 8)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8, key.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(10, 20)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("clientsToNotFindByCase")
-    void searchClientKeyDoesNotFindDifferentCase(ClientKey[] clientKeys, String searchString, Vertx vertx, VertxTestContext testContext) {
+    @MethodSource("searchByClientKeyNotFound")
+    void searchByClientKeyNotFound(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
 
         get(vertx, searchUrl + searchString, response -> {
             try {
@@ -164,65 +191,356 @@ public class SearchServiceTest extends ServiceTestBase {
         });
     }
 
-    private static Stream<Arguments> clientsToNotFindByCase() {
+    private static Stream<Arguments> searchByClientKeyNotFound() {
         ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
         String key = clientKeys[1].getKey();
         return Stream.of(
-                Arguments.of(clientKeys, key.toLowerCase()),
-                Arguments.of(clientKeys, key.toUpperCase())
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.toLowerCase()),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.toUpperCase())
         );
     }
 
+    @ParameterizedTest
+    @MethodSource("searchByClientSecretSuccess")
+    void searchByClientSecretSuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
 
-    private static Stream<Arguments> nonAdminRolesTestData() {
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(1, result.size());
+                JsonObject client = result.getJsonObject(0);
+                assertClientKey(clientKeys[1], client);
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByClientSecretSuccess() {
+        ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
+
+        String secret = clientKeys[1].getSecret();
         return Stream.of(
-                Arguments.of(Role.GENERATOR),
-                Arguments.of(Role.MAPPER),
-                Arguments.of(Role.ID_READER),
-                Arguments.of(Role.SHARER),
-                Arguments.of(Role.OPERATOR),
-                Arguments.of(Role.OPTOUT),
-                Arguments.of(Role.CLIENTKEY_ISSUER),
-                Arguments.of(Role.OPERATOR_MANAGER),
-                Arguments.of(Role.SECRET_MANAGER),
-                Arguments.of(Role.SHARING_PORTAL),
-                Arguments.of(Role.PRIVATE_SITE_REFRESHER)
+                Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(0, 8)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(secret.length() - 8, secret.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(10, 20)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, secret)
         );
     }
 
-    private static Stream<Arguments> shortParameterValues() {
+    @ParameterizedTest
+    @MethodSource("searchByOperatorKeySuccess")
+    void searchByOperatorKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(1, result.size());
+                JsonObject operator = result.getJsonObject(0);
+                assertOperatorKey(operatorKeys[1], operator);
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByOperatorKeySuccess() {
+        ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
+
+        String key = operatorKeys[1].getKey();
         return Stream.of(
-                Arguments.of("a"),
-                Arguments.of("aa"),
-                Arguments.of("aaa"),
-                Arguments.of("aaaa"),
-                Arguments.of("aaaaa"),
-                Arguments.of("aaaaaa")
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(0, 8)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8, key.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(10, 20)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key)
         );
     }
 
-    private static void AssertClientKey(ClientKey expected, JsonObject actual) {
+    @ParameterizedTest
+    @MethodSource("searchByAdminKeySuccess")
+    void searchByAdminKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(1, result.size());
+                JsonObject operator = result.getJsonObject(0);
+                assertAdminUser(adminUsers[1], operator);
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByAdminKeySuccess() {
+        ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
+
+        String key = adminUsers[1].getKey();
+        return Stream.of(
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(0, 8)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8, key.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(10, 20)),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("searchByAllKeySuccess")
+    void searchByAllKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(9, result.size()); // all the clientkeys, operatorkeys and admin users must be returned
+                for (int i = 0; i < 3; i++) {
+                    JsonObject clientKey = result.getJsonObject(i);
+                    assertClientKey(clientKeys[i], clientKey);
+                }
+                for (int i = 3; i < 6; i++) {
+                    JsonObject clientKey = result.getJsonObject(i);
+                    assertOperatorKey(operatorKeys[i - 3], clientKey);
+                }
+                for (int i = 6; i < 9; i++) {
+                    JsonObject clientKey = result.getJsonObject(i);
+                    assertAdminUser(adminUsers[i - 6], clientKey);
+                }
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByAllKeySuccess() {
+        ClientKey[] clientKeys = getClientKeys("SHAREDVALUE", "");
+        OperatorKey[] operatorKeys = getOperatorKeys("SHAREDVALUE");
+        AdminUser[] adminUsers = getAdminUsers("SHAREDVALUE");
+
+        return Stream.of(
+                Arguments.of(clientKeys, operatorKeys, adminUsers, "SHAREDVALUE")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("searchByAllClientKeySuccess")
+    void searchByAllClientKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(3, result.size()); // all the clientkeys, operatorkeys and admin users must be returned
+                for (int i = 0; i < 3; i++) {
+                    JsonObject clientKey = result.getJsonObject(i);
+                    assertClientKey(clientKeys[i], clientKey);
+                }
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByAllClientKeySuccess() {
+        ClientKey[] clientKeys = getClientKeys("SHAREDVALUE", "");
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
+
+        return Stream.of(
+                Arguments.of(clientKeys, operatorKeys, adminUsers, "SHAREDVALUE")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("searchByAllOperatorKeySuccess")
+    void searchByAllOperatorKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(3, result.size()); // all the clientkeys, operatorkeys and admin users must be returned
+                for (int i = 0; i < 3; i++) {
+                    JsonObject key = result.getJsonObject(i);
+                    assertOperatorKey(operatorKeys[i], key);
+                }
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByAllOperatorKeySuccess() {
+        ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys("SHAREDVALUE");
+        AdminUser[] adminUsers = getAdminUsers();
+
+        return Stream.of(
+                Arguments.of(clientKeys, operatorKeys, adminUsers, "SHAREDVALUE")
+        );
+    }
+    @ParameterizedTest
+    @MethodSource("searchByAllAdminKeySuccess")
+    void searchByAllAdminKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setClientKeys(clientKeys);
+        setOperatorKeys(operatorKeys);
+        setAdminUsers(adminUsers);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonArray result = httpResponse.bodyAsJsonArray();
+                assertEquals(3, result.size());
+                for (int i = 0; i < 3; i++) {
+                    JsonObject key = result.getJsonObject(i);
+                    assertAdminUser(adminUsers[i], key);
+                }
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    private static Stream<Arguments> searchByAllAdminKeySuccess() {
+        ClientKey[] clientKeys = getClientKeys();
+        OperatorKey[] operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers("SHAREDVALUE");
+
+        return Stream.of(
+                Arguments.of(clientKeys, operatorKeys, adminUsers, "SHAREDVALUE")
+        );
+    }
+
+    private static ClientKey[] getClientKeys() {
+        return getClientKeys("", "");
+    }
+
+    private static ClientKey[] getClientKeys(String keySuffix, String secretSuffix) {
+        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
+                .size(3)
+                .generate(field(ClientKey::getKey), gen -> gen.string().suffix(keySuffix).minLength(44).mixedCase())
+                .generate(field(ClientKey::getSecret), gen -> gen.string().suffix(secretSuffix).minLength(44).mixedCase())
+                .create().toArray(new ClientKey[0]);
+        return clientKeys;
+    }
+
+    private static OperatorKey[] getOperatorKeys() {
+        return getOperatorKeys("");
+    }
+
+    private static OperatorKey[] getOperatorKeys(String suffix) {
+        OperatorKey[] operatorKeys = Instancio.ofList(OperatorKey.class)
+                .size(3)
+                .generate(field(OperatorKey::getKey), gen -> gen.string().suffix(suffix).minLength(44).mixedCase())
+                .create().toArray(new OperatorKey[0]);
+        return operatorKeys;
+    }
+
+    private static AdminUser[] getAdminUsers() {
+        return getAdminUsers("");
+    }
+
+    private static AdminUser[] getAdminUsers(String suffix) {
+        AdminUser[] adminUsers = Instancio.ofList(AdminUser.class)
+                .size(3)
+                .generate(field(AdminUser::getKey), gen -> gen.string().suffix(suffix).minLength(44).mixedCase())
+                .create().toArray(new AdminUser[0]);
+        return adminUsers;
+    }
+
+    private static void assertClientKey(ClientKey expected, JsonObject actual) {
         assertEquals(expected.getKey(), actual.getString("key"));
         assertEquals(expected.getSecret(), actual.getString("secret"));
         assertEquals(expected.getName(), actual.getString("name"));
         assertEquals(expected.getContact(), actual.getString("contact"));
         assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
 
-        List<Role> actualRoles = actual.getJsonArray("roles").stream()
-                .map(r -> Role.valueOf((String) r))
-                .collect(Collectors.toList());
-        assertEquals(expected.getRoles().size(), actualRoles.size());
-        for (Role role : expected.getRoles()) {
-            assertTrue(actualRoles.contains(role));
-        }
+        assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
     }
 
-    private static ClientKey[] getClientKeys() {
-        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
-                .size(3)
-                .generate(field(ClientKey::getKey), gen -> gen.string().minLength(44).mixedCase())
-                .generate(field(ClientKey::getSecret), gen -> gen.string().minLength(44).mixedCase())
-                .create().toArray(new ClientKey[0]);
-        return clientKeys;
+    private static void assertOperatorKey(OperatorKey expected, JsonObject actual) {
+        assertEquals(expected.getKey(), actual.getString("key"));
+        assertEquals(expected.getName(), actual.getString("name"));
+        assertEquals(expected.getContact(), actual.getString("contact"));
+        assertEquals(expected.getProtocol(), actual.getString("protocol"));
+        assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
+        assertEquals(expected.getOperatorType().toString(), actual.getString("operator_type"));
+
+        assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
+    }
+
+    private static void assertAdminUser(AdminUser expected, JsonObject actual) {
+        assertEquals(expected.getKey(), actual.getString("key"));
+        assertEquals(expected.getName(), actual.getString("name"));
+        assertEquals(expected.getContact(), actual.getString("contact"));
+        assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
+
+        assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
+    }
+
+    private static void assertRoles(Set<Role> expectedRoles, JsonArray actualRoles) {
+        List<Role> actualRolesList = actualRoles.stream()
+                .map(r -> Role.valueOf((String) r))
+                .collect(Collectors.toList());
+        assertEquals(expectedRoles.size(), actualRolesList.size());
+        for (Role role : expectedRoles) {
+            assertTrue(actualRolesList.contains(role));
+        }
     }
 }
