@@ -16,7 +16,7 @@ function doApiCall(method, url, outputDiv, errorDiv) {
             $(outputDiv).html(pretty);
         },
         error: function (err) {
-            $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText);
+            $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText + ', Message: ' + err.responseText);
         }
     });
 }

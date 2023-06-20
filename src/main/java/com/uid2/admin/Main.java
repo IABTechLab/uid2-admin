@@ -154,7 +154,8 @@ public class Main {
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
-                    new JobDispatcherService(auth, jobDispatcher)
+                    new JobDispatcherService(auth, jobDispatcher),
+                    new SearchService(auth, clientKeyProvider, operatorKeyProvider, adminUserProvider)
             };
 
             RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
