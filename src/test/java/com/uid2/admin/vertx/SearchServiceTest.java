@@ -18,6 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Set;
@@ -119,9 +120,10 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(1, result.size());
-                JsonObject client = result.getJsonObject(0);
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("ClientKeys");
+                assertEquals(1, foundKeys.size());
+                JsonObject client = foundKeys.getJsonObject(0);
                 assertClientKey(clientKeys[0], client);
                 testContext.completeNow();
             } catch (Throwable t) {
@@ -143,9 +145,10 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(1, result.size());
-                JsonObject client = result.getJsonObject(0);
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("ClientKeys");
+                assertEquals(1, foundKeys.size());
+                JsonObject client = foundKeys.getJsonObject(0);
                 assertClientKey(clientKeys[1], client);
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -182,8 +185,15 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(0, result.size());
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
+                JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
+                JsonArray foundAdminKeys = result.getJsonArray("AdministratorKeys");
+
+                assertEquals(0, foundClientKeys.size());
+                assertEquals(0, foundOperatorKeys.size());
+                assertEquals(0, foundAdminKeys.size());
+
                 testContext.completeNow();
             } catch (Throwable ex) {
                 testContext.failNow(ex);
@@ -215,9 +225,10 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(1, result.size());
-                JsonObject client = result.getJsonObject(0);
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("ClientKeys");
+                assertEquals(1, foundKeys.size());
+                JsonObject client = foundKeys.getJsonObject(0);
                 assertClientKey(clientKeys[1], client);
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -253,9 +264,10 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(1, result.size());
-                JsonObject operator = result.getJsonObject(0);
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("OperatorKeys");
+                assertEquals(1, foundKeys.size());
+                JsonObject operator = foundKeys.getJsonObject(0);
                 assertOperatorKey(operatorKeys[1], operator);
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -291,9 +303,10 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(1, result.size());
-                JsonObject operator = result.getJsonObject(0);
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("AdministratorKeys");
+                assertEquals(1, foundKeys.size());
+                JsonObject operator = foundKeys.getJsonObject(0);
                 assertAdminUser(adminUsers[1], operator);
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -329,19 +342,21 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(9, result.size()); // all the clientkeys, operatorkeys and admin users must be returned
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
+                JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
+                JsonArray foundAdminKeys = result.getJsonArray("AdministratorKeys");
+
+                assertEquals(3, foundClientKeys.size());
+                assertEquals(3, foundOperatorKeys.size());
+                assertEquals(3, foundAdminKeys.size());
                 for (int i = 0; i < 3; i++) {
-                    JsonObject clientKey = result.getJsonObject(i);
+                    JsonObject clientKey = foundClientKeys.getJsonObject(i);
                     assertClientKey(clientKeys[i], clientKey);
-                }
-                for (int i = 3; i < 6; i++) {
-                    JsonObject clientKey = result.getJsonObject(i);
-                    assertOperatorKey(operatorKeys[i - 3], clientKey);
-                }
-                for (int i = 6; i < 9; i++) {
-                    JsonObject clientKey = result.getJsonObject(i);
-                    assertAdminUser(adminUsers[i - 6], clientKey);
+                    JsonObject operatorKey = foundOperatorKeys.getJsonObject(i);
+                    assertOperatorKey(operatorKeys[i], operatorKey);
+                    JsonObject adminKey = foundAdminKeys.getJsonObject(i);
+                    assertAdminUser(adminUsers[i], adminKey);
                 }
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -373,10 +388,12 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(3, result.size()); // all the clientkeys, operatorkeys and admin users must be returned
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("ClientKeys");
+
+                assertEquals(3, foundKeys.size());
                 for (int i = 0; i < 3; i++) {
-                    JsonObject clientKey = result.getJsonObject(i);
+                    JsonObject clientKey = foundKeys.getJsonObject(i);
                     assertClientKey(clientKeys[i], clientKey);
                 }
                 testContext.completeNow();
@@ -409,11 +426,13 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(3, result.size()); // all the clientkeys, operatorkeys and admin users must be returned
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("OperatorKeys");
+
+                assertEquals(3, foundKeys.size());
                 for (int i = 0; i < 3; i++) {
-                    JsonObject key = result.getJsonObject(i);
-                    assertOperatorKey(operatorKeys[i], key);
+                    JsonObject operatorKey = foundKeys.getJsonObject(i);
+                    assertOperatorKey(operatorKeys[i], operatorKey);
                 }
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -431,6 +450,7 @@ public class SearchServiceTest extends ServiceTestBase {
                 Arguments.of(clientKeys, operatorKeys, adminUsers, "SHAREDVALUE")
         );
     }
+
     @ParameterizedTest
     @MethodSource("searchByAllAdminKeySuccess")
     void searchByAllAdminKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
@@ -444,17 +464,48 @@ public class SearchServiceTest extends ServiceTestBase {
             try {
                 assertTrue(response.succeeded());
                 HttpResponse httpResponse = response.result();
-                JsonArray result = httpResponse.bodyAsJsonArray();
-                assertEquals(3, result.size());
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("AdministratorKeys");
+
+                assertEquals(3, foundKeys.size());
                 for (int i = 0; i < 3; i++) {
-                    JsonObject key = result.getJsonObject(i);
-                    assertAdminUser(adminUsers[i], key);
+                    JsonObject adminKey = foundKeys.getJsonObject(i);
+                    assertAdminUser(adminUsers[i], adminKey);
                 }
                 testContext.completeNow();
             } catch (Throwable ex) {
                 testContext.failNow(ex);
             }
         });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"OPLCLXt/gh", "/ght6tOD", "t/ght6tOD+8", "+8mmodEtI3J6", "oqMMFk=", "t/ght6tOD%2B8", "%2B8mmodEtI3J6"})
+    void searchBySpecialCharactersSuccess(String searchString, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
+                .size(1)
+                .set(field(ClientKey::getSecret), "OPLCLXt/ght6tOD+8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=")
+                .create().toArray(new ClientKey[0]);
+        setClientKeys(clientKeys);
+
+        get(vertx, searchUrl + searchString, response -> {
+            try {
+                assertTrue(response.succeeded());
+                HttpResponse httpResponse = response.result();
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("ClientKeys");
+
+                assertEquals(1, foundKeys.size());
+                JsonObject clientKey = foundKeys.getJsonObject(0);
+                assertClientKey(clientKeys[0], clientKey);
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+
     }
 
     private static Stream<Arguments> searchByAllAdminKeySuccess() {

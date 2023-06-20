@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.vertx.ResponseUtil;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -15,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-
-import java.util.Optional;
 
 public class SearchService implements IService {
     private static final String queryParameter = "keyOrSecret";
@@ -50,31 +47,42 @@ public class SearchService implements IService {
                 ResponseUtil.error(rc, 400, "Invalid parameters");
                 return;
             }
-            final String queryParam = rc.queryParam("keyOrSecret").get(0);
-            if (queryParam.length() < 6) {
+            final String queryParamInput = rc.queryParam("keyOrSecret").get(0);
+            if (queryParamInput.length() < 6) {
                 ResponseUtil.error(rc, 400, "Parameter too short");
             }
 
-            JsonArray results = new JsonArray();
+            // the only special character that is a problem in the keys is a space, so replace it.
+            // does also accept URL encoded query strings
+            final String queryParam = queryParamInput.replace(' ', '+');
+
+            JsonArray clientKeyResults = new JsonArray();
+            JsonArray operatorKeyResults = new JsonArray();
+            JsonArray adminUserResults = new JsonArray();
+            JsonObject results = new JsonObject();
+            results.put("ClientKeys", clientKeyResults);
+            results.put("OperatorKeys", operatorKeyResults );
+            results.put("AdministratorKeys", adminUserResults);
 
             this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getKey().contains(queryParam) || c.getSecret().contains(queryParam))
-                    .forEach(results::add);
+                    .forEach(clientKeyResults::add);
 
             this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getKey().contains(queryParam))
-                    .forEach(results::add);
+                    .forEach(operatorKeyResults::add);
 
             this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getKey().contains(queryParam))
-                    .forEach(results::add);
+                    .forEach(adminUserResults::add);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(results.encode());
-        } catch (Exception ex) {
+        } catch (Throwable t) {
             // does this go to some handler that removes sensitive info?
-            rc.fail(500, ex);
+            LOGGER.error("Error executing search", t);
+            rc.fail(500, t);
         }
     }
 }
