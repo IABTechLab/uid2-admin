@@ -27,7 +27,9 @@ public class OperatorKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
 
     private static final Set<Set<Role>> VALID_ROLE_COMBINATIONS = (Set.of(
+            new TreeSet<>(Set.of()), // Empty role input is accepted as OPERATOR will be automatically added
             new TreeSet<>(Set.of(Role.OPERATOR)),
+            new TreeSet<>(Set.of(Role.OPTOUT)),
             new TreeSet<>(Set.of(Role.OPTOUT_SERVICE)),
             new TreeSet<>(Set.of(Role.OPERATOR, Role.OPTOUT))
     ));
