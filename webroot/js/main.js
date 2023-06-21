@@ -20,6 +20,29 @@ function doApiCall(method, url, outputDiv, errorDiv) {
         }
     });
 }
+function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
+    $(outputDiv).html('');
+    $(errorDiv).html('');
+
+    authHeader = "Bearer " + window.__uid2_admin_token;
+
+    $.ajax({
+        type: method,
+        url: url,
+        data: body,
+        dataType: 'text',
+        headers: {
+            "Authorization": authHeader
+        },
+        success: function (text) {
+            var pretty = JSON.stringify(JSON.parse(text),null,2);
+            $(outputDiv).html(pretty);
+        },
+        error: function (err) {
+            $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
+        }
+    });
+}
 
 function isJsonString(str) {
     try {
