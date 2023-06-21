@@ -41,7 +41,7 @@
         const text = $('#standardOutput').html();
         if (text != '') {
             const textToHighlight = $('#key').val();
-            const highlightedText = text.replace(textToHighlight, '<span style="background-color: yellow;">'+textToHighlight+'</span>');
+            const highlightedText = text.replaceAll(textToHighlight, '<span style="background-color: yellow;">'+textToHighlight+'</span>');
             $('#standardOutput').html(highlightedText);
         }
     });
