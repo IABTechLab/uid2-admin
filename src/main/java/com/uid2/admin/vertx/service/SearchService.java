@@ -47,7 +47,7 @@ public class SearchService implements IService {
             final String queryParam = rc.body().asString();
 
             if (queryParam.length() < QUERY_PARAMETER_MIN_LENGTH) {
-                ResponseUtil.error(rc, 400, "Parameter too short. Must be 6 or more characters.");
+                ResponseUtil.error(rc, 400, String.format("Parameter too short. Must be %d or more characters.", QUERY_PARAMETER_MIN_LENGTH));
             }
 
             JsonArray clientKeyResults = new JsonArray();
@@ -55,7 +55,7 @@ public class SearchService implements IService {
             JsonArray adminUserResults = new JsonArray();
             JsonObject results = new JsonObject();
             results.put("ClientKeys", clientKeyResults);
-            results.put("OperatorKeys", operatorKeyResults );
+            results.put("OperatorKeys", operatorKeyResults);
             results.put("AdministratorKeys", adminUserResults);
 
             this.clientKeyProvider.getAll()
