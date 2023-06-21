@@ -16,7 +16,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class SearchService implements IService {
-    private static final String QUERY_PARAMETER = "keyOrSecret";
     private static final Integer QUERY_PARAMETER_MIN_LENGTH = 6;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
@@ -38,24 +37,18 @@ public class SearchService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/search").handler(
+        router.post("/api/search").handler(
                 auth.handle(this::handleSearch, Role.ADMINISTRATOR));
     }
 
     private void handleSearch(RoutingContext rc) {
         try {
-            if (!rc.queryParams().contains(QUERY_PARAMETER)) {
-                ResponseUtil.error(rc, 400, "Invalid parameters");
-                return;
-            }
-            final String queryParamInput = rc.queryParam("keyOrSecret").get(0);
-            if (queryParamInput.length() < QUERY_PARAMETER_MIN_LENGTH) {
+            // body contains the query
+            final String queryParam = rc.body().asString();
+
+            if (queryParam.length() < QUERY_PARAMETER_MIN_LENGTH) {
                 ResponseUtil.error(rc, 400, "Parameter too short. Must be 6 or more characters.");
             }
-
-            // the only special character that is a problem in the keys is a space, so replace it.
-            // does also accept URL encoded query strings
-            final String queryParam = queryParamInput.replace(' ', '+');
 
             JsonArray clientKeyResults = new JsonArray();
             JsonArray operatorKeyResults = new JsonArray();

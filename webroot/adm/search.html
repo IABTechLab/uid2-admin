@@ -30,10 +30,10 @@
 <script language="JavaScript">
     $(document).ready(function () {
         $('#doSearch').on('click', function () {
-            var keyString = encodeURIComponent($('#key').val());
-            var url = '/api/search?keyOrSecret=' + keyString;
+            var keyString = $('#key').val();
+            const url = '/api/search';
 
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
+            doApiCallWithBody('POST', url, keyString, '#standardOutput', '#errorOutput');
         });
     });
 

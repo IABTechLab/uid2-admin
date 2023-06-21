@@ -8,6 +8,7 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -29,7 +30,7 @@ import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SearchServiceTest extends ServiceTestBase {
-    private final static String searchUrl = "api/search?keyOrSecret=";
+    private final static String searchUrl = "api/search";
 
     @Override
     protected IService createService() {
@@ -40,13 +41,13 @@ public class SearchServiceTest extends ServiceTestBase {
     @EnumSource(value = Role.class, names = {"ADMINISTRATOR"}, mode = EnumSource.Mode.EXCLUDE)
     void searchAsNonAdminFails(Role role, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(role);
-        get(vertx, searchUrl, expectHttpError(testContext, 401));
+        post(vertx, searchUrl, "1234567", expectHttpError(testContext, 401));
     }
 
     @Test
     void searchAsAdminPasses(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        get(vertx, searchUrl + "123456", response -> {
+        post(vertx, searchUrl, "123456", response -> {
             assertAll(
                     "SearchAsAdminPasses",
                     () -> assertTrue(response.succeeded()),
@@ -58,41 +59,30 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchWithoutRoleFails(Vertx vertx, VertxTestContext testContext) {
-        get(vertx, searchUrl, expectHttpError(testContext, 401));
-    }
-
-    @Test
-    void searchWithoutQueryStringReturns400Error(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
-        get(vertx, "api/search?invalid=123", response -> {
-            assertAll(
-                    "searchWithoutQueryStringReturns400Error",
-                    () -> assertTrue(response.succeeded()),
-                    () -> assertEquals(400, response.result().statusCode()),
-                    () -> assertEquals("{\"message\":\"Invalid parameters\",\"status\":\"error\"}", response.result().bodyAsString())
-            );
-
-            testContext.completeNow();
-        });
+        post(vertx, searchUrl, "1234567", expectHttpError(testContext, 401));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa"})
+    @ValueSource(strings = {"a", "aa", "aaa", "aaaa", "aaaaa"})
     void searchWithShortQueryStringReturns400Error(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        get(vertx, String.format("api/search?keyOrSecret=$s", parameter), response -> {
-            assertAll(
-                    "searchWithShortQueryStringReturns400Error",
-                    () -> assertTrue(response.succeeded()),
-                    () -> assertEquals(400, response.result().statusCode()),
-                    () -> assertEquals("{\"message\":\"Parameter too short. Must be 6 or more characters.\",\"status\":\"error\"}", response.result().bodyAsString())
-            );
-            testContext.completeNow();
+        post(vertx, "api/search", parameter, response -> {
+            try {
+                assertAll(
+                        "searchWithShortQueryStringReturns400Error",
+                        () -> assertTrue(response.succeeded()),
+                        () -> assertEquals(400, response.result().statusCode()),
+                        () -> assertEquals("{\"message\":\"Parameter too short. Must be 6 or more characters.\",\"status\":\"error\"}", response.result().bodyAsString())
+                );
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
         });
     }
 
     @Test
-    void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
+    void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         ClientKey[] clientKeys = new ClientKey[3];
         clientKeys[0] = new ClientKey("LOCALfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
@@ -109,9 +99,9 @@ public class SearchServiceTest extends ServiceTestBase {
                 .withSiteId(5);
 
         setClientKeys(clientKeys);
-        get(vertx, searchUrl + "fCXrMMfs", response -> {
+        post(vertx, searchUrl, "fCXrMMfs", response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
                 JsonObject client = foundKeys.getJsonObject(0);
@@ -138,9 +128,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
                 JsonObject client = foundKeys.getJsonObject(0);
@@ -166,7 +156,7 @@ public class SearchServiceTest extends ServiceTestBase {
         String key = clientKeys[1].getKey();
         return Stream.of(
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(0, 8)),
-                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8, key.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(10, 20)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key)
         );
@@ -181,10 +171,10 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
 
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
                 JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
@@ -225,9 +215,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
                 JsonObject client = foundKeys.getJsonObject(0);
@@ -253,7 +243,7 @@ public class SearchServiceTest extends ServiceTestBase {
         String secret = clientKeys[1].getSecret();
         return Stream.of(
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(0, 8)),
-                Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(secret.length() - 8, secret.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(secret.length() - 8)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(10, 20)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret)
         );
@@ -268,9 +258,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("OperatorKeys");
                 JsonObject operator = foundKeys.getJsonObject(0);
@@ -296,7 +286,7 @@ public class SearchServiceTest extends ServiceTestBase {
         String key = operatorKeys[1].getKey();
         return Stream.of(
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(0, 8)),
-                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8, key.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(10, 20)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key)
         );
@@ -311,9 +301,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("AdministratorKeys");
                 JsonObject operator = foundKeys.getJsonObject(0);
@@ -339,7 +329,7 @@ public class SearchServiceTest extends ServiceTestBase {
         String key = adminUsers[1].getKey();
         return Stream.of(
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(0, 8)),
-                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8, key.length())),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(key.length() - 8)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.substring(10, 20)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key)
         );
@@ -354,9 +344,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
                 JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
@@ -371,7 +361,7 @@ public class SearchServiceTest extends ServiceTestBase {
                 );
 
                 for (int i = 0; i < 3; i++) {
-                    final Integer counter = i;
+                    final int counter = i;
                     JsonObject clientKey = foundClientKeys.getJsonObject(i);
                     JsonObject operatorKey = foundOperatorKeys.getJsonObject(i);
                     JsonObject adminKey = foundAdminKeys.getJsonObject(i);
@@ -408,9 +398,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
 
@@ -450,9 +440,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("OperatorKeys");
 
@@ -492,9 +482,9 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("AdministratorKeys");
 
@@ -515,7 +505,7 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"OPLCLXt/gh", "/ght6tOD", "t/ght6tOD+8", "+8mmodEtI3J6", "oqMMFk=", "t/ght6tOD%2B8", "%2B8mmodEtI3J6"})
+    @ValueSource(strings = {"OPLCLXt/gh", "/ght6tOD", "t/ght6tOD+8", "+8mmodEtI3J6", "oqMMFk="})
     void searchBySpecialCharactersSuccess(String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -525,9 +515,9 @@ public class SearchServiceTest extends ServiceTestBase {
                 .create().toArray(new ClientKey[0]);
         setClientKeys(clientKeys);
 
-        get(vertx, searchUrl + searchString, response -> {
+        post(vertx, searchUrl, searchString, response -> {
             try {
-                HttpResponse httpResponse = response.result();
+                HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
                 JsonObject clientKey = foundKeys.getJsonObject(0);
@@ -561,12 +551,11 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static ClientKey[] getClientKeys(String keySuffix, String secretSuffix) {
-        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
+        return Instancio.ofList(ClientKey.class)
                 .size(3)
                 .generate(field(ClientKey::getKey), gen -> gen.string().suffix(keySuffix).minLength(44).mixedCase())
                 .generate(field(ClientKey::getSecret), gen -> gen.string().suffix(secretSuffix).minLength(44).mixedCase())
                 .create().toArray(new ClientKey[0]);
-        return clientKeys;
     }
 
     private static OperatorKey[] getOperatorKeys() {
@@ -574,11 +563,10 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static OperatorKey[] getOperatorKeys(String suffix) {
-        OperatorKey[] operatorKeys = Instancio.ofList(OperatorKey.class)
+        return Instancio.ofList(OperatorKey.class)
                 .size(3)
                 .generate(field(OperatorKey::getKey), gen -> gen.string().suffix(suffix).minLength(44).mixedCase())
                 .create().toArray(new OperatorKey[0]);
-        return operatorKeys;
     }
 
     private static AdminUser[] getAdminUsers() {
@@ -586,11 +574,10 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static AdminUser[] getAdminUsers(String suffix) {
-        AdminUser[] adminUsers = Instancio.ofList(AdminUser.class)
+        return Instancio.ofList(AdminUser.class)
                 .size(3)
                 .generate(field(AdminUser::getKey), gen -> gen.string().suffix(suffix).minLength(44).mixedCase())
                 .create().toArray(new AdminUser[0]);
-        return adminUsers;
     }
 
     private static void assertClientKey(ClientKey expected, JsonObject actual) {
