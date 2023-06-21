@@ -80,7 +80,6 @@ public class SearchService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(results.encode());
         } catch (Throwable t) {
-            // does this go to some handler that removes sensitive info?
             LOGGER.error("Error executing search", t);
             rc.fail(500, t);
         }
