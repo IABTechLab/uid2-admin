@@ -16,7 +16,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class SearchService implements IService {
-    private static final String queryParameter = "keyOrSecret";
+    private static final String QUERY_PARAMETER = "keyOrSecret";
+    private static final Integer QUERY_PARAMETER_MIN_LENGTH = 6;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
     private final AuthMiddleware auth;
@@ -43,13 +44,13 @@ public class SearchService implements IService {
 
     private void handleSearch(RoutingContext rc) {
         try {
-            if (!rc.queryParams().contains(queryParameter)) {
+            if (!rc.queryParams().contains(QUERY_PARAMETER)) {
                 ResponseUtil.error(rc, 400, "Invalid parameters");
                 return;
             }
             final String queryParamInput = rc.queryParam("keyOrSecret").get(0);
-            if (queryParamInput.length() < 6) {
-                ResponseUtil.error(rc, 400, "Parameter too short");
+            if (queryParamInput.length() < QUERY_PARAMETER_MIN_LENGTH) {
+                ResponseUtil.error(rc, 400, "Parameter too short. Must be 6 or more characters.");
             }
 
             // the only special character that is a problem in the keys is a space, so replace it.
@@ -65,15 +66,18 @@ public class SearchService implements IService {
             results.put("AdministratorKeys", adminUserResults);
 
             this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getKey().contains(queryParam) || c.getSecret().contains(queryParam))
+                    .stream()
+                    .filter(c -> c.getKey().contains(queryParam) || c.getSecret().contains(queryParam))
                     .forEach(clientKeyResults::add);
 
             this.operatorKeyProvider.getAll()
-                    .stream().filter(o -> o.getKey().contains(queryParam))
+                    .stream()
+                    .filter(o -> o.getKey().contains(queryParam))
                     .forEach(operatorKeyResults::add);
 
             this.adminUserProvider.getAll()
-                    .stream().filter(a -> a.getKey().contains(queryParam))
+                    .stream()
+                    .filter(a -> a.getKey().contains(queryParam))
                     .forEach(adminUserResults::add);
 
             rc.response()
