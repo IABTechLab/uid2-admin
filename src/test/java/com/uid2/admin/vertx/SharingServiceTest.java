@@ -18,12 +18,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider);
+        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {
@@ -146,6 +148,13 @@ public class SharingServiceTest extends ServiceTestBase {
             compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
+
+            //Ensure new key was created
+            try {
+                verify(keysetKeyManager).addKeysetKey(4);
+            } catch (Exception ex) {
+                fail(ex);
+            }
             testContext.completeNow();
         });
     }

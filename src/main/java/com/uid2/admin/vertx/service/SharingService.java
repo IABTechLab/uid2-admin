@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Keyset;
@@ -24,16 +25,19 @@ public class SharingService implements IService {
     private final WriteLock writeLock;
     private final KeysetStoreWriter storeWriter;
     private final RotatingKeysetProvider keysetProvider;
+    private final IKeysetKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
                           KeysetStoreWriter storeWriter,
-                          RotatingKeysetProvider keysetProvider) {
+                          RotatingKeysetProvider keysetProvider,
+                          IKeysetKeyManager keyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
+        this.keyManager = keyManager;
     }
 
     @Override
@@ -97,10 +101,13 @@ public class SharingService implements IService {
            collection.put(keysetId, newKeyset);
            try {
                storeWriter.upload(collection.values(), null);
+               //Create a new key
+               this.keyManager.addKeysetKey(keysetId);
            } catch (Exception e) {
                rc.fail(500, e);
                return;
            }
+
 
            JsonObject jo = new JsonObject();
            jo.put("site_id", newKeyset.getSiteId());
@@ -293,6 +300,8 @@ public class SharingService implements IService {
            collection.put(keysetId, newKeyset);
            try {
                storeWriter.upload(collection.values(), null);
+               //Create new key for keyset
+               this.keyManager.addKeysetKey(keysetId);
            } catch (Exception e) {
                rc.fail(500, e);
                return;
@@ -306,10 +315,5 @@ public class SharingService implements IService {
                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                    .end(jo.encode());
         }
-    }
-
-    private int computeWhitelistHash(Set<Integer> list)
-    {
-        return Objects.hash(list);
     }
 }
