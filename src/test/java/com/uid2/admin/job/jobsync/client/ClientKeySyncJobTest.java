@@ -53,7 +53,7 @@ class ClientKeySyncJobTest {
     private ClientKeyStoreFactory clientKeyStoreFactory;
     private FileManager fileManager;
 
-    ClientKeySyncJobTest() throws InvalidRoleException {
+    ClientKeySyncJobTest() {
     }
 
     @BeforeEach
