@@ -4,27 +4,24 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.job.jobsync.acl.KeyAclSyncJob;
 import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
 import com.uid2.admin.job.jobsync.key.EncryptionKeySyncJob;
+import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
+import com.uid2.admin.job.jobsync.keyset.KeysetSyncJob;
 import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.*;
-import com.uid2.admin.store.factory.ClientKeyStoreFactory;
-import com.uid2.admin.store.factory.EncryptionKeyStoreFactory;
-import com.uid2.admin.store.factory.KeyAclStoreFactory;
-import com.uid2.admin.store.factory.SiteStoreFactory;
+import com.uid2.admin.store.factory.*;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.ClientKey;
-import com.uid2.shared.auth.EncryptionKeyAcl;
-import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.RotatingOperatorKeyProvider;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.EncryptionKey;
+import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.JsonObject;
@@ -89,6 +86,21 @@ public class PrivateSiteDataSyncJob extends Job {
                 clock,
                 fileManager);
 
+        KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
+                cloudStorage,
+                new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp)),
+                jsonWriter,
+                versionGenerator,
+                clock,
+                fileManager);
+
+        KeysetKeyStoreFactory keysetKeyStoreFactory = new KeysetKeyStoreFactory(
+                cloudStorage,
+                new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp)),
+                versionGenerator,
+                clock,
+                fileManager);
+
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -100,6 +112,8 @@ public class PrivateSiteDataSyncJob extends Job {
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
             keyAclStoreFactory.getGlobalReader().loadContent();
+            keysetStoreFactory.getGlobalReader().loadContent();
+            keysetKeyStoreFactory.getGlobalReader().loadContent();
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
@@ -108,6 +122,9 @@ public class PrivateSiteDataSyncJob extends Job {
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
         Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
+        Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
+        Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeysetKeys();
+        Integer globalMaxKeysetKeyId = keysetKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
@@ -125,6 +142,14 @@ public class PrivateSiteDataSyncJob extends Job {
                 fileManager,
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
+        MultiScopeStoreWriter<Map<Integer, Keyset>> keysetWriter = new MultiScopeStoreWriter<>(
+                fileManager,
+                keysetStoreFactory,
+                MultiScopeStoreWriter::areMapsEqual);
+        MultiScopeStoreWriter<Collection<KeysetKey>> keysetKeyWriter = new MultiScopeStoreWriter<>(
+                fileManager,
+                keysetKeyStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
 
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
@@ -137,10 +162,14 @@ public class PrivateSiteDataSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
+        KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
+        KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
 
         siteSyncJob.execute();
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
         keyAclSyncJob.execute();
+        keysetSyncJob.execute();
+        keysetKeySyncJob.execute();
     }
 }

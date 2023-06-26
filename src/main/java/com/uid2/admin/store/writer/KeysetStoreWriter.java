@@ -8,12 +8,13 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Collection;
 import java.util.Map;
 
-public class KeysetStoreWriter implements StoreWriter<Collection<Keyset>> {
+public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
 
     private final ScopedStoreWriter writer;
     private final ObjectWriter jsonWriter;
@@ -27,8 +28,12 @@ public class KeysetStoreWriter implements StoreWriter<Collection<Keyset>> {
     }
 
     @Override
-    public void upload(Collection<Keyset> data, JsonObject extraMeta) throws Exception {
-        writer.upload(jsonWriter.writeValueAsString(data), extraMeta);
+    public void upload(Map<Integer, Keyset> data, JsonObject extraMeta) throws Exception {
+        JsonArray jsonKeysets = new JsonArray();
+        for (Map.Entry<Integer, Keyset> keyset: data.entrySet()) {
+            jsonKeysets.add(keyset.getValue());
+        }
+        writer.upload(jsonKeysets.encodePrettily(), extraMeta);
     }
 
     @Override

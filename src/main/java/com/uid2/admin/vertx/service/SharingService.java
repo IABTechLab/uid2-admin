@@ -100,7 +100,7 @@ public class SharingService implements IService {
 
            collection.put(keysetId, newKeyset);
            try {
-               storeWriter.upload(collection.values(), null);
+               storeWriter.upload(collection, null);
                //Create a new key
                this.keyManager.addKeysetKey(keysetId);
            } catch (Exception e) {
@@ -299,7 +299,7 @@ public class SharingService implements IService {
 
            collection.put(keysetId, newKeyset);
            try {
-               storeWriter.upload(collection.values(), null);
+               storeWriter.upload(collection, null);
                //Create new key for keyset
                this.keyManager.addKeysetKey(keysetId);
            } catch (Exception e) {
