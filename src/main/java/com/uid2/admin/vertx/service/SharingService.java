@@ -272,9 +272,9 @@ public class SharingService implements IService {
            final JsonObject body = rc.body().asJsonObject();
 
            final JsonArray whitelist = body.getJsonArray("allowlist");
-           final int whitelist_hash = body.getInteger("hash");
+           final int hash = body.getInteger("hash");
 
-           if (keyset != null && whitelist_hash != keyset.hashCode()) {
+           if (keyset != null &&  hash != keyset.hashCode()) {
                rc.fail(409);
                return;
            }

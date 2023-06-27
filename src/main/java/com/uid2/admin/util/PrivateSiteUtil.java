@@ -111,7 +111,7 @@ public final class PrivateSiteUtil {
     public static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getEncryptionKeyAclsForEachSite(
             Collection<OperatorKey> operators,
             Map<Integer, EncryptionKeyAcl> acls) {
-        final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = getPrivateSiteAcls(operators);
+        final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = getPrivateSiteMap(operators);
 
         acls.forEach((siteId, acl) -> {
             // Add it to site file for its site_id
@@ -146,7 +146,7 @@ public final class PrivateSiteUtil {
 
     public static HashMap<Integer, Map<Integer, Keyset>> getKeysetForEachSite(Collection<OperatorKey> operators,
         Map<Integer, Keyset> keysets) {
-        final HashMap<Integer, Map<Integer, Keyset>> result = getPrivateSiteKeyset(operators);
+        final HashMap<Integer, Map<Integer, Keyset>> result = getPrivateSiteMap(operators);
 
         keysets.forEach((keysetId, keyset) -> {
             int siteId = keyset.getSiteId();
@@ -203,21 +203,8 @@ public final class PrivateSiteUtil {
         return result;
     }
 
-    private static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getPrivateSiteAcls(Collection<OperatorKey> operators) {
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = new HashMap<>();
-        operators.forEach(o -> {
-            // TODO: Should we check if site is disabled?
-            if (o.getOperatorType() == OperatorType.PRIVATE
-                    && o.getSiteId() != null && !result.containsKey(o.getSiteId())) {
-                result.put(o.getSiteId(), new HashMap<>());
-            }
-        });
-        return result;
-    }
-
-    private static HashMap<Integer, Map<Integer, Keyset>> getPrivateSiteKeyset(Collection<OperatorKey> operators) {
-        // TODO: Is there a way to combine this with above?
-        HashMap<Integer, Map<Integer, Keyset>> result = new HashMap<>();
+    private static <T> HashMap<Integer, Map<Integer, T>> getPrivateSiteMap(Collection<OperatorKey> operators) {
+        HashMap<Integer, Map<Integer, T>> result = new HashMap<>();
         operators.forEach(o -> {
             // TODO: Should we check if site is disabled?
             if (o.getOperatorType() == OperatorType.PRIVATE
