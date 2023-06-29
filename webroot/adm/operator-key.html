@@ -39,6 +39,13 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetOperatorType">Update Public/Private Operator Type</a></li>
     <li class="ro-opm" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
+</ul>
+
+<br>
+
+<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
+
+<ul>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Operator Key</a></li>
 </ul>
 
@@ -80,6 +87,10 @@
         });
 
         $('#doDel').on('click', function () {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
             var operatorName = encodeURIComponent($('#operatorName').val());
             var url = '/api/operator/del?name=' + operatorName;
 

@@ -33,6 +33,13 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
+</ul>
+
+<br>
+
+<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
+
+<ul>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doRename">Rename Client Key (Click to enter new client name)</a></li>
 </ul>
@@ -73,6 +80,10 @@
         });
 
         $('#doDel').on('click', function () {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
             var clientName = encodeURIComponent($('#clientName').val());
             var url = '/api/client/del?name=' + clientName;
 
@@ -110,6 +121,10 @@
         });
 
         $('#doRename').on('click', function () {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
             var newClientName = prompt("Enter the new client name", "new client name here");
             var oldClientName = encodeURIComponent($('#clientName').val());
             var url = '/api/client/rename?oldName=' + oldClientName + '&newName=' + newClientName;
