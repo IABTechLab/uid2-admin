@@ -26,6 +26,14 @@ import java.util.stream.Collectors;
 public class OperatorKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
 
+    private static final Set<Set<Role>> VALID_ROLE_COMBINATIONS = (Set.of(
+            new TreeSet<>(Set.of()), // Empty role input is accepted as OPERATOR will be automatically added
+            new TreeSet<>(Set.of(Role.OPERATOR)),
+            new TreeSet<>(Set.of(Role.OPTOUT)),
+            new TreeSet<>(Set.of(Role.OPTOUT_SERVICE)),
+            new TreeSet<>(Set.of(Role.OPERATOR, Role.OPTOUT))
+    ));
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final OperatorKeyStoreWriter operatorKeyStoreWriter;
@@ -184,11 +192,10 @@ public class OperatorKeyService implements IService {
                 roles = new HashSet<>();
             } else {
                 roles = RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
-                    ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
-                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+                        ? new HashSet<>() // If roles are not specified in the request, we are still able to add new operator key
+                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
             }
-            if (roles == null) {
-                ResponseUtil.error(rc, 400, "Incorrect roles specified");
+            if (!validateOperatorRoles(rc, roles)) {
                 return;
             }
 
@@ -225,7 +232,7 @@ public class OperatorKeyService implements IService {
             String key = keyGenerator.generateRandomKeyString(32);
             if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + key;
 
-            // add new client to array
+            // create new operator
             long created = Instant.now().getEpochSecond();
             OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
 
@@ -394,10 +401,9 @@ public class OperatorKeyService implements IService {
 
             Set<Role> roles = !rc.queryParams().contains("roles")
                     || RequestUtil.getRoles(rc.queryParam("roles").get(0)) == null
-                        ? null
-                        : RequestUtil.getRoles(rc.queryParam("roles").get(0));
-            if (roles == null) {
-                ResponseUtil.error(rc, 400, "No roles or incorrect roles specified");
+                    ? null
+                    : RequestUtil.getRoles(rc.queryParam("roles").get(0));
+            if (!validateOperatorRoles(rc, roles)) {
                 return;
             }
 
@@ -416,5 +422,18 @@ public class OperatorKeyService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private boolean validateOperatorRoles(RoutingContext rc, Set<Role> roles) {
+        if (roles == null) {
+            ResponseUtil.error(rc, 400, "Incorrect roles specified");
+            return false;
+        }
+        if (!VALID_ROLE_COMBINATIONS.contains(roles)) {
+            ResponseUtil.error(rc, 400, "Invalid role combination for operator key. Must be one of: " + VALID_ROLE_COMBINATIONS);
+            return false;
+        }
+
+        return true;
     }
 }
