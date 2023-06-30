@@ -151,7 +151,7 @@ public class Main {
             jobDispatcher.start();
 
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, keyGenerator, clock);
+                    config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, encryptionKeyService, keyGenerator),

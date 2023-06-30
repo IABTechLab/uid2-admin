@@ -6,11 +6,13 @@ import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.util.MaxKeyUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
@@ -18,6 +20,7 @@ import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
+import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -33,6 +36,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.util.KeysetUtil.*;
 import static java.util.stream.Collectors.*;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager, IKeysetKeyManager {
@@ -58,6 +62,9 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private final KeysetKeyStoreWriter keysetKeyStoreWriter;
     private final RotatingKeyStore keyProvider;
     private final RotatingKeysetKeyStore keysetKeyProvider;
+
+    private final RotatingKeysetProvider keysetProvider;
+    private final KeysetStoreWriter keysetStoreWriter;
     private final IKeyGenerator keyGenerator;
 
     private final Duration masterKeyActivatesIn;
@@ -76,6 +83,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
                                 KeysetKeyStoreWriter keysetKeyStoreWriter,
                                 RotatingKeyStore keyProvider,
                                 RotatingKeysetKeyStore keysetKeyProvider,
+                                RotatingKeysetProvider keysetProvider,
+                                KeysetStoreWriter keysetStoreWriter,
                                 IKeyGenerator keyGenerator,
                                 Clock clock) {
         this.auth = auth;
@@ -84,6 +93,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         this.keysetKeyStoreWriter = keysetKeyStoreWriter;
         this.keyProvider = keyProvider;
         this.keysetKeyProvider = keysetKeyProvider;
+        this.keysetStoreWriter = keysetStoreWriter;
+        this.keysetProvider = keysetProvider;
         this.keyGenerator = keyGenerator;
         this.clock = clock;
 
@@ -337,8 +348,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             }
 
             //rotate all keyset keys when site keys rotate
-            final RotationResult<KeysetKey> resultKeysetKeys = rotateKeysetKeys(rc, siteKeyActivatesIn, siteKeyExpiresAfter, s -> true);
-
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
             rc.response()
@@ -375,6 +384,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
         // force refresh manually
         this.keyProvider.loadContent();
+        this.keysetProvider.loadContent();
+        this.keysetKeyProvider.loadContent();
 
         final List<EncryptionKey> allKeys = this.keyProvider.getSnapshot().getActiveKeySet();
 
@@ -413,6 +424,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             throws Exception {
         RotationResult<KeysetKey> result = new RotationResult();
 
+        this.keyProvider.loadContent();
+        this.keysetProvider.loadContent();
         this.keysetKeyProvider.loadContent();
 
         final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys();
@@ -469,8 +482,48 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             addedKeys.add(key);
         }
         storeWriter.upload(keys, maxKeyId);
+        catchUpKeysetKeys(addedKeys, isDuringRotation, maxKeyId);
 
         return addedKeys;
+    }
+
+    private void catchUpKeys(Iterable<KeysetKey> missingKeys, boolean isDuringRotation, int maxKeyId)
+            throws Exception {
+        final Instant now = clock.now();
+
+        final List<EncryptionKey> keys = this.keyProvider.getSnapshot().getActiveKeySet().stream()
+                .sorted(Comparator.comparingInt(EncryptionKey::getId))
+                .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
+                .collect(Collectors.toList());
+
+        final List<EncryptionKey> addedKeys = new ArrayList<>();
+
+        for (KeysetKey key : missingKeys) {
+            final int siteId = getSiteId(key.getKeysetId());
+            final EncryptionKey newKey = new EncryptionKey(key.getId(), key.getKeyBytes(), key.getCreated(), key.getActivates(), key.getExpires(), siteId);
+            keys.add(newKey);
+            addedKeys.add(newKey);
+        }
+        storeWriter.upload(keys, maxKeyId);
+    }
+
+    private int getOrCreateKeysetId(int siteId)
+        throws Exception {
+        Map<Integer, Keyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
+        Keyset keyset = lookUpKeyset(siteId, currentKeysets);
+        if(keyset == null) {
+            int newKeysetId = getMaxKeyset(currentKeysets)+1;
+            keyset = createDefaultKeyset(siteId, newKeysetId);
+            currentKeysets.put(newKeysetId, keyset);
+            keysetStoreWriter.upload(currentKeysets, null);
+        }
+
+        return keyset.getKeysetId();
+    }
+
+    private int getSiteId(int keysetId) throws Exception {
+        Map<Integer, Keyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
+        return currentKeysets.get(keysetId).getSiteId();
     }
 
     private List<KeysetKey> addKeysetKeys(Iterable<Integer> keysetIds, Duration activatesIn, Duration expiresAfter, boolean isDuringRotation)
@@ -499,8 +552,30 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             addedKeys.add(key);
         }
         keysetKeyStoreWriter.upload(keys, maxKeyId);
+        catchUpKeys(addedKeys, isDuringRotation, maxKeyId);
 
         return addedKeys;
+    }
+
+    private void catchUpKeysetKeys(Iterable<EncryptionKey> missingKeys, boolean isDuringRotation, int maxKeyId)
+        throws Exception {
+        final Instant now = clock.now();
+
+        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
+                .sorted(Comparator.comparingInt(KeysetKey::getId))
+                .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
+                .collect(Collectors.toList());
+
+
+        final List<KeysetKey> addedKeys = new ArrayList<>();
+
+        for (EncryptionKey key : missingKeys) {
+            final int keysetId = getOrCreateKeysetId(key.getSiteId());
+            final KeysetKey newKey = new KeysetKey(key.getId(), key.getKeyBytes(), key.getCreated(), key.getActivates(), key.getExpires(), keysetId);
+            keys.add(newKey);
+            addedKeys.add(newKey);
+        }
+        keysetKeyStoreWriter.upload(keys, maxKeyId);
     }
 
     private JsonObject toJson(EncryptionKey key) {

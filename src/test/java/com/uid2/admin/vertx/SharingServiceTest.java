@@ -36,9 +36,6 @@ public class SharingServiceTest extends ServiceTestBase {
         assertEquals(keyset.getAllowedSites(), actualSet);
     }
 
-    protected void setKeysets(Map<Integer, Keyset> keysets) {
-        when(keysetSnapshot.getAllKeysets()).thenReturn(keysets);
-    }
 
     @Test
     void listSiteGet(Vertx vertx, VertxTestContext testContext) {

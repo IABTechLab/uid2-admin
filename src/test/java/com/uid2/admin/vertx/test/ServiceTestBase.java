@@ -152,6 +152,10 @@ public abstract class ServiceTestBase {
         when(keyProviderSnapshot.getActiveKeySet()).thenReturn(Arrays.asList(keys));
     }
 
+    protected void setKeysets(Map<Integer, Keyset> keysets) {
+        when(keysetSnapshot.getAllKeysets()).thenReturn(keysets);
+    }
+
     protected void setKeysetKeys(int maxKeyId, KeysetKey... keys) throws Exception {
         JsonObject metadata = new JsonObject();
         metadata.put("max_key_id", maxKeyId);

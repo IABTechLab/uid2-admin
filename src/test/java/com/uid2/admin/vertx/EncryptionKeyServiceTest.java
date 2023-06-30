@@ -4,6 +4,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.EncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
@@ -15,9 +16,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import static javax.swing.UIManager.put;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -59,7 +63,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         this.config.put("filter_key_over_cut_off_days", FILTER_KEY_OVER_CUT_OFF_DAYS);
 
         keyService = new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter,
-                keyProvider, keysetKeyProvider, keyGenerator, clock);
+                keyProvider, keysetKeyProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
         return keyService;
     }
 
@@ -142,11 +146,57 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void addSiteKeyAddsKeysetAndKey() throws Exception {
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 2, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+        setKeysets(keysets);
+        setEncryptionKeys(123);
+        setKeysetKeys(123);
+        final EncryptionKey key = keyService.addSiteKey(5);
+
+        Keyset expected = new Keyset(2, 5, "", null, Instant.now().getEpochSecond(), true, true);
+        assertNotNull(keysets.get(2));
+        assertTrue(keysets.get(2).equals(expected));
+        verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
+    }
+
+    @Test
+    void addSiteKeyUsesKeysetAndAddsKey() throws Exception {
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+        setKeysets(keysets);
+        setEncryptionKeys(123);
+        setKeysetKeys(123);
+        final EncryptionKey key = keyService.addSiteKey(5);
+
+        assertNotNull(keysets.get(1));
+        assertTrue(keysets.get(1).equals(keysets.get(1)));
+        verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
+    }
+
+    @Test
     void addKeysetKey() throws Exception {
         setKeysetKeys(123);
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+        setKeysets(keysets);
         final KeysetKey key = keyService.addKeysetKey(1);
         verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
         assertSiteKeyActivation(key, clock.now());
+    }
+
+    @Test
+    void addKeysetKeyAddsSiteKey() throws Exception {
+        setKeysetKeys(123);
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+        setKeysets(keysets);
+        final KeysetKey key = keyService.addKeysetKey(1);
+        verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
     }
 
     @Test
@@ -215,6 +265,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
+        setKeysetKeys(MAX_KEY_ID);
+
         post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
@@ -224,6 +276,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+                verify(keysetKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -250,6 +303,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+                verify(keysetKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -426,6 +480,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new KeysetKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+1), 5)
         };
         setKeysetKeys(MAX_KEY_ID, keys);
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(4, new Keyset(4, 2, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(5, new Keyset(5, 3, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+        setKeysets(keysets);
 
         post(vertx, "api/key/rotate_keyset_key?keyset_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
@@ -437,6 +496,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
             try {
                 verify(keysetKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+                verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
             } catch (Exception ex) {
                 fail(ex);
             }
@@ -607,6 +667,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                     response.bodyAsJsonArray().stream().toArray());
             try {
                 verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
+                verify(keysetKeyStoreWriter).upload(collectionOfSize(2), eq(MAX_KEY_ID+2));
             } catch (Exception ex) {
                 fail(ex);
             }
