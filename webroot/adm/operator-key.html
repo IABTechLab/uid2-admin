@@ -38,8 +38,14 @@
     <li class="ro-opm" style="display: none"><a href="#" id="doEnable">Enable Operator Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetOperatorType">Update Public/Private Operator Type</a></li>
-    <li class="ro-adm" style="display: none"><a href="#" id="doRekey">Rekey</a></li>
     <li class="ro-opm" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
+</ul>
+
+<br>
+
+<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
+
+<ul>
     <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Operator Key</a></li>
 </ul>
 
@@ -81,15 +87,12 @@
         });
 
         $('#doDel').on('click', function () {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
             var operatorName = encodeURIComponent($('#operatorName').val());
             var url = '/api/operator/del?name=' + operatorName;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRekey').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var url = '/api/operator/rekey?name=' + operatorName;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
