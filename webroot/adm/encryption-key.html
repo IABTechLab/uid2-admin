@@ -90,6 +90,7 @@
             var minAge = encodeURIComponent($('#minAge').val());
             var keysetId = encodeURIComponent($('#keysetId').val());
             var url = '/api/key/rotate_keyset_key?min_age_seconds=' + minAge + "&keyset_id=" + keysetId;
+            if ($('#force').is(':checked')) url = url + '&force=true';
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
