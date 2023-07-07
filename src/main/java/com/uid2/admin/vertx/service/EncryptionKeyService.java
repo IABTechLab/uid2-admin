@@ -347,7 +347,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
                 return;
             }
 
-            //rotate all keyset keys when site keys rotate
             final JsonArray ja = new JsonArray();
             result.rotatedKeys.stream().forEachOrdered(k -> ja.add(toJson(k)));
             rc.response()
