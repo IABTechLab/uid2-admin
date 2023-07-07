@@ -4,7 +4,7 @@ import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingSiteStore;

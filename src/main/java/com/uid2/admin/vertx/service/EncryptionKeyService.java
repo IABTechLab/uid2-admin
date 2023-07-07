@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.util.MaxKeyUtil;
