@@ -201,6 +201,23 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         return addSiteKeys(Arrays.asList(siteId), Duration.ZERO, siteKeyExpiresAfter, false).get(0);
     }
 
+    public void createKeysetKeys() throws Exception {
+        this.keyProvider.loadContent();
+        this.keysetProvider.loadContent();
+        this.keysetKeyProvider.loadContent();
+
+        final List<EncryptionKey> encryptionKeys = this.keyProvider.getSnapshot().getActiveKeySet();
+        List<EncryptionKey> addKeys = new ArrayList<>();
+
+        for (EncryptionKey key: encryptionKeys) {
+            KeysetKey keysetKey = this.keysetKeyProvider.getSnapshot().getKey(key.getId());
+            if(keysetKey == null) {
+                addKeys.add(key);
+            }
+        }
+        catchUpKeysetKeys(addKeys, false, this.keyProvider.getMetadata().getInteger("max_key_id"));
+    }
+
     private void handleKeyList(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();

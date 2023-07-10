@@ -39,10 +39,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -159,8 +156,14 @@ public abstract class ServiceTestBase {
     protected void setKeysetKeys(int maxKeyId, KeysetKey... keys) throws Exception {
         JsonObject metadata = new JsonObject();
         metadata.put("max_key_id", maxKeyId);
+        List<KeysetKey> keysetKeys = Arrays.asList(keys);
+        HashMap<Integer, KeysetKey> keyMap = new HashMap<>();
+        keysetKeys.forEach(i -> keyMap.put(i.getId(), i));
         when(keysetKeyProvider.getMetadata()).thenReturn(metadata);
-        when(keysetKeyProviderSnapshot.getActiveKeysetKeys()).thenReturn(Arrays.asList(keys));
+        when(keysetKeyProviderSnapshot.getActiveKeysetKeys()).thenReturn(keysetKeys);
+        when(keysetKeyProviderSnapshot.getKey(anyInt())).thenAnswer(i -> {
+            return keyMap.get(i.getArgument(0));
+        });
     }
 
     protected void setEncryptionKeyAcls(Map<Integer, EncryptionKeyAcl> acls) {

@@ -179,6 +179,9 @@ public class Main {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
+
+            //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
+            encryptionKeyService.createKeysetKeys();
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
