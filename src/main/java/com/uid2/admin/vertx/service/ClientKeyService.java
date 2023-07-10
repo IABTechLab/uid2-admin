@@ -104,15 +104,15 @@ public class ClientKeyService implements IService {
             }
         }, Role.CLIENTKEY_ISSUER));
 
-        router.post("/api/client/rekey").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientRekey(ctx);
-            }
-        }, Role.ADMINISTRATOR));
-
         router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+
+        router.post("/api/client/rename").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleClientRename(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
     }
@@ -356,42 +356,6 @@ public class ClientKeyService implements IService {
         }
     }
 
-    private void handleClientRekey(RoutingContext rc) {
-        try {
-            // refresh manually
-            clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
-
-            final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
-                    .findFirst();
-            if (!existingClient.isPresent()) {
-                ResponseUtil.error(rc, 404, "client key not found");
-                return;
-            }
-
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
-
-            ClientKey c = existingClient.get();
-            String newKey = keyGenerator.generateRandomKeyString(32);
-            if (this.clientKeyPrefix != null) newKey = this.clientKeyPrefix + newKey;
-
-            c.setKey(newKey);
-
-            c.setSecret(keyGenerator.generateRandomKeyString(32));
-
-            // upload to storage
-            storeWriter.upload(clients, null);
-
-            // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(c));
-        } catch (Exception e) {
-            rc.fail(500, e);
-        }
-    }
-
     private void handleClientRoles(RoutingContext rc) {
         try {
             // refresh manually
@@ -426,6 +390,44 @@ public class ClientKeyService implements IService {
 
             // return client with new key
             rc.response().end(jsonWriter.writeValueAsString(c));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleClientRename(RoutingContext rc) {
+        try {
+            // refresh manually
+            clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
+
+            final String oldName = rc.queryParam("oldName").get(0);
+            final String newName = rc.queryParam("newName").get(0);
+            final ClientKey existingClient = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getName().equals(oldName))
+                    .findFirst().orElse(null);
+            if (existingClient == null) {
+                ResponseUtil.error(rc, 404, "client not found");
+                return;
+            }
+            final ClientKey existingClientWithNewName = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getName().equals(newName))
+                    .findFirst().orElse(null);
+            if (existingClientWithNewName != null) {
+                ResponseUtil.error(rc, 400, "already exist a client with name " + newName);
+                return;
+            }
+
+            existingClient.withNameAndContact(newName);
+
+            List<ClientKey> clients = this.clientKeyProvider.getAll()
+                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                    .collect(Collectors.toList());
+
+            // upload to storage
+            storeWriter.upload(clients, null);
+
+            // return the updated client
+            rc.response().end(jsonWriter.writeValueAsString(existingClient));
         } catch (Exception e) {
             rc.fail(500, e);
         }

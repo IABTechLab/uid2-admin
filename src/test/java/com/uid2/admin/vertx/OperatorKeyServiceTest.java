@@ -107,12 +107,6 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorKeyAddInvalidRole(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,nonexist", "", expectHttpError(testContext, 400));
-    }
-
-    @Test
     void operatorKeyAddWithoutRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
@@ -136,6 +130,30 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
             testContext.completeNow();
         });
+    }
+
+    @Test
+    void operatorKeyAddInvalidRoleWithOperatorAndNonExistent(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,nonexistent", "", expectHttpError(testContext, 400));
+    }
+
+    @Test
+    public void operatorKeyAddInvalidRoleCombinationWithOperatorAndOptoutService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpError(testContext, 400));
+    }
+
+    @Test
+    public void operatorKeyAddInvalidRoleCombinationWithOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=optout,optout_service", "", expectHttpError(testContext, 400));
+    }
+
+    @Test
+    public void operatorKeyAddInvalidRoleCombinationWithOperatorAndOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout,optout_service", "", expectHttpError(testContext, 400));
     }
 
     @Test
@@ -225,10 +243,30 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void operatorKeySetInvalidRole(Vertx vertx, VertxTestContext testContext) {
+    void operatorKeySetInvalidRoleCombinationWithOperatorAndNonexistent(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
-        post(vertx, "api/operator/roles?name=test_operator&roles=operator,role", "", expectHttpError(testContext, 400));
+        post(vertx, "api/operator/roles?name=test_operator&roles=operator,nonexistent", "", expectHttpError(testContext, 400));
+    }
+
+    @Test
+    public void operatorKeySetInvalidRoleCombinationWithOperatorAndOptoutService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpError(testContext, 400));
+    }
+
+    @Test
+    public void operatorKeySetInvalidRoleCombinationWithOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
+        post(vertx, "api/operator/roles?name=test_operator&roles=optout,optout_service", "", expectHttpError(testContext, 400));
+    }
+
+    @Test
+    public void operatorKeySetInvalidRoleCombinationWithOperatorptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR_MANAGER);
+        setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR))));
+        post(vertx, "api/operator/roles?name=test_operator&roles=operator,optout,optout_service", "", expectHttpError(testContext, 400));
     }
 
     @Test

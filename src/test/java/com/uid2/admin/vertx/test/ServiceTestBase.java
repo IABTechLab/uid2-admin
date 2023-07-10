@@ -174,6 +174,10 @@ public abstract class ServiceTestBase {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
     }
 
+    protected void setAdminUsers(AdminUser... adminUsers) {
+        when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
+    }
+
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
         return ar -> {
             assertTrue(ar.succeeded());
