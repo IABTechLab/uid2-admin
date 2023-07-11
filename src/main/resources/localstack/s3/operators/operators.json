@@ -1,6 +1,6 @@
 [
   {
-    "key": "OPLCLdp9Dt0JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
+    "key": "UID2-O-L-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
     "name": "MegaTest-Operator",
     "contact": "MegaTest-Operator",
     "protocol": "trusted",
@@ -13,7 +13,7 @@
     "operator_type": "PUBLIC"
   },
   {
-    "key": "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
+    "key": "UID2-O-L-AjLRWc.VlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
     "name": "MegaTest-Operator-Private",
     "contact": "MegaTest-Operator-Private",
     "protocol": "trusted",
@@ -26,7 +26,7 @@
     "operator_type": "PRIVATE"
   },
   {
-    "key": "OPLCLXt/ght6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=",
+    "key": "UID2-O-L-Xt/ght.6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=",
     "name": "TestCorp-Operator",
     "contact": "TestCorp-Operator",
     "protocol": "trusted",
@@ -39,7 +39,7 @@
     "operator_type": "PUBLIC"
   },
   {
-    "key": "OPLCLcr24BtdYP+Wpo6NWlP7CbvwpzHn0lXS3Cst6Y+qFDK4=",
+    "key": "UID2-O-L-cr24Bt.dYP+Wpo6NWlP7CbvwpzHn0lXS3Cst6Y+qFDK4=",
     "name": "LoremTestIpsum-Operator-GCP",
     "contact": "LoremTestIpsum-Operator-GCP",
     "protocol": "gcp-vmid",
