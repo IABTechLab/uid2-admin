@@ -120,6 +120,9 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         router.get("/api/key/list").handler(
                 auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
 
+        router.get("/api/key/list_keyset_keys").handler(
+                auth.handle(this::handleKeysetKeyList, Role.SECRET_MANAGER));
+
         router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
@@ -154,6 +157,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             }
         }, Role.SECRET_MANAGER));
     }
+
 
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -223,6 +227,21 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             final JsonArray ja = new JsonArray();
             this.keyProvider.getSnapshot().getActiveKeySet().stream()
                     .sorted(Comparator.comparingInt(EncryptionKey::getSiteId).thenComparing(EncryptionKey::getActivates))
+                    .forEachOrdered(k -> ja.add(toJson(k)));
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(ja.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleKeysetKeyList(RoutingContext rc) {
+        try {
+            final JsonArray ja = new JsonArray();
+            this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
+                    .sorted(Comparator.comparingInt(KeysetKey::getKeysetId).thenComparing(KeysetKey::getActivates))
                     .forEachOrdered(k -> ja.add(toJson(k)));
 
             rc.response()
