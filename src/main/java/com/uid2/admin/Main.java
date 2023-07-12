@@ -55,9 +55,7 @@ import io.vertx.micrometer.backends.BackendRegistries;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Optional;
+import java.util.*;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -112,14 +110,24 @@ public class Main {
             CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
-            keysetProvider.loadContent();
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
+            try {
+                keysetProvider.loadContent();
+            } catch (Exception e) {
+                keysetStoreWriter.upload(new HashMap<>(), null);
+                keysetProvider.loadContent();
+            }
 
             CloudPath keysetKeyMetadataPath = new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp));
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
             RotatingKeysetKeyStore keysetKeysProvider = new RotatingKeysetKeyStore(cloudStorage, keysetKeysGlobalScope);
-            keysetKeysProvider.loadContent();
             KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope);
+            try {
+                keysetKeysProvider.loadContent();
+            } catch (Exception e) {
+                keysetKeyStoreWriter.upload(new HashSet<>(), 0);
+                keysetKeysProvider.loadContent();
+            }
 
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
             GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
