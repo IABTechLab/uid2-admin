@@ -25,6 +25,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
+import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
@@ -113,9 +114,13 @@ public class Main {
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
             try {
                 keysetProvider.loadContent();
-            } catch (Exception e) {
-                keysetStoreWriter.upload(new HashMap<>(), null);
-                keysetProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")){
+                    keysetStoreWriter.upload(new HashMap<>(), null);
+                    keysetProvider.loadContent();
+                } else {
+                    throw e;
+                }
             }
 
             CloudPath keysetKeyMetadataPath = new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp));
@@ -124,9 +129,13 @@ public class Main {
             KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope);
             try {
                 keysetKeysProvider.loadContent();
-            } catch (Exception e) {
-                keysetKeyStoreWriter.upload(new HashSet<>(), 0);
-                keysetKeysProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")) {
+                    keysetKeyStoreWriter.upload(new HashSet<>(), 0);
+                    keysetKeysProvider.loadContent();
+                } else {
+                    throw e;
+                }
             }
 
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
