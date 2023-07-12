@@ -72,22 +72,6 @@ public class RequestUtil {
         }
     }
 
-    public static Optional<Integer> getKeysetId(RoutingContext rc, String param) {
-        final List<String> siteIds = rc.queryParam(param);
-        if (siteIds.isEmpty()) {
-            ResponseUtil.error(rc, 400, "must specify keyset id");
-            return Optional.empty();
-        }
-
-        int siteId;
-        try {
-            return Optional.of(Integer.valueOf(siteIds.get(0)));
-        } catch (Exception ex) {
-            ResponseUtil.error(rc, 400, "unable to parse keyset id " + ex.getMessage());
-            return Optional.empty();
-        }
-    }
-
     public static Boolean getKeyAclType(RoutingContext rc) {
         boolean isWhitelist;
         List<String> types = rc.queryParam("type");

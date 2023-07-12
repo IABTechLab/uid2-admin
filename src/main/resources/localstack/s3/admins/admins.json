@@ -8,8 +8,7 @@
       "ADMINISTRATOR",
       "CLIENTKEY_ISSUER",
       "SECRET_MANAGER",
-      "OPERATOR_MANAGER",
-      "SHARING_PORTAL"
+      "OPERATOR_MANAGER"
     ],
     "disabled": false
   }
