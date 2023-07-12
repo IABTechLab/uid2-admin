@@ -6,6 +6,7 @@ import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
+import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.*;
@@ -17,10 +18,10 @@ import com.uid2.shared.Utils;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
+import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.IKeyStore;
-import com.uid2.shared.store.reader.RotatingKeyStore;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
-import com.uid2.shared.store.reader.RotatingKeyAclProvider;
+import com.uid2.shared.store.IKeysetKeyStore;
+import com.uid2.shared.store.reader.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -38,10 +39,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,19 +63,26 @@ public abstract class ServiceTestBase {
     @Mock protected StoreWriter storeWriter;
     @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
+    @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
     @Mock protected KeyAclStoreWriter keyAclStoreWriter;
+    @Mock protected KeysetStoreWriter keysetStoreWriter;
     @Mock protected OperatorKeyStoreWriter operatorKeyStoreWriter;
     @Mock protected EnclaveStoreWriter enclaveStoreWriter;
     @Mock protected SaltStoreWriter saltStoreWriter;
     @Mock protected PartnerStoreWriter partnerStoreWriter;
 
     @Mock protected IEncryptionKeyManager keyManager;
+    @Mock protected IKeysetKeyManager keysetKeyManager;
     @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;
     @Mock protected RotatingClientKeyProvider clientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
+    @Mock protected IKeysetKeyStore.IkeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
     @Mock protected RotatingKeyAclProvider keyAclProvider;
+    @Mock protected RotatingKeysetProvider keysetProvider;
+    @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
+    @Mock protected KeysetSnapshot keysetSnapshot;
     @Mock protected AclSnapshot keyAclProviderSnapshot;
     @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
@@ -88,7 +93,9 @@ public abstract class ServiceTestBase {
         mocks = MockitoAnnotations.openMocks(this);
         when(authFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
+        when(keysetKeyProvider.getSnapshot()).thenReturn(keysetKeyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
+        when(keysetProvider.getSnapshot()).thenReturn(keysetSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
@@ -140,6 +147,23 @@ public abstract class ServiceTestBase {
         metadata.put("max_key_id", maxKeyId);
         when(keyProvider.getMetadata()).thenReturn(metadata);
         when(keyProviderSnapshot.getActiveKeySet()).thenReturn(Arrays.asList(keys));
+    }
+
+    protected void setKeysets(Map<Integer, Keyset> keysets) {
+        when(keysetSnapshot.getAllKeysets()).thenReturn(keysets);
+    }
+
+    protected void setKeysetKeys(int maxKeyId, KeysetKey... keys) throws Exception {
+        JsonObject metadata = new JsonObject();
+        metadata.put("max_key_id", maxKeyId);
+        List<KeysetKey> keysetKeys = Arrays.asList(keys);
+        HashMap<Integer, KeysetKey> keyMap = new HashMap<>();
+        keysetKeys.forEach(i -> keyMap.put(i.getId(), i));
+        when(keysetKeyProvider.getMetadata()).thenReturn(metadata);
+        when(keysetKeyProviderSnapshot.getActiveKeysetKeys()).thenReturn(keysetKeys);
+        when(keysetKeyProviderSnapshot.getKey(anyInt())).thenAnswer(i -> {
+            return keyMap.get(i.getArgument(0));
+        });
     }
 
     protected void setEncryptionKeyAcls(Map<Integer, EncryptionKeyAcl> acls) {

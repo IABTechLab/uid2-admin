@@ -4,6 +4,7 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.EncryptionKeyAcl;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -12,46 +13,50 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static javax.swing.UIManager.put;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keyAclStoreWriter, keyAclProvider);
+        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager);
     }
 
-    private void compareAclToResult(EncryptionKeyAcl expectedAcl, JsonArray actualAcl) {
-        assertNotNull(actualAcl);
-        Set<Integer> actualSet = actualAcl.stream()
+    private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {
+        assertNotNull(actualKeyset);
+        Set<Integer> actualSet = actualKeyset.stream()
                 .map(s -> (Integer) s)
                 .collect(Collectors.toSet());
-        assertEquals(expectedAcl.getAccessList(), actualSet);
+        assertEquals(keyset.getAllowedSites(), actualSet);
     }
+
 
     @Test
     void listSiteGet(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
-        Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
-            put(5, makeKeyAcl(true, 4, 6, 7));
-            put(7, makeKeyAcl(true));
-            put(4, makeKeyAcl(true, 5));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
-        setEncryptionKeyAcls(acls);
+        setKeysets(keysets);
         get(vertx, "api/sharing/list/5", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            compareAclToResult(acls.get(5), response.bodyAsJsonObject().getJsonArray("whitelist"));
+            compareKeysetToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowlist"));
 
-            Integer expectedHash = Objects.hash(acls.get(5).getAccessList());
-            assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("whitelist_hash"));
+            Integer expectedHash = keysets.get(1).hashCode();
+            assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
 
             testContext.completeNow();
         });
@@ -61,13 +66,13 @@ public class SharingServiceTest extends ServiceTestBase {
     void listSiteGetNotFound(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
-        Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
-            put(5, makeKeyAcl(true, 4, 6, 7));
-            put(7, makeKeyAcl(true));
-            put(4, makeKeyAcl(true, 5));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
-        setEncryptionKeyAcls(acls);
+        setKeysets(keysets);
         get(vertx, "api/sharing/list/42", ar -> {
             HttpResponse response = ar.result();
             assertEquals(404, response.statusCode());
@@ -80,21 +85,21 @@ public class SharingServiceTest extends ServiceTestBase {
     void listSiteSet(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
-        Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
-            put(5, makeKeyAcl(true, 4, 6, 7));
-            put(7, makeKeyAcl(true));
-            put(4, makeKeyAcl(true, 5));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
-        setEncryptionKeyAcls(acls);
+        setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"whitelist\": [\n" +
+                "    \"allowlist\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
                 "    ],\n" +
-                "    \"whitelist_hash\": 48\n" +
+                "    \"hash\": " + keysets.get(1).hashCode() + "\n" +
                 "  }";
 
         post(vertx, "api/sharing/list/5", body, ar -> {
@@ -102,10 +107,10 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            EncryptionKeyAcl expected = makeKeyAcl(true, 22, 25, 6);
-            compareAclToResult(expected, response.bodyAsJsonObject().getJsonArray("whitelist"));
+            Keyset expected = new Keyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
-            assertEquals(expected.getAccessList(), acls.get(5).getAccessList());
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
         });
     }
@@ -114,21 +119,21 @@ public class SharingServiceTest extends ServiceTestBase {
     void listSiteSetNew(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
-        Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
-            put(5, makeKeyAcl(true, 4, 6, 7));
-            put(7, makeKeyAcl(true));
-            put(4, makeKeyAcl(true, 5));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
-        setEncryptionKeyAcls(acls);
+        setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"whitelist\": [\n" +
+                "    \"allowlist\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
                 "    ],\n" +
-                "    \"whitelist_hash\": 0\n" +
+                "    \"hash\": 0\n" +
                 "  }";
 
         post(vertx, "api/sharing/list/8", body, ar -> {
@@ -136,10 +141,17 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            EncryptionKeyAcl expected = makeKeyAcl(true, 22, 25, 6);
-            compareAclToResult(expected, response.bodyAsJsonObject().getJsonArray("whitelist"));
+            Keyset expected = new Keyset(4, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
-            assertEquals(expected.getAccessList(), acls.get(8).getAccessList());
+            assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
+
+            //Ensure new key was created
+            try {
+                verify(keysetKeyManager).addKeysetKey(4);
+            } catch (Exception ex) {
+                fail(ex);
+            }
             testContext.completeNow();
         });
     }
@@ -148,30 +160,30 @@ public class SharingServiceTest extends ServiceTestBase {
     void listSiteSetConcurrency(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
-        Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
-            put(5, makeKeyAcl(true, 4, 6, 7));
-            put(7, makeKeyAcl(true));
-            put(4, makeKeyAcl(true, 5));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
-        setEncryptionKeyAcls(acls);
+        setKeysets(keysets);
 
         String body1 = "  {\n" +
-                "    \"whitelist\": [\n" +
+                "    \"allowlist\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
                 "    ],\n" +
-                "    \"whitelist_hash\": 48\n" +
+                "    \"hash\": " + keysets.get(1).hashCode() + "\n" +
                 "  }";
 
         String body2 = "  {\n" +
-                "    \"whitelist\": [\n" +
+                "    \"allowlist\": [\n" +
                 "      2,\n" +
                 "      5,\n" +
                 "      6\n" +
                 "    ],\n" +
-                "    \"whitelist_hash\": 48\n" +
+                "    \"hash\": " + keysets.get(1).hashCode() + "\n" +
                 "  }";
 
         post(vertx, "api/sharing/list/5", body1, ar -> {
@@ -179,10 +191,10 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            EncryptionKeyAcl expected = makeKeyAcl(true, 22, 25, 6);
-            compareAclToResult(expected, response.bodyAsJsonObject().getJsonArray("whitelist"));
+            Keyset expected = new Keyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("whitelist"));
 
-            assertEquals(expected.getAccessList(), acls.get(5).getAccessList());
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
         });
 
@@ -199,13 +211,13 @@ public class SharingServiceTest extends ServiceTestBase {
     void listAll(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
-        Map<Integer, EncryptionKeyAcl> acls = new HashMap<Integer, EncryptionKeyAcl>() {{
-            put(5, makeKeyAcl(true, 4, 6, 7));
-            put(7, makeKeyAcl(true));
-            put(4, makeKeyAcl(true, 5));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
-        setEncryptionKeyAcls(acls);
+        setKeysets(keysets);
         get(vertx, "api/sharing/lists", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
@@ -213,15 +225,134 @@ public class SharingServiceTest extends ServiceTestBase {
 
             JsonArray respArray = response.bodyAsJsonArray();
 
-            for (int i = 0; i < acls.size(); i++) {
+            for (int i = 0; i < keysets.size(); i++) {
                 JsonObject resp = respArray.getJsonObject(i);
-                int site_id = resp.getInteger("site_id");
-                compareAclToResult(acls.get(site_id), resp.getJsonArray("whitelist"));
+                int keyset_id = resp.getInteger("keyset_id");
+                compareKeysetToResult(keysets.get(keyset_id), resp.getJsonArray("allowlist"));
 
-                Integer expectedHash = Objects.hash(acls.get(site_id).getAccessList());
-                assertEquals(expectedHash, resp.getInteger("whitelist_hash"));
+                Integer expectedHash = keysets.get(keyset_id).hashCode();
+                assertEquals(expectedHash, resp.getInteger("hash"));
             }
 
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetList(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+        get(vertx, "api/sharing/keyset/1", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            compareKeysetToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void listAllKeysets(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+        get(vertx, "api/sharing/keysets", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            JsonArray respArray = response.bodyAsJsonArray();
+
+            for (int i = 0; i < keysets.size(); i++) {
+                JsonObject resp = respArray.getJsonObject(i);
+                int keyset_id = resp.getInteger("keyset_id");
+                compareKeysetToResult(keysets.get(keyset_id), resp.getJsonArray("allowlist"));
+            }
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSet(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"keyset_id\": 1," +
+                "    \"site_id\": 5" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNew(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"site_id\": 8" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(4, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
             testContext.completeNow();
         });
     }
