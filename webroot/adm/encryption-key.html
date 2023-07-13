@@ -15,6 +15,8 @@
 
 <label for="siteId">Site id:</label>
 <input type="text" id="siteId" name="siteId">
+<label for="keysetId">Keyset id:</label>
+<input type="text" id="keysetId" name="keysetId">
 <label for="minAge">Min age (seconds):</label>
 <input type="text" id="minAge" name="minAge">
 <label for="activatesIn">Activates in (seconds):</label>
@@ -33,6 +35,7 @@
     <li class="ro-sem" style="display: none"><a href="#" id="doAddSiteKey">Add Site Key</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateSite">Rotate Site Key</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateAllSites">Rotate All Site Keys</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotateKeysetKey">Rotate Keyset Key</a></li>
 </ul>
 
 <br>
@@ -78,6 +81,15 @@
         $('#doRotateAllSites').on('click', function () {
             var minAge = encodeURIComponent($('#minAge').val());
             var url = '/api/key/rotate_all_sites?min_age_seconds=' + minAge;
+            if ($('#force').is(':checked')) url = url + '&force=true';
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRotateKeysetKey').on('click', function () {
+            var minAge = encodeURIComponent($('#minAge').val());
+            var keysetId = encodeURIComponent($('#keysetId').val());
+            var url = '/api/key/rotate_keyset_key?min_age_seconds=' + minAge + "&keyset_id=" + keysetId;
             if ($('#force').is(':checked')) url = url + '&force=true';
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');

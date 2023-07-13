@@ -1,12 +1,40 @@
 [
   {
-    "keyset_id" : 123,
-    "site_id": 7,
+    "keyset_id" : 1,
+    "site_id": -1,
+    "name" : "My keyset",
+    "allowed_sites" : [],
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+  },
+  {
+    "keyset_id" : 2,
+    "site_id": -2,
     "name" : "My keyset",
     "allowed_sites" : [5, 7, 8, 9],
     "created" : 1617149276,
     "enabled" : true,
     "default" : true
+  },
+  {
+    "keyset_id" : 3,
+    "site_id": 2,
+    "name" : "My keyset",
+    "allowed_sites" : [5, 7, 8, 9],
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+  },
+  {
+    "keyset_id" : 4,
+    "site_id": 123,
+    "name" : "My keyset",
+    "allowed_sites" : [5, 7, 8, 9],
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+
   },
   {
     "keyset_id" : 821,
