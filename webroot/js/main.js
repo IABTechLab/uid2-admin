@@ -95,9 +95,6 @@ function init() {
             if (u.roles.findIndex(e => e === 'SECRET_MANAGER') >= 0) {
                 $('.ro-sem').show();
             }
-            if (u.roles.findIndex(e => e === 'SHARING_PORTAL') >= 0) {
-                $('.ro-shr').show();
-            }
             if (u.roles.length === 0) {
                 $('.ro-nil').show();
             }
