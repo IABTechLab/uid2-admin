@@ -38,7 +38,9 @@ public class PrivateSiteUtilTest {
             .withType(OperatorType.PRIVATE)
             .thatIsEnabled()
             .build();
-    ;
+
+    public PrivateSiteUtilTest() {
+    }
 
     @Nested
     class Client {
@@ -704,6 +706,9 @@ public class PrivateSiteUtilTest {
     static class OperatorBuilder {
         private final OperatorKey operator = new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
 
+        OperatorBuilder() {
+        }
+
         public OperatorBuilder withSiteId(int siteId) {
             this.operator.setSiteId(siteId);
             return this;
@@ -754,7 +759,6 @@ public class PrivateSiteUtilTest {
             roles.add(Role.ID_READER);
             return this;
         }
-
 
         public ClientKey build() {
             return new ClientKey("key3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);

@@ -17,9 +17,41 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
             $(outputDiv).html(pretty);
         },
         error: function (err) {
-            $(errorDiv).html('Error: ' + err.status + ': ' + err.statusText);
+            $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
         }
     });
+}
+function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
+    $(outputDiv).html('');
+    $(errorDiv).html('');
+
+    authHeader = "Bearer " + window.__uid2_admin_token;
+
+    $.ajax({
+        type: method,
+        url: url,
+        data: body,
+        dataType: 'text',
+        headers: {
+            "Authorization": authHeader
+        },
+        success: function (text) {
+            var pretty = JSON.stringify(JSON.parse(text),null,2);
+            $(outputDiv).html(pretty);
+        },
+        error: function (err) {
+            $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
+        }
+    });
+}
+
+function isJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
 
 function doApiCallWithCallback(method, url, onSuccess, onError, body) {
@@ -74,7 +106,7 @@ function init() {
             window.__uid2_admin_token = window.__uid2_admin_user.key;
         },
         error: function (err) {
-            // alert('Error: ' + err.status + ': ' + err.statusText);
+            // alert('Error: ' + err.status + ': ' + JSON.parse(err).message);
             $('.notauthed').show();
         }
     });

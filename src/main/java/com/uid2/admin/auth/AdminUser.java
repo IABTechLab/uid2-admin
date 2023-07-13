@@ -11,18 +11,12 @@ import java.util.Objects;
 import java.util.Set;
 
 public class AdminUser implements IRoleAuthorizable<Role> {
-    private String key;
+    private final String key;
     private final String name;
     private final String contact;
-    // epochSeconds
-    private final long created;
+    private final long created; // epochSeconds
     private Set<Role> roles;
     private boolean disabled;
-
-    public static AdminUser unknown(String unknown) {
-        return new AdminUser(unknown, unknown, unknown,
-                Instant.now().getEpochSecond(), Collections.emptySet(), false);
-    }
 
     public AdminUser(String key, String name, String contact, long created, Set<Role> roles, boolean disabled) {
         this.key = key;
@@ -33,41 +27,9 @@ public class AdminUser implements IRoleAuthorizable<Role> {
         this.disabled = disabled;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public long getCreated() {
-        return created;
-    }
-
-    @Override
-    public boolean hasRole(Role role) {
-        return this.roles.contains(role);
-    }
-
-    @Override
-    public String getKey() {
-        return key;
-    }
-
-    @Override
-    public String getContact() {
-        return contact;
-    }
-
-    @Override
-    public Integer getSiteId() {
-        return null;
-    }
-
-    @Override
-    public boolean isDisabled() {
-        return disabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        this.disabled = disabled;
+    public static AdminUser unknown(String unknown) {
+        return new AdminUser(unknown, unknown, unknown,
+                Instant.now().getEpochSecond(), Collections.emptySet(), false);
     }
 
     public static AdminUser valueOf(JsonObject json) {
@@ -79,6 +41,51 @@ public class AdminUser implements IRoleAuthorizable<Role> {
                 Roles.getRoles(Role.class, json),
                 json.getBoolean("disabled", false)
         );
+    }
+
+    @Override
+    public String getKey() {
+        return key;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getContact() {
+        return contact;
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> newRoles) {
+        this.roles = newRoles;
+    }
+
+    @Override
+    public boolean hasRole(Role role) {
+        return this.roles.contains(role);
+    }
+
+    @Override
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+    }
+
+    @Override
+    public Integer getSiteId() {
+        return null;
     }
 
     @Override
@@ -101,17 +108,5 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     @Override
     public int hashCode() {
         return Objects.hash(key, name, contact, created);
-    }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> newRoles) {
-        this.roles = newRoles;
-    }
-
-    public void setKey(String newKey) {
-        this.key = newKey;
     }
 }

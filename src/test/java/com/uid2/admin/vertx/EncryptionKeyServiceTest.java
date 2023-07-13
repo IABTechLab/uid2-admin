@@ -787,4 +787,80 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+
+    @Test
+    void createKeysetKeysFirstRun() throws Exception {
+        final EncryptionKey[] keys = {
+                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
+                new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 6),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 7),
+        };
+        setEncryptionKeys(MAX_KEY_ID, keys);
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+        }};
+        setKeysets(keysets);
+        final KeysetKey[] keysetKeys = {};
+        setKeysetKeys(0, keysetKeys);
+        keyService.createKeysetKeys();
+        // 4 keys should be added
+        verify(keysetKeyStoreWriter).upload(collectionOfSize(4), eq(777));
+        // 3 keysets should be created
+        assertEquals(3, keysets.keySet().size());
+    }
+
+    @Test
+    void createKeysetKeysNoKeysNeed() throws Exception {
+        final EncryptionKey[] keys = {
+                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
+                new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 6),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 7),
+        };
+        setEncryptionKeys(MAX_KEY_ID, keys);
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+        }};
+        setKeysets(keysets);
+        final KeysetKey[] keysetKeys = {
+                new KeysetKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 1),
+                new KeysetKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
+                new KeysetKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 3),
+                new KeysetKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 4),
+        };
+        setKeysetKeys(0, keysetKeys);
+        keyService.createKeysetKeys();
+        // No new keys should be uploaded and no keyset created
+        verify(keysetKeyStoreWriter).upload(collectionOfSize(4), eq(777));
+        assertEquals(0, keysets.keySet().size());
+    }
+
+    @Test
+    void createKeysetKeysMissingKey() throws Exception {
+        final EncryptionKey[] keys = {
+                new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
+                new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
+                new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 6),
+                new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 7),
+                new EncryptionKey(15, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 7),
+                new EncryptionKey(16, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 8),
+        };
+        setEncryptionKeys(MAX_KEY_ID, keys);
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 7, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+        setKeysets(keysets);
+        // Missing 2 keys, 1 without a keyset
+        final KeysetKey[] keysetKeys = {
+                new KeysetKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 1),
+                new KeysetKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
+                new KeysetKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 3),
+                new KeysetKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 4),
+        };
+        setKeysetKeys(0, keysetKeys);
+        keyService.createKeysetKeys();
+        // 6 keys should be added
+        verify(keysetKeyStoreWriter).upload(collectionOfSize(6), eq(777));
+        // One keyset created
+        assertEquals(2, keysets.keySet().size());
+    }
 }

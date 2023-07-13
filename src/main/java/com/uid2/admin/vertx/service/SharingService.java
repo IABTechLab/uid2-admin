@@ -43,27 +43,27 @@ public class SharingService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/sharing/lists").handler(
-                auth.handle(this::handleAllowlistListALL, Role.SHARING_PORTAL)
+                auth.handle(this::handleListAllAllowlist, Role.SHARING_PORTAL)
         );
         router.get("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleAllowlistList, Role.SHARING_PORTAL)
+                auth.handle(this::handleListAllowlist, Role.SHARING_PORTAL)
         );
         router.post("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleAllowlistSet, Role.SHARING_PORTAL)
+                auth.handle(this::handleSetAllowlist, Role.SHARING_PORTAL)
         );
 
         router.get("/api/sharing/keysets").handler(
-                auth.handle(this::handleKeysetListAll, Role.ADMINISTRATOR)
+                auth.handle(this::handleListAllKeysets, Role.ADMINISTRATOR)
         );
         router.post("/api/sharing/keyset").handler(
-                auth.handle(this::handleKeysetSet, Role.ADMINISTRATOR)
+                auth.handle(this::handleSetKeyset, Role.ADMINISTRATOR)
         );
         router.get("/api/sharing/keyset/:keyset_id").handler(
-                auth.handle(this::handleKeysetList, Role.ADMINISTRATOR)
+                auth.handle(this::handleListKeyset, Role.ADMINISTRATOR)
         );
     }
 
-    private void handleKeysetSet(RoutingContext rc) {
+    private void handleSetKeyset(RoutingContext rc) {
         synchronized (writeLock) {
            try {
                keysetProvider.loadContent();
@@ -78,13 +78,13 @@ public class SharingService implements IService {
            Integer keysetId = body.getInteger("keyset_id");
            final Integer siteId = body.getInteger("site_id");
 
-           final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = collection.get(keysetId);
+           final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
+           Keyset keyset = keysetsById.get(keysetId);
 
            String name;
 
            if (keyset == null) {
-               keysetId = Collections.max(collection.keySet()) + 1;
+               keysetId = Collections.max(keysetsById.keySet()) + 1;
                name = "";
            } else {
                keysetId = keyset.getKeysetId();
@@ -98,9 +98,9 @@ public class SharingService implements IService {
            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                    newlist, Instant.now().getEpochSecond(), true, true);
 
-           collection.put(keysetId, newKeyset);
+           keysetsById.put(keysetId, newKeyset);
            try {
-               storeWriter.upload(collection, null);
+               storeWriter.upload(keysetsById, null);
                //Create a new key
                this.keyManager.addKeysetKey(keysetId);
            } catch (Exception e) {
@@ -108,23 +108,26 @@ public class SharingService implements IService {
                return;
            }
 
-
-           JsonObject jo = new JsonObject();
-           jo.put("site_id", newKeyset.getSiteId());
-           jo.put("keyset_id", newKeyset.getKeysetId());
-           jo.put("name", newKeyset.getName());
-           jo.put("allowlist", newKeyset.getAllowedSites());
-           jo.put("created", newKeyset.getCreated());
-           jo.put("is_enabled", newKeyset.isEnabled());
-           jo.put("is_default", newKeyset.isDefault());
-
+           JsonObject jo = jsonFullKeyset(newKeyset);
            rc.response()
-                   .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                   .end(jo.encode());
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(jo.encode());
         }
     }
 
-    private void handleKeysetList(RoutingContext rc) {
+    private JsonObject jsonFullKeyset(Keyset keyset) {
+        JsonObject jo = new JsonObject();
+        jo.put("keyset_id", keyset.getKeysetId());
+        jo.put("site_id", keyset.getSiteId());
+        jo.put("name", keyset.getName());
+        jo.put("allowlist", keyset.getAllowedSites());
+        jo.put("created", keyset.getCreated());
+        jo.put("is_enabled", keyset.isEnabled());
+        jo.put("is_default", keyset.isDefault());
+        return jo;
+    }
+
+    private void handleListKeyset(RoutingContext rc) {
         int keysetId;
         try {
             keysetId = Integer.parseInt(rc.pathParam("keyset_id"));
@@ -142,17 +145,7 @@ public class SharingService implements IService {
             return;
         }
 
-        JsonArray listedSites = new JsonArray();
-        keyset.getAllowedSites().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
-        JsonObject jo = new JsonObject();
-        jo.put("site_id", keyset.getSiteId());
-        jo.put("keyset_id", keyset.getKeysetId());
-        jo.put("name", keyset.getName());
-        jo.put("allowlist", keyset.getAllowedSites());
-        jo.put("created", keyset.getCreated());
-        jo.put("is_enabled", keyset.isEnabled());
-        jo.put("is_default", keyset.isDefault());
-
+        JsonObject jo = jsonFullKeyset(keyset);
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(jo.encode());
@@ -167,22 +160,12 @@ public class SharingService implements IService {
            return null;
     }
 
-    private void handleKeysetListAll(RoutingContext rc) {
+    private void handleListAllKeysets(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
             for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
-                JsonArray listedSites = new JsonArray();
-                keyset.getValue().getAllowedSites().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
-
-                JsonObject jo = new JsonObject();
-                jo.put("site_id", keyset.getValue().getSiteId());
-                jo.put("keyset_id", keyset.getValue().getKeysetId());
-                jo.put("name", keyset.getValue().getName());
-                jo.put("allowlist", listedSites);
-                jo.put("created", keyset.getValue().getCreated());
-                jo.put("is_enabled", keyset.getValue().isEnabled());
-                jo.put("is_default", keyset.getValue().isDefault());
+                JsonObject jo = jsonFullKeyset(keyset.getValue());
                 ja.add(jo);
             }
 
@@ -194,7 +177,7 @@ public class SharingService implements IService {
         }
     }
 
-    private void handleAllowlistList(RoutingContext rc) {
+    private void handleListAllowlist(RoutingContext rc) {
         int siteId;
         try {
             siteId = Integer.parseInt(rc.pathParam("siteId"));
@@ -213,7 +196,10 @@ public class SharingService implements IService {
         }
 
         JsonArray listedSites = new JsonArray();
-        keyset.getAllowedSites().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
+        Set<Integer> allowedSites = keyset.getAllowedSites();
+        if(allowedSites != null) {
+            allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
+        }
         JsonObject jo = new JsonObject();
         jo.put("allowlist", listedSites);
         jo.put("hash", keyset.hashCode());
@@ -223,17 +209,19 @@ public class SharingService implements IService {
                 .end(jo.encode());
     }
 
-    private void handleAllowlistListALL(RoutingContext rc) {
+    private void handleListAllAllowlist(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
             for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
                 JsonArray listedSites = new JsonArray();
-                keyset.getValue().getAllowedSites().stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
-
+                Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
+                if(allowedSites != null) {
+                    allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
+                }
                 JsonObject jo = new JsonObject();
-                jo.put("site_id", keyset.getValue().getSiteId());
                 jo.put("keyset_id", keyset.getValue().getKeysetId());
+                jo.put("site_id", keyset.getValue().getSiteId());
                 jo.put("allowlist", listedSites);
                 jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);
@@ -247,7 +235,7 @@ public class SharingService implements IService {
         }
     }
 
-    private void handleAllowlistSet(RoutingContext rc) {
+    private void handleSetAllowlist(RoutingContext rc) {
         synchronized (writeLock) {
            int siteId;
            try {

@@ -157,13 +157,17 @@ public final class PrivateSiteUtil {
             });
 
             // Add to list of all allowed sites
-            keyset.getAllowedSites().forEach(allowedSiteId ->
-                    result.computeIfPresent(allowedSiteId, (privateSiteId, privateSiteMap) -> {
-                        if(privateSiteId.intValue() != siteId) {
-                            privateSiteMap.put(keysetId, keyset);
-                        }
-                        return privateSiteMap;
-                    }));
+            Set<Integer> allowedSites = keyset.getAllowedSites();
+            if(allowedSites != null)
+            {
+                allowedSites.forEach(allowedSiteId ->
+                        result.computeIfPresent(allowedSiteId, (privateSiteId, privateSiteMap) -> {
+                            if(privateSiteId.intValue() != siteId) {
+                                privateSiteMap.put(keysetId, keyset);
+                            }
+                            return privateSiteMap;
+                        }));
+            }
         });
 
         return result;
@@ -272,12 +276,15 @@ public final class PrivateSiteUtil {
             });
             //Add the key to all allowed sites
             Set<Integer> allowedSites = globalKeysets.get(keysetKey.getKeysetId()).getAllowedSites();
-            allowedSites.forEach(allowedSiteId -> {
-                result.computeIfPresent(allowedSiteId, (privateSiteId, privateSiteSet) -> {
-                   privateSiteSet.add(keysetKey);
-                   return privateSiteSet;
+            if(allowedSites != null)
+            {
+                allowedSites.forEach(allowedSiteId -> {
+                    result.computeIfPresent(allowedSiteId, (privateSiteId, privateSiteSet) -> {
+                        privateSiteSet.add(keysetKey);
+                        return privateSiteSet;
+                    });
                 });
-            });
+            }
         });
         return result;
     }
