@@ -5,6 +5,7 @@ import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.model.EncryptionKey;
+import com.uid2.shared.model.KeysetKey;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -110,7 +111,7 @@ public final class PrivateSiteUtil {
     public static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getEncryptionKeyAclsForEachSite(
             Collection<OperatorKey> operators,
             Map<Integer, EncryptionKeyAcl> acls) {
-        final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = getPrivateSiteAcls(operators);
+        final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = getPrivateSiteMap(operators);
 
         acls.forEach((siteId, acl) -> {
             // Add it to site file for its site_id
@@ -140,6 +141,35 @@ public final class PrivateSiteUtil {
                 });
             }
         });
+        return result;
+    }
+
+    public static HashMap<Integer, Map<Integer, Keyset>> getKeysetForEachSite(Collection<OperatorKey> operators,
+        Map<Integer, Keyset> keysets) {
+        final HashMap<Integer, Map<Integer, Keyset>> result = getPrivateSiteMap(operators);
+
+        keysets.forEach((keysetId, keyset) -> {
+            int siteId = keyset.getSiteId();
+            // Add to list for own site
+            result.computeIfPresent(siteId, (privateSiteId, privateKeysetMap) -> {
+                privateKeysetMap.put(keysetId, keyset);
+                return privateKeysetMap;
+            });
+
+            // Add to list of all allowed sites
+            Set<Integer> allowedSites = keyset.getAllowedSites();
+            if(allowedSites != null)
+            {
+                allowedSites.forEach(allowedSiteId ->
+                        result.computeIfPresent(allowedSiteId, (privateSiteId, privateSiteMap) -> {
+                            if(privateSiteId.intValue() != siteId) {
+                                privateSiteMap.put(keysetId, keyset);
+                            }
+                            return privateSiteMap;
+                        }));
+            }
+        });
+
         return result;
     }
 
@@ -177,8 +207,8 @@ public final class PrivateSiteUtil {
         return result;
     }
 
-    private static HashMap<Integer, Map<Integer, EncryptionKeyAcl>> getPrivateSiteAcls(Collection<OperatorKey> operators) {
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> result = new HashMap<>();
+    private static <T> HashMap<Integer, Map<Integer, T>> getPrivateSiteMap(Collection<OperatorKey> operators) {
+        HashMap<Integer, Map<Integer, T>> result = new HashMap<>();
         operators.forEach(o -> {
             // TODO: Should we check if site is disabled?
             if (o.getOperatorType() == OperatorType.PRIVATE
@@ -232,4 +262,30 @@ public final class PrivateSiteUtil {
         }
     }
 
+    public static PrivateSiteDataMap<KeysetKey> getKeysetKeys(Collection<OperatorKey> globalOperators,
+                                                              Collection<KeysetKey> globalKeysetKeys,
+                                                              Map<Integer, Keyset> globalKeysets) {
+        final PrivateSiteDataMap<KeysetKey> result = getPrivateSites(globalOperators);
+
+        globalKeysetKeys.stream().forEach(keysetKey -> {
+            //Add the key from keysets for its own site
+            int siteId = globalKeysets.get(keysetKey.getKeysetId()).getSiteId();
+            result.computeIfPresent(siteId, (privateSiteId, privateSiteSet) -> {
+                privateSiteSet.add(keysetKey);
+                return privateSiteSet;
+            });
+            //Add the key to all allowed sites
+            Set<Integer> allowedSites = globalKeysets.get(keysetKey.getKeysetId()).getAllowedSites();
+            if(allowedSites != null)
+            {
+                allowedSites.forEach(allowedSiteId -> {
+                    result.computeIfPresent(allowedSiteId, (privateSiteId, privateSiteSet) -> {
+                        privateSiteSet.add(keysetKey);
+                        return privateSiteSet;
+                    });
+                });
+            }
+        });
+        return result;
+    }
 }
