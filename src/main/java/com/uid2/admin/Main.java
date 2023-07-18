@@ -72,7 +72,7 @@ public class Main {
     public void run() {
         try {
             AuthFactory authFactory = new GithubAuthFactory(config);
-            TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+            TaggableCloudStorage cloudStorage = createStorage();
             FileStorage fileStorage = new TmpFileStorage();
             ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
             FileManager fileManager = new FileManager(cloudStorage, fileStorage);
@@ -204,6 +204,14 @@ public class Main {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
         }
+    }
+
+    private TaggableCloudStorage createStorage() {
+        if (config.containsKey(com.uid2.shared.Const.Config.AccessKeyIdProp)) {
+            return CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+        }
+
+        return CloudUtils.createStorageWithIam(config.getString(Const.Config.CoreS3BucketProp));
     }
 
     public static void main(String[] args) {
