@@ -20,6 +20,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.CloudPath;
@@ -48,7 +49,7 @@ public class PrivateSiteDataSyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+        ICloudStorage cloudStorage = getStorage();
         FileStorage fileStorage = new TmpFileStorage();
         ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
         Clock clock = new InstantClock();
@@ -103,7 +104,10 @@ public class PrivateSiteDataSyncJob extends Job {
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
-        RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
+        RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(
+                cloudStorage,
+                cloudStorage,
+                operatorScope);
 
         // so that we will get a single consistent version of everything before generating private site data
         synchronized (writeLock) {
@@ -163,7 +167,12 @@ public class PrivateSiteDataSyncJob extends Job {
         );
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
         KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
-        KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
+        KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(
+                globalOperators,
+                globalKeysetKeys,
+                globalKeysets,
+                globalMaxKeysetKeyId,
+                keysetKeyWriter);
 
         siteSyncJob.execute();
         clientSyncJob.execute();
@@ -171,5 +180,13 @@ public class PrivateSiteDataSyncJob extends Job {
         keyAclSyncJob.execute();
         keysetSyncJob.execute();
         keysetKeySyncJob.execute();
+    }
+
+    private TaggableCloudStorage getStorage() {
+        if (config.containsKey(com.uid2.shared.Const.Config.AccessKeyIdProp)) {
+            return CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+        }
+
+        return CloudUtils.createStorageWithIam(config.getString(Const.Config.CoreS3BucketProp));
     }
 }
