@@ -41,7 +41,7 @@ public class RotatingAdminKeysetStore implements StoreReader<Map<Integer, AdminK
 
     @Override
     public long loadContent(JsonObject metadata) throws Exception {
-        return reader.loadContent(metadata, "keysets");
+        return reader.loadContent(metadata, "admin_keysets");
     }
 
     @Override
