@@ -1,12 +1,13 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.admin.model.ClientType;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
+import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
+import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -23,15 +24,15 @@ public class SharingService implements IService {
     private final AuthMiddleware auth;
 
     private final WriteLock writeLock;
-    private final KeysetStoreWriter storeWriter;
-    private final RotatingKeysetProvider keysetProvider;
+    private final AdminKeysetWriter storeWriter;
+    private final RotatingAdminKeysetStore keysetProvider;
     private final IKeysetKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
-                          KeysetStoreWriter storeWriter,
-                          RotatingKeysetProvider keysetProvider,
+                          AdminKeysetWriter storeWriter,
+                          RotatingAdminKeysetStore keysetProvider,
                           IKeysetKeyManager keyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
@@ -74,38 +75,19 @@ public class SharingService implements IService {
 
             final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowlist");
+           final JsonArray allowlist = body.getJsonArray("allowlist");
+           final JsonArray allowedTypes = body.getJsonArray("allowed_types");
            Integer keysetId = body.getInteger("keyset_id");
            final Integer siteId = body.getInteger("site_id");
 
-           final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = keysetsById.get(keysetId);
+           final Map<Integer, AdminKeyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
+           AdminKeyset keyset = keysetsById.get(keysetId);
+           AdminKeyset newKeyset = null;
 
-           String name;
-
-           if (keyset == null) {
-               keysetId = Collections.max(keysetsById.keySet()) + 1;
-               name = "";
-           } else {
-               keysetId = keyset.getKeysetId();
-               name = keyset.getName();
-           }
-
-           final Set<Integer> newlist = whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet());
-
-           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                   newlist, Instant.now().getEpochSecond(), true, true);
-
-           keysetsById.put(keysetId, newKeyset);
            try {
-               storeWriter.upload(keysetsById, null);
-               //Create a new key
-               this.keyManager.addKeysetKey(keysetId);
+               newKeyset = setAdminKeyset(rc, allowlist, allowedTypes, siteId, keysetsById, keyset);
            } catch (Exception e) {
                rc.fail(500, e);
-               return;
            }
 
            JsonObject jo = jsonFullKeyset(newKeyset);
@@ -115,17 +97,6 @@ public class SharingService implements IService {
         }
     }
 
-    private JsonObject jsonFullKeyset(Keyset keyset) {
-        JsonObject jo = new JsonObject();
-        jo.put("keyset_id", keyset.getKeysetId());
-        jo.put("site_id", keyset.getSiteId());
-        jo.put("name", keyset.getName());
-        jo.put("allowlist", keyset.getAllowedSites());
-        jo.put("created", keyset.getCreated());
-        jo.put("is_enabled", keyset.isEnabled());
-        jo.put("is_default", keyset.isDefault());
-        return jo;
-    }
 
     private void handleListKeyset(RoutingContext rc) {
         int keysetId;
@@ -137,7 +108,7 @@ public class SharingService implements IService {
             return;
         }
 
-        Keyset keyset = this.keysetProvider.getSnapshot().getAllKeysets().get(keysetId);
+        AdminKeyset keyset = this.keysetProvider.getSnapshot().getAllKeysets().get(keysetId);
 
         if (keyset == null) {
             LOGGER.warn("Failed to find keyset for keyset id: " + keyset);
@@ -151,8 +122,8 @@ public class SharingService implements IService {
                 .end(jo.encode());
     }
 
-    private Keyset getDefaultKeyset(Map<Integer, Keyset> keysets, Integer siteId) {
-           for(Keyset keyset: keysets.values()) {
+    private AdminKeyset getDefaultKeyset(Map<Integer, AdminKeyset> keysets, Integer siteId) {
+           for(AdminKeyset keyset: keysets.values()) {
                if(keyset.getSiteId() == siteId && keyset.isDefault()) {
                    return keyset;
                }
@@ -163,8 +134,8 @@ public class SharingService implements IService {
     private void handleListAllKeysets(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
-            Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-            for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
+            Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
                 JsonObject jo = jsonFullKeyset(keyset.getValue());
                 ja.add(jo);
             }
@@ -187,7 +158,7 @@ public class SharingService implements IService {
             return;
         }
 
-        Keyset keyset = getDefaultKeyset(this.keysetProvider.getSnapshot().getAllKeysets(), siteId);
+        AdminKeyset keyset = getDefaultKeyset(this.keysetProvider.getSnapshot().getAllKeysets(), siteId);
 
         if (keyset == null) {
             LOGGER.warn("Failed to find keyset for site id: " + siteId);
@@ -202,6 +173,7 @@ public class SharingService implements IService {
         }
         JsonObject jo = new JsonObject();
         jo.put("allowlist", listedSites);
+        jo.put("allowed_types", keyset.getAllowedTypes());
         jo.put("hash", keyset.hashCode());
 
         rc.response()
@@ -212,8 +184,8 @@ public class SharingService implements IService {
     private void handleListAllAllowlist(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
-            Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-            for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
+            Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
                 JsonArray listedSites = new JsonArray();
                 Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
                 if(allowedSites != null) {
@@ -223,6 +195,7 @@ public class SharingService implements IService {
                 jo.put("keyset_id", keyset.getValue().getKeysetId());
                 jo.put("site_id", keyset.getValue().getSiteId());
                 jo.put("allowlist", listedSites);
+                jo.put("allowed_types", keyset.getValue().getAllowedTypes());
                 jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);
             }
@@ -254,12 +227,13 @@ public class SharingService implements IService {
            }
 
 
-           final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = getDefaultKeyset(collection, siteId);
+           final Map<Integer, AdminKeyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
+           AdminKeyset keyset = getDefaultKeyset(keysetsById, siteId);
 
            final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowlist");
+           final JsonArray allowlist = body.getJsonArray("allowlist");
+           final JsonArray allowedTypes = body.getJsonArray("allowed_types");
            final int hash = body.getInteger("hash");
 
            if (keyset != null &&  hash != keyset.hashCode()) {
@@ -267,41 +241,71 @@ public class SharingService implements IService {
                return;
            }
 
-           Integer keysetId;
-           String name;
+            AdminKeyset newKeyset = null;
 
-           if (keyset == null) {
-               keysetId = Collections.max(collection.keySet()) + 1;
-               name = "";
-           } else {
-               keysetId = keyset.getKeysetId();
-               name = keyset.getName();
-           }
-
-           final Set<Integer> newlist = whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet());
-
-           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                   newlist, Instant.now().getEpochSecond(), true, true);
-
-           collection.put(keysetId, newKeyset);
-           try {
-               storeWriter.upload(collection, null);
-               //Create new key for keyset
-               this.keyManager.addKeysetKey(keysetId);
-           } catch (Exception e) {
-               rc.fail(500, e);
-               return;
-           }
+            try {
+                newKeyset = setAdminKeyset(rc, allowlist, allowedTypes, siteId, keysetsById, keyset);
+            } catch (Exception e) {
+                rc.fail(500, e);
+            }
 
            JsonObject jo = new JsonObject();
-           jo.put("allowlist", whitelist);
+           jo.put("allowlist", allowlist);
+           jo.put("allowed_types", newKeyset.getAllowedTypes());
            jo.put("hash", newKeyset.hashCode());
 
            rc.response()
                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                    .end(jo.encode());
         }
+    }
+
+    private AdminKeyset setAdminKeyset(RoutingContext rc, JsonArray allowList, JsonArray allowedTypes, Integer siteId, Map<Integer, AdminKeyset> keysetsById, AdminKeyset keyset)
+            throws Exception{
+        int keysetId;
+        String name;
+
+        if (keyset == null) {
+            keysetId = Collections.max(keysetsById.keySet()) + 1;
+            name = "";
+        } else {
+            keysetId = keyset.getKeysetId();
+            name = keyset.getName();
+        }
+
+        final Set<Integer> newlist = allowList.stream()
+                .map(s -> (Integer) s)
+                .collect(Collectors.toSet());
+
+        Set<ClientType> newAllowedTypes = null;
+        if(allowedTypes == null || allowedTypes.isEmpty()) {
+            newAllowedTypes = new HashSet<>();
+        } else {
+            newAllowedTypes = allowedTypes.stream()
+                    .map(s -> Enum.valueOf(ClientType.class, s.toString()))
+                    .collect(Collectors.toSet());
+        }
+
+        final AdminKeyset newKeyset = new AdminKeyset(keysetId, siteId, name,
+                newlist, Instant.now().getEpochSecond(), true, true, newAllowedTypes);
+
+        keysetsById.put(keysetId, newKeyset);
+        storeWriter.upload(keysetsById, null);
+        //Create a new key
+        this.keyManager.addKeysetKey(keysetId);
+        return newKeyset;
+    }
+
+    private JsonObject jsonFullKeyset(AdminKeyset keyset) {
+        JsonObject jo = new JsonObject();
+        jo.put("keyset_id", keyset.getKeysetId());
+        jo.put("site_id", keyset.getSiteId());
+        jo.put("name", keyset.getName());
+        jo.put("allowlist", keyset.getAllowedSites());
+        jo.put("allowed_types", keyset.getAllowedTypes());
+        jo.put("created", keyset.getCreated());
+        jo.put("is_enabled", keyset.isEnabled());
+        jo.put("is_default", keyset.isDefault());
+        return jo;
     }
 }

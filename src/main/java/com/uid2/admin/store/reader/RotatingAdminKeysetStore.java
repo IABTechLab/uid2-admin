@@ -19,6 +19,9 @@ public class RotatingAdminKeysetStore implements StoreReader<Map<Integer, AdminK
         this.reader = new ScopedStoreReader(fileStreamProvider, scope, new AdminKeysetParser(), "keysets");
     }
 
+    public AdminKeysetSnapshot getSnapshot() {
+        return reader.getSnapshot();
+    }
     @Override
     public Map<Integer, AdminKeyset> getAll() {
         return reader.getSnapshot().getAllKeysets();

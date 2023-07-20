@@ -12,6 +12,7 @@ import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.secret.SaltRotation;
 import com.uid2.admin.secret.SecureKeyGenerator;
 import com.uid2.admin.store.*;
+import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
@@ -122,6 +123,8 @@ public class Main {
                     throw e;
                 }
             }
+            RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, keysetGlobalScope);
+            AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
 
             CloudPath keysetKeyMetadataPath = new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp));
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
@@ -175,7 +178,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
-                    new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
+                    new SharingService(auth, writeLock, adminKeysetStoreWriter, adminKeysetProvider, encryptionKeyService),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
