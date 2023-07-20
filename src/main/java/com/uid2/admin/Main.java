@@ -138,6 +138,21 @@ public class Main {
                 }
             }
 
+            CloudPath clientSideKeypairMetadataPath = new CloudPath(config.getString(Const.Config.ClientSideKeypairsMetadataPathProp));
+            GlobalScope clientSideKeypairGlobalScope = new GlobalScope(clientSideKeypairMetadataPath);
+            RotatingClientSideKeypairStore clientSideKeypairProvider = new RotatingClientSideKeypairStore(cloudStorage, clientSideKeypairGlobalScope);
+            ClientSideKeypairStoreWriter clientSideKeypairStoreWriter = new ClientSideKeypairStoreWriter(clientSideKeypairProvider, fileManager, versionGenerator, clock, clientSideKeypairGlobalScope);
+            try {
+                clientSideKeypairProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")) {
+                    clientSideKeypairStoreWriter.upload(new HashSet<>(), null);
+                    clientSideKeypairProvider.loadContent();
+                } else {
+                    throw e;
+                }
+            }
+
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
             GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
             RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -176,6 +191,7 @@ public class Main {
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
+                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
