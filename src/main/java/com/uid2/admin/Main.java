@@ -109,22 +109,20 @@ public class Main {
             keyAclProvider.loadContent();
             KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, versionGenerator, clock, keyAclGlobalScope);
 
-            CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
+            CloudPath keysetMetadataPath = new CloudPath(config.getString("admin_keyset_metadata_path"));
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
-            RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
-            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
+            RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, keysetGlobalScope);
+            AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
             try {
-                keysetProvider.loadContent();
+                adminKeysetProvider.loadContent();
             } catch (CloudStorageException e) {
                 if(e.getMessage().contains("The specified key does not exist")){
-                    keysetStoreWriter.upload(new HashMap<>(), null);
-                    keysetProvider.loadContent();
+                    adminKeysetStoreWriter.upload(new HashMap<>(), null);
+                    adminKeysetProvider.loadContent();
                 } else {
                     throw e;
                 }
             }
-            RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, keysetGlobalScope);
-            AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
 
             CloudPath keysetKeyMetadataPath = new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp));
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
@@ -171,7 +169,7 @@ public class Main {
             jobDispatcher.start();
 
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
+                    config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, adminKeysetProvider, adminKeysetStoreWriter, keyGenerator, clock);
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, encryptionKeyService, keyGenerator),
