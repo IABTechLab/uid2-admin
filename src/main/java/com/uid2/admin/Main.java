@@ -6,6 +6,7 @@ import com.uid2.admin.auth.GithubAuthFactory;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
+import com.uid2.admin.job.jobsync.keyset.AdminToOperatorKeysetJob;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.ISaltRotation;
@@ -192,6 +193,10 @@ public class Main {
 
             AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
+
+            AdminToOperatorKeysetJob adminToOperatorKeysetJob = new AdminToOperatorKeysetJob(config, writeLock);
+            jobDispatcher.enqueue(adminToOperatorKeysetJob);
+            jobDispatcher.executeNextJob();
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
