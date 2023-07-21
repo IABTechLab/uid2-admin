@@ -307,6 +307,42 @@ public class SharingServiceTest extends ServiceTestBase {
                 "      6\n" +
                 "    ],\n" +
                 "    \"keyset_id\": 1," +
+                "    \"site_id\": 5," +
+                "     \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(1, 5, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetWithoutNameUpdate(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test-name", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"keyset_id\": 1," +
                 "    \"site_id\": 5" +
                 "  }";
 
@@ -315,7 +351,7 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            Keyset expected = new Keyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            Keyset expected = new Keyset(1, 5, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
             compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
@@ -341,7 +377,8 @@ public class SharingServiceTest extends ServiceTestBase {
                 "      25,\n" +
                 "      6\n" +
                 "    ],\n" +
-                "    \"site_id\": 8" +
+                "    \"site_id\": 8," +
+                "    \"name\": \"test-name\"" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -349,7 +386,7 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            Keyset expected = new Keyset(4, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            Keyset expected = new Keyset(4, 8, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
             compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());

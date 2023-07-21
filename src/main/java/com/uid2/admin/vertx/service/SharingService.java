@@ -77,18 +77,19 @@ public class SharingService implements IService {
            final JsonArray whitelist = body.getJsonArray("allowlist");
            Integer keysetId = body.getInteger("keyset_id");
            final Integer siteId = body.getInteger("site_id");
+           String name = body.getString("name", "");
 
            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
            Keyset keyset = keysetsById.get(keysetId);
 
-           String name;
 
            if (keyset == null) {
                keysetId = Collections.max(keysetsById.keySet()) + 1;
-               name = "";
            } else {
                keysetId = keyset.getKeysetId();
-               name = keyset.getName();
+               if(name.equals("")){
+                   name = keyset.getName();
+               }
            }
 
            final Set<Integer> newlist = whitelist.stream()

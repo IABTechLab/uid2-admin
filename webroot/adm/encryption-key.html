@@ -30,7 +30,10 @@
 <h3>Operations</h3>
 
 <ul>
-    <li class="ro-sem" style="display: none"><a href="#" id="doList">List Keys</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doListKeys">List Keys</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doListKeysBySite">List Keys By Site</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doListKeysetKeys">List Keyset Keys</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doListKeysetKeysByKeysetId">List Keyset Keys By Keyset Id</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateMaster">Rotate Master Key</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doAddSiteKey">Add Site Key</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateSite">Rotate Site Key</a></li>
@@ -49,8 +52,50 @@
 
 <script language="JavaScript">
     $(document).ready(function () {
-        $('#doList').on('click', function () {
+        $('#doListKeys').on('click', function () {
             doApiCall('GET', '/api/key/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doListKeysBySite').on('click', function () {
+
+            const siteId = parseInt($('#siteId').val());
+            const url = '/api/key/list';
+
+            doApiCallWithCallback('GET', url, (text) => {
+                const ja = JSON.parse(text);
+
+                const filtered = ja.filter(function(key) {
+                    return key.site_id === siteId
+                });
+                const pretty = JSON.stringify(filtered,null,2);
+                $('#standardOutput').html(pretty);
+
+            }, (err) => {
+                $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
+            });
+        });
+
+        $('#doListKeysetKeys').on('click', function () {
+            doApiCall('GET', '/api/key/list_keyset_keys', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doListKeysetKeysByKeysetId').on('click', function () {
+
+            const keysetId = parseInt($('#keysetId').val());
+            const url = '/api/key/list_keyset_keys';
+
+            doApiCallWithCallback('GET', url, (text) => {
+                const ja = JSON.parse(text);
+
+                const filtered = ja.filter(function(key) {
+                    return key.keyset_id === keysetId
+                });
+                const pretty = JSON.stringify(filtered,null,2);
+                $('#standardOutput').html(pretty);
+
+            }, (err) => {
+                $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
+            });
         });
 
         $('#doRotateMaster').on('click', function () {
