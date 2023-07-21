@@ -24,6 +24,7 @@ public class Site {
     public Boolean isEnabled() { return enabled; }
 
     public Set<ClientType> getTypes() { return types; }
+    public void setTypes(Set<ClientType> types) { this.types = types; }
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 
     @Override

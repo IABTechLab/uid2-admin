@@ -109,7 +109,7 @@ public class Main {
             keyAclProvider.loadContent();
             KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, versionGenerator, clock, keyAclGlobalScope);
 
-            CloudPath keysetMetadataPath = new CloudPath(config.getString("admin_keyset_metadata_path"));
+            CloudPath keysetMetadataPath = new CloudPath(config.getString("admin_keysets_metadata_path"));
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, keysetGlobalScope);
             AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);

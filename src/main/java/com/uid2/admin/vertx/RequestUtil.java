@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.model.ClientType;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.shared.auth.Role;
@@ -22,6 +23,18 @@ public class RequestUtil {
                     .map(r -> Role.valueOf(r))
                     .collect(Collectors.toSet());
             return roles;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static Set<ClientType> getTypes(String typeSpec) {
+        try {
+            Set<ClientType> types = Arrays.stream(typeSpec.split(","))
+                    .map(r -> r.trim().toUpperCase())
+                    .map(r -> ClientType.valueOf(r))
+                    .collect(Collectors.toSet());
+            return types;
         } catch (Exception e) {
             return null;
         }

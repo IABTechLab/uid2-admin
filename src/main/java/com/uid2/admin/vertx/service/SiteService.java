@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.model.ClientType;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.StoreWriter;
@@ -20,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+
+import static com.uid2.admin.vertx.RequestUtil.getTypes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,6 +68,11 @@ public class SiteService implements IService {
                 this.handleSiteEnable(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteTypesSet(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -93,6 +101,7 @@ public class SiteService implements IService {
                 jo.put("id", site.getId());
                 jo.put("name", site.getName());
                 jo.put("enabled", site.isEnabled());
+                jo.put("types", site.getTypes());
 
                 List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
                 JsonArray jr = new JsonArray();
@@ -142,11 +151,13 @@ public class SiteService implements IService {
                 }
             }
 
+            Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
+
             final List<Site> sites = this.siteProvider.getAllSites()
                     .stream().sorted(Comparator.comparingInt(Site::getId))
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
-            final Site newSite = new Site(siteId, name, enabled, new HashSet<>());
+            final Site newSite = new Site(siteId, name, enabled, types);
 
             // add site to the array
             sites.add(newSite);
@@ -156,6 +167,29 @@ public class SiteService implements IService {
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newSite));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSiteTypesSet(RoutingContext rc) {
+        try {
+            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+
+            Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            existingSite.setTypes(types);
+
+            storeWriter.upload(sites, null);
+
+            rc.response().end(jsonWriter.writeValueAsString(existingSite));
         } catch (Exception e) {
             rc.fail(500, e);
         }
