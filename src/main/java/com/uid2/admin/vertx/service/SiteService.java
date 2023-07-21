@@ -146,7 +146,7 @@ public class SiteService implements IService {
                     .stream().sorted(Comparator.comparingInt(Site::getId))
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
-            final Site newSite = new Site(siteId, name, enabled);
+            final Site newSite = new Site(siteId, name, enabled, new HashSet<>());
 
             // add site to the array
             sites.add(newSite);

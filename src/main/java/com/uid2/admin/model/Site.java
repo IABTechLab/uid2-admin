@@ -1,16 +1,20 @@
 package com.uid2.admin.model;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class Site {
     private final int id;
     private final String name;
     private Boolean enabled;
 
-    public Site(int id, String name, Boolean enabled) {
+    private Set<ClientType> types;
+
+    public Site(int id, String name, Boolean enabled, Set<ClientType> types) {
         this.id = id;
         this.name = name;
         this.enabled = enabled;
+        this.types = types;
     }
 
     public int getId() { return id; }
@@ -18,6 +22,8 @@ public class Site {
     public String getName() { return name; }
 
     public Boolean isEnabled() { return enabled; }
+
+    public Set<ClientType> getTypes() { return types; }
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 
     @Override
@@ -26,6 +32,7 @@ public class Site {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", enabled=" + enabled +
+                ", types=" + types.toString() +
                 '}';
     }
 

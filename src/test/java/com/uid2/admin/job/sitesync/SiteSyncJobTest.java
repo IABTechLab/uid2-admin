@@ -47,7 +47,7 @@ public class SiteSyncJobTest {
                     new HashSet<>(Collections.singletonList(Role.OPERATOR)),
                     OperatorType.PRIVATE));
 
-    Site site = new Site(scopedSiteId, "site 1", true);
+    Site site = new Site(scopedSiteId, "site 1", true, new HashSet<>());
     private SiteStoreFactory siteStoreFactory;
     private FileManager fileManager;
 
@@ -119,7 +119,7 @@ public class SiteSyncJobTest {
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
-        Site updatedSite = new Site(scopedSiteId, "site 1 updated", true);
+        Site updatedSite = new Site(scopedSiteId, "site 1 updated", true, new HashSet<>());
         SiteSyncJob job = new SiteSyncJob(new MultiScopeStoreWriter<>(
                 fileManager,
                 siteStoreFactory,

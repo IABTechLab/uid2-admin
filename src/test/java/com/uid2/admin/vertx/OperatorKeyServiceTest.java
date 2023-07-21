@@ -53,7 +53,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPTOUT);
         roles.add(Role.OPERATOR);
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(5, "test_site", true, new HashSet<>()));
         OperatorKey[] expectedOperators = {
                 new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC)
         };
@@ -85,7 +85,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(5, "test_site", true, new HashSet<>()));
         OperatorKey[] expectedOperators = {
                 new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)
         };
@@ -111,7 +111,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(5, "test_site", true, new HashSet<>()));
         OperatorKey[] expectedOperators = {
                 new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)
         };
@@ -159,7 +159,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(5, "test_site", true, new HashSet<>()));
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)), OperatorType.PRIVATE));
         OperatorKey[] expectedOperators = {
                 new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, new HashSet<>(Arrays.asList(Role.OPERATOR)), OperatorType.PUBLIC)
@@ -194,7 +194,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
         Set<Role> roles = new HashSet<>();
         roles.add(Role.OPERATOR);
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(5, "test_site", true, new HashSet<>()));
         setOperatorKeys(new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC));
         OperatorKey[] expectedOperators = {
                 new OperatorKey("", "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PRIVATE)

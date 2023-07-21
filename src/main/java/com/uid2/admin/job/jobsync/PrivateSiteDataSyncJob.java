@@ -5,7 +5,7 @@ import com.uid2.admin.job.jobsync.acl.KeyAclSyncJob;
 import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
 import com.uid2.admin.job.jobsync.key.EncryptionKeySyncJob;
 import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
-import com.uid2.admin.job.jobsync.keyset.KeysetSyncJob;
+import com.uid2.admin.job.jobsync.keyset.SiteKeysetSyncJob;
 import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.Site;
@@ -162,14 +162,14 @@ public class PrivateSiteDataSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
-        KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
+        SiteKeysetSyncJob siteKeysetSyncJob = new SiteKeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
         KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
 
         siteSyncJob.execute();
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
         keyAclSyncJob.execute();
-        keysetSyncJob.execute();
+        siteKeysetSyncJob.execute();
         keysetKeySyncJob.execute();
     }
 }
