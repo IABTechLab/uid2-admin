@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.model.ClientType;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SiteService;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -176,6 +178,35 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void addSiteWithTypes(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] initialSites = {
+                new Site(7, "initial_site", false, new HashSet<>()),
+        };
+        Site[] addedSites = {
+                new Site(8, "test_site", false, Set.of(ClientType.DSP, ClientType.ADVERTISER)),
+        };
+
+        setSites(initialSites);
+
+        post(vertx, "api/site/add?name=test_site&types=DSP,ADVERTISER", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void addSiteEnabled(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
@@ -303,6 +334,35 @@ public class SiteServiceTest extends ServiceTestBase {
 
             try {
                 verify(storeWriter, times(0)).upload(any(), isNull());
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void setTypes(Vertx vertx, VertxTestContext testContext) {
+                fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] initialSites = {
+                new Site(3, "test_site", true, new HashSet<>()),
+        };
+        Site[] updatedSites = {
+                new Site(3, "test_site", true, Set.of(ClientType.DSP, ClientType.ADVERTISER)),
+        };
+
+        setSites(initialSites);
+
+        post(vertx, "api/site/set-types?id=3&types=DSP,ADVERTISER", "", ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
+
+            try {
+                verify(storeWriter).upload(collectionOfSize(initialSites.length), isNull());
             } catch (Exception ex) {
                 fail(ex);
             }

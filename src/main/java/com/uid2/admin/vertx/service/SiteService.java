@@ -151,7 +151,11 @@ public class SiteService implements IService {
                 }
             }
 
-            Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
+            Set<ClientType> types = new HashSet<>();
+            if(!rc.queryParam("types").isEmpty())
+            {
+                types = getTypes(rc.queryParam("types").get(0));
+            }
 
             final List<Site> sites = this.siteProvider.getAllSites()
                     .stream().sorted(Comparator.comparingInt(Site::getId))
