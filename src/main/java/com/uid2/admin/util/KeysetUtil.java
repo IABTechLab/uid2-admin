@@ -5,9 +5,12 @@ import com.uid2.admin.model.ClientType;
 import com.uid2.shared.auth.Keyset;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static java.lang.Math.max;
 
 public class KeysetUtil {
     public static AdminKeyset lookUpKeyset(int siteId, Map<Integer, AdminKeyset> keysets) {
@@ -20,7 +23,8 @@ public class KeysetUtil {
     }
 
     public static Integer getMaxKeyset(Map<Integer, AdminKeyset> keysets) {
-        return keysets.keySet().size();
+        if(keysets.isEmpty()) return 3;
+        return max(Collections.max(keysets.keySet()), 3);
     }
 
     public static AdminKeyset createDefaultKeyset(int siteId, int keysetId) {

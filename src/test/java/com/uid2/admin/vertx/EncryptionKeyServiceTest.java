@@ -156,9 +156,9 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setKeysetKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
 
-        AdminKeyset expected = new AdminKeyset(2, 5, "", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
-        assertNotNull(keysets.get(2));
-        assertTrue(keysets.get(2).equals(expected));
+        AdminKeyset expected = new AdminKeyset(4, 5, "", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
+        assertNotNull(keysets.get(4));
+        assertTrue(keysets.get(4).equals(expected));
         verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
     }
 
@@ -796,6 +796,9 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), clock.now().plusSeconds(MASTER_KEY_ACTIVATES_IN_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), clock.now().plusSeconds(MASTER_KEY_EXPIRES_AFTER_SECONDS + A_HUNDRED_DAYS_IN_SECONDS), 5),
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 6),
                 new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 7),
+                new EncryptionKey(15, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
+                new EncryptionKey(16, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
+                new EncryptionKey(17, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
@@ -804,10 +807,17 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         final KeysetKey[] keysetKeys = {};
         setKeysetKeys(0, keysetKeys);
         keyService.createKeysetKeys();
-        // 4 keys should be added
-        verify(keysetKeyStoreWriter).upload(collectionOfSize(4), eq(777));
-        // 3 keysets should be created
-        assertEquals(3, keysets.keySet().size());
+        // 7 keys should be added
+        verify(keysetKeyStoreWriter).upload(collectionOfSize(7), eq(777));
+        // 6 keysets should be created
+        assertEquals(6, keysets.keySet().size());
+        //Special Keysets are set correctly
+        // Master key site id -1 : keyset id 1
+        assertEquals(-1, keysets.get(1).getSiteId());
+        // Master key site id -2 : keyset id 2
+        assertEquals(-2, keysets.get(2).getSiteId());
+        // Master key site id 2 : keyset id 3
+        assertEquals(2, keysets.get(3).getSiteId());
     }
 
     @Test
