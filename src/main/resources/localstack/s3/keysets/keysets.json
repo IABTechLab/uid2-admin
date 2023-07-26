@@ -37,8 +37,17 @@
 
   },
   {
-    "keyset_id" : 821,
-    "site_id": 5,
+    "keyset_id" : 5,
+    "site_id": 124,
+    "name" : "My keyset",
+    "allowed_sites" : [2, 3, 4],
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+  },
+  {
+    "keyset_id" : 6,
+    "site_id": 125,
     "name" : "My keyset",
     "allowed_sites" : [2, 3, 4],
     "created" : 1617149276,

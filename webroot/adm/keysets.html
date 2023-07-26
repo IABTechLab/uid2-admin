@@ -32,7 +32,7 @@
 <ul>
   <li class="ro-adm" style="display: none"><a href="#" id="doListAll">List All Keysets</a></li>
   <li class="ro-adm" style="display: none"><a href="#" id="doListAllBySite">List All Keysets By Site Id</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doListKeyset">List Keyset</a></li>
+  <li class="ro-adm" style="display: none"><a href="#" id="doShowKeysetById">Show Keyset By Keyset Id</a></li>
   <li class="ro-adm" style="display: none"><a href="#" id="doReset">Reset Keyset</a></li>
   <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update Keyset</a></li>
   <li class="ro-adm" style="display: none"><a href="#" id="doMakeNew">Make New Keyset</a></li>
@@ -54,8 +54,11 @@
     });
 
     $('#doListAllBySite').on('click', function () {
-
       const siteId = parseInt($('#siteId').val());
+      if(!siteId) {
+        $('#errorOutput').html("Required Parameters: site_id")
+        return;
+      }
       const url = '/api/sharing/keysets';
 
       doApiCallWithCallback('GET', url, (text) => {
@@ -72,17 +75,21 @@
       });
     });
 
-    $('#doListKeyset').on('click', function () {
-      var keysetId = encodeURIComponent($('#keysetId').val());
+    $('#doShowKeysetById').on('click', function () {
+      const keysetId = parseInt($('#keysetId').val());
+      if(!keysetId) {
+        $('#errorOutput').html("Required Parameters: keyset_id")
+        return;
+      }
       doApiCall('GET', '/api/sharing/keyset/' + keysetId, '#standardOutput', '#errorOutput');
     });
 
     $('#doReset').on('click', function () {
       const siteId = parseInt($('#siteId').val());
       const keysetId = parseInt($('#keysetId').val());
-      if(isNaN(keysetId)) {
-        $("#standardOutput").html("Enter a keyset id");
-        return
+      if(!keysetId || !siteId) {
+        $('#errorOutput').html("Required Parameters: keyset_id, site_id")
+        return;
       }
       const url = '/api/sharing/keyset';
       doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify({allowlist: [], keyset_id : keysetId, site_id: siteId}))
@@ -91,6 +98,10 @@
     $('#doUpdate').on('click', function () {
       const siteId = parseInt($('#siteId').val());
       const keysetId = parseInt($('#keysetId').val());
+      if(!keysetId || !siteId) {
+        $('#errorOutput').html("Required Parameters: keyset_id, site_id")
+        return;
+      }
       let name = $('#keysetName').val();
       const url = '/api/sharing/keyset/' + keysetId.toString();
 
@@ -124,6 +135,10 @@
     });
     $('#doMakeNew').on('click', function () {
       const siteId = parseInt($('#siteId').val());
+      if(!siteId) {
+        $('#errorOutput').html("Required Parameters: site_id")
+        return;
+      }
       let name = $('#keysetName').val();
       const url = '/api/sharing/keyset';
 

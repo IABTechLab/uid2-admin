@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -19,13 +20,12 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager);
+        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, siteProvider);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {
@@ -292,6 +292,8 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSet(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
+        doReturn(new Site(5, "test-name", true)).when(siteProvider).getSite(5);
+
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
             put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
@@ -325,8 +327,76 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void KeysetSetBadSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(null).when(siteProvider).getSite(5);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"keyset_id\": 1," +
+                "    \"site_id\": 5," +
+                "     \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Site id 5 not found", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNoSiteIdOrKeysetId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "     \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("You must specify at least one of: keyset_id, site_id", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void KeysetSetWithoutNameUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(5, "test-name", true)).when(siteProvider).getSite(5);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test-name", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
@@ -362,6 +432,8 @@ public class SharingServiceTest extends ServiceTestBase {
     @Test
     void KeysetSetNew(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(8, "test-name", true)).when(siteProvider).getSite(8);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));

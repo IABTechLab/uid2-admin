@@ -1,7 +1,9 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IKeysetKeyManager;
+import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
+import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
@@ -25,6 +27,7 @@ public class SharingService implements IService {
     private final WriteLock writeLock;
     private final KeysetStoreWriter storeWriter;
     private final RotatingKeysetProvider keysetProvider;
+    private final RotatingSiteStore siteProvider;
     private final IKeysetKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
@@ -32,12 +35,14 @@ public class SharingService implements IService {
                           WriteLock writeLock,
                           KeysetStoreWriter storeWriter,
                           RotatingKeysetProvider keysetProvider,
-                          IKeysetKeyManager keyManager) {
+                          IKeysetKeyManager keyManager,
+                          RotatingSiteStore siteProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
         this.keyManager = keyManager;
+        this.siteProvider = siteProvider;
     }
 
     @Override
@@ -67,6 +72,7 @@ public class SharingService implements IService {
         synchronized (writeLock) {
            try {
                keysetProvider.loadContent();
+               siteProvider.loadContent();
            } catch (Exception e) {
                LOGGER.error("Failed to load key acls");
                rc.fail(500);
@@ -77,6 +83,14 @@ public class SharingService implements IService {
            final JsonArray whitelist = body.getJsonArray("allowlist");
            Integer keysetId = body.getInteger("keyset_id");
            final Integer siteId = body.getInteger("site_id");
+           if(keysetId == null && siteId == null){
+               ResponseUtil.error(rc, 400, "You must specify at least one of: keyset_id, site_id");
+               return;
+           }
+           if(siteId != null && siteProvider.getSite(siteId) == null) {
+               ResponseUtil.error(rc, 400, "Site id " + siteId + " not found");
+               return;
+           }
            String name = body.getString("name", "");
 
            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
