@@ -1,4 +1,4 @@
-function doApiCall(method, url, outputDiv, errorDiv) {
+function doApiCall(method, url, outputDiv, errorDiv, body) {
     $(outputDiv).html('');
     $(errorDiv).html('');
 
@@ -11,6 +11,7 @@ function doApiCall(method, url, outputDiv, errorDiv) {
         headers: {
             "Authorization": authHeader
         },
+        data : body,
         success: function (text) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).html(pretty);
@@ -51,6 +52,26 @@ function isJsonString(str) {
         return false;
     }
     return true;
+}
+
+function doApiCallWithCallback(method, url, onSuccess, onError, body) {
+    authHeader = "Bearer " + window.__uid2_admin_token;
+
+    $.ajax({
+        type: method,
+        url: url,
+        dataType: 'text',
+        headers: {
+            "Authorization": authHeader
+        },
+        data : body,
+        success: function (text) {
+            onSuccess(text);
+        },
+        error: function (err) {
+            onError(err);
+        }
+    });
 }
 
 function init() {
