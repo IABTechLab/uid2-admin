@@ -13,6 +13,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 import java.util.*;
@@ -355,7 +357,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
-            assertEquals("Site id 5 not found", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Site id 5 not valid", response.bodyAsJsonObject().getString("message"));
 
             testContext.completeNow();
         });
@@ -462,6 +464,164 @@ public class SharingServiceTest extends ServiceTestBase {
             compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(8, "test-name", true)).when(siteProvider).getSite(8);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 8, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"site_id\": 8," +
+                "    \"name\": \"test\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Keyset with same site_id and name already exists", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNewSameNameDifferentSite(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"site_id\": 8," +
+                "    \"name\": \"test\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(2, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNewEmptyAllowlist(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [],\n" +
+                "    \"site_id\": 8," +
+                "    \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(2, 8, "test", Set.of(), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetAllowSelf(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [8, 5],\n" +
+                "    \"site_id\": 8," +
+                "    \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(2, 8, "test", Set.of(5), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-2, -1, 2})
+    void KeysetSetReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [],\n" +
+                String.format("    \"site_id\": %d,", input) +
+                "    \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Site id " + input + " not valid", response.bodyAsJsonObject().getString("message"));
+
             testContext.completeNow();
         });
     }

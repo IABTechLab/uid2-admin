@@ -5,6 +5,7 @@ import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -87,8 +88,12 @@ public class SharingService implements IService {
                ResponseUtil.error(rc, 400, "You must specify at least one of: keyset_id, site_id");
                return;
            }
-           if(siteId != null && siteProvider.getSite(siteId) == null) {
-               ResponseUtil.error(rc, 400, "Site id " + siteId + " not found");
+           if(siteId != null &&
+                   (siteId == Const.Data.AdvertisingTokenSiteId
+                           || siteId == Const.Data.RefreshKeySiteId
+                           || siteId == Const.Data.MasterKeySiteId
+                           || siteProvider.getSite(siteId) == null)) {
+               ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                return;
            }
            String name = body.getString("name", "");
@@ -96,9 +101,10 @@ public class SharingService implements IService {
            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
            Keyset keyset = keysetsById.get(keysetId);
 
-
+            boolean create = false;
            if (keyset == null) {
                keysetId = Collections.max(keysetsById.keySet()) + 1;
+               create = true;
            } else {
                keysetId = keyset.getKeysetId();
                if(name.equals("")){
@@ -112,6 +118,14 @@ public class SharingService implements IService {
 
            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                    newlist, Instant.now().getEpochSecond(), true, true);
+
+            if(create){
+                if(keysetsById.values().stream().anyMatch(item ->
+                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equals(newKeyset.getName()))){
+                    ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
+                    return;
+                }
+            }
 
            keysetsById.put(keysetId, newKeyset);
            try {
