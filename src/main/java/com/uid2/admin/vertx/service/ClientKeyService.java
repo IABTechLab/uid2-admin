@@ -3,6 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IEncryptionKeyManager;
+import com.uid2.shared.model.KeyGenerationResult;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
@@ -208,14 +209,12 @@ public class ClientKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create random key and secret
-            String key = keyGenerator.generateFormattedKeyString(32);
-            if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + key;
-
+            KeyGenerationResult kgr = keyGenerator.generateFormattedKeyStringAndKeyHash(this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "", 32);
             String secret = keyGenerator.generateRandomKeyString(32);
 
             // add new client to array
             Instant created = Instant.now();
-            ClientKey newClient = new ClientKey(key, secret, created)
+            ClientKey newClient = new ClientKey(kgr.getKey(), kgr.getKeyHash(), secret, created)
                     .withNameAndContact(name)
                     .withSiteId(site.getId())
                     .withRoles(roles);
