@@ -21,6 +21,8 @@ public class KeysetUtil {
     }
 
     public static Integer getMaxKeyset(Map<Integer, Keyset> keysets) {
+        // keyset id 1/2/3 are assigned for master/refresh/default publisher encryption key ids,
+        // so we always reserve these 3 keyset ids for them
         if(keysets.isEmpty()) return 3;
         return max(Collections.max(keysets.keySet()), 3);
     }

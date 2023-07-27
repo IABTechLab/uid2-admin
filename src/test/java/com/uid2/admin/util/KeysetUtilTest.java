@@ -1,11 +1,14 @@
 package com.uid2.admin.util;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.uid2.shared.auth.Keyset;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Map;
 
+import static com.uid2.admin.util.KeysetUtil.getMaxKeyset;
 import static com.uid2.admin.util.KeysetUtil.lookUpKeyset;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -26,5 +29,40 @@ public class KeysetUtilTest {
 
         result = lookUpKeyset(4, keysets);
         assertNull(result);
+    }
+
+    // keyset id 1/2/3 are assigned for master/refresh/default publisher encryption key ids,
+    // so we always reserve these 3 keyset ids for them
+    @Test
+    public void testGetMaxKeyset() {
+        Map<Integer, Keyset> emptyKeysets = ImmutableMap.of();
+        assertEquals(3, getMaxKeyset(emptyKeysets));
+
+
+        Map<Integer, Keyset> singleKeyset = Map.of(
+                1, new Keyset(1, 1, "", new HashSet<>(), 0, true, true)
+        );
+        assertEquals(3, getMaxKeyset(singleKeyset));
+
+        Map<Integer, Keyset> twoKeysets = Map.of(
+                1, new Keyset(1, -1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, -2, "", new HashSet<>(), 0, true, false)
+        );
+        assertEquals(3, getMaxKeyset(twoKeysets));
+
+        Map<Integer, Keyset> threeKeysets = Map.of(
+                1, new Keyset(1, -1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, -2, "", new HashSet<>(), 0, true, false),
+                3, new Keyset(3, 2, "", new HashSet<>(), 0, true, true)
+        );
+        assertEquals(3, getMaxKeyset(threeKeysets));
+
+        Map<Integer, Keyset> fourKeysets = Map.of(
+                1, new Keyset(1, -1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, -2, "", new HashSet<>(), 0, true, false),
+                3, new Keyset(3, 2, "", new HashSet<>(), 0, true, true),
+                4, new Keyset(4, 3, "", new HashSet<>(), 0, true, true)
+        );
+        assertEquals(4, getMaxKeyset(fourKeysets));
     }
 }
