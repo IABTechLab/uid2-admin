@@ -414,8 +414,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "      25,\n" +
                 "      6\n" +
                 "    ],\n" +
-                "    \"keyset_id\": 1," +
-                "    \"site_id\": 5" +
+                "    \"keyset_id\": 1\n" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -535,6 +534,65 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {-2, -1, 2})
+    void KeysetSetNewReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [],\n" +
+                String.format("    \"site_id\": %d,", input) +
+                "    \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Site id " + input + " not valid", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-2, -1, 2})
+    void KeysetSetUpdateReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [],\n" +
+                String.format("    \"site_id\": %d,", input) +
+                "    \"name\": \"test-name\"," +
+                "    \"keyset_id\": 1" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Site id " + input + " not valid", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
     @Test
     void KeysetSetNewEmptyAllowlist(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
@@ -567,7 +625,38 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetAllowSelf(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetUpdateEmptyAllowlist(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(5, "test", true)).when(siteProvider).getSite(5);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [],\n" +
+                "    \"name\": \"test-name\"," +
+                "    \"keyset_id\": 1" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(1, 5, "test", Set.of(), Instant.now().getEpochSecond(), true, true);
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetDisallowSelf(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
@@ -597,12 +686,11 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {-2, -1, 2})
-    void KeysetSetReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
+    @Test
+    void KeysetSetDisallowDuplicates(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
+        doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
@@ -611,8 +699,8 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [],\n" +
-                String.format("    \"site_id\": %d,", input) +
+                "    \"allowlist\": [8, 8],\n" +
+                "    \"site_id\": 8," +
                 "    \"name\": \"test-name\"" +
                 "  }";
 
@@ -620,7 +708,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
-            assertEquals("Site id " + input + " not valid", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Duplicate site_id not permitted", response.bodyAsJsonObject().getString("message"));
 
             testContext.completeNow();
         });

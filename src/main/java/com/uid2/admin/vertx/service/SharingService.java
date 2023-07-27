@@ -112,8 +112,15 @@ public class SharingService implements IService {
                }
            }
 
+           boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
+           if (containsDuplicates){
+               ResponseUtil.error(rc, 400, "Duplicate site_id not permitted");
+               return;
+           }
+
            final Set<Integer> newlist = whitelist.stream()
                    .map(s -> (Integer) s)
+                   .filter(s -> !Objects.equals(s, siteId))
                    .collect(Collectors.toSet());
 
            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
