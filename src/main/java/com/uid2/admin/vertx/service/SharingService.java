@@ -91,9 +91,18 @@ public class SharingService implements IService {
                 ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
                 return;
             }
+            if (siteId != null &&
+                    (siteId == Const.Data.AdvertisingTokenSiteId
+                            || siteId == Const.Data.RefreshKeySiteId
+                            || siteId == Const.Data.MasterKeySiteId
+                            || siteProvider.getSite(siteId) == null)) {
+                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
+                return;
+            }
 
             final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
+            boolean create = false;
             if (keysetId != null) {
                 Keyset keyset = keysetsById.get(keysetId);
                 if (keyset == null) {
@@ -106,14 +115,37 @@ public class SharingService implements IService {
                 }
             } else {
                 keysetId = Collections.max(keysetsById.keySet()) + 1;
+                create = true;
             }
 
+            Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+            if(firstInvalidSite.isPresent()) {
+                ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
+                return;
+            }
+
+            boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
+            if (containsDuplicates) {
+                ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
+                return;
+            }
+
+            Integer finalSiteId = siteId;
             final Set<Integer> newlist = whitelist.stream()
                     .map(s -> (Integer) s)
+                    .filter(s -> !Objects.equals(s, finalSiteId))
                     .collect(Collectors.toSet());
 
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
+
+            if(create){
+                if(keysetsById.values().stream().anyMatch(item ->
+                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equals(newKeyset.getName()))){
+                    ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
+                    return;
+                }
+            }
 
             keysetsById.put(keysetId, newKeyset);
             try {
