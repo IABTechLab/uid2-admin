@@ -598,13 +598,13 @@ public class PrivateSiteUtilTest {
     @Nested
     class KeysetKeys {
 
-        KeysetKey keysetKey1 = new KeysetKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 1);
-        KeysetKey keysetKey2 = new KeysetKey(2, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
-        KeysetKey keysetKey3 = new KeysetKey(3, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 3);
+        KeysetKey keysetKey1 = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 1);
+        KeysetKey keysetKey2 = new KeysetKey(2000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
+        KeysetKey keysetKey3 = new KeysetKey(3000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 3);
 
-        Keyset keyset1 = new Keyset(1, 1, "test-name-1", ImmutableSet.of(), 999999, true, true);
-        Keyset keyset2 = new Keyset(2, 2, "test-name-2", ImmutableSet.of(), 999999, true, true);
-        Keyset keyset3 = new Keyset(3, 3, "test-name-3", ImmutableSet.of(), 999999, true, true);
+        Keyset keyset1 = new Keyset(1, 123, "test-name-1", ImmutableSet.of(), 999999, true, true);
+        Keyset keyset2 = new Keyset(2, 124, "test-name-2", ImmutableSet.of(), 999999, true, true);
+        Keyset keyset3 = new Keyset(3, 125, "test-name-3", ImmutableSet.of(), 999999, true, true);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>();
 
@@ -647,21 +647,21 @@ public class PrivateSiteUtilTest {
             keysets.put(3, keyset3);
 
             PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
-            expected.put(1, ImmutableSet.of(keysetKey1));
-            expected.put(2, ImmutableSet.of(keysetKey2));
-            expected.put(3, ImmutableSet.of(keysetKey3));
+            expected.put(123, ImmutableSet.of(keysetKey1));
+            expected.put(124, ImmutableSet.of(keysetKey2));
+            expected.put(125, ImmutableSet.of(keysetKey3));
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(1)
+                            .withSiteId(123)
                             .withType(OperatorType.PRIVATE)
                             .build(),
                     new OperatorBuilder()
-                            .withSiteId(2)
+                            .withSiteId(124)
                             .withType(OperatorType.PRIVATE)
                             .build(),
                     new OperatorBuilder()
-                            .withSiteId(3)
+                            .withSiteId(125)
                             .withType(OperatorType.PRIVATE)
                             .build()
             );
@@ -678,26 +678,26 @@ public class PrivateSiteUtilTest {
         @Test
         public void siteHasAllowedKeysetKeys() {
 
-            keysets.put(1, new Keyset(1, 1, "test-name-1", ImmutableSet.of(2, 3), 999999, true, true));
+            keysets.put(1, new Keyset(1, 123, "test-name-1", ImmutableSet.of(124, 125), 999999, true, true));
             keysets.put(2, keyset2);
             keysets.put(3, keyset3);
 
             PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
-            expected.put(1, ImmutableSet.of(keysetKey1));
-            expected.put(2, ImmutableSet.of(keysetKey1, keysetKey2));
-            expected.put(3, ImmutableSet.of(keysetKey1, keysetKey3));
+            expected.put(123, ImmutableSet.of(keysetKey1));
+            expected.put(124, ImmutableSet.of(keysetKey1, keysetKey2));
+            expected.put(125, ImmutableSet.of(keysetKey1, keysetKey3));
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(1)
+                            .withSiteId(123)
                             .withType(OperatorType.PRIVATE)
                             .build(),
                     new OperatorBuilder()
-                            .withSiteId(2)
+                            .withSiteId(124)
                             .withType(OperatorType.PRIVATE)
                             .build(),
                     new OperatorBuilder()
-                            .withSiteId(3)
+                            .withSiteId(125)
                             .withType(OperatorType.PRIVATE)
                             .build()
             );
@@ -719,25 +719,25 @@ public class PrivateSiteUtilTest {
             listAppender.start();
             privateSiteUtilLogger.addAppender(listAppender);
 
-            keysets.put(1, new Keyset(1, 1, "test-name-1", ImmutableSet.of(2, 3), 999999, true, true));
+            keysets.put(1, new Keyset(1, 123, "test-name-1", ImmutableSet.of(124, 125), 999999, true, true));
             keysets.put(2, keyset2);
 
             PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
-            expected.put(1, ImmutableSet.of(keysetKey1));
-            expected.put(2, ImmutableSet.of(keysetKey1, keysetKey2));
-            expected.put(3, ImmutableSet.of(keysetKey1));
+            expected.put(123, ImmutableSet.of(keysetKey1));
+            expected.put(124, ImmutableSet.of(keysetKey1, keysetKey2));
+            expected.put(125, ImmutableSet.of(keysetKey1));
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(1)
+                            .withSiteId(123)
                             .withType(OperatorType.PRIVATE)
                             .build(),
                     new OperatorBuilder()
-                            .withSiteId(2)
+                            .withSiteId(124)
                             .withType(OperatorType.PRIVATE)
                             .build(),
                     new OperatorBuilder()
-                            .withSiteId(3)
+                            .withSiteId(125)
                             .withType(OperatorType.PRIVATE)
                             .build()
             );
