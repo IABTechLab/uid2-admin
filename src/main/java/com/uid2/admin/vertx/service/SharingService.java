@@ -71,62 +71,62 @@ public class SharingService implements IService {
 
     private void handleSetKeyset(RoutingContext rc) {
         synchronized (writeLock) {
-           try {
-               keysetProvider.loadContent();
-               siteProvider.loadContent();
-           } catch (Exception e) {
-               LOGGER.error("Failed to load key acls");
-               rc.fail(500);
-           }
+            try {
+                keysetProvider.loadContent();
+                siteProvider.loadContent();
+            } catch (Exception e) {
+                LOGGER.error("Failed to load key acls");
+                rc.fail(500);
+            }
 
             final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowlist");
-           Integer keysetId = body.getInteger("keyset_id");
-           Integer siteId = body.getInteger("site_id");
-           String name = body.getString("name", "");
+            final JsonArray whitelist = body.getJsonArray("allowlist");
+            Integer keysetId = body.getInteger("keyset_id");
+            Integer siteId = body.getInteger("site_id");
+            String name = body.getString("name", "");
 
-           if(keysetId == null && siteId == null
-           || keysetId != null && siteId != null){
-               ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
-               return;
-           }
+            if (keysetId == null && siteId == null
+                    || keysetId != null && siteId != null) {
+                ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
+                return;
+            }
 
             final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
-            if(keysetId != null){
-               Keyset keyset = keysetsById.get(keysetId);
-               if(keyset == null) {
-                   ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + keysetId);
-                   return;
-               }
+            if (keysetId != null) {
+                Keyset keyset = keysetsById.get(keysetId);
+                if (keyset == null) {
+                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + keysetId);
+                    return;
+                }
                 siteId = keyset.getSiteId();
-                if(name.equals("")){
+                if (name.equals("")) {
                     name = keyset.getName();
                 }
             } else {
-               keysetId = Collections.max(keysetsById.keySet()) + 1;
+                keysetId = Collections.max(keysetsById.keySet()) + 1;
             }
 
-           final Set<Integer> newlist = whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet());
+            final Set<Integer> newlist = whitelist.stream()
+                    .map(s -> (Integer) s)
+                    .collect(Collectors.toSet());
 
-           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                   newlist, Instant.now().getEpochSecond(), true, true);
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
 
-           keysetsById.put(keysetId, newKeyset);
-           try {
-               storeWriter.upload(keysetsById, null);
-               //Create a new key
-               this.keyManager.addKeysetKey(keysetId);
-           } catch (Exception e) {
-               rc.fail(500, e);
-               return;
-           }
+            keysetsById.put(keysetId, newKeyset);
+            try {
+                storeWriter.upload(keysetsById, null);
+                //Create a new key
+                this.keyManager.addKeysetKey(keysetId);
+            } catch (Exception e) {
+                rc.fail(500, e);
+                return;
+            }
 
-           JsonObject jo = jsonFullKeyset(newKeyset);
-           rc.response()
+            JsonObject jo = jsonFullKeyset(newKeyset);
+            rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jo.encode());
         }
@@ -168,12 +168,12 @@ public class SharingService implements IService {
     }
 
     private Keyset getDefaultKeyset(Map<Integer, Keyset> keysets, Integer siteId) {
-           for(Keyset keyset: keysets.values()) {
-               if(keyset.getSiteId() == siteId && keyset.isDefault()) {
-                   return keyset;
-               }
-           }
-           return null;
+        for (Keyset keyset : keysets.values()) {
+            if (keyset.getSiteId() == siteId && keyset.isDefault()) {
+                return keyset;
+            }
+        }
+        return null;
     }
 
     private void handleListAllKeysets(RoutingContext rc) {
@@ -213,7 +213,7 @@ public class SharingService implements IService {
 
         JsonArray listedSites = new JsonArray();
         Set<Integer> allowedSites = keyset.getAllowedSites();
-        if(allowedSites != null) {
+        if (allowedSites != null) {
             allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
         }
         JsonObject jo = new JsonObject();
@@ -232,7 +232,7 @@ public class SharingService implements IService {
             for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
                 JsonArray listedSites = new JsonArray();
                 Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
-                if(allowedSites != null) {
+                if (allowedSites != null) {
                     allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
                 }
                 JsonObject jo = new JsonObject();
@@ -253,71 +253,71 @@ public class SharingService implements IService {
 
     private void handleSetAllowlist(RoutingContext rc) {
         synchronized (writeLock) {
-           int siteId;
-           try {
-               siteId = Integer.parseInt(rc.pathParam("siteId"));
-           } catch (Exception e) {
-               LOGGER.warn("Failed to parse a site id from list request", e);
-               rc.fail(400, e);
-               return;
-           }
+            int siteId;
+            try {
+                siteId = Integer.parseInt(rc.pathParam("siteId"));
+            } catch (Exception e) {
+                LOGGER.warn("Failed to parse a site id from list request", e);
+                rc.fail(400, e);
+                return;
+            }
 
-           try {
-               keysetProvider.loadContent();
-           } catch (Exception e) {
-               LOGGER.error("Failed to load key acls");
-               rc.fail(500);
-           }
+            try {
+                keysetProvider.loadContent();
+            } catch (Exception e) {
+                LOGGER.error("Failed to load key acls");
+                rc.fail(500);
+            }
 
 
-           final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = getDefaultKeyset(collection, siteId);
+            final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            Keyset keyset = getDefaultKeyset(collection, siteId);
 
-           final JsonObject body = rc.body().asJsonObject();
+            final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowlist");
-           final int hash = body.getInteger("hash");
+            final JsonArray whitelist = body.getJsonArray("allowlist");
+            final int hash = body.getInteger("hash");
 
-           if (keyset != null &&  hash != keyset.hashCode()) {
-               rc.fail(409);
-               return;
-           }
+            if (keyset != null && hash != keyset.hashCode()) {
+                rc.fail(409);
+                return;
+            }
 
-           Integer keysetId;
-           String name;
+            Integer keysetId;
+            String name;
 
-           if (keyset == null) {
-               keysetId = Collections.max(collection.keySet()) + 1;
-               name = "";
-           } else {
-               keysetId = keyset.getKeysetId();
-               name = keyset.getName();
-           }
+            if (keyset == null) {
+                keysetId = Collections.max(collection.keySet()) + 1;
+                name = "";
+            } else {
+                keysetId = keyset.getKeysetId();
+                name = keyset.getName();
+            }
 
-           final Set<Integer> newlist = whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet());
+            final Set<Integer> newlist = whitelist.stream()
+                    .map(s -> (Integer) s)
+                    .collect(Collectors.toSet());
 
-           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                   newlist, Instant.now().getEpochSecond(), true, true);
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
 
-           collection.put(keysetId, newKeyset);
-           try {
-               storeWriter.upload(collection, null);
-               //Create new key for keyset
-               this.keyManager.addKeysetKey(keysetId);
-           } catch (Exception e) {
-               rc.fail(500, e);
-               return;
-           }
+            collection.put(keysetId, newKeyset);
+            try {
+                storeWriter.upload(collection, null);
+                //Create new key for keyset
+                this.keyManager.addKeysetKey(keysetId);
+            } catch (Exception e) {
+                rc.fail(500, e);
+                return;
+            }
 
-           JsonObject jo = new JsonObject();
-           jo.put("allowlist", whitelist);
-           jo.put("hash", newKeyset.hashCode());
+            JsonObject jo = new JsonObject();
+            jo.put("allowlist", whitelist);
+            jo.put("hash", newKeyset.hashCode());
 
-           rc.response()
-                   .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                   .end(jo.encode());
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(jo.encode());
         }
     }
 }
