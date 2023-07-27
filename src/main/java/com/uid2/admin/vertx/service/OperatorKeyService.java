@@ -2,6 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
+import com.uid2.shared.model.KeyGenerationResult;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -187,6 +188,7 @@ public class OperatorKeyService implements IService {
                 ResponseUtil.error(rc, 400, "no protocol specified");
                 return;
             }
+
             Set<Role> roles;
             if (!rc.queryParams().contains("roles")) {
                 roles = new HashSet<>();
@@ -229,12 +231,11 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String key = keyGenerator.generateFormattedKeyString(32);
-            if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + key;
+            KeyGenerationResult kgr = keyGenerator.generateFormattedKeyStringAndKeyHash(this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "", 32);
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(kgr.getKey(), kgr.getKeyHash(), name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);
