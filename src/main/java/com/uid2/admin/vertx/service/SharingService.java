@@ -119,7 +119,7 @@ public class SharingService implements IService {
             }
 
             Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
-            if(firstInvalidSite.isPresent()) {
+            if (firstInvalidSite.isPresent()) {
                 ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
                 return;
             }
@@ -139,9 +139,9 @@ public class SharingService implements IService {
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
 
-            if(create){
-                if(keysetsById.values().stream().anyMatch(item ->
-                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equals(newKeyset.getName()))){
+            if (create) {
+                if (keysetsById.values().stream().anyMatch(item ->
+                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equals(newKeyset.getName()))) {
                     ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
                     return;
                 }
