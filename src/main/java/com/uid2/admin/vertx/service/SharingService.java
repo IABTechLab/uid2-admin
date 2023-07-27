@@ -92,18 +92,21 @@ public class SharingService implements IService {
                return;
            }
 
-           final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = keysetsById.get(keysetId);
+            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
-           if (keyset == null) {
-               keysetId = Collections.max(keysetsById.keySet()) + 1;
-           } else {
-               keysetId = keyset.getKeysetId();
-               siteId = keyset.getSiteId();
-               if(name.equals("")){
-                   name = keyset.getName();
+            if(keysetId != null){
+               Keyset keyset = keysetsById.get(keysetId);
+               if(keyset == null) {
+                   ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + keysetId);
+                   return;
                }
-           }
+                siteId = keyset.getSiteId();
+                if(name.equals("")){
+                    name = keyset.getName();
+                }
+            } else {
+               keysetId = Collections.max(keysetsById.keySet()) + 1;
+            }
 
            final Set<Integer> newlist = whitelist.stream()
                    .map(s -> (Integer) s)
@@ -146,7 +149,7 @@ public class SharingService implements IService {
         try {
             keysetId = Integer.parseInt(rc.pathParam("keyset_id"));
         } catch (Exception e) {
-            LOGGER.warn("Failed to parse a site id from list request", e);
+            LOGGER.warn("Failed to parse a keyset_id from list request", e);
             rc.fail(400, e);
             return;
         }
@@ -154,8 +157,7 @@ public class SharingService implements IService {
         Keyset keyset = this.keysetProvider.getSnapshot().getAllKeysets().get(keysetId);
 
         if (keyset == null) {
-            LOGGER.warn("Failed to find keyset for keyset id: " + keyset);
-            rc.fail(404);
+            ResponseUtil.error(rc, 404, "Failed to find keyset for keyset_id: " + keysetId);
             return;
         }
 

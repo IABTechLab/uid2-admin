@@ -16,9 +16,10 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).html(pretty);
         },
-        error: function (err) {
+        fail: function (err) {
+            console.log(err);
             $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-        }
+        },
     });
 }
 function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
