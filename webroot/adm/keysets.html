@@ -91,7 +91,7 @@
         return;
       }
       const url = '/api/sharing/keyset';
-      doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify({allowlist: [], keyset_id : keysetId}))
+      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({allowlist: [], keyset_id : keysetId}))
     });
 
     $('#doUpdate').on('click', function () {
@@ -125,9 +125,9 @@
           payload["name"] = name
         }
 
-        doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify(payload))
+        doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload))
       }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
+        $('#errorOutput').html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
       });
 
     });
@@ -147,7 +147,7 @@
         payload = JSON.stringify({allowlist: [], site_id: siteId})
       }
 
-      doApiCall('POST', url, '#standardOutput', 'errorOutput', payload);
+      doApiCall('POST', url, '#standardOutput', '#errorOutput', payload);
     });
   });
 
