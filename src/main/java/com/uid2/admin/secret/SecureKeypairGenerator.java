@@ -1,5 +1,8 @@
 package com.uid2.admin.secret;
 
+import com.uid2.shared.secure.gcpoidc.Environment;
+import com.uid2.shared.secure.gcpoidc.IdentityScope;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -10,9 +13,9 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.stream.Collectors;
 
 public class SecureKeypairGenerator implements IKeypairGenerator {
+
     private static final char[] BASE58_CHARS =
             "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
-    public SecureKeypairGenerator() {}
 
     @Override
     public KeyPair generateRandomKeypair() throws Exception {

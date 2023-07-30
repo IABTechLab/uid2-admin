@@ -11,6 +11,8 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientSideKeypair;
+import com.uid2.shared.secure.gcpoidc.Environment;
+import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.reader.RotatingClientSideKeypairStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -34,6 +36,8 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private final RotatingClientSideKeypairStore keypairStore;
     private final RotatingSiteStore siteProvider;
     private final IKeypairGenerator keypairGenerator;
+    private final String publicKeyPrefix;
+    private final String privateKeyPrefix;
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientSideKeypairService.class);
 
     public ClientSideKeypairService(AuthMiddleware auth,
@@ -42,7 +46,9 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                                     RotatingClientSideKeypairStore keypairStore,
                                     RotatingSiteStore siteProvider,
                                     IKeypairGenerator keypairGenerator,
-                                    Clock clock) {
+                                    Clock clock,
+                                    IdentityScope identityScope,
+                                    Environment environment) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -50,6 +56,33 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         this.keypairGenerator = keypairGenerator;
         this.siteProvider = siteProvider;
         this.clock = clock;
+
+        StringBuilder pub = new StringBuilder();
+        StringBuilder priv = new StringBuilder();
+        if (identityScope == IdentityScope.UID2) {
+            pub.append("UID2-");
+            priv.append("UID2-");
+        } else {
+            pub.append("EUID-");
+            priv.append("EUID-");
+        }
+        pub.append("X-");
+        priv.append("Y-");
+        if(environment == Environment.Integration){
+            pub.append("I-");
+            priv.append("I-");
+        } else if(environment == Environment.Production) {
+            pub.append("P-");
+            priv.append("P-");
+        } else if (environment == Environment.Test) {
+            pub.append("T-");
+            priv.append("T-");
+        } else if (environment == Environment.Local) {
+            pub.append("L-");
+            priv.append("L-");
+        }
+        this.privateKeyPrefix = priv.toString();
+        this.publicKeyPrefix = pub.toString();
     }
 
     @Override
@@ -142,7 +175,9 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 keypair.getSiteId(),
                 normalizedContactEmail,
                 keypair.getCreated(),
-                disabled);
+                disabled,
+                keypair.getPublicKeyPrefix(),
+                keypair.getPrivateKeyPrefix());
         final JsonObject json = toJson(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
@@ -184,8 +219,8 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private JsonObject toJson(ClientSideKeypair keypair) {
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", keypair.getSubscriptionId());
-        jo.put("public_key", Base64.getEncoder().encodeToString(keypair.getPublicKeyBytes()));
-        jo.put("private_key", Base64.getEncoder().encodeToString(keypair.getPrivateKeyBytes()));
+        jo.put("public_key", keypair.encodePublicKeyToString());
+        jo.put("private_key", keypair.encodePrivateKeyToString());
         jo.put("site_id", keypair.getSiteId());
         jo.put("contact", keypair.getContact());
         jo.put("created", keypair.getCreated().getEpochSecond());
@@ -207,8 +242,9 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         while (existingIds.contains(subscriptionId)) {
             subscriptionId = keypairGenerator.generateRandomSubscriptionId();
         }
+        
 
-        ClientSideKeypair newKeypair = new ClientSideKeypair(subscriptionId, pair.getPublic().getEncoded(), pair.getPrivate().getEncoded(), siteId, contact, now, disabled);
+        ClientSideKeypair newKeypair = new ClientSideKeypair(subscriptionId, pair.getPublic().getEncoded(), pair.getPrivate().getEncoded(), siteId, contact, now, disabled, publicKeyPrefix, privateKeyPrefix);
         keypairs.add(newKeypair);
         storeWriter.upload(keypairs, null);
 

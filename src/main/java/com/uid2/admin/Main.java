@@ -27,6 +27,8 @@ import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.secure.gcpoidc.Environment;
+import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
@@ -189,7 +191,7 @@ public class Main {
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
-                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
+                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock, IdentityScope.UID2, Environment.Test),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
