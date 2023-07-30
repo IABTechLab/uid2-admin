@@ -36,8 +36,6 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private final RotatingClientSideKeypairStore keypairStore;
     private final RotatingSiteStore siteProvider;
     private final IKeypairGenerator keypairGenerator;
-    private final String publicKeyPrefix;
-    private final String privateKeyPrefix;
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientSideKeypairService.class);
 
     public ClientSideKeypairService(AuthMiddleware auth,
@@ -46,9 +44,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                                     RotatingClientSideKeypairStore keypairStore,
                                     RotatingSiteStore siteProvider,
                                     IKeypairGenerator keypairGenerator,
-                                    Clock clock,
-                                    IdentityScope identityScope,
-                                    Environment environment) {
+                                    Clock clock) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -56,33 +52,6 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         this.keypairGenerator = keypairGenerator;
         this.siteProvider = siteProvider;
         this.clock = clock;
-
-        StringBuilder pub = new StringBuilder();
-        StringBuilder priv = new StringBuilder();
-        if (identityScope == IdentityScope.UID2) {
-            pub.append("UID2-");
-            priv.append("UID2-");
-        } else {
-            pub.append("EUID-");
-            priv.append("EUID-");
-        }
-        pub.append("X-");
-        priv.append("Y-");
-        if(environment == Environment.Integration){
-            pub.append("I-");
-            priv.append("I-");
-        } else if(environment == Environment.Production) {
-            pub.append("P-");
-            priv.append("P-");
-        } else if (environment == Environment.Test) {
-            pub.append("T-");
-            priv.append("T-");
-        } else if (environment == Environment.Local) {
-            pub.append("L-");
-            priv.append("L-");
-        }
-        this.privateKeyPrefix = priv.toString();
-        this.publicKeyPrefix = pub.toString();
     }
 
     @Override
@@ -242,14 +211,12 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         while (existingIds.contains(subscriptionId)) {
             subscriptionId = keypairGenerator.generateRandomSubscriptionId();
         }
-        
 
-        ClientSideKeypair newKeypair = new ClientSideKeypair(subscriptionId, pair.getPublic().getEncoded(), pair.getPrivate().getEncoded(), siteId, contact, now, disabled, publicKeyPrefix, privateKeyPrefix);
+        ClientSideKeypair newKeypair = new ClientSideKeypair(subscriptionId, pair.getPublic().getEncoded(), pair.getPrivate().getEncoded(), siteId, contact, now, disabled, keypairGenerator.getPublicKeyPrefix(), keypairGenerator.getPrivateKeyPrefix());
         keypairs.add(newKeypair);
         storeWriter.upload(keypairs, null);
 
         return newKeypair;
 
     }
-
 }

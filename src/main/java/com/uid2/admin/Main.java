@@ -176,7 +176,7 @@ public class Main {
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
-            IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
+            IKeypairGenerator keypairGenerator = new SecureKeypairGenerator(IdentityScope.UID2, Environment.Production);
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
             JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
@@ -191,7 +191,7 @@ public class Main {
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
-                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock, IdentityScope.UID2, Environment.Test),
+                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),

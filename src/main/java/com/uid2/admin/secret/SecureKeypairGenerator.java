@@ -14,8 +14,40 @@ import java.util.stream.Collectors;
 
 public class SecureKeypairGenerator implements IKeypairGenerator {
 
+    private final String publicKeyPrefix;
+    private final String privateKeyPrefix;
+
     private static final char[] BASE58_CHARS =
             "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
+
+    public SecureKeypairGenerator(IdentityScope identityScope, Environment environment) {
+        StringBuilder pub = new StringBuilder();
+        StringBuilder priv = new StringBuilder();
+        if (identityScope == IdentityScope.UID2) {
+            pub.append("UID2-");
+            priv.append("UID2-");
+        } else {
+            pub.append("EUID-");
+            priv.append("EUID-");
+        }
+        pub.append("X-");
+        priv.append("Y-");
+        if(environment == Environment.Integration){
+            pub.append("I-");
+            priv.append("I-");
+        } else if(environment == Environment.Production) {
+            pub.append("P-");
+            priv.append("P-");
+        } else if (environment == Environment.Test) {
+            pub.append("T-");
+            priv.append("T-");
+        } else if (environment == Environment.Local) {
+            pub.append("L-");
+            priv.append("L-");
+        }
+        this.privateKeyPrefix = priv.toString();
+        this.publicKeyPrefix = pub.toString();
+    }
 
     @Override
     public KeyPair generateRandomKeypair() throws Exception {
@@ -35,5 +67,15 @@ public class SecureKeypairGenerator implements IKeypairGenerator {
                 .mapToObj(i -> BASE58_CHARS[i])
                 .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
                 .toString();
+    }
+
+    @Override
+    public String getPublicKeyPrefix() {
+        return publicKeyPrefix;
+    }
+
+    @Override
+    public String getPrivateKeyPrefix() {
+        return privateKeyPrefix;
     }
 }
