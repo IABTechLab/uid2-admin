@@ -31,11 +31,11 @@ public class ClientSideKeypairStoreWriter implements StoreWriter<Collection<Clie
             json.put("subscription_id", keypair.getSubscriptionId());
             json.put("public_key", Base64.getEncoder().encodeToString(keypair.getPublicKeyBytes()));
             json.put("private_key", Base64.getEncoder().encodeToString(keypair.getPrivateKeyBytes()));
-            json.put("side_id", keypair.getSiteId());
+            json.put("site_id", keypair.getSiteId());
             json.put("contact", keypair.getContact());
             json.put("created", keypair.getCreated().getEpochSecond());
             json.put("disabled", keypair.isDisabled());
-            jsonKeypairs.add(keypair);
+            jsonKeypairs.add(json);
         }
         String content = jsonKeypairs.encodePrettily();
         writer.upload(content, extraMeta);

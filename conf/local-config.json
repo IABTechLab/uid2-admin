@@ -7,6 +7,7 @@
   "sites_metadata_path": "sites/metadata.json",
   "clients_metadata_path": "clients/metadata.json",
   "keys_metadata_path": "keys/metadata.json",
+  "client_side_keypairs_metadata_path": "client_side_keypairs/metadata.json",
   "keys_acl_metadata_path": "keys_acl/metadata.json",
   "salts_metadata_path": "salts/metadata.json",
   "salt_snapshot_location_prefix": "salts/salts.txt.",

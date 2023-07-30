@@ -7,10 +7,7 @@ import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.model.Site;
-import com.uid2.admin.secret.IKeyGenerator;
-import com.uid2.admin.secret.ISaltRotation;
-import com.uid2.admin.secret.SaltRotation;
-import com.uid2.admin.secret.SecureKeyGenerator;
+import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.reader.RotatingSiteStore;
@@ -177,6 +174,7 @@ public class Main {
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
+            IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
             JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
@@ -191,7 +189,7 @@ public class Main {
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
-                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider),
+                    new ClientSideKeypairService(auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
