@@ -7,6 +7,7 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -590,6 +591,77 @@ public class PrivateSiteUtilTest {
     }
 
     @Nested
+    class ClientSideKeypairs {
+
+        ClientSideKeypair pair1 = new ClientSideKeypair("0123456789", new byte[] {0, 1,2 }, new byte[] {0, 1, 2}, 123, "contact@email.com", Instant.now(), false, "UID2-X-T-", "UID2-Y-T-");
+        ClientSideKeypair pair2 = new ClientSideKeypair("0123456789", new byte[] {0, 1,2 }, new byte[] {0, 1, 2}, 123, "contact@email.com", Instant.now(), false, "UID2-X-T-", "UID2-Y-T-");
+        ClientSideKeypair pair3 = new ClientSideKeypair("0123456789", new byte[] {0, 1,2 }, new byte[] {0, 1, 2}, 124, "contact@email.com", Instant.now(), false, "UID2-X-T-", "UID2-Y-T-");
+
+        Collection<ClientSideKeypair> keypairs = new ArrayList<>() {{
+           add(pair1);
+           add(pair2);
+           add(pair3);
+        }};
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>();
+
+        @Test
+        public void returnsNoKeysetKeysForNoKeysetKeysOrOperators() {
+            PrivateSiteDataMap<ClientSideKeypair> expected = new PrivateSiteDataMap<>();
+
+            PrivateSiteDataMap<ClientSideKeypair> actual = getClientSideKeypairs(noOperators, noKeypairs);
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void ignoresSitesWithOnlyPublicOperators() {
+
+            PrivateSiteDataMap<ClientSideKeypair> expected = new PrivateSiteDataMap<>();
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId1)
+                            .withType(OperatorType.PUBLIC)
+                            .build()
+            );
+
+            PrivateSiteDataMap<ClientSideKeypair> actual = getClientSideKeypairs(
+                    operators,
+                    keypairs
+            );
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void siteHasOwnKeypairs() {
+
+            PrivateSiteDataMap<ClientSideKeypair> expected = new PrivateSiteDataMap<>();
+            expected.put(123, ImmutableSet.of(pair1, pair2));
+            expected.put(124, ImmutableSet.of(pair3));
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(123)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(124)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            PrivateSiteDataMap<ClientSideKeypair> actual = getClientSideKeypairs(
+                    operators,
+                    ImmutableSet.of(pair1, pair2, pair3)
+            );
+
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Nested
     class Sites {
         Site site1 = new Site(siteId1, "site1", true);
 
@@ -701,6 +773,7 @@ public class PrivateSiteUtilTest {
     final Set<OperatorKey> noOperators = ImmutableSet.of();
     final Set<ClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
+    final Set<ClientSideKeypair> noKeypairs = ImmutableSet.of();
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
     static class OperatorBuilder {

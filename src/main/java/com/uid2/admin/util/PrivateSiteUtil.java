@@ -4,6 +4,7 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 
@@ -286,6 +287,21 @@ public final class PrivateSiteUtil {
                 });
             }
         });
+        return result;
+    }
+
+    public static PrivateSiteDataMap<ClientSideKeypair> getClientSideKeypairs(Collection<OperatorKey> globalOperators,Collection<ClientSideKeypair> globalKeypairs) {
+
+        final PrivateSiteDataMap<ClientSideKeypair> result = getPrivateSites(globalOperators);
+
+        globalKeypairs.stream().forEach(clientSideKeypair -> {
+            int siteId = clientSideKeypair.getSiteId();
+            result.computeIfPresent(siteId, (privateSiteId, privateSiteSet) -> {
+                privateSiteSet.add(clientSideKeypair);
+                return privateSiteSet;
+            });
+        });
+
         return result;
     }
 }

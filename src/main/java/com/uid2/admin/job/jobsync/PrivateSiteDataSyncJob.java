@@ -3,6 +3,7 @@ package com.uid2.admin.job.jobsync;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.job.jobsync.acl.KeyAclSyncJob;
 import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
+import com.uid2.admin.job.jobsync.key.ClientSideKeypairSyncJob;
 import com.uid2.admin.job.jobsync.key.EncryptionKeySyncJob;
 import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
 import com.uid2.admin.job.jobsync.keyset.KeysetSyncJob;
@@ -20,6 +21,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.CloudPath;
@@ -101,6 +103,14 @@ public class PrivateSiteDataSyncJob extends Job {
                 clock,
                 fileManager);
 
+        ClientSideKeypairStoreFactory keypairStoreFactory = new ClientSideKeypairStoreFactory(
+                cloudStorage,
+                new CloudPath(config.getString(Const.Config.ClientSideKeypairsMetadataPathProp)),
+                versionGenerator,
+                clock,
+                fileManager
+        );
+
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -114,6 +124,7 @@ public class PrivateSiteDataSyncJob extends Job {
             keyAclStoreFactory.getGlobalReader().loadContent();
             keysetStoreFactory.getGlobalReader().loadContent();
             keysetKeyStoreFactory.getGlobalReader().loadContent();
+            keypairStoreFactory.getGlobalReader().loadContent();
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
@@ -125,6 +136,7 @@ public class PrivateSiteDataSyncJob extends Job {
         Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
         Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeysetKeys();
         Integer globalMaxKeysetKeyId = keysetKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
+        Collection<ClientSideKeypair> globalKeypairs = keypairStoreFactory.getGlobalReader().getSnapshot().getEnabledKeypairs();
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
@@ -150,6 +162,10 @@ public class PrivateSiteDataSyncJob extends Job {
                 fileManager,
                 keysetKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<ClientSideKeypair>> keypairWriter = new MultiScopeStoreWriter<>(
+                fileManager,
+                keypairStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
 
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
@@ -164,6 +180,7 @@ public class PrivateSiteDataSyncJob extends Job {
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
         KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
         KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
+        ClientSideKeypairSyncJob keypairSyncJob = new ClientSideKeypairSyncJob(globalOperators, globalKeypairs, keypairWriter);
 
         siteSyncJob.execute();
         clientSyncJob.execute();
@@ -171,5 +188,6 @@ public class PrivateSiteDataSyncJob extends Job {
         keyAclSyncJob.execute();
         keysetSyncJob.execute();
         keysetKeySyncJob.execute();
+        keypairSyncJob.execute();
     }
 }

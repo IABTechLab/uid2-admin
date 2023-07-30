@@ -49,14 +49,14 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     private void validateKeypair(ClientSideKeypair expectedKeypair, JsonObject resp) {
         assertEquals(expectedKeypair.getSubscriptionId(), resp.getString("subscription_id"));
-        assertArrayEquals(expectedKeypair.getPublicKeyBytes(), Base64.getDecoder().decode(resp.getString("public_key").substring(9)));
-        assertArrayEquals(expectedKeypair.getPrivateKeyBytes(), Base64.getDecoder().decode(resp.getString("private_key").substring(9)));
+        assertArrayEquals(expectedKeypair.getPublicKeyBytes(), Base64.getDecoder().decode(resp.getString("public_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
+        assertArrayEquals(expectedKeypair.getPrivateKeyBytes(), Base64.getDecoder().decode(resp.getString("private_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
         assertEquals(expectedKeypair.getSiteId(), resp.getInteger("site_id"));
         assertEquals(expectedKeypair.getContact(), resp.getString("contact"));
         assertEquals(expectedKeypair.getCreated().getEpochSecond(), resp.getLong("created"));
         assertEquals(expectedKeypair.isDisabled(), resp.getBoolean("disabled"));
-        assertEquals("UID2-X-T-", expectedKeypair.getPublicKeyPrefix());
-        assertEquals("UID2-Y-T-", expectedKeypair.getPrivateKeyPrefix());
+        assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
+        assertEquals("UID2-Y-T-", resp.getString("private_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
     }
 
     @Test
