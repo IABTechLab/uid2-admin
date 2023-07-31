@@ -20,15 +20,6 @@
 
 <h3>Inputs</h3>
 
-<label for="apiToken" class="bold">Operator Api Key:</label>
-<br>
-<label for="apiToken">This can be found here: <a href="operator-key.html">Operator Key Management</a> using Reveal
-  Operator Key</label>
-<br>
-<input type="text" id="apiToken" name="apiToken" size="100" value="">
-<br>
-<br>
-
 <label for="imageId" class="bold">Operator Docker Image ID:</label>
 <br>
 <label for="imageId">The full digest for the image, with or without 'sha256:'</label>
@@ -133,11 +124,6 @@
   }
 
   function onGenerate() {
-    const apiToken = $('#apiToken').val();
-    if (!apiToken) {
-      alert("Operator Api Key is empty");
-      return;
-    }
     let imageSha = $('#imageId').val();
     if (!imageSha) {
       alert("Operator Docker Image ID is empty");
@@ -149,12 +135,10 @@
 
     const env = $('#envId').val();
     const identityScope = $('#identityScope').val();
-    const isDebug = $('#debugMode').val();
+    const isDebug = $('#debugMode').val() === 'true';
 
     // generate and show enclaveId
     generateEnclaveId(imageSha, isDebug).then(enclaveId => {
-      console.log("isDebug:" + isDebug + ", imageSha:" + imageSha);
-      console.log("enclaveId:" + enclaveId);
       $('#enclaveId').text(enclaveId);
     });
 
@@ -163,12 +147,10 @@
     const cli = gcloudCli
             .replaceAll('<IMAGE_FAMILY>', imageFamily)
             .replaceAll('<IMAGE_SHA>', imageSha)
-            .replaceAll('<API_TOKEN>', apiToken)
             .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env)
             .replaceAll('<IDENTITY_SCOPE>', identityScope);
     $('#gcloudCli').val(cli);
   }
-
 
   function sha256base64(string) {
     const utf8 = new TextEncoder().encode(string);
