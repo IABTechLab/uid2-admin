@@ -209,7 +209,7 @@ public class ClientKeyService implements IService {
 
             // create random key and secret
             String key = keyGenerator.generateFormattedKeyString(32);
-            if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + key;
+            if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + site.getId() + "-" + key;
 
             String secret = keyGenerator.generateRandomKeyString(32);
 
