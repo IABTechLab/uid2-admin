@@ -86,8 +86,8 @@ public class SharingService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name", "");
 
-            if (keysetId == null && siteId == null
-                    || keysetId != null && siteId != null) {
+            if ((keysetId == null && siteId == null)
+                    || (keysetId != null && siteId != null)) {
                 ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
                 return;
             }
@@ -141,7 +141,7 @@ public class SharingService implements IService {
 
             if (create) {
                 if (keysetsById.values().stream().anyMatch(item ->
-                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equals(newKeyset.getName()))) {
+                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equalsIgnoreCase(newKeyset.getName()))) {
                     ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
                     return;
                 }
