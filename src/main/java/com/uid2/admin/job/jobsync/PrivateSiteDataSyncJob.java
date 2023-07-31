@@ -188,6 +188,6 @@ public class PrivateSiteDataSyncJob extends Job {
         keyAclSyncJob.execute();
         keysetSyncJob.execute();
         keysetKeySyncJob.execute();
-        keypairSyncJob.execute();
+//        keypairSyncJob.execute(); Keypair sync Job should not be executed until we want to enable CSTG for private operators
     }
 }
