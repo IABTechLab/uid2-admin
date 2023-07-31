@@ -4,6 +4,7 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
@@ -381,7 +382,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSet(Vertx vertx, VertxTestContext testContext) {
+    void KeysetCanUpdateAllowedSitesAndName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(22, 25, 6);
@@ -418,7 +419,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetWithoutNameUpdate(Vertx vertx, VertxTestContext testContext) {
+    void KeysetCanUpdateAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(5, 22, 25, 6);
@@ -454,7 +455,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetNew(Vertx vertx, VertxTestContext testContext) {
+    void KeysetCanMakeNew(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(8, 22, 25, 6);
@@ -577,7 +578,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "      6\n" +
                 "    ],\n" +
                 "    \"site_id\": 8," +
-                "    \"name\": \"test\"" +
+                "    \"name\": \"TEST\"" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -688,7 +689,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {-2, -1, 2})
+    @ValueSource(ints = {Const.Data.AdvertisingTokenSiteId, Const.Data.RefreshKeySiteId, Const.Data.MasterKeySiteId})
     void KeysetSetNewReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -717,7 +718,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {-2, -1, 2})
+    @ValueSource(ints = {Const.Data.AdvertisingTokenSiteId, Const.Data.RefreshKeySiteId, Const.Data.MasterKeySiteId})
     void KeysetSetUpdateReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
