@@ -139,14 +139,12 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
         final ClientSideKeypair newKeypair = new ClientSideKeypair(
                 keypair.getSubscriptionId(),
-                keypair.getPublicKeyBytes(),
-                keypair.getPrivateKeyBytes(),
+                keypair.encodePublicKeyToString(),
+                keypair.encodePrivateKeyToString(),
                 keypair.getSiteId(),
                 normalizedContactEmail,
                 keypair.getCreated(),
-                disabled,
-                keypair.getPublicKeyPrefix(),
-                keypair.getPrivateKeyPrefix());
+                disabled);
         final JsonObject json = toJson(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
@@ -212,7 +210,14 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             subscriptionId = keypairGenerator.generateRandomSubscriptionId();
         }
 
-        ClientSideKeypair newKeypair = new ClientSideKeypair(subscriptionId, pair.getPublic().getEncoded(), pair.getPrivate().getEncoded(), siteId, contact, now, disabled, keypairGenerator.getPublicKeyPrefix(), keypairGenerator.getPrivateKeyPrefix());
+        ClientSideKeypair newKeypair = new ClientSideKeypair(
+                subscriptionId,
+                keypairGenerator.getPublicKeyPrefix() + Base64.getEncoder().encodeToString(pair.getPublic().getEncoded()),
+                keypairGenerator.getPrivateKeyPrefix() + Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded()),
+                siteId,
+                contact,
+                now,
+                disabled);
         keypairs.add(newKeypair);
         storeWriter.upload(keypairs, null);
 
