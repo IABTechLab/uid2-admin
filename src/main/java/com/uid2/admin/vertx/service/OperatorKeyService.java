@@ -230,7 +230,7 @@ public class OperatorKeyService implements IService {
 
             // create a random key
             String key = keyGenerator.generateFormattedKeyString(32);
-            if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + key;
+            if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + siteId + "-" + key;
 
             // create new operator
             long created = Instant.now().getEpochSecond();
