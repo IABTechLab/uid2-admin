@@ -24,21 +24,21 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 public class AdminKeyServiceTest extends ServiceTestBase {
-    final String adminKeyPrefix = "UID2-A-L-";
-    final String expectedAdminKey = adminKeyPrefix + "abcdef.abcdefabcdefabcdef";
+    private static final String ADMIN_KEY_PREFIX = "UID2-A-L-";
+    private static final String EXPECTED_ADMIN_KEY = ADMIN_KEY_PREFIX + "abcdef.abcdefabcdefabcdef";
 
     @Override
     protected IService createService() {
-        this.config.put("admin_key_prefix", adminKeyPrefix);
+        this.config.put("admin_key_prefix", ADMIN_KEY_PREFIX);
         return new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter);
     }
 
     @Test
     void addAdminUsesKeyPrefixAndFormattedKeyString(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.ADMINISTRATOR);
-        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(expectedAdminKey, ""));
+        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(EXPECTED_ADMIN_KEY, ""));
 
-        AdminUser expectedAdminUser = this.getAdminUser(expectedAdminKey);
+        AdminUser expectedAdminUser = this.getAdminUser(EXPECTED_ADMIN_KEY);
 
         post(vertx, String.format("api/admin/add?name=%s&roles=administrator", expectedAdminUser.getName()), "", response -> {
             try {
@@ -48,7 +48,7 @@ public class AdminKeyServiceTest extends ServiceTestBase {
                 assertAll(
                         () -> assertTrue(response.succeeded()),
                         () -> assertNotNull(result),
-                        () -> assertEquals(expectedAdminKey, result.getString("key"))
+                        () -> assertEquals(EXPECTED_ADMIN_KEY, result.getString("key"))
                 );
                 testContext.completeNow();
             } catch (Throwable t) {
