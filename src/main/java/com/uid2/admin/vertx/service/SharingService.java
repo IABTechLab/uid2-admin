@@ -43,13 +43,13 @@ public class SharingService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/sharing/lists").handler(
-                auth.handle(this::handleListAllAllowlist, Role.SHARING_PORTAL)
+                auth.handle(this::handleListAllAllowedSites, Role.SHARING_PORTAL)
         );
         router.get("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleListAllowlist, Role.SHARING_PORTAL)
+                auth.handle(this::handleListAllowedSites, Role.SHARING_PORTAL)
         );
         router.post("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleSetAllowlist, Role.SHARING_PORTAL)
+                auth.handle(this::handleSetAllowedSites, Role.SHARING_PORTAL)
         );
 
         router.get("/api/sharing/keysets").handler(
@@ -74,7 +74,7 @@ public class SharingService implements IService {
 
             final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowlist");
+           final JsonArray whitelist = body.getJsonArray("allowed_sites");
            Integer keysetId = body.getInteger("keyset_id");
            final Integer siteId = body.getInteger("site_id");
 
@@ -120,7 +120,7 @@ public class SharingService implements IService {
         jo.put("keyset_id", keyset.getKeysetId());
         jo.put("site_id", keyset.getSiteId());
         jo.put("name", keyset.getName());
-        jo.put("allowlist", keyset.getAllowedSites());
+        jo.put("allowed_sites", keyset.getAllowedSites());
         jo.put("created", keyset.getCreated());
         jo.put("is_enabled", keyset.isEnabled());
         jo.put("is_default", keyset.isDefault());
@@ -177,7 +177,7 @@ public class SharingService implements IService {
         }
     }
 
-    private void handleListAllowlist(RoutingContext rc) {
+    private void handleListAllowedSites(RoutingContext rc) {
         int siteId;
         try {
             siteId = Integer.parseInt(rc.pathParam("siteId"));
@@ -201,7 +201,7 @@ public class SharingService implements IService {
             allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
         }
         JsonObject jo = new JsonObject();
-        jo.put("allowlist", listedSites);
+        jo.put("allowed_sites", listedSites);
         jo.put("hash", keyset.hashCode());
 
         rc.response()
@@ -209,7 +209,7 @@ public class SharingService implements IService {
                 .end(jo.encode());
     }
 
-    private void handleListAllAllowlist(RoutingContext rc) {
+    private void handleListAllAllowedSites(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
@@ -222,7 +222,7 @@ public class SharingService implements IService {
                 JsonObject jo = new JsonObject();
                 jo.put("keyset_id", keyset.getValue().getKeysetId());
                 jo.put("site_id", keyset.getValue().getSiteId());
-                jo.put("allowlist", listedSites);
+                jo.put("allowed_sites", listedSites);
                 jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);
             }
@@ -235,7 +235,7 @@ public class SharingService implements IService {
         }
     }
 
-    private void handleSetAllowlist(RoutingContext rc) {
+    private void handleSetAllowedSites(RoutingContext rc) {
         synchronized (writeLock) {
            int siteId;
            try {
@@ -259,7 +259,7 @@ public class SharingService implements IService {
 
            final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowlist");
+           final JsonArray whitelist = body.getJsonArray("allowed_sites");
            final int hash = body.getInteger("hash");
 
            if (keyset != null &&  hash != keyset.hashCode()) {
@@ -296,7 +296,7 @@ public class SharingService implements IService {
            }
 
            JsonObject jo = new JsonObject();
-           jo.put("allowlist", whitelist);
+           jo.put("allowed_sites", whitelist);
            jo.put("hash", newKeyset.hashCode());
 
            rc.response()
