@@ -71,6 +71,7 @@ public class Main {
 
     public void run() {
         try {
+            boolean enable_keysets = config.getBoolean("enable_keysets");
             AuthFactory authFactory = new GithubAuthFactory(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
@@ -198,8 +199,10 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
 
-            //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
-            encryptionKeyService.createKeysetKeys();
+            if(config.getBoolean("enable_keysets")) {
+                //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
+                encryptionKeyService.createKeysetKeys();
+            }
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);

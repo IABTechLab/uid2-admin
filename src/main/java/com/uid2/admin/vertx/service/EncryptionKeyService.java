@@ -76,6 +76,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private final Duration refreshKeyRotationCutOffTime;
     private final boolean filterKeyOverCutOffTime;
 
+    private final boolean enableKeysets;
+
     public EncryptionKeyService(JsonObject config,
                                 AuthMiddleware auth,
                                 WriteLock writeLock,
@@ -113,6 +115,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         if (siteKeyActivatesIn.compareTo(siteKeyExpiresAfter) >= 0) {
             throw new IllegalStateException(SITE_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + SITE_KEY_EXPIRES_AFTER_SECONDS);
         }
+
+        enableKeysets = config.getBoolean("enable_keysets");
     }
 
     @Override
@@ -603,6 +607,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
     private void catchUpKeysetKeys(Iterable<EncryptionKey> missingKeys, boolean isDuringRotation, int maxKeyId)
         throws Exception {
+        if(!enableKeysets) return;
         final Instant now = clock.now();
 
         final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
