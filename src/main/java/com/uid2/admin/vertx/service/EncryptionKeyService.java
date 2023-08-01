@@ -548,6 +548,15 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         Keyset keyset = lookUpKeyset(siteId, currentKeysets);
         if(keyset == null) {
             int newKeysetId = getMaxKeyset(currentKeysets)+1;
+            if(siteId == Const.Data.MasterKeySiteId) {
+                newKeysetId = Const.Data.MasterKeysetId;
+            }
+            else if(siteId == Const.Data.RefreshKeySiteId) {
+                newKeysetId = Const.Data.RefreshKeysetId;
+            }
+            else if(siteId == Const.Data.AdvertisingTokenSiteId) {
+                newKeysetId = Const.Data.FallbackPublisherKeysetId;
+            }
             keyset = createDefaultKeyset(siteId, newKeysetId);
             currentKeysets.put(newKeysetId, keyset);
             keysetStoreWriter.upload(currentKeysets, null);
