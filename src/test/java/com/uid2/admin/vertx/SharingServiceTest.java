@@ -532,7 +532,6 @@ public class SharingServiceTest extends ServiceTestBase {
         mockSiteExistence(5, 22);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
-            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
             put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
             put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
@@ -559,37 +558,38 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
-    @Test
-    void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        mockSiteExistence(8, 22, 25, 6);
-
-        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
-            put(1, new Keyset(1, 8, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
-        }};
-
-        setKeysets(keysets);
-
-        String body = "  {\n" +
-                "    \"allowlist\": [\n" +
-                "      22,\n" +
-                "      25,\n" +
-                "      6\n" +
-                "    ],\n" +
-                "    \"site_id\": 8," +
-                "    \"name\": \"TEST\"" +
-                "  }";
-
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
-            assertEquals("Keyset with same site_id and name already exists", response.bodyAsJsonObject().getString("message"));
-
-            testContext.completeNow();
-        });
-    }
+    // This test should be commented out when multiple keysets is enabled
+//    @Test
+//    void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
+//        fakeAuth(Role.ADMINISTRATOR);
+//
+//        mockSiteExistence(8, 22, 25, 6);
+//
+//        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+//            put(1, new Keyset(1, 8, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+//        }};
+//
+//        setKeysets(keysets);
+//
+//        String body = "  {\n" +
+//                "    \"allowlist\": [\n" +
+//                "      22,\n" +
+//                "      25,\n" +
+//                "      6\n" +
+//                "    ],\n" +
+//                "    \"site_id\": 8," +
+//                "    \"name\": \"TEST\"" +
+//                "  }";
+//
+//        post(vertx, "api/sharing/keyset", body, ar -> {
+//            assertTrue(ar.succeeded());
+//            HttpResponse response = ar.result();
+//            assertEquals(400, response.statusCode());
+//            assertEquals("Keyset with same site_id and name already exists", response.bodyAsJsonObject().getString("message"));
+//
+//            testContext.completeNow();
+//        });
+//    }
 
     @Test
     void KeysetSetNewSameNameDifferentSite(Vertx vertx, VertxTestContext testContext) {
@@ -860,6 +860,33 @@ public class SharingServiceTest extends ServiceTestBase {
             compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNewDisallowMultipleForSite(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        mockSiteExistence(5, 8);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowlist\": [8],\n" +
+                "    \"site_id\": 5" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Site id 5 not valid", response.bodyAsJsonObject().getString("message"));
+
             testContext.completeNow();
         });
     }

@@ -79,6 +79,8 @@ public class SharingService implements IService {
                 rc.fail(500);
             }
 
+            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
+
             final JsonObject body = rc.body().asJsonObject();
 
             final JsonArray whitelist = body.getJsonArray("allowlist");
@@ -91,16 +93,17 @@ public class SharingService implements IService {
                 ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
                 return;
             }
+            Integer finalSiteId = siteId;
             if (siteId != null &&
                     (siteId == Const.Data.AdvertisingTokenSiteId
                             || siteId == Const.Data.RefreshKeySiteId
                             || siteId == Const.Data.MasterKeySiteId
-                            || siteProvider.getSite(siteId) == null)) {
+                            || siteProvider.getSite(siteId) == null
+                            || keysetsById.values().stream().anyMatch(k -> k.getSiteId() == finalSiteId))) {
                 ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                 return;
             }
 
-            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
             boolean create = false;
             if (keysetId != null) {
@@ -130,10 +133,10 @@ public class SharingService implements IService {
                 return;
             }
 
-            Integer finalSiteId = siteId;
+            Integer finalSiteId2 = siteId;
             final Set<Integer> newlist = whitelist.stream()
                     .map(s -> (Integer) s)
-                    .filter(s -> !Objects.equals(s, finalSiteId))
+                    .filter(s -> !Objects.equals(s, finalSiteId2))
                     .collect(Collectors.toSet());
 
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
