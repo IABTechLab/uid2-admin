@@ -62,7 +62,7 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            compareKeysetToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             Integer expectedHash = keysets.get(1).hashCode();
             assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
@@ -103,7 +103,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -117,7 +117,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
@@ -137,7 +137,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -151,7 +151,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(4, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
 
@@ -178,7 +178,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body1 = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -187,7 +187,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "  }";
 
         String body2 = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      2,\n" +
                 "      5,\n" +
                 "      6\n" +
@@ -237,7 +237,7 @@ public class SharingServiceTest extends ServiceTestBase {
             for (int i = 0; i < keysets.size(); i++) {
                 JsonObject resp = respArray.getJsonObject(i);
                 int keyset_id = resp.getInteger("keyset_id");
-                compareKeysetToResult(keysets.get(keyset_id), resp.getJsonArray("allowlist"));
+                compareKeysetToResult(keysets.get(keyset_id), resp.getJsonArray("allowed_sites"));
 
                 Integer expectedHash = keysets.get(keyset_id).hashCode();
                 assertEquals(expectedHash, resp.getInteger("hash"));
@@ -263,7 +263,7 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            compareKeysetToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             testContext.completeNow();
         });
@@ -310,7 +310,7 @@ public class SharingServiceTest extends ServiceTestBase {
             for (int i = 0; i < keysets.size(); i++) {
                 JsonObject resp = respArray.getJsonObject(i);
                 int keyset_id = resp.getInteger("keyset_id");
-                compareKeysetToResult(keysets.get(keyset_id), resp.getJsonArray("allowlist"));
+                compareKeysetToResult(keysets.get(keyset_id), resp.getJsonArray("allowed_sites"));
             }
 
             testContext.completeNow();
@@ -330,7 +330,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -361,7 +361,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -396,7 +396,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -411,7 +411,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
@@ -433,7 +433,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -447,7 +447,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
@@ -469,7 +469,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -484,7 +484,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(4, 8, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
             testContext.completeNow();
@@ -506,7 +506,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -539,7 +539,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -572,7 +572,7 @@ public class SharingServiceTest extends ServiceTestBase {
 //        setKeysets(keysets);
 //
 //        String body = "  {\n" +
-//                "    \"allowlist\": [\n" +
+//                "    \"allowed_sites\": [\n" +
 //                "      22,\n" +
 //                "      25,\n" +
 //                "      6\n" +
@@ -604,7 +604,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [\n" +
+                "    \"allowed_sites\": [\n" +
                 "      22,\n" +
                 "      25,\n" +
                 "      6\n" +
@@ -619,7 +619,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(2, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
             testContext.completeNow();
@@ -627,7 +627,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetNewEmptyAllowlist(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetNewEmptyAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
@@ -639,7 +639,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [],\n" +
+                "    \"allowed_sites\": [],\n" +
                 "    \"site_id\": 8," +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -650,7 +650,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(2, 8, "test", Set.of(), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
             testContext.completeNow();
@@ -658,7 +658,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetUpdateEmptyAllowlist(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetUpdateEmptyAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         doReturn(new Site(5, "test", true)).when(siteProvider).getSite(5);
@@ -670,7 +670,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [],\n" +
+                "    \"allowed_sites\": [],\n" +
                 "    \"name\": \"test-name\"," +
                 "    \"keyset_id\": 1" +
                 "  }";
@@ -681,7 +681,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test", Set.of(), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
@@ -702,7 +702,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [],\n" +
+                "    \"allowed_sites\": [],\n" +
                 String.format("    \"site_id\": %d,", input) +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -731,7 +731,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [],\n" +
+                "    \"allowed_sites\": [],\n" +
                 String.format("    \"site_id\": %d,", input) +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -759,7 +759,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [8, 8],\n" +
+                "    \"allowed_sites\": [8, 8],\n" +
                 "    \"site_id\": 8," +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -787,7 +787,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [8, 8],\n" +
+                "    \"allowed_sites\": [8, 8],\n" +
                 "    \"keyset_id\": 1," +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -815,7 +815,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [8, 5],\n" +
+                "    \"allowed_sites\": [8, 5],\n" +
                 "    \"site_id\": 8," +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -826,7 +826,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(2, 8, "test", Set.of(5), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
             testContext.completeNow();
@@ -846,7 +846,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [8, 5],\n" +
+                "    \"allowed_sites\": [8, 5],\n" +
                 "    \"keyset_id\": 1," +
                 "    \"name\": \"test-name\"" +
                 "  }";
@@ -857,7 +857,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test", Set.of(8), Instant.now().getEpochSecond(), true, true);
-            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
             testContext.completeNow();
@@ -877,7 +877,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"allowlist\": [8],\n" +
+                "    \"allowed_sites\": [8],\n" +
                 "    \"site_id\": 5" +
                 "  }";
 
@@ -892,7 +892,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetNewNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetNewNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(5, 1);
@@ -913,14 +913,14 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true);
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             testContext.completeNow();
         });
     }
 
     @Test
-    void KeysetSetNewExplicitlyNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetNewExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(5, 1);
@@ -933,7 +933,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
         String body = "  {\n" +
                 "    \"site_id\": 1," +
-                "    \"allowlist\": null" +
+                "    \"allowed_sites\": null" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -942,14 +942,14 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true);
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             testContext.completeNow();
         });
     }
 
     @Test
-    void KeysetSetUpdateNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetUpdateNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(5);
@@ -970,14 +970,14 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true);
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             testContext.completeNow();
         });
     }
 
     @Test
-    void KeysetSetUpdateExplicitlyNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetUpdateExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         mockSiteExistence(5);
@@ -990,7 +990,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
         String body = "  {\n" +
                 "    \"keyset_id\": 1," +
-                "    \"allowlist\": null" +
+                "    \"allowed_sites\": null" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -999,7 +999,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             Keyset expected = new Keyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true);
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             testContext.completeNow();
         });
