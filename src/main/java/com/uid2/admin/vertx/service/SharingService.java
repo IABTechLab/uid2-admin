@@ -1,8 +1,11 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IKeysetKeyManager;
+import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
+import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -25,6 +28,7 @@ public class SharingService implements IService {
     private final WriteLock writeLock;
     private final KeysetStoreWriter storeWriter;
     private final RotatingKeysetProvider keysetProvider;
+    private final RotatingSiteStore siteProvider;
     private final IKeysetKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
@@ -32,12 +36,14 @@ public class SharingService implements IService {
                           WriteLock writeLock,
                           KeysetStoreWriter storeWriter,
                           RotatingKeysetProvider keysetProvider,
-                          IKeysetKeyManager keyManager) {
+                          IKeysetKeyManager keyManager,
+                          RotatingSiteStore siteProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
         this.keyManager = keyManager;
+        this.siteProvider = siteProvider;
     }
 
     @Override
@@ -65,51 +71,94 @@ public class SharingService implements IService {
 
     private void handleSetKeyset(RoutingContext rc) {
         synchronized (writeLock) {
-           try {
-               keysetProvider.loadContent();
-           } catch (Exception e) {
-               LOGGER.error("Failed to load key acls");
-               rc.fail(500);
-           }
+            try {
+                keysetProvider.loadContent();
+                siteProvider.loadContent();
+            } catch (Exception e) {
+                LOGGER.error("Failed to load keysets");
+                rc.fail(500);
+            }
 
             final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowed_sites");
-           Integer keysetId = body.getInteger("keyset_id");
-           final Integer siteId = body.getInteger("site_id");
+            final JsonArray whitelist = body.getJsonArray("allowed_sites");
+            Integer keysetId = body.getInteger("keyset_id");
+            Integer siteId = body.getInteger("site_id");
+            String name = body.getString("name", "");
 
-           final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = keysetsById.get(keysetId);
+            if ((keysetId == null && siteId == null)
+                    || (keysetId != null && siteId != null)) {
+                ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
+                return;
+            }
+            if (siteId != null &&
+                    (siteId == Const.Data.AdvertisingTokenSiteId
+                            || siteId == Const.Data.RefreshKeySiteId
+                            || siteId == Const.Data.MasterKeySiteId
+                            || siteProvider.getSite(siteId) == null)) {
+                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
+                return;
+            }
 
-           String name;
+            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
-           if (keyset == null) {
-               keysetId = Collections.max(keysetsById.keySet()) + 1;
-               name = "";
-           } else {
-               keysetId = keyset.getKeysetId();
-               name = keyset.getName();
-           }
+            boolean create = false;
+            if (keysetId != null) {
+                Keyset keyset = keysetsById.get(keysetId);
+                if (keyset == null) {
+                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + keysetId);
+                    return;
+                }
+                siteId = keyset.getSiteId();
+                if (name.equals("")) {
+                    name = keyset.getName();
+                }
+            } else {
+                keysetId = Collections.max(keysetsById.keySet()) + 1;
+                create = true;
+            }
 
-           final Set<Integer> newlist = whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet());
+            Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+            if (firstInvalidSite.isPresent()) {
+                ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
+                return;
+            }
 
-           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                   newlist, Instant.now().getEpochSecond(), true, true);
+            boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
+            if (containsDuplicates) {
+                ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
+                return;
+            }
 
-           keysetsById.put(keysetId, newKeyset);
-           try {
-               storeWriter.upload(keysetsById, null);
-               //Create a new key
-               this.keyManager.addKeysetKey(keysetId);
-           } catch (Exception e) {
-               rc.fail(500, e);
-               return;
-           }
+            Integer finalSiteId = siteId;
+            final Set<Integer> newlist = whitelist.stream()
+                    .map(s -> (Integer) s)
+                    .filter(s -> !Objects.equals(s, finalSiteId))
+                    .collect(Collectors.toSet());
 
-           JsonObject jo = jsonFullKeyset(newKeyset);
-           rc.response()
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
+
+            if (create) {
+                if (keysetsById.values().stream().anyMatch(item ->
+                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equalsIgnoreCase(newKeyset.getName()))) {
+                    ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
+                    return;
+                }
+            }
+
+            keysetsById.put(keysetId, newKeyset);
+            try {
+                storeWriter.upload(keysetsById, null);
+                //Create a new key
+                this.keyManager.addKeysetKey(keysetId);
+            } catch (Exception e) {
+                rc.fail(500, e);
+                return;
+            }
+
+            JsonObject jo = jsonFullKeyset(newKeyset);
+            rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jo.encode());
         }
@@ -132,7 +181,7 @@ public class SharingService implements IService {
         try {
             keysetId = Integer.parseInt(rc.pathParam("keyset_id"));
         } catch (Exception e) {
-            LOGGER.warn("Failed to parse a site id from list request", e);
+            LOGGER.warn("Failed to parse a keyset_id from list request", e);
             rc.fail(400, e);
             return;
         }
@@ -140,8 +189,7 @@ public class SharingService implements IService {
         Keyset keyset = this.keysetProvider.getSnapshot().getAllKeysets().get(keysetId);
 
         if (keyset == null) {
-            LOGGER.warn("Failed to find keyset for keyset id: " + keyset);
-            rc.fail(404);
+            ResponseUtil.error(rc, 404, "Failed to find keyset for keyset_id: " + keysetId);
             return;
         }
 
@@ -152,12 +200,12 @@ public class SharingService implements IService {
     }
 
     private Keyset getDefaultKeyset(Map<Integer, Keyset> keysets, Integer siteId) {
-           for(Keyset keyset: keysets.values()) {
-               if(keyset.getSiteId() == siteId && keyset.isDefault()) {
-                   return keyset;
-               }
-           }
-           return null;
+        for (Keyset keyset : keysets.values()) {
+            if (keyset.getSiteId() == siteId && keyset.isDefault()) {
+                return keyset;
+            }
+        }
+        return null;
     }
 
     private void handleListAllKeysets(RoutingContext rc) {
@@ -197,7 +245,7 @@ public class SharingService implements IService {
 
         JsonArray listedSites = new JsonArray();
         Set<Integer> allowedSites = keyset.getAllowedSites();
-        if(allowedSites != null) {
+        if (allowedSites != null) {
             allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
         }
         JsonObject jo = new JsonObject();
@@ -216,7 +264,7 @@ public class SharingService implements IService {
             for (Map.Entry<Integer, Keyset> keyset : collection.entrySet()) {
                 JsonArray listedSites = new JsonArray();
                 Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
-                if(allowedSites != null) {
+                if (allowedSites != null) {
                     allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
                 }
                 JsonObject jo = new JsonObject();
@@ -237,71 +285,72 @@ public class SharingService implements IService {
 
     private void handleSetAllowedSites(RoutingContext rc) {
         synchronized (writeLock) {
-           int siteId;
-           try {
-               siteId = Integer.parseInt(rc.pathParam("siteId"));
-           } catch (Exception e) {
-               LOGGER.warn("Failed to parse a site id from list request", e);
-               rc.fail(400, e);
-               return;
-           }
+            int siteId;
+            try {
+                siteId = Integer.parseInt(rc.pathParam("siteId"));
+            } catch (Exception e) {
+                LOGGER.warn("Failed to parse a site id from list request", e);
+                rc.fail(400, e);
+                return;
+            }
 
-           try {
-               keysetProvider.loadContent();
-           } catch (Exception e) {
-               LOGGER.error("Failed to load key acls");
-               rc.fail(500);
-           }
+            try {
+                keysetProvider.loadContent();
+            } catch (Exception e) {
+                LOGGER.error("Failed to load keysets");
+                rc.fail(500);
+            }
 
 
-           final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-           Keyset keyset = getDefaultKeyset(collection, siteId);
+            final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            Keyset keyset = getDefaultKeyset(collection, siteId);
 
-           final JsonObject body = rc.body().asJsonObject();
+            final JsonObject body = rc.body().asJsonObject();
 
            final JsonArray whitelist = body.getJsonArray("allowed_sites");
            final int hash = body.getInteger("hash");
 
-           if (keyset != null &&  hash != keyset.hashCode()) {
-               rc.fail(409);
-               return;
-           }
+            if (keyset != null && hash != keyset.hashCode()) {
+                rc.fail(409);
+                return;
+            }
 
-           Integer keysetId;
-           String name;
+            Integer keysetId;
+            String name;
 
-           if (keyset == null) {
-               keysetId = Collections.max(collection.keySet()) + 1;
-               name = "";
-           } else {
-               keysetId = keyset.getKeysetId();
-               name = keyset.getName();
-           }
+            if (keyset == null) {
+                keysetId = Collections.max(collection.keySet()) + 1;
+                name = "";
+            } else {
+                keysetId = keyset.getKeysetId();
+                name = keyset.getName();
+            }
 
-           final Set<Integer> newlist = whitelist.stream()
-                   .map(s -> (Integer) s)
-                   .collect(Collectors.toSet());
+            final Set<Integer> newlist = whitelist.stream()
+                    .map(s -> (Integer) s)
+                    .collect(Collectors.toSet());
 
-           final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                   newlist, Instant.now().getEpochSecond(), true, true);
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
 
-           collection.put(keysetId, newKeyset);
-           try {
-               storeWriter.upload(collection, null);
-               //Create new key for keyset
-               this.keyManager.addKeysetKey(keysetId);
-           } catch (Exception e) {
-               rc.fail(500, e);
-               return;
-           }
+            collection.put(keysetId, newKeyset);
+            try {
+                storeWriter.upload(collection, null);
+                //Create new key for keyset
+                this.keyManager.addKeysetKey(keysetId);
+            } catch (Exception e) {
+                rc.fail(500, e);
+                return;
+            }
 
            JsonObject jo = new JsonObject();
            jo.put("allowed_sites", whitelist);
            jo.put("hash", newKeyset.hashCode());
 
-           rc.response()
-                   .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                   .end(jo.encode());
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(jo.encode());
         }
     }
+
 }
