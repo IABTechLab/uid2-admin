@@ -128,6 +128,9 @@
         if ($('#nullify').is(':checked')){
           allowedSites = null
         } else if((add && add.length !== 0) || (remove && remove.length !== 0)) {
+          if(allowedSites !== undefined && allowedSites == null) {
+            $('#errorOutput').html('cannot modify siteIds for allow * keyset. Please reset first')
+          }
           allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
           allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
         }
