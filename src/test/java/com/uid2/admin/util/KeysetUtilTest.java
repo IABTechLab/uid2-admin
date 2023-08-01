@@ -2,14 +2,15 @@ package com.uid2.admin.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Map;
 
-import static com.uid2.admin.util.KeysetUtil.getMaxKeyset;
-import static com.uid2.admin.util.KeysetUtil.lookUpKeyset;
+import static com.uid2.admin.util.KeysetUtil.*;
+import static com.uid2.admin.util.KeysetUtil.createDefaultKeyset;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -64,5 +65,39 @@ public class KeysetUtilTest {
                 4, new Keyset(4, 3, "", new HashSet<>(), 0, true, true)
         );
         assertEquals(4, getMaxKeyset(fourKeysets));
+    }
+
+    @Test
+    public void testKeysetNameCreation() {
+
+        //expected cases of special keysets when site id and keyset id match our expectations
+        Keyset keyset = createDefaultKeyset(-1, 1);
+        assertEquals(keyset.getName(), Const.Data.MasterKeysetName);
+        keyset = createDefaultKeyset(-2, 2);
+        assertEquals(keyset.getName(), Const.Data.RefreshKeysetName);
+        keyset = createDefaultKeyset(2, 3);
+        assertEquals(keyset.getName(), Const.Data.FallbackPublisherKeysetName);
+
+        //only site id matches but keyset id aren't the same as what we expected
+        keyset = createDefaultKeyset(-1, 3);
+        assertEquals(keyset.getName(), "");
+        keyset = createDefaultKeyset(-2, 34);
+        assertEquals(keyset.getName(), "");
+        keyset = createDefaultKeyset(2, 56);
+        assertEquals(keyset.getName(), "");
+
+        //only keyset id matches but site Id aren't the same as what we expected
+        keyset = createDefaultKeyset(-5, 1);
+        assertEquals(keyset.getName(), "");
+        keyset = createDefaultKeyset(-3, 2);
+        assertEquals(keyset.getName(), "");
+        keyset = createDefaultKeyset(20, 3);
+        assertEquals(keyset.getName(), "");
+
+        //for any other normal keyset creation
+        keyset = createDefaultKeyset(6, 7);
+        assertEquals(keyset.getName(), "");
+        keyset = createDefaultKeyset(9, 23);
+        assertEquals(keyset.getName(), "");
     }
 }
