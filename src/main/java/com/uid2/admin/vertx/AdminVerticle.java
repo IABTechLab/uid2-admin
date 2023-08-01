@@ -60,7 +60,7 @@ public class AdminVerticle extends AbstractVerticle {
         this.adminUserProvider = adminUserProvider;
         this.services = services;
 
-        int clientCount = 500;
+        int clientCount = 270;
         for (int i = 0; i < clientCount; i++) {
             validKgrs.add(this.generateFormattedKeyStringAndKeyHash(32));
         }

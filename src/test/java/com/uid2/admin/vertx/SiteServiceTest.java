@@ -97,10 +97,10 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(sites);
 
         ClientKey[] clientKeys = {
-                new ClientKey("ck1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
-                new ClientKey("ck2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
-                new ClientKey("ck3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
-                new ClientKey("ck4", "cs4").withSiteId(13).withRoles(Role.SHARER),
+                new ClientKey("ck1", "ckh1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
+                new ClientKey("ck2", "ckh2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
+                new ClientKey("ck3", "ckh3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
+                new ClientKey("ck4", "ckh4", "cs4").withSiteId(13).withRoles(Role.SHARER),
         };
         setClientKeys(clientKeys);
 

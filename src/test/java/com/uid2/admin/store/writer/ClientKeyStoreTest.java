@@ -184,12 +184,12 @@ class ClientKeyStoreTest {
     private InMemoryStorageMock cloudStorage;
     private FileManager fileManager;
     private final List<ClientKey> oneClient = ImmutableList.of(
-            new ClientKey("key1", "secret1", "contact1")
+            new ClientKey("key1", "keyHash1", "secret1", "contact1")
                     .withRoles(Role.GENERATOR)
                     .withSiteId(5)
     );
     private final List<ClientKey> anotherClient = ImmutableList.of(
-            new ClientKey("key2", "secret2", "contact2")
+            new ClientKey("key2", "keyHash2", "secret2", "contact2")
                     .withRoles(Role.CLIENTKEY_ISSUER)
                     .withSiteId(5)
     );

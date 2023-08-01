@@ -33,6 +33,7 @@ class ClientKeySyncJobTest {
     private final ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
                     "key",
+                    "keyHash",
                     "name",
                     "contact",
                     "protocol",
@@ -43,6 +44,7 @@ class ClientKeySyncJobTest {
                     OperatorType.PRIVATE));
     private final ClientKey client = new ClientKey(
             "key",
+            "keyHash",
             "secret",
             "name",
             "contact",

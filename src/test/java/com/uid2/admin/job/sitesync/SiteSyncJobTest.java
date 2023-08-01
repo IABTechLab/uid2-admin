@@ -38,6 +38,7 @@ public class SiteSyncJobTest {
     ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
                     "key",
+                    "keyHash",
                     "name",
                     "contact",
                     "protocol",

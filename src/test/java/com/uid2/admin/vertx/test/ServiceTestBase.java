@@ -4,6 +4,7 @@ import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
+import com.uid2.shared.model.KeyGenerationResult;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeysetKeyManager;
@@ -100,7 +101,10 @@ public abstract class ServiceTestBase {
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
-        when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
+        when(keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult("abcdef.abcdefabcdefabcdef", "abcdefabcdefabcdefabcdef"));
+        when(keyGenerator.generateFormattedKeyStringAndKeyHash(startsWith("UID2-A-L-"), anyInt())).thenReturn(new KeyGenerationResult("UID2-A-L-abcdef.abcdefabcdefabcdef", "UID2-A-L-abcdefabcdefabcdefabcdef"));
+        when(keyGenerator.generateFormattedKeyStringAndKeyHash(startsWith("UID2-C-L-"), anyInt())).thenReturn(new KeyGenerationResult("UID2-C-L-5-abcdef.abcdefabcdefabcdef", "UID2-C-L-5-abcdefabcdefabcdefabcdef"));
+        when(keyGenerator.generateFormattedKeyStringAndKeyHash(startsWith("UID2-O-L-"), anyInt())).thenReturn(new KeyGenerationResult("UID2-O-L-5-abcdef.abcdefabcdefabcdef", "UID2-O-L-5-abcdefabcdefabcdefabcdef"));
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};

@@ -5,6 +5,7 @@ import com.uid2.admin.vertx.service.AdminKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.KeyGenerationResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -19,6 +20,7 @@ import java.util.List;
 import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 public class AdminKeyServiceTest extends ServiceTestBase {
@@ -32,32 +34,34 @@ public class AdminKeyServiceTest extends ServiceTestBase {
     @Test
     void addAdminUsesKeyPrefixAndFormattedKeyString(Vertx vertx, VertxTestContext testContext) throws Exception {
         final String keySuffix = "abcdef.abcdefabcdefabcdef";
-        fakeAuth(Role.ADMINISTRATOR);
-        when(this.keyGenerator.generateFormattedKeyString(anyInt())).thenReturn(keySuffix);
+        final String key = adminKeyPrefix + keySuffix;
 
-        AdminUser expectedAdminUser = this.getAdminUser(adminKeyPrefix + keySuffix);
+        fakeAuth(Role.ADMINISTRATOR);
+        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(key, ""));
+
+        AdminUser expectedAdminUser = this.getAdminUser(key);
 
         post(vertx, String.format("api/admin/add?name=%s&roles=administrator", expectedAdminUser.getName()), "", response -> {
-           try {
-               HttpResponse<Buffer> httpResponse = response.result();
-               JsonObject result = httpResponse.bodyAsJsonObject();
+            try {
+                HttpResponse<Buffer> httpResponse = response.result();
+                JsonObject result = httpResponse.bodyAsJsonObject();
 
-               assertAll(
-                       () -> assertTrue(response.succeeded()),
-                       () -> assertNotNull(result),
-                       () -> assertEquals(adminKeyPrefix + keySuffix, result.getString("key"))
-               );
-               testContext.completeNow();
-           } catch (Throwable t) {
-               testContext.failNow(t);
-           }
+                assertAll(
+                        () -> assertTrue(response.succeeded()),
+                        () -> assertNotNull(result),
+                        () -> assertEquals(key, result.getString("key"))
+                );
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
         });
     }
 
     private AdminUser getAdminUser(String key) {
         return Instancio.of(AdminUser.class)
                 .set(field(AdminUser::getKey), key)
-                .set(field(AdminUser::getRoles), new HashSet<Role>(List.of(Role.ADMINISTRATOR)))
+                .set(field(AdminUser::getRoles), new HashSet<>(List.of(Role.ADMINISTRATOR)))
                 .create();
     }
 }
