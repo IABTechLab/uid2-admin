@@ -153,10 +153,14 @@
         payload['name'] = name
       }
 
+      let allowlist = []
       const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
-      if(add && add.length !== 0) {
-        payload['allowlist'] = [].concat(add.filter((value, _, __) => !allowlist.includes(value)))
+      if ($('#nullify').is(':checked')){
+        allowlist = null
+      } else if(add && add.length !== 0) {
+        allowlist = allowlist.concat(add.filter((value, _, __) => !allowlist.includes(value)))
       }
+      payload['allowlist'] = allowlist
 
       doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
     });
