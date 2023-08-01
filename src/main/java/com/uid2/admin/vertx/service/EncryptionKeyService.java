@@ -551,10 +551,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             if(siteId == Const.Data.MasterKeySiteId) {
                 newKeysetId = Const.Data.MasterKeysetId;
             }
-            if(siteId == Const.Data.RefreshKeySiteId) {
+            else if(siteId == Const.Data.RefreshKeySiteId) {
                 newKeysetId = Const.Data.RefreshKeysetId;
             }
-            if(siteId == Const.Data.AdvertisingTokenSiteId) {
+            else if(siteId == Const.Data.AdvertisingTokenSiteId) {
                 newKeysetId = Const.Data.FallbackPublisherKeysetId;
             }
             keyset = createDefaultKeyset(siteId, newKeysetId);
