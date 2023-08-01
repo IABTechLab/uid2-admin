@@ -890,4 +890,118 @@ public class SharingServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+
+    @Test
+    void KeysetSetNewNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        mockSiteExistence(5, 1);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"site_id\": 1" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true);
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetNewExplicitlyNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        mockSiteExistence(5, 1);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"site_id\": 1," +
+                "    \"allowlist\": null" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true);
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetUpdateNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        mockSiteExistence(5);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"keyset_id\": 1" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true);
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void KeysetSetUpdateExplicitlyNullAllowlist(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        mockSiteExistence(5);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"keyset_id\": 1," +
+                "    \"allowlist\": null" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            Keyset expected = new Keyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true);
+            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowlist"));
+
+            testContext.completeNow();
+        });
+    }
 }

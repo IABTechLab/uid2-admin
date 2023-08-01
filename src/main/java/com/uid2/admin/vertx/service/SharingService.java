@@ -121,23 +121,31 @@ public class SharingService implements IService {
                 create = true;
             }
 
-            Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
-            if (firstInvalidSite.isPresent()) {
-                ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
-                return;
+            final Set<Integer> newlist;
+
+            if (whitelist != null){
+                Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+                if (firstInvalidSite.isPresent()) {
+                    ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
+                    return;
+                }
+
+                boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
+                if (containsDuplicates) {
+                    ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
+                    return;
+                }
+
+                Integer finalSiteId2 = siteId;
+                newlist = whitelist.stream()
+                        .map(s -> (Integer) s)
+                        .filter(s -> !Objects.equals(s, finalSiteId2))
+                        .collect(Collectors.toSet());
+            } else {
+                newlist = null;
             }
 
-            boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
-            if (containsDuplicates) {
-                ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
-                return;
-            }
 
-            Integer finalSiteId2 = siteId;
-            final Set<Integer> newlist = whitelist.stream()
-                    .map(s -> (Integer) s)
-                    .filter(s -> !Objects.equals(s, finalSiteId2))
-                    .collect(Collectors.toSet());
 
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
