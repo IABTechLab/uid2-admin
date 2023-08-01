@@ -75,7 +75,7 @@ public class SharingService implements IService {
                 keysetProvider.loadContent();
                 siteProvider.loadContent();
             } catch (Exception e) {
-                LOGGER.error("Failed to load key acls");
+                LOGGER.error("Failed to load keysets");
                 rc.fail(500);
             }
 
@@ -308,7 +308,7 @@ public class SharingService implements IService {
             try {
                 keysetProvider.loadContent();
             } catch (Exception e) {
-                LOGGER.error("Failed to load key acls");
+                LOGGER.error("Failed to load keysets");
                 rc.fail(500);
             }
 
