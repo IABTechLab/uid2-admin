@@ -84,47 +84,47 @@ public class SharingService implements IService {
             final JsonObject body = rc.body().asJsonObject();
 
             final JsonArray whitelist = body.getJsonArray("allowed_sites");
-            Integer keysetId = body.getInteger("keyset_id");
-            Integer siteId = body.getInteger("site_id");
-            String name = body.getString("name", "");
+            final Integer requestKeysetId = body.getInteger("keyset_id");
+            final Integer requestSiteId = body.getInteger("site_id");
+            final String requestName = body.getString("name", "");
 
-            if ((keysetId == null && siteId == null)
-                    || (keysetId != null && siteId != null)) {
+            if ((requestKeysetId == null && requestSiteId == null)
+                    || (requestKeysetId != null && requestSiteId != null)) {
                 ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
                 return;
             }
-            Integer finalSiteId = siteId;
-            if (siteId != null &&
-                    (siteId == Const.Data.AdvertisingTokenSiteId
-                            || siteId == Const.Data.RefreshKeySiteId
-                            || siteId == Const.Data.MasterKeySiteId
-                            || siteProvider.getSite(siteId) == null
-                            || keysetsById.values().stream().anyMatch(k -> k.getSiteId() == finalSiteId))) {
-                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
-                return;
-            }
 
-
-            if (keysetId != null) {
-                Keyset keyset = keysetsById.get(keysetId);
-                if (keyset == null) {
-                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + keysetId);
+            final int siteId;
+            final int keysetId;
+            final String name;
+            if(requestSiteId != null) {
+                siteId = requestSiteId;
+                name = requestName;
+                if (siteId == Const.Data.AdvertisingTokenSiteId
+                        || siteId == Const.Data.RefreshKeySiteId
+                        || siteId == Const.Data.MasterKeySiteId
+                        || siteProvider.getSite(siteId) == null
+                        || keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) {
+                    ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
-                siteId = keyset.getSiteId();
-                if (name.equals("")) {
-                    name = keyset.getName();
-                }
-            } else {
                 keysetId = Collections.max(keysetsById.keySet()) + 1;
-                Integer finalSiteId1 = siteId;
-                String finalName = name;
                 if (keysetsById.values().stream().anyMatch(item ->
-                        item.getSiteId() == finalSiteId1 && item.getName().equalsIgnoreCase(finalName))) {
+                        item.getSiteId() == siteId && item.getName().equalsIgnoreCase(name))) {
                     ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
                     return;
                 }
+            } else {
+                Keyset keyset = keysetsById.get(requestKeysetId);
+                if (keyset == null) {
+                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + requestKeysetId);
+                    return;
+                }
+                keysetId = requestKeysetId;
+                siteId = keyset.getSiteId();
+                name = requestName.equals("") ? keyset.getName() : requestName;
             }
+
 
             final Set<Integer> newlist;
 
