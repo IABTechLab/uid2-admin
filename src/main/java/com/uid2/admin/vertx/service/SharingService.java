@@ -105,7 +105,6 @@ public class SharingService implements IService {
             }
 
 
-            boolean create = false;
             if (keysetId != null) {
                 Keyset keyset = keysetsById.get(keysetId);
                 if (keyset == null) {
@@ -118,7 +117,13 @@ public class SharingService implements IService {
                 }
             } else {
                 keysetId = Collections.max(keysetsById.keySet()) + 1;
-                create = true;
+                Integer finalSiteId1 = siteId;
+                String finalName = name;
+                if (keysetsById.values().stream().anyMatch(item ->
+                        item.getSiteId() == finalSiteId1 && item.getName().equalsIgnoreCase(finalName))) {
+                    ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
+                    return;
+                }
             }
 
             final Set<Integer> newlist;
@@ -145,18 +150,8 @@ public class SharingService implements IService {
                 newlist = null;
             }
 
-
-
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
-
-            if (create) {
-                if (keysetsById.values().stream().anyMatch(item ->
-                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equalsIgnoreCase(newKeyset.getName()))) {
-                    ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
-                    return;
-                }
-            }
 
             keysetsById.put(keysetId, newKeyset);
             try {
