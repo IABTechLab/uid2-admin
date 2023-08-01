@@ -104,7 +104,7 @@ public class SharingService implements IService {
                         || siteId == Const.Data.RefreshKeySiteId
                         || siteId == Const.Data.MasterKeySiteId
                         || siteProvider.getSite(siteId) == null
-                        || keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) {
+                        || keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId))  { // enforce single keyset per site
                     ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }

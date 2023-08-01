@@ -73,6 +73,11 @@
         const filtered = ja.filter(function(keyset) {
           return keyset.site_id === siteId
         });
+        filtered.forEach( obj => {
+          if(obj['allowed_sites'] !== undefined && obj['allowed_sites'] == null){
+            obj['allowed_sites'] = '*'
+          }
+        })
         const pretty = JSON.stringify(filtered,null,2);
         $('#standardOutput').html(pretty);
 
