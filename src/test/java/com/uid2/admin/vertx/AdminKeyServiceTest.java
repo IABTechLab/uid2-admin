@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 
 public class AdminKeyServiceTest extends ServiceTestBase {
     final String adminKeyPrefix = "UID2-A-L-";
+    final String expectedAdminKey = adminKeyPrefix + "abcdef.abcdefabcdefabcdef";
+
     @Override
     protected IService createService() {
         this.config.put("admin_key_prefix", adminKeyPrefix);
@@ -33,13 +35,10 @@ public class AdminKeyServiceTest extends ServiceTestBase {
 
     @Test
     void addAdminUsesKeyPrefixAndFormattedKeyString(Vertx vertx, VertxTestContext testContext) throws Exception {
-        final String keySuffix = "abcdef.abcdefabcdefabcdef";
-        final String key = adminKeyPrefix + keySuffix;
-
         fakeAuth(Role.ADMINISTRATOR);
-        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(key, ""));
+        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(expectedAdminKey, ""));
 
-        AdminUser expectedAdminUser = this.getAdminUser(key);
+        AdminUser expectedAdminUser = this.getAdminUser(expectedAdminKey);
 
         post(vertx, String.format("api/admin/add?name=%s&roles=administrator", expectedAdminUser.getName()), "", response -> {
             try {
@@ -49,7 +48,7 @@ public class AdminKeyServiceTest extends ServiceTestBase {
                 assertAll(
                         () -> assertTrue(response.succeeded()),
                         () -> assertNotNull(result),
-                        () -> assertEquals(key, result.getString("key"))
+                        () -> assertEquals(expectedAdminKey, result.getString("key"))
                 );
                 testContext.completeNow();
             } catch (Throwable t) {
