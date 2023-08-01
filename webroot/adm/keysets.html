@@ -97,7 +97,7 @@
         return;
       }
       const url = '/api/sharing/keyset';
-      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({allowlist: [], keyset_id : keysetId}))
+      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({allowed_sites: [], keyset_id : keysetId}))
     });
 
     $('#doUpdate').on('click', function () {
@@ -114,20 +114,20 @@
 
       doApiCallWithCallback('GET', url, (text) => {
         const jo = JSON.parse(text);
-        let allowlist = jo.allowlist;
+        let allowedSites = jo.allowed_sites;
 
         const url = '/api/sharing/keyset';
 
         let payload = {keyset_id: keysetId}
 
         if ($('#nullify').is(':checked')){
-          allowlist = null
+          allowedSites = null
         } else if((add && add.length !== 0) || (remove && remove.length !== 0)) {
-          allowlist = allowlist.filter((value, _, __) => !remove.includes(value))
-          allowlist = allowlist.concat(add.filter((value, _, __) => !allowlist.includes(value)))
+          allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
+          allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
         }
 
-        payload["allowlist"] = allowlist
+        payload["allowed_sites"] = allowedSites
 
         if(name && (name = $.trim(name))) {
           payload["name"] = name
@@ -153,14 +153,14 @@
         payload['name'] = name
       }
 
-      let allowlist = []
+      let allowedSites = []
       const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
       if ($('#nullify').is(':checked')){
-        allowlist = null
+        allowedSites = null
       } else if(add && add.length !== 0) {
-        allowlist = allowlist.concat(add.filter((value, _, __) => !allowlist.includes(value)))
+        allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
       }
-      payload['allowlist'] = allowlist
+      payload['allowed_sites'] = allowedSites
 
       doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
     });
