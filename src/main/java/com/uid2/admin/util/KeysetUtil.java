@@ -12,6 +12,12 @@ import java.util.stream.Collectors;
 import static java.lang.Math.max;
 
 public class KeysetUtil {
+
+    public static final String MasterKeysetName = "Master";
+    public static final String RefreshKeysetName = "Refresh";
+    public static final String FallbackPublisherKeysetName = "Fallback Publisher";
+
+
     public static Keyset lookUpKeyset(int siteId, Map<Integer, Keyset> keysets) {
         for (Keyset keyset: keysets.values()) {
             if(keyset.getSiteId() == siteId && keyset.isDefault()) {
@@ -34,13 +40,13 @@ public class KeysetUtil {
         //only set if both siteId and keysetId match our expectation according to the requirements
         //or otherwise we know there's a bug in other codes
         if(siteId == Const.Data.MasterKeySiteId && keysetId == Const.Data.MasterKeysetId) {
-            name = Const.Data.MasterKeysetName;
+            name = MasterKeysetName;
         }
         else if(siteId == Const.Data.RefreshKeySiteId && keysetId == Const.Data.RefreshKeysetId) {
-            name = Const.Data.RefreshKeysetName;
+            name = RefreshKeysetName;
         }
         else if(siteId == Const.Data.AdvertisingTokenSiteId && keysetId == Const.Data.FallbackPublisherKeysetId) {
-            name = Const.Data.FallbackPublisherKeysetName;
+            name = FallbackPublisherKeysetName;
         }
         return new Keyset(keysetId, siteId, name, null, Instant.now().getEpochSecond(), true, true);
     }

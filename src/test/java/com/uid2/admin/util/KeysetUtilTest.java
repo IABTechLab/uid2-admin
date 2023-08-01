@@ -72,11 +72,11 @@ public class KeysetUtilTest {
 
         //expected cases of special keysets when site id and keyset id match our expectations
         Keyset keyset = createDefaultKeyset(-1, 1);
-        assertEquals(keyset.getName(), Const.Data.MasterKeysetName);
+        assertEquals(keyset.getName(), KeysetUtil.MasterKeysetName);
         keyset = createDefaultKeyset(-2, 2);
-        assertEquals(keyset.getName(), Const.Data.RefreshKeysetName);
+        assertEquals(keyset.getName(), KeysetUtil.RefreshKeysetName);
         keyset = createDefaultKeyset(2, 3);
-        assertEquals(keyset.getName(), Const.Data.FallbackPublisherKeysetName);
+        assertEquals(keyset.getName(), KeysetUtil.FallbackPublisherKeysetName);
 
         //only site id matches but keyset id aren't the same as what we expected
         keyset = createDefaultKeyset(-1, 3);
