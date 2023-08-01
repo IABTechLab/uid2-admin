@@ -71,7 +71,7 @@ public class Main {
 
     public void run() {
         try {
-            boolean enable_keysets = config.getBoolean("enable_keysets");
+            boolean enableKeysets = config.getBoolean("enable_keysets");
             AuthFactory authFactory = new GithubAuthFactory(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
@@ -176,7 +176,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
-                    new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
+                    new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService, enableKeysets),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),

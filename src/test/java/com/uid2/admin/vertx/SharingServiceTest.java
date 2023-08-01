@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager);
+        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, true);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {

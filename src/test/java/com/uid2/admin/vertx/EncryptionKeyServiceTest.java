@@ -61,6 +61,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         this.config.put("site_key_rotation_cut_off_days", SITE_KEY_ROTATION_CUT_OFF_DAYS);
         this.config.put("refresh_key_rotation_cut_off_days", REFRESH_KEY_ROTATION_CUT_OFF_DAYS);
         this.config.put("filter_key_over_cut_off_days", FILTER_KEY_OVER_CUT_OFF_DAYS);
+        this.config.put("enable_keysets", true);
 
         keyService = new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter,
                 keyProvider, keysetKeyProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);

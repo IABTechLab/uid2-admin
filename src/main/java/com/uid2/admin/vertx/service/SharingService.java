@@ -28,16 +28,20 @@ public class SharingService implements IService {
     private final IKeysetKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
+    private final boolean enableKeysets;
+
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
                           KeysetStoreWriter storeWriter,
                           RotatingKeysetProvider keysetProvider,
-                          IKeysetKeyManager keyManager) {
+                          IKeysetKeyManager keyManager,
+                          boolean enableKeyset) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
         this.keyManager = keyManager;
+        this.enableKeysets = enableKeyset;
     }
 
     @Override
