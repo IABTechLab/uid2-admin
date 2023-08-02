@@ -558,7 +558,7 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
-    // This test should be commented out when multiple keysets is enabled
+    // This test should be uncommented out when multiple keysets is enabled
 //    @Test
 //    void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
 //        fakeAuth(Role.ADMINISTRATOR);
