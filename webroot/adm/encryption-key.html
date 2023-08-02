@@ -52,12 +52,21 @@
 
 <script language="JavaScript">
     $(document).ready(function () {
+
+        function sortKeysCallback(text) {
+            let resp = JSON.parse(text);
+            resp.sort(function(a, b) {
+                return a.id - b.id;
+            });
+            var pretty = JSON.stringify(resp, null, 2);
+            $('#standardOutput').html(pretty);
+        }
+
         $('#doListKeys').on('click', function () {
-            doApiCall('GET', '/api/key/list', '#standardOutput', '#errorOutput');
+            doApiCallWithCallback('GET', '/api/key/list', sortKeysCallback, errorCallback)
         });
 
         $('#doListKeysBySite').on('click', function () {
-
             const siteId = parseInt($('#siteId').val());
             if(!siteId) {
                 $('#errorOutput').html("Required Parameters: site_id");
@@ -71,16 +80,12 @@
                 const filtered = ja.filter(function(key) {
                     return key.site_id === siteId
                 });
-                const pretty = JSON.stringify(filtered,null,2);
-                $('#standardOutput').html(pretty);
-
-            }, (err) => {
-                $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
-            });
+                sortKeysCallback(JSON.stringify(filtered))
+            }, errorCallback );
         });
 
         $('#doListKeysetKeys').on('click', function () {
-            doApiCall('GET', '/api/key/list_keyset_keys', '#standardOutput', '#errorOutput');
+            doApiCallWithCallback('GET', '/api/key/list_keyset_keys', sortKeysCallback, errorCallback)
         });
 
         $('#doListKeysetKeysByKeysetId').on('click', function () {
@@ -101,9 +106,7 @@
                 const pretty = JSON.stringify(filtered,null,2);
                 $('#standardOutput').html(pretty);
 
-            }, (err) => {
-                $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
-            });
+            }, errorCallback);
         });
 
         $('#doRotateMaster').on('click', function () {
@@ -136,7 +139,7 @@
             var url = '/api/key/rotate_all_sites?min_age_seconds=' + minAge;
             if ($('#force').is(':checked')) url = url + '&force=true';
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            doApiCallWithCallback('POST', url, sortKeysCallback, errorCallback);
         });
 
         $('#doRotateKeysetKey').on('click', function () {

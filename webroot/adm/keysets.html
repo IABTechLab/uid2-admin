@@ -76,9 +76,7 @@
         const pretty = JSON.stringify(filtered,null,2);
         $('#standardOutput').html(pretty);
 
-      }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
-      });
+      }, errorCallback );
     });
 
     $('#doShowKeysetById').on('click', function () {
@@ -137,9 +135,7 @@
         }
 
         doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload))
-      }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-      });
+      }, errorCallback );
 
     });
     $('#doMakeNew').on('click', function () {
