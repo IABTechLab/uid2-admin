@@ -13,19 +13,7 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
         },
         data : body,
         success: function (text) {
-            resp = JSON.parse(text)
-            if(Array.isArray(resp)) {
-                resp.forEach( obj => {
-                    if(obj['allowed_sites'] !== undefined && obj['allowed_sites'] == null){
-                        obj['allowed_sites'] = '*'
-                    }
-                })
-            } else {
-                if(resp['allowed_sites'] !== undefined && resp['allowed_sites'] == null){
-                    resp['allowed_sites'] = '*'
-                }
-            }
-            var pretty = JSON.stringify(resp,null,2);
+            var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).html(pretty);
         },
         error: function (err) {

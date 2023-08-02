@@ -26,7 +26,7 @@
   <input type="text" id="addSiteIds" name="addSiteIds">
   <label for="removeSiteIds">Remove Allowed Sites:</label>
   <input type="text" id="removeSiteIds" name="removeSiteIds">
-  <label for="nullify">Set allowed_sites to *:</label>
+  <label for="nullify">Set allowed_sites to null:</label>
   <input type="checkbox" id="nullify" name="nullify" value="true">
 </div>
 
@@ -73,11 +73,6 @@
         const filtered = ja.filter(function(keyset) {
           return keyset.site_id === siteId
         });
-        filtered.forEach( obj => {
-          if(obj['allowed_sites'] !== undefined && obj['allowed_sites'] == null){
-            obj['allowed_sites'] = '*'
-          }
-        })
         const pretty = JSON.stringify(filtered,null,2);
         $('#standardOutput').html(pretty);
 
@@ -129,7 +124,7 @@
           allowedSites = null
         } else if((add && add.length !== 0) || (remove && remove.length !== 0)) {
           if(allowedSites !== undefined && allowedSites == null) {
-            $('#errorOutput').html('cannot modify siteIds for allow * keyset. Please reset first')
+            $('#errorOutput').html('cannot set siteIds for null allowlist keyset. Please reset to [] first')
           }
           allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
           allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
