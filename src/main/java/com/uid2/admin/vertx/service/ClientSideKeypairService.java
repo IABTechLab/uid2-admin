@@ -11,8 +11,6 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientSideKeypair;
-import com.uid2.shared.secure.gcpoidc.Environment;
-import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.reader.RotatingClientSideKeypairStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -84,6 +82,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         }
         if(siteProvider.getSite(siteId) == null) {
             ResponseUtil.error(rc, 404, "site_id: " + siteId + " not valid");
+            return;
         }
         String normalizedContactEmail = InputUtil.normalizeEmailString(contact);
         if(normalizedContactEmail == null){
@@ -111,6 +110,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
         if(subscriptionId == null) {
             ResponseUtil.error(rc, 400, "Required parameters: subscription_id");
+            return;
         }
 
         ClientSideKeypair keypair = this.keypairStore.getSnapshot().getKeypair(subscriptionId);
