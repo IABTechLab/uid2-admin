@@ -145,6 +145,18 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 normalizedContactEmail,
                 keypair.getCreated(),
                 disabled);
+
+
+        Set<ClientSideKeypair> allKeypairs = new HashSet<>(this.keypairStore.getAll());
+        allKeypairs.remove(keypair);
+        allKeypairs.add(newKeypair);
+        try {
+            storeWriter.upload(allKeypairs, null);
+        }  catch (Exception e) {
+            rc.fail(500, e);
+            return;
+        }
+
         final JsonObject json = toJson(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
