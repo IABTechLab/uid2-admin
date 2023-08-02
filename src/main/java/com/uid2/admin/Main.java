@@ -112,11 +112,13 @@ public class Main {
             CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
-            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
+            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
             try {
                 keysetProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")){
+                if(!enableKeysets) {
+                    LOGGER.warn("Skipping Creation of keyset.json");
+                } else if(e.getMessage().contains("The specified key does not exist")){
                     keysetStoreWriter.upload(new HashMap<>(), null);
                     keysetProvider.loadContent();
                 } else {
@@ -127,11 +129,13 @@ public class Main {
             CloudPath keysetKeyMetadataPath = new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp));
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
             RotatingKeysetKeyStore keysetKeysProvider = new RotatingKeysetKeyStore(cloudStorage, keysetKeysGlobalScope);
-            KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope);
+            KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope, enableKeysets);
             try {
                 keysetKeysProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if(!enableKeysets) {
+                    LOGGER.warn("Skipping Creation of keyset_keys.json");
+                } else if(e.getMessage().contains("The specified key does not exist")) {
                     keysetKeyStoreWriter.upload(new HashSet<>(), 0);
                     keysetKeysProvider.loadContent();
                 } else {
@@ -199,7 +203,7 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
 
-            if(config.getBoolean("enable_keysets")) {
+            if(enableKeysets) {
                 //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
                 encryptionKeyService.createKeysetKeys();
             }

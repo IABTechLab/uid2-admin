@@ -124,8 +124,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         router.get("/api/key/list").handler(
                 auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
 
-        router.get("/api/key/list_keyset_keys").handler(
-                auth.handle(this::handleKeysetKeyList, Role.SECRET_MANAGER));
+        if(enableKeysets) {
+            router.get("/api/key/list_keyset_keys").handler(
+                    auth.handle(this::handleKeysetKeyList, Role.SECRET_MANAGER));
+        }
 
         router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -150,11 +152,15 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
                 this.handleRotateSiteKey(ctx);
             }
         }, Role.SECRET_MANAGER));
-        router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-            this.handleRotateKeysetKey(ctx);
-            }
-        }, Role.SECRET_MANAGER));
+
+        if(enableKeysets) {
+            router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
+                synchronized (writeLock) {
+                    this.handleRotateKeysetKey(ctx);
+                }
+            }, Role.SECRET_MANAGER));
+        }
+
         router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateAllSiteKeys(ctx);
@@ -188,7 +194,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
     @Override
     public KeysetKey addKeysetKey(int keysetId) throws Exception {
-        this.keysetKeyProvider.loadContent();
+        loadKeysetKeys();
         return addKeysetKeys(Arrays.asList(keysetId), siteKeyActivatesIn, siteKeyExpiresAfter, false).get(0);
     }
 
@@ -210,9 +216,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     }
 
     public void createKeysetKeys() throws Exception {
-        this.keyProvider.loadContent();
-        this.keysetProvider.loadContent();
-        this.keysetKeyProvider.loadContent();
+        loadAllContent();
 
         final List<EncryptionKey> encryptionKeys = this.keyProvider.getSnapshot().getActiveKeySet();
         List<EncryptionKey> addKeys = new ArrayList<>();
@@ -225,6 +229,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         }
         catchUpKeysetKeys(addKeys, false, this.keyProvider.getMetadata().getInteger("max_key_id"));
     }
+
 
     private void handleKeyList(RoutingContext rc) {
         try {
@@ -422,9 +427,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         RotationResult<EncryptionKey> result = new RotationResult();
 
         // force refresh manually
-        this.keyProvider.loadContent();
-        this.keysetProvider.loadContent();
-        this.keysetKeyProvider.loadContent();
+        loadAllContent();
 
         final List<EncryptionKey> allKeys = this.keyProvider.getSnapshot().getActiveKeySet();
 
@@ -463,9 +466,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             throws Exception {
         RotationResult<KeysetKey> result = new RotationResult();
 
-        this.keyProvider.loadContent();
-        this.keysetProvider.loadContent();
-        this.keysetKeyProvider.loadContent();
+        loadAllContent();
 
         final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys();
 
@@ -673,4 +674,22 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         Duration cutoffTime = siteKeyRotationCutOffTime;
         return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
     }
- }
+
+    private void loadAllContent() throws Exception {
+        this.keyProvider.loadContent();
+        loadKeysets();
+        loadKeysetKeys();
+    }
+
+    private void loadKeysetKeys() throws Exception {
+        if(enableKeysets){
+            this.keysetKeyProvider.loadContent();
+        }
+    }
+
+    private void loadKeysets() throws Exception {
+        if(enableKeysets) {
+            this.keysetProvider.loadContent();
+        }
+    }
+}

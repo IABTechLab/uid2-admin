@@ -92,14 +92,16 @@ public class PrivateSiteDataSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager,
+                config.getBoolean("enable_keysets"));
 
         KeysetKeyStoreFactory keysetKeyStoreFactory = new KeysetKeyStoreFactory(
                 cloudStorage,
                 new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp)),
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager,
+                config.getBoolean("enable_keysets"));
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);

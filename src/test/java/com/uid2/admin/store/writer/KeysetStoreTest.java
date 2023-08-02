@@ -58,7 +58,7 @@ public class KeysetStoreTest {
 
     @Test
     void uploadsClients() throws Exception {
-        KeysetStoreWriter writer = new KeysetStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+        KeysetStoreWriter writer = new KeysetStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope, true);
 
         writer.upload(keysets, null);
 

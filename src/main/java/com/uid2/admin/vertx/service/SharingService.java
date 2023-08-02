@@ -46,6 +46,7 @@ public class SharingService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
+        if(!enableKeysets) return;
         router.get("/api/sharing/lists").handler(
                 auth.handle(this::handleListAllAllowedSites, Role.SHARING_PORTAL)
         );
