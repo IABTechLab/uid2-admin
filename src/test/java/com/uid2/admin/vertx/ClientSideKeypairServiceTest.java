@@ -59,6 +59,17 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     private void validateKeypair(ClientSideKeypair expectedKeypair, JsonObject resp) {
         assertEquals(expectedKeypair.getSubscriptionId(), resp.getString("subscription_id"));
         assertArrayEquals(expectedKeypair.getPublicKey().getEncoded(), Base64.getDecoder().decode(resp.getString("public_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
+        assertEquals(expectedKeypair.getSiteId(), resp.getInteger("site_id"));
+        assertEquals(expectedKeypair.getContact(), resp.getString("contact"));
+        assertEquals(expectedKeypair.getCreated().getEpochSecond(), resp.getLong("created"));
+        assertEquals(expectedKeypair.isDisabled(), resp.getBoolean("disabled"));
+        assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
+        assertEquals(expectedKeypair.encodePublicKeyToString(), resp.getString("public_key"));
+    }
+
+    private void validateKeypairWithPrivateKey(ClientSideKeypair expectedKeypair, JsonObject resp) {
+        assertEquals(expectedKeypair.getSubscriptionId(), resp.getString("subscription_id"));
+        assertArrayEquals(expectedKeypair.getPublicKey().getEncoded(), Base64.getDecoder().decode(resp.getString("public_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
         assertArrayEquals(expectedKeypair.getPrivateKey().getEncoded(), Base64.getDecoder().decode(resp.getString("private_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
         assertEquals(expectedKeypair.getSiteId(), resp.getInteger("site_id"));
         assertEquals(expectedKeypair.getContact(), resp.getString("contact"));
@@ -143,7 +154,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            validateKeypair(queryKeypair, response.bodyAsJsonObject());
+            validateKeypairWithPrivateKey(queryKeypair, response.bodyAsJsonObject());
 
             testContext.completeNow();
         });
