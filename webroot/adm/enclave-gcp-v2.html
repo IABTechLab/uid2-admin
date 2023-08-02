@@ -37,15 +37,6 @@
 <br>
 <br>
 
-<label for="identityScope" class="bold">Identity Scope:</label>
-<br>
-<select id="identityScope">
-  <option value="uid2">UID2</option>
-  <option value="euid">EUID</option>
-</select>
-<br>
-<br>
-
 <label for="debugMode" class="bold">DebugMode:</label>
 <br>
 <label for="debugMode">
@@ -91,7 +82,7 @@
     --image-project confidential-space-images \\\n\
     --image-family <IMAGE_FAMILY> \\\n\
     --service-account <SERVICE_ACCOUNT> \\\n\
-    --metadata ^~^tee-image-reference=ghcr.io/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-env-API_TOKEN=<API_TOKEN>~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-IDENTITY_SCOPE=<IDENTITY_SCOPE>'
+    --metadata ^~^tee-image-reference=ghcr.io/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN=<API_TOKEN>'
 
   $('#gcloudCli').val(gcloudCli);
 
@@ -107,19 +98,13 @@
   });
 
   function onEnvChange() {
-    console.log('onEnvChange');
     const env = $('#envId').val();
     const $debugMode = $('#debugMode');
-    const $overrides = $('#optionalOverrides');
-    console.log(env);
+    $debugMode.val('false');
     if (env === 'prod') {
       $debugMode.prop('disabled', true);
-      $debugMode.val('false');
-      $overrides.hide();
     } else {
       $debugMode.prop('disabled', false);
-      $debugMode.val('false');
-      $overrides.show();
     }
   }
 
@@ -134,7 +119,6 @@
     }
 
     const env = $('#envId').val();
-    const identityScope = $('#identityScope').val();
     const isDebug = $('#debugMode').val() === 'true';
 
     // generate and show enclaveId
@@ -147,8 +131,7 @@
     const cli = gcloudCli
             .replaceAll('<IMAGE_FAMILY>', imageFamily)
             .replaceAll('<IMAGE_SHA>', imageSha)
-            .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env)
-            .replaceAll('<IDENTITY_SCOPE>', identityScope);
+            .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
     $('#gcloudCli').val(cli);
   }
 
