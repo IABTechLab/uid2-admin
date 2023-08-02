@@ -885,7 +885,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
-            assertEquals("Site id 5 not valid", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Keyset already exists for site: 5", response.bodyAsJsonObject().getString("message"));
 
             testContext.completeNow();
         });

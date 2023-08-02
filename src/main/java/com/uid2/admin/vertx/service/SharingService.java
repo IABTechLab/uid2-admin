@@ -75,15 +75,15 @@ public class SharingService implements IService {
                 keysetProvider.loadContent();
                 siteProvider.loadContent();
             } catch (Exception e) {
-                LOGGER.error("Failed to load keysets");
-                rc.fail(500);
+                ResponseUtil.errorInternal(rc, "Failed to load keysets", e);
+                return;
             }
 
             final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
             final JsonObject body = rc.body().asJsonObject();
 
-            final JsonArray whitelist = body.getJsonArray("allowed_sites");
+            final JsonArray allowedSites = body.getJsonArray("allowed_sites");
             final Integer requestKeysetId = body.getInteger("keyset_id");
             final Integer requestSiteId = body.getInteger("site_id");
             final String requestName = body.getString("name", "");
@@ -103,13 +103,15 @@ public class SharingService implements IService {
                 if (siteId == Const.Data.AdvertisingTokenSiteId
                         || siteId == Const.Data.RefreshKeySiteId
                         || siteId == Const.Data.MasterKeySiteId
-                        || siteProvider.getSite(siteId) == null
-                        || keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId))  { // enforce single keyset per site
+                        || siteProvider.getSite(siteId) == null)  {
                     ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
+                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
+                    ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
+                }
                 keysetId = Collections.max(keysetsById.keySet()) + 1;
-                if (keysetsById.values().stream().anyMatch(item ->
+                if (keysetsById.values().stream().anyMatch(item -> // for multiple keysets. See commented out SharingServiceTest#KeysetSetNewIdenticalNameAndSiteId
                         item.getSiteId() == siteId && item.getName().equalsIgnoreCase(name))) {
                     ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
                     return;
@@ -128,23 +130,23 @@ public class SharingService implements IService {
 
             final Set<Integer> newlist;
 
-            if (whitelist != null){
-                Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+            if (allowedSites != null){
+                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
                 if (firstInvalidSite.isPresent()) {
-                    ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
+                    ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
                     return;
                 }
 
-                boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
+                boolean containsDuplicates = allowedSites.stream().distinct().count() < allowedSites.stream().count();
                 if (containsDuplicates) {
                     ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
                     return;
                 }
 
-                Integer finalSiteId2 = siteId;
-                newlist = whitelist.stream()
-                        .map(s -> (Integer) s)
-                        .filter(s -> !Objects.equals(s, finalSiteId2))
+                newlist = allowedSites.stream()
+                        .mapToInt(s -> (Integer) s)
+                        .filter(s -> !Objects.equals(s, siteId))
+                        .boxed()
                         .collect(Collectors.toSet());
             } else {
                 newlist = null;
@@ -303,8 +305,8 @@ public class SharingService implements IService {
             try {
                 keysetProvider.loadContent();
             } catch (Exception e) {
-                LOGGER.error("Failed to load keysets");
-                rc.fail(500);
+                ResponseUtil.errorInternal(rc, "Failed to load keysets", e);
+                return;
             }
 
 
@@ -313,7 +315,7 @@ public class SharingService implements IService {
 
             final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowed_sites");
+           final JsonArray allowedSites = body.getJsonArray("allowed_sites");
            final int hash = body.getInteger("hash");
 
             if (keyset != null && hash != keyset.hashCode()) {
@@ -332,7 +334,7 @@ public class SharingService implements IService {
                 name = keyset.getName();
             }
 
-            final Set<Integer> newlist = whitelist.stream()
+            final Set<Integer> newlist = allowedSites.stream()
                     .map(s -> (Integer) s)
                     .collect(Collectors.toSet());
 
@@ -350,7 +352,7 @@ public class SharingService implements IService {
             }
 
            JsonObject jo = new JsonObject();
-           jo.put("allowed_sites", whitelist);
+           jo.put("allowed_sites", allowedSites);
            jo.put("hash", newKeyset.hashCode());
 
             rc.response()

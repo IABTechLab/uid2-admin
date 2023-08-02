@@ -124,7 +124,7 @@
           allowedSites = null
         } else if((add && add.length !== 0) || (remove && remove.length !== 0)) {
           if(allowedSites !== undefined && allowedSites == null) {
-            $('#errorOutput').html('cannot set siteIds for null allowlist keyset. Please reset to [] first')
+            $('#errorOutput').html('cannot set siteIds for null allowed_sites keyset. Please reset to [] first')
           }
           allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
           allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
