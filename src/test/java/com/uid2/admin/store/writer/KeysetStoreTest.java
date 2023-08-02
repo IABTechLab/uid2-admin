@@ -30,13 +30,13 @@ public class KeysetStoreTest {
     private FileManager fileManager;
 
     private final Map<Integer, Keyset> keysets = Map.of(
-            1, new Keyset(1, 5, "test", Set.of(1, 2, 3), Instant.now().getEpochSecond(), true, true),
-            2, new Keyset(2, 6, "test", Set.of(1, 3), Instant.now().getEpochSecond(), true, true)
+            1, new Keyset(1, 5, "test1", Set.of(1, 2, 3), Instant.now().getEpochSecond(), true, true),
+            2, new Keyset(2, 6, "test2", Set.of(1, 3), Instant.now().getEpochSecond(), true, true)
     );
 
     private final Map<Integer, Keyset> expected = Map.of(
-            1, new Keyset(1, 5, "test", Set.of(1, 2, 3), Instant.now().getEpochSecond(), true, true),
-            2, new Keyset(2, 6, "test", Set.of(1, 3), Instant.now().getEpochSecond(), true, true)
+            1, new Keyset(1, 5, "test1", Set.of(1, 2, 3), Instant.now().getEpochSecond(), true, true),
+            2, new Keyset(2, 6, "test2", Set.of(1, 3), Instant.now().getEpochSecond(), true, true)
     );
 
     private final String rootDir = "this-test-data-type";

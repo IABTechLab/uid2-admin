@@ -18,7 +18,7 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
         },
         error: function (err) {
             $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-        }
+        },
     });
 }
 function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
