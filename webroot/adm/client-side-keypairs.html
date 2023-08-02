@@ -30,7 +30,7 @@
 <ul>
     <li class="ro-sem" style="display: none"><a href="#" id="doList">List Keypairs</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doListSite">List Keypairs By Site Id</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListSubscription">Get Keypair By Subscription Id</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doListSubscription">Reveal Keypair By Subscription Id</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doCreate">Create Keypair</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doUpdate">Update Keypair</a></li>
 </ul>
@@ -71,7 +71,7 @@
             }
             const url = '/api/client_side_keypairs/' + encodeURIComponent(subscriptionId);
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doCreate').on('click', function () {
