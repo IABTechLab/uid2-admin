@@ -97,7 +97,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             rc.fail(500, e);
             return;
         }
-        final JsonObject json = toJson(newKeypair);
+        final JsonObject json = toJsonWithPrivateKey(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
@@ -177,13 +177,24 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        JsonObject jo = toJson(keypair);
+        JsonObject jo = toJsonWithPrivateKey(keypair);
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(jo.encode());
     }
 
     private JsonObject toJson(ClientSideKeypair keypair) {
+        JsonObject jo = new JsonObject();
+        jo.put("subscription_id", keypair.getSubscriptionId());
+        jo.put("public_key", keypair.encodePublicKeyToString());
+        jo.put("site_id", keypair.getSiteId());
+        jo.put("contact", keypair.getContact());
+        jo.put("created", keypair.getCreated().getEpochSecond());
+        jo.put("disabled", keypair.isDisabled());
+        return jo;
+    }
+
+    private JsonObject toJsonWithPrivateKey(ClientSideKeypair keypair) {
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", keypair.getSubscriptionId());
         jo.put("public_key", keypair.encodePublicKeyToString());
