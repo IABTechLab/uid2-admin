@@ -31,9 +31,8 @@
     <li class="ro-sem" style="display: none"><a href="#" id="doList">List Keypairs</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doListSite">List Keypairs By Site Id</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doListSubscription">Get Keypair By Subscription Id</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateSite">Rotate Site Key</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateAllSites">Rotate All Site Keys</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateKeysetKey">Rotate Keyset Key</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doCreate">Create Keypair</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doUpdate">Update Keypair</a></li>
 </ul>
 
 <br>
@@ -52,51 +51,61 @@
         });
 
         $('#doListSite').on('click', function () {
-            const siteId =($('#siteId').val())
+            const siteId = parseInt($('#siteId').val())
             if(!siteId) {
                 $('#errorOutput').html("required parameters: site_id")
                 return
             }
-
-            doApiCallWithCallback('POST', '/api/client_side_keypairs/list', function (text) {
-                resp = JSON.parse(text)
-
+            doApiCallWithCallback('GET', '/api/client_side_keypairs/list', function (text) {
+                let resp = JSON.parse(text)
+                resp = resp.filter(obj => obj.site_id === siteId)
+                $('#standardOutput').html(JSON.stringify(resp, null, 2));
             }, errorCallback);
         });
 
         $('#doListSubscription').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var activatesIn = encodeURIComponent($('#activatesIn').val());
-            var url = '/api/key/add?site_id=' + siteId + '&activates_in_seconds=' + activatesIn;
+            const subscriptionId = $('#subscriptionId').val()
+            if(!subscriptionId) {
+                $('#errorOutput').html("required parameters: subscription_id")
+                return
+            }
+            const url = '/api/client_side_keypairs/' + encodeURIComponent(subscriptionId);
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
-        $('#doRotateSite').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/key/rotate_site?min_age_seconds=' + minAge + '&site_id=' + siteId;
-            if ($('#force').is(':checked')) url = url + '&force=true';
+        $('#doCreate').on('click', function () {
+            const siteId = $('#siteId').val();
+            const contact = $('#contact').val();
+            const disabled = ($('#disable').is(':checked'));
+            if(!siteId || !contact) {
+                $('#errorOutput').html("required parameters: site_id, contact")
+                return
+            }
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            const payload = {"site_id": parseInt(siteId), "contact": contact, "disabled": disabled}
+
+            doApiCall('POST', '/api/client_side_keypairs/add', '#standardOutput', '#errorOutput', JSON.stringify(payload));
         });
 
-        $('#doRotateAllSites').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var url = '/api/key/rotate_all_sites?min_age_seconds=' + minAge;
-            if ($('#force').is(':checked')) url = url + '&force=true';
+        $('#doUpdate').on('click', function () {
+            const subscriptionId = $('#subscriptionId').val()
+            const contact = $('#contact').val();
+            const disabled = ($('#disable').is(':checked'));
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            if(!subscriptionId) {
+                $('#errorOutput').html("required parameters: subscription_id")
+                return
+            }
+
+            const payload = {"subscription_id": subscriptionId, "disabled" : disabled}
+            if(contact){
+                payload["contact"] = contact
+            }
+
+            doApiCall('POST', '/api/client_side_keypairs/update', '#standardOutput', '#errorOutput', JSON.stringify(payload));
         });
 
-        $('#doRotateKeysetKey').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var keysetId = encodeURIComponent($('#keysetId').val());
-            var url = '/api/key/rotate_keyset_key?min_age_seconds=' + minAge + "&keyset_id=" + keysetId;
-            if ($('#force').is(':checked')) url = url + '&force=true';
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
     });
 </script>
 

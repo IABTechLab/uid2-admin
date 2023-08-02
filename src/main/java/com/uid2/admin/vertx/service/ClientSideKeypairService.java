@@ -84,6 +84,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         }
         if(siteProvider.getSite(siteId) == null) {
             ResponseUtil.error(rc, 404, "site_id: " + siteId + " not valid");
+            return;
         }
         String normalizedContactEmail = InputUtil.normalizeEmailString(contact);
         if(normalizedContactEmail == null){
@@ -111,6 +112,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
         if(subscriptionId == null) {
             ResponseUtil.error(rc, 400, "Required parameters: subscription_id");
+            return;
         }
 
         ClientSideKeypair keypair = this.keypairStore.getSnapshot().getKeypair(subscriptionId);
