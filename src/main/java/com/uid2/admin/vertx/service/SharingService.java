@@ -75,77 +75,85 @@ public class SharingService implements IService {
                 keysetProvider.loadContent();
                 siteProvider.loadContent();
             } catch (Exception e) {
-                LOGGER.error("Failed to load keysets");
-                rc.fail(500);
-            }
-
-            final JsonObject body = rc.body().asJsonObject();
-
-            final JsonArray whitelist = body.getJsonArray("allowed_sites");
-            Integer keysetId = body.getInteger("keyset_id");
-            Integer siteId = body.getInteger("site_id");
-            String name = body.getString("name", "");
-
-            if ((keysetId == null && siteId == null)
-                    || (keysetId != null && siteId != null)) {
-                ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
-                return;
-            }
-            if (siteId != null &&
-                    (siteId == Const.Data.AdvertisingTokenSiteId
-                            || siteId == Const.Data.RefreshKeySiteId
-                            || siteId == Const.Data.MasterKeySiteId
-                            || siteProvider.getSite(siteId) == null)) {
-                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
+                ResponseUtil.errorInternal(rc, "Failed to load keysets", e);
                 return;
             }
 
             final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
-            boolean create = false;
-            if (keysetId != null) {
-                Keyset keyset = keysetsById.get(keysetId);
-                if (keyset == null) {
-                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + keysetId);
+            final JsonObject body = rc.body().asJsonObject();
+
+            final JsonArray allowedSites = body.getJsonArray("allowed_sites");
+            final Integer requestKeysetId = body.getInteger("keyset_id");
+            final Integer requestSiteId = body.getInteger("site_id");
+            final String requestName = body.getString("name", "");
+
+            if ((requestKeysetId == null && requestSiteId == null)
+                    || (requestKeysetId != null && requestSiteId != null)) {
+                ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
+                return;
+            }
+
+            final int siteId;
+            final int keysetId;
+            final String name;
+            if(requestSiteId != null) {
+                siteId = requestSiteId;
+                name = requestName;
+                if (siteId == Const.Data.AdvertisingTokenSiteId
+                        || siteId == Const.Data.RefreshKeySiteId
+                        || siteId == Const.Data.MasterKeySiteId
+                        || siteProvider.getSite(siteId) == null)  {
+                    ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
-                siteId = keyset.getSiteId();
-                if (name.equals("")) {
-                    name = keyset.getName();
+                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
+                    ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
                 }
-            } else {
                 keysetId = Collections.max(keysetsById.keySet()) + 1;
-                create = true;
-            }
-
-            Optional<Integer> firstInvalidSite = whitelist.stream().map(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
-            if (firstInvalidSite.isPresent()) {
-                ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.get() + " not valid");
-                return;
-            }
-
-            boolean containsDuplicates = whitelist.stream().distinct().count() < whitelist.stream().count();
-            if (containsDuplicates) {
-                ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
-                return;
-            }
-
-            Integer finalSiteId = siteId;
-            final Set<Integer> newlist = whitelist.stream()
-                    .map(s -> (Integer) s)
-                    .filter(s -> !Objects.equals(s, finalSiteId))
-                    .collect(Collectors.toSet());
-
-            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
-                    newlist, Instant.now().getEpochSecond(), true, true);
-
-            if (create) {
-                if (keysetsById.values().stream().anyMatch(item ->
-                        item.getSiteId() == newKeyset.getSiteId() && item.getName().equalsIgnoreCase(newKeyset.getName()))) {
+                if (keysetsById.values().stream().anyMatch(item -> // for multiple keysets. See commented out SharingServiceTest#KeysetSetNewIdenticalNameAndSiteId
+                        item.getSiteId() == siteId && item.getName().equalsIgnoreCase(name))) {
                     ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
                     return;
                 }
+            } else {
+                Keyset keyset = keysetsById.get(requestKeysetId);
+                if (keyset == null) {
+                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + requestKeysetId);
+                    return;
+                }
+                keysetId = requestKeysetId;
+                siteId = keyset.getSiteId();
+                name = requestName.equals("") ? keyset.getName() : requestName;
             }
+
+
+            final Set<Integer> newlist;
+
+            if (allowedSites != null){
+                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+                if (firstInvalidSite.isPresent()) {
+                    ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
+                    return;
+                }
+
+                boolean containsDuplicates = allowedSites.stream().distinct().count() < allowedSites.stream().count();
+                if (containsDuplicates) {
+                    ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
+                    return;
+                }
+
+                newlist = allowedSites.stream()
+                        .mapToInt(s -> (Integer) s)
+                        .filter(s -> !Objects.equals(s, siteId))
+                        .boxed()
+                        .collect(Collectors.toSet());
+            } else {
+                newlist = null;
+            }
+
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
 
             keysetsById.put(keysetId, newKeyset);
             try {
@@ -297,8 +305,8 @@ public class SharingService implements IService {
             try {
                 keysetProvider.loadContent();
             } catch (Exception e) {
-                LOGGER.error("Failed to load keysets");
-                rc.fail(500);
+                ResponseUtil.errorInternal(rc, "Failed to load keysets", e);
+                return;
             }
 
 
@@ -307,7 +315,7 @@ public class SharingService implements IService {
 
             final JsonObject body = rc.body().asJsonObject();
 
-           final JsonArray whitelist = body.getJsonArray("allowed_sites");
+           final JsonArray allowedSites = body.getJsonArray("allowed_sites");
            final int hash = body.getInteger("hash");
 
             if (keyset != null && hash != keyset.hashCode()) {
@@ -326,7 +334,7 @@ public class SharingService implements IService {
                 name = keyset.getName();
             }
 
-            final Set<Integer> newlist = whitelist.stream()
+            final Set<Integer> newlist = allowedSites.stream()
                     .map(s -> (Integer) s)
                     .collect(Collectors.toSet());
 
@@ -344,7 +352,7 @@ public class SharingService implements IService {
             }
 
            JsonObject jo = new JsonObject();
-           jo.put("allowed_sites", whitelist);
+           jo.put("allowed_sites", allowedSites);
            jo.put("hash", newKeyset.hashCode());
 
             rc.response()
@@ -352,5 +360,4 @@ public class SharingService implements IService {
                     .end(jo.encode());
         }
     }
-
 }

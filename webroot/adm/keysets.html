@@ -26,6 +26,8 @@
   <input type="text" id="addSiteIds" name="addSiteIds">
   <label for="removeSiteIds">Remove Allowed Sites:</label>
   <input type="text" id="removeSiteIds" name="removeSiteIds">
+  <label for="nullify">Set allowed_sites to null:</label>
+  <input type="checkbox" id="nullify" name="nullify" value="true">
 </div>
 
 <br>
@@ -74,9 +76,7 @@
         const pretty = JSON.stringify(filtered,null,2);
         $('#standardOutput').html(pretty);
 
-      }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
-      });
+      }, errorCallback );
     });
 
     $('#doShowKeysetById').on('click', function () {
@@ -118,7 +118,12 @@
 
         let payload = {keyset_id: keysetId}
 
-        if((add && add.length !== 0) || (remove && remove.length !== 0)) {
+        if ($('#nullify').is(':checked')){
+          allowedSites = null
+        } else if((add && add.length !== 0) || (remove && remove.length !== 0)) {
+          if(allowedSites !== undefined && allowedSites == null) {
+            $('#errorOutput').html('cannot set siteIds for null allowed_sites keyset. Please reset to [] first')
+          }
           allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
           allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
         }
@@ -130,9 +135,7 @@
         }
 
         doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload))
-      }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-      });
+      }, errorCallback );
 
     });
     $('#doMakeNew').on('click', function () {
@@ -144,14 +147,21 @@
       let name = $('#keysetName').val();
       const url = '/api/sharing/keyset';
 
-      let payload;
+      let payload = {site_id: siteId}
       if(name && (name = $.trim(name))) {
-        payload = JSON.stringify({allowed_sites: [], site_id: siteId, name: name})
-      } else {
-        payload = JSON.stringify({allowed_sites: [], site_id: siteId})
+        payload['name'] = name
       }
 
-      doApiCall('POST', url, '#standardOutput', '#errorOutput', payload);
+      let allowedSites = []
+      const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
+      if ($('#nullify').is(':checked')){
+        allowedSites = null
+      } else if(add && add.length !== 0) {
+        allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
+      }
+      payload['allowed_sites'] = allowedSites
+
+      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
     });
   });
 

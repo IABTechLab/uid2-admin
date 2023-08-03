@@ -16,9 +16,7 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).html(pretty);
         },
-        error: function (err) {
-            $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-        },
+        error: function (err) { standardErrorCallback(err, errorDiv) }
     });
 }
 function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
@@ -36,13 +34,17 @@ function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
             "Authorization": authHeader
         },
         success: function (text) {
-            var pretty = JSON.stringify(JSON.parse(text),null,2);
+            let pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).html(pretty);
         },
-        error: function (err) {
-            $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-        }
+        error: function (err) { standardErrorCallback(err, errorDiv) }
     });
+}
+
+function errorCallback(err) { standardErrorCallback(err, '#errorOutput') }
+
+function standardErrorCallback(err, errorDiv) {
+    $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
 }
 
 function isJsonString(str) {
