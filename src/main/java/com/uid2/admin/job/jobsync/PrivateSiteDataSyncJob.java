@@ -114,8 +114,10 @@ public class PrivateSiteDataSyncJob extends Job {
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
             keyAclStoreFactory.getGlobalReader().loadContent();
-            keysetStoreFactory.getGlobalReader().loadContent();
-            keysetKeyStoreFactory.getGlobalReader().loadContent();
+            if(config.getBoolean("enable_keysets")) {
+                keysetStoreFactory.getGlobalReader().loadContent();
+                keysetKeyStoreFactory.getGlobalReader().loadContent();
+            }
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
@@ -171,7 +173,9 @@ public class PrivateSiteDataSyncJob extends Job {
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
         keyAclSyncJob.execute();
-        keysetSyncJob.execute();
-        keysetKeySyncJob.execute();
+        if(config.getBoolean("enable_keysets")) {
+            keysetSyncJob.execute();
+            keysetKeySyncJob.execute();
+        }
     }
 }

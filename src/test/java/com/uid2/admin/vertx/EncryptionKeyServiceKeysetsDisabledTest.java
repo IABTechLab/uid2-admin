@@ -143,6 +143,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         final EncryptionKey key = keyService.addSiteKey(5);
         verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
         assertSiteKeyActivation(key, clock.now());
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
 
@@ -156,6 +158,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         verifyNoMoreInteractions(encryptionKeyStoreWriter);
         assertKeyActivation(clock.now(), 0, SITE_KEY_EXPIRES_AFTER_SECONDS,
                 key.getCreated(), key.getActivates(), key.getExpires());
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -166,6 +170,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         assertNull(key);
         verifyNoInteractions(encryptionKeyStoreWriter);
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -179,6 +185,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             assertEquals(0, response.bodyAsJsonArray().size());
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -200,6 +208,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             checkEncryptionKeyResponse(keys, response.bodyAsJsonArray().stream().toArray());
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -226,6 +236,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -252,6 +264,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -280,6 +294,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -308,6 +324,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -334,6 +352,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -360,6 +380,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -386,6 +408,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -412,6 +436,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
 
@@ -437,6 +463,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -463,6 +491,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -473,6 +503,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", expectHttpError(testContext, 404));
         verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -487,6 +519,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
         verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -500,6 +534,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
         verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -525,6 +561,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -552,6 +590,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -582,6 +622,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -612,6 +654,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -636,6 +680,8 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -656,5 +702,7 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             }
             testContext.completeNow();
         });
+        verifyNoInteractions(keysetStoreWriter);
+        verifyNoInteractions(keysetKeyStoreWriter);
     }
 }

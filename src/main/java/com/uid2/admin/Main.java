@@ -113,16 +113,16 @@ public class Main {
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
-            try {
-                keysetProvider.loadContent();
-            } catch (CloudStorageException e) {
-                if(!enableKeysets) {
-                    LOGGER.warn("Skipping Creation of keyset.json");
-                } else if(e.getMessage().contains("The specified key does not exist")){
-                    keysetStoreWriter.upload(new HashMap<>(), null);
+            if(enableKeysets) {
+                try {
                     keysetProvider.loadContent();
-                } else {
-                    throw e;
+                } catch (CloudStorageException e) {
+                    if (e.getMessage().contains("The specified key does not exist")) {
+                        keysetStoreWriter.upload(new HashMap<>(), null);
+                        keysetProvider.loadContent();
+                    } else {
+                        throw e;
+                    }
                 }
             }
 
@@ -130,16 +130,16 @@ public class Main {
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
             RotatingKeysetKeyStore keysetKeysProvider = new RotatingKeysetKeyStore(cloudStorage, keysetKeysGlobalScope);
             KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope, enableKeysets);
-            try {
-                keysetKeysProvider.loadContent();
-            } catch (CloudStorageException e) {
-                if(!enableKeysets) {
-                    LOGGER.warn("Skipping Creation of keyset_keys.json");
-                } else if(e.getMessage().contains("The specified key does not exist")) {
-                    keysetKeyStoreWriter.upload(new HashSet<>(), 0);
+            if(enableKeysets) {
+                try {
                     keysetKeysProvider.loadContent();
-                } else {
-                    throw e;
+                } catch (CloudStorageException e) {
+                    if (e.getMessage().contains("The specified key does not exist")) {
+                        keysetKeyStoreWriter.upload(new HashSet<>(), 0);
+                        keysetKeysProvider.loadContent();
+                    } else {
+                        throw e;
+                    }
                 }
             }
 
