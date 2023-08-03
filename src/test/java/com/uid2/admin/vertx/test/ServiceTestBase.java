@@ -88,7 +88,6 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
     @Mock protected RotatingClientSideKeypairStore keypairProvider;
     @Mock protected KeysetSnapshot keysetSnapshot;
-    @Mock protected ClientSideKeypairStoreSnapshot keypairSnapshot;
     @Mock protected AclSnapshot keyAclProviderSnapshot;
     @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
@@ -102,7 +101,6 @@ public abstract class ServiceTestBase {
         when(keysetKeyProvider.getSnapshot()).thenReturn(keysetKeyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
         when(keysetProvider.getSnapshot()).thenReturn(keysetSnapshot);
-        when(keypairProvider.getSnapshot()).thenReturn(keypairSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
@@ -176,13 +174,15 @@ public abstract class ServiceTestBase {
     protected void setKeypairs(List<ClientSideKeypair> keypairs) throws Exception {
         JsonObject metadata = new JsonObject();
         HashMap<String, ClientSideKeypair> keypairMap = new HashMap<>();
-        keypairs.forEach(k -> keypairMap.put(k.getSubscriptionId(), k));
+        HashMap<Integer, List<ClientSideKeypair>> siteKeypairMap = new HashMap<>();
+        keypairs.forEach(k -> {
+            keypairMap.put(k.getSubscriptionId(), k);
+            siteKeypairMap.computeIfAbsent(k.getSiteId(), id -> new ArrayList<>()).add(k);
+        });
         when(keypairProvider.getMetadata()).thenReturn(metadata);
         when(keypairProvider.getAll()).thenReturn(keypairMap.values());
-        when(keypairProvider.getSnapshot().getAll()).thenReturn(new ArrayList<>(keypairMap.values()));
-        when(keypairSnapshot.getKeypair((anyString()))).thenAnswer(i -> {
-            return keypairMap.get(i.getArgument(0));
-        });
+        ClientSideKeypairStoreSnapshot snapshot = new ClientSideKeypairStoreSnapshot(keypairMap, siteKeypairMap);
+        when(keypairProvider.getSnapshot()).thenReturn(snapshot);
     }
 
     protected void setEncryptionKeyAcls(Map<Integer, EncryptionKeyAcl> acls) {

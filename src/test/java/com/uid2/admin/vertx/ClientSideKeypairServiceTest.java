@@ -82,8 +82,10 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listAllEmpty(Vertx vertx, VertxTestContext testContext) {
+    void listAllEmpty(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.ADMINISTRATOR);
+
+        setKeypairs(new ArrayList<>());
 
         get(vertx, "api/client_side_keypairs/list", ar -> {
             assertTrue(ar.succeeded());
