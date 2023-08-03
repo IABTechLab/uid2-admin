@@ -27,14 +27,7 @@ public class ClientSideKeypairStoreWriter implements StoreWriter<Collection<Clie
     public void upload(Collection<ClientSideKeypair> data, JsonObject extraMeta) throws Exception {
         JsonArray jsonKeypairs = new JsonArray();
         for (ClientSideKeypair keypair : data) {
-            JsonObject json = new JsonObject();
-            json.put("subscription_id", keypair.getSubscriptionId());
-            json.put("public_key", keypair.encodePublicKeyToString());
-            json.put("private_key", keypair.encodePrivateKeyToString());
-            json.put("site_id", keypair.getSiteId());
-            json.put("contact", keypair.getContact());
-            json.put("created", keypair.getCreated().getEpochSecond());
-            json.put("disabled", keypair.isDisabled());
+            JsonObject json = toJsonWithPrivateKey(keypair);
             jsonKeypairs.add(json);
         }
         String content = jsonKeypairs.encodePrettily();
@@ -44,6 +37,28 @@ public class ClientSideKeypairStoreWriter implements StoreWriter<Collection<Clie
     @Override
     public void rewriteMeta() throws Exception {
         writer.rewriteMeta();
+    }
+
+    public static JsonObject toJsonWithoutPrivateKey(ClientSideKeypair keypair) {
+        return toJson(keypair, false);
+    }
+
+    public static JsonObject toJsonWithPrivateKey(ClientSideKeypair keypair) {
+        return toJson(keypair, true);
+    }
+
+    private static JsonObject toJson(ClientSideKeypair keypair, boolean includePrivateKey) {
+        JsonObject jo = new JsonObject();
+        jo.put("subscription_id", keypair.getSubscriptionId());
+        jo.put("public_key", keypair.encodePublicKeyToString());
+        if(includePrivateKey) {
+            jo.put("private_key", keypair.encodePrivateKeyToString());
+        }
+        jo.put("site_id", keypair.getSiteId());
+        jo.put("contact", keypair.getContact());
+        jo.put("created", keypair.getCreated().getEpochSecond());
+        jo.put("disabled", keypair.isDisabled());
+        return jo;
     }
 
 }

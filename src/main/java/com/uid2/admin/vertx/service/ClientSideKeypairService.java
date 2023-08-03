@@ -25,6 +25,9 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWithPrivateKey;
+import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWithoutPrivateKey;
+
 public class ClientSideKeypairService implements IService, IKeypairManager {
     private final AuthMiddleware auth;
     private final Clock clock;
@@ -157,7 +160,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        final JsonObject json = toJson(newKeypair);
+        final JsonObject json = toJsonWithoutPrivateKey(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
@@ -165,7 +168,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private void handleListAllKeypairs(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();
-            this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJson(k)));
+            this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJsonWithoutPrivateKey(k)));
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(ja.encode());
@@ -195,28 +198,9 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 .end(jo.encode());
     }
 
-    private JsonObject toJson(ClientSideKeypair keypair) {
-        JsonObject jo = new JsonObject();
-        jo.put("subscription_id", keypair.getSubscriptionId());
-        jo.put("public_key", keypair.encodePublicKeyToString());
-        jo.put("site_id", keypair.getSiteId());
-        jo.put("contact", keypair.getContact());
-        jo.put("created", keypair.getCreated().getEpochSecond());
-        jo.put("disabled", keypair.isDisabled());
-        return jo;
-    }
 
-    private JsonObject toJsonWithPrivateKey(ClientSideKeypair keypair) {
-        JsonObject jo = new JsonObject();
-        jo.put("subscription_id", keypair.getSubscriptionId());
-        jo.put("public_key", keypair.encodePublicKeyToString());
-        jo.put("private_key", keypair.encodePrivateKeyToString());
-        jo.put("site_id", keypair.getSiteId());
-        jo.put("contact", keypair.getContact());
-        jo.put("created", keypair.getCreated().getEpochSecond());
-        jo.put("disabled", keypair.isDisabled());
-        return jo;
-    }
+
+
 
     @Override
     public ClientSideKeypair createAndSaveSiteKeypair(int siteId, String contact, boolean disabled) throws Exception {
