@@ -40,7 +40,10 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     private final String priv4 = "UID2-Y-T-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDe6TIHd+Eyoczq1a8xeNGw17OWjeJHZwSLXtuMcqCXZQ==";
     @Override
     protected IService createService() {
-        return new ClientSideKeypairService(auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, new SecureKeypairGenerator(IdentityScope.UID2, Environment.Test), clock);
+        JsonObject config = new JsonObject();
+        config.put("client_side_keypair_public_prefix", "UID2-X-T-");
+        config.put("client_side_keypair_private_prefix", "UID2-Y-T-");
+        return new ClientSideKeypairService(config, auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, new SecureKeypairGenerator(), clock);
     }
     @BeforeEach
     void setUp() {
@@ -545,35 +548,6 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             validateKeypair(expected, response.bodyAsJsonObject());
             testContext.completeNow();
         });
-    }
-
-    @Test
-    void testKeyPrefix(){
-        SecureKeypairGenerator uid2L = new SecureKeypairGenerator(IdentityScope.UID2, Environment.Local);
-        assertEquals("UID2-X-L-", uid2L.getPublicKeyPrefix());
-        assertEquals("UID2-Y-L-", uid2L.getPrivateKeyPrefix());
-        SecureKeypairGenerator uid2T = new SecureKeypairGenerator(IdentityScope.UID2, Environment.Test);
-        assertEquals("UID2-X-T-", uid2T.getPublicKeyPrefix());
-        assertEquals("UID2-Y-T-", uid2T.getPrivateKeyPrefix());
-        SecureKeypairGenerator uid2I = new SecureKeypairGenerator(IdentityScope.UID2, Environment.Integration);
-        assertEquals("UID2-X-I-", uid2I.getPublicKeyPrefix());
-        assertEquals("UID2-Y-I-", uid2I.getPrivateKeyPrefix());
-        SecureKeypairGenerator uid2P = new SecureKeypairGenerator(IdentityScope.UID2, Environment.Production);
-        assertEquals("UID2-X-P-", uid2P.getPublicKeyPrefix());
-        assertEquals("UID2-Y-P-", uid2P.getPrivateKeyPrefix());
-
-        SecureKeypairGenerator euidL = new SecureKeypairGenerator(IdentityScope.EUID, Environment.Local);
-        assertEquals("EUID-X-L-", euidL.getPublicKeyPrefix());
-        assertEquals("EUID-Y-L-", euidL.getPrivateKeyPrefix());
-        SecureKeypairGenerator euidT = new SecureKeypairGenerator(IdentityScope.EUID, Environment.Test);
-        assertEquals("EUID-X-T-", euidT.getPublicKeyPrefix());
-        assertEquals("EUID-Y-T-", euidT.getPrivateKeyPrefix());
-        SecureKeypairGenerator euidI = new SecureKeypairGenerator(IdentityScope.EUID, Environment.Integration);
-        assertEquals("EUID-X-I-", euidI.getPublicKeyPrefix());
-        assertEquals("EUID-Y-I-", euidI.getPrivateKeyPrefix());
-        SecureKeypairGenerator euidP = new SecureKeypairGenerator(IdentityScope.EUID, Environment.Production);
-        assertEquals("EUID-X-P-", euidP.getPublicKeyPrefix());
-        assertEquals("EUID-Y-P-", euidP.getPrivateKeyPrefix());
     }
 }
 

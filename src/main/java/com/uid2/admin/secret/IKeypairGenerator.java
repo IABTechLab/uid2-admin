@@ -6,7 +6,4 @@ public interface IKeypairGenerator {
     public KeyPair generateRandomKeypair() throws Exception;
 
     public String generateRandomSubscriptionId();
-
-    public String getPublicKeyPrefix();
-    public String getPrivateKeyPrefix();
 }

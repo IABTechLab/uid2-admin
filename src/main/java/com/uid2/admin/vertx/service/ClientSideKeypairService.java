@@ -31,15 +31,17 @@ import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWit
 public class ClientSideKeypairService implements IService, IKeypairManager {
     private final AuthMiddleware auth;
     private final Clock clock;
-
     private final WriteLock writeLock;
     private final ClientSideKeypairStoreWriter storeWriter;
     private final RotatingClientSideKeypairStore keypairStore;
     private final RotatingSiteStore siteProvider;
     private final IKeypairGenerator keypairGenerator;
+    private final String publicKeyPrefix;
+    private final String privateKeyPrefix;
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientSideKeypairService.class);
 
-    public ClientSideKeypairService(AuthMiddleware auth,
+    public ClientSideKeypairService(JsonObject config,
+                                    AuthMiddleware auth,
                                     WriteLock writeLock,
                                     ClientSideKeypairStoreWriter storeWriter,
                                     RotatingClientSideKeypairStore keypairStore,
@@ -53,6 +55,8 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         this.keypairGenerator = keypairGenerator;
         this.siteProvider = siteProvider;
         this.clock = clock;
+        this.publicKeyPrefix = config.getString("client_side_keypair_public_prefix");
+        this.privateKeyPrefix = config.getString("client_side_keypair_private_prefix");
     }
 
     @Override
@@ -219,8 +223,8 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
         ClientSideKeypair newKeypair = new ClientSideKeypair(
                 subscriptionId,
-                keypairGenerator.getPublicKeyPrefix() + Base64.getEncoder().encodeToString(pair.getPublic().getEncoded()),
-                keypairGenerator.getPrivateKeyPrefix() + Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded()),
+                this.publicKeyPrefix + Base64.getEncoder().encodeToString(pair.getPublic().getEncoded()),
+                this.privateKeyPrefix + Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded()),
                 siteId,
                 contact,
                 now,

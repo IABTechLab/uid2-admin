@@ -21,6 +21,8 @@
   "client_key_prefix": "LOCAL",
   "operator_key_prefix": "OPLCL",
   "admin_key_prefix": "ADLCL",
+  "client_side_keypair_public_prefix": "UID2-X-T-",
+  "client_side_keypair_private_prefix": "UID2-Y-T-",
   "master_key_activates_in_seconds": 30,
   "master_key_expires_after_seconds": 60000,
   "master_key_rotation_cut_off_days": 37,
