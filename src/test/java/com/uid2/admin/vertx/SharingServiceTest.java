@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -558,38 +559,39 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
-    // This test should be uncommented out when multiple keysets is enabled
-//    @Test
-//    void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
-//        fakeAuth(Role.ADMINISTRATOR);
-//
-//        mockSiteExistence(8, 22, 25, 6);
-//
-//        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
-//            put(1, new Keyset(1, 8, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
-//        }};
-//
-//        setKeysets(keysets);
-//
-//        String body = "  {\n" +
-//                "    \"allowed_sites\": [\n" +
-//                "      22,\n" +
-//                "      25,\n" +
-//                "      6\n" +
-//                "    ],\n" +
-//                "    \"site_id\": 8," +
-//                "    \"name\": \"TEST\"" +
-//                "  }";
-//
-//        post(vertx, "api/sharing/keyset", body, ar -> {
-//            assertTrue(ar.succeeded());
-//            HttpResponse response = ar.result();
-//            assertEquals(400, response.statusCode());
-//            assertEquals("Keyset with same site_id and name already exists", response.bodyAsJsonObject().getString("message"));
-//
-//            testContext.completeNow();
-//        });
-//    }
+    // This test should be enabled when multiple keysets is enabled
+    @Test
+    @Disabled
+    void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        mockSiteExistence(8, 22, 25, 6);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 8, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowed_sites\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"site_id\": 8," +
+                "    \"name\": \"TEST\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Keyset with same site_id and name already exists", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
 
     @Test
     void KeysetSetNewSameNameDifferentSite(Vertx vertx, VertxTestContext testContext) {
