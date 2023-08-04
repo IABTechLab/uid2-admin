@@ -58,6 +58,8 @@ import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
+import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
+
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
@@ -71,7 +73,7 @@ public class Main {
 
     public void run() {
         try {
-            boolean enableKeysets = config.getBoolean("enable_keysets");
+            boolean enableKeysets = config.getBoolean(enableKeysetConfigProp);
             AuthFactory authFactory = new GithubAuthFactory(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();

@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 import static com.uid2.admin.util.KeysetUtil.*;
 import static java.util.stream.Collectors.*;
 
@@ -116,7 +117,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             throw new IllegalStateException(SITE_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + SITE_KEY_EXPIRES_AFTER_SECONDS);
         }
 
-        enableKeysets = config.getBoolean("enable_keysets");
+        enableKeysets = config.getBoolean(enableKeysetConfigProp);
     }
 
     @Override
