@@ -95,7 +95,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         try {
             newKeypair = createAndSaveSiteKeypair(siteId, contact, disabled);
         } catch (Exception e) {
-            rc.fail(500, e);
+            ResponseUtil.errorInternal(rc, "failed to upload keypairs", e);
             return;
         }
         final JsonObject json = toJsonWithPrivateKey(newKeypair);
@@ -148,7 +148,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         try {
             storeWriter.upload(allKeypairs, null);
         } catch (Exception e) {
-            rc.fail(500, e);
+            ResponseUtil.errorInternal(rc, "failed to upload keypairs", e);
             return;
         }
 
@@ -158,15 +158,11 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     }
 
     private void handleListAllKeypairs(RoutingContext rc) {
-        try {
-            final JsonArray ja = new JsonArray();
-            this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJsonWithoutPrivateKey(k)));
-            rc.response()
-                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(ja.encode());
-        } catch (Exception e) {
-            rc.fail(500, e);
-        }
+        final JsonArray ja = new JsonArray();
+        this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJsonWithoutPrivateKey(k)));
+        rc.response()
+                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .end(ja.encode());
     }
 
     private void handleListKeypair(RoutingContext rc) {
