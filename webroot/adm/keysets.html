@@ -129,7 +129,7 @@
 
         if((add && add.length !== 0) || (remove && remove.length !== 0)) {
           if(allowedSites == null) {
-            $('#errorOutput').html('cannot add/remove sites from null. Reset allowed_sites to empty then try again.')
+            $('#errorOutput').html('cannot add/remove sites from null. If this was intentional, please reset allowed_sites to empty then try again.')
             return
           }
           allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
