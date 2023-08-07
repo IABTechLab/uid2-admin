@@ -32,22 +32,27 @@ public class SharingService implements IService {
     private final IKeysetKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
+    private final boolean enableKeysets;
+
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
                           KeysetStoreWriter storeWriter,
                           RotatingKeysetProvider keysetProvider,
                           IKeysetKeyManager keyManager,
-                          RotatingSiteStore siteProvider) {
+                          RotatingSiteStore siteProvider,
+                          boolean enableKeyset) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
         this.keyManager = keyManager;
         this.siteProvider = siteProvider;
+        this.enableKeysets = enableKeyset;
     }
 
     @Override
     public void setupRoutes(Router router) {
+        if(!enableKeysets) return;
         router.get("/api/sharing/lists").handler(
                 auth.handle(this::handleListAllAllowedSites, Role.SHARING_PORTAL)
         );

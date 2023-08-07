@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, siteProvider);
+        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, siteProvider, true);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {

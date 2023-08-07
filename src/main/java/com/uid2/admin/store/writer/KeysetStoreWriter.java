@@ -10,25 +10,34 @@ import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Map;
 
 public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
 
     private final ScopedStoreWriter writer;
     private final ObjectWriter jsonWriter;
+    private final boolean enableKeysets;
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeysetStoreWriter.class);
 
     public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
-                             ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
+                             ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope,
+                             boolean enableKeysets) {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("keysets", ".json");
         String dataType = "keysets";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+        this.enableKeysets = enableKeysets;
     }
 
     @Override
     public void upload(Map<Integer, Keyset> data, JsonObject extraMeta) throws Exception {
+        if(!enableKeysets) {
+            LOGGER.error("Uploaded Attempted to Keysets with keysets disabled");
+            return;
+        }
         JsonArray jsonKeysets = new JsonArray();
         for (Map.Entry<Integer, Keyset> keyset: data.entrySet()) {
             jsonKeysets.add(keyset.getValue());
