@@ -16,6 +16,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -262,32 +263,6 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addKeypairBadContact(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
-        }};
-
-        setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true));
-
-        JsonObject jo = new JsonObject();
-        jo.put("site_id", 123);
-        jo.put("contact", "not-an-email");
-
-        post(vertx, "api/client_side_keypairs/add", jo.encode(), ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
-            assertEquals("contact email: not-an-email not valid", response.bodyAsJsonObject().getString("message"));
-            testContext.completeNow();
-        });
-    }
-
-    @Test
     void addKeypair(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -435,32 +410,6 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("Updatable parameters: contact, disabled", response.bodyAsJsonObject().getString("message"));
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void updateKeypairBadContactEmail(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
-        }};
-
-        setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true));
-
-        JsonObject jo = new JsonObject();
-        jo.put("subscription_id", "8901234567");
-        jo.put("contact", "not-an-email");
-
-        post(vertx, "api/client_side_keypairs/update", jo.encode(), ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
-            assertEquals("contact email: not-an-email not valid", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }

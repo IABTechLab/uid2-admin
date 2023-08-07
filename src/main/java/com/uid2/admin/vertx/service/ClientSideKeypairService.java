@@ -5,7 +5,6 @@ import com.uid2.admin.secret.IKeypairManager;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.ClientSideKeypairStoreWriter;
-import com.uid2.admin.util.InputUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
@@ -78,22 +77,17 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         );
     }
 
-    private void handleAddKeypair(RoutingContext rc){
+    private void handleAddKeypair(RoutingContext rc) {
         final JsonObject body = rc.body().asJsonObject();
         final Integer siteId = body.getInteger("site_id");
         final String contact = body.getString("contact");
         final boolean disabled = body.getBoolean("disabled", false);
-        if(contact == null || siteId == null) {
+        if (contact == null || siteId == null) {
             ResponseUtil.error(rc, 400, "Required parameters: site_id, contact");
             return;
         }
-        if(siteProvider.getSite(siteId) == null) {
+        if (siteProvider.getSite(siteId) == null) {
             ResponseUtil.error(rc, 404, "site_id: " + siteId + " not valid");
-            return;
-        }
-        String normalizedContactEmail = InputUtil.normalizeEmailString(contact);
-        if(normalizedContactEmail == null){
-            ResponseUtil.error(rc, 400, "contact email: " + contact + " not valid");
             return;
         }
 
@@ -112,35 +106,29 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private void handleUpdateKeypair(RoutingContext rc) {
         final JsonObject body = rc.body().asJsonObject();
         final String subscriptionId = body.getString("subscription_id");
-        final String contact = body.getString("contact");
+        String contact = body.getString("contact");
         Boolean disabled = body.getBoolean("disabled");
 
-        if(subscriptionId == null) {
+        if (subscriptionId == null) {
             ResponseUtil.error(rc, 400, "Required parameters: subscription_id");
             return;
         }
 
         ClientSideKeypair keypair = this.keypairStore.getSnapshot().getKeypair(subscriptionId);
-        if(keypair == null) {
+        if (keypair == null) {
             ResponseUtil.error(rc, 404, "Failed to find a keypair for subscription id: " + subscriptionId);
             return;
         }
 
-        if(contact == null && disabled == null) {
+        if (contact == null && disabled == null) {
             ResponseUtil.error(rc, 400, "Updatable parameters: contact, disabled");
             return;
         }
-        String normalizedContactEmail;
-        if (contact != null) {
-            normalizedContactEmail = InputUtil.normalizeEmailString(contact);
-            if(normalizedContactEmail == null){
-                ResponseUtil.error(rc, 400, "contact email: " + contact + " not valid");
-                return;
-            }
-        } else {
-            normalizedContactEmail = keypair.getContact();
+
+        if (contact == null) {
+            contact = keypair.getContact();
         }
-        if(disabled == null) {
+        if (disabled == null) {
             disabled = keypair.isDisabled();
         }
 
@@ -149,7 +137,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 keypair.encodePublicKeyToString(),
                 keypair.encodePrivateKeyToString(),
                 keypair.getSiteId(),
-                normalizedContactEmail,
+                contact,
                 keypair.getCreated(),
                 disabled);
 
@@ -159,7 +147,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         allKeypairs.add(newKeypair);
         try {
             storeWriter.upload(allKeypairs, null);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             rc.fail(500, e);
             return;
         }
@@ -182,16 +170,11 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     }
 
     private void handleListKeypair(RoutingContext rc) {
-        String subscriptionId;
-        try {
-            subscriptionId = rc.pathParam("subscriptionId");
-        } catch (Exception e) {
-            ResponseUtil.error(rc, 400, "Failed to parse subscription id from request path");
-            return;
-        }
+
+        String subscriptionId = rc.pathParam("subscriptionId");
 
         ClientSideKeypair keypair = this.keypairStore.getSnapshot().getKeypair(subscriptionId);
-        if(keypair == null) {
+        if (keypair == null) {
             ResponseUtil.error(rc, 404, "Failed to find a keypair for subscription id: " + subscriptionId);
             return;
         }
@@ -202,10 +185,6 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 .end(jo.encode());
     }
 
-
-
-
-
     @Override
     public ClientSideKeypair createAndSaveSiteKeypair(int siteId, String contact, boolean disabled) throws Exception {
 
@@ -214,7 +193,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         this.keypairStore.loadContent();
         final Set<String> existingIds = this.keypairStore.getAll().stream().map(ClientSideKeypair::getSubscriptionId).collect(Collectors.toSet());
         final List<ClientSideKeypair> keypairs = new ArrayList<>(this.keypairStore.getAll());
-        KeyPair pair = keypairGenerator.generateRandomKeypair();
+        KeyPair pair = keypairGenerator.generateKeypair();
 
         String subscriptionId = keypairGenerator.generateRandomSubscriptionId();
         while (existingIds.contains(subscriptionId)) {
