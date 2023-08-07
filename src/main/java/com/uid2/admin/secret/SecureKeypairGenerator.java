@@ -1,8 +1,5 @@
 package com.uid2.admin.secret;
 
-import com.uid2.shared.secure.gcpoidc.Environment;
-import com.uid2.shared.secure.gcpoidc.IdentityScope;
-
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -16,9 +13,9 @@ public class SecureKeypairGenerator implements IKeypairGenerator {
     public SecureKeypairGenerator() { }
 
     @Override
-    public KeyPair generateRandomKeypair() throws Exception {
+    public KeyPair generateKeypair() throws Exception {
         final String ecdhCurvenameString = "secp256r1";
-        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC", "SunEC");
+        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
         final ECGenParameterSpec ecParameterSpec = new ECGenParameterSpec(ecdhCurvenameString);
         keyPairGenerator.initialize(ecParameterSpec);
         final KeyPair ecdhKeyPair = keyPairGenerator.genKeyPair();
