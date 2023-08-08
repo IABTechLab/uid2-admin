@@ -99,7 +99,7 @@ public class SearchServiceTest extends ServiceTestBase {
                 .withSiteId(124);
 
         setClientKeys(clientKeys);
-        post(vertx, searchUrl, "UID2-C-L-fCXrMMfs", response -> {
+        post(vertx, searchUrl, "UID2-C-L-999-fCXrMM.fs", response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
