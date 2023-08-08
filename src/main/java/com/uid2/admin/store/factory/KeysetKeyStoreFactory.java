@@ -22,13 +22,15 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingKeysetKeyStore globalReader;
+    private final boolean enableKeyset;
 
     public KeysetKeyStoreFactory(
             ICloudStorage fileStreamProvider,
             CloudPath rootMetadataPath,
             VersionGenerator versionGenerator,
             Clock clock,
-            FileManager fileManager) {
+            FileManager fileManager,
+            boolean enableKeyset) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.versionGenerator = versionGenerator;
@@ -36,6 +38,7 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
         this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeysetKeyStore(fileStreamProvider, globalScope);
+        this.enableKeyset = enableKeyset;
     }
 
     @Override
@@ -50,7 +53,8 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
                 fileManager,
                 versionGenerator,
                 clock,
-                new SiteScope(rootMetadataPath, siteId)
+                new SiteScope(rootMetadataPath, siteId),
+                enableKeyset
         );
     }
 
