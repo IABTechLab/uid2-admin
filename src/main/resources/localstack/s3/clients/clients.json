@@ -46,7 +46,8 @@
     "contact": "Data Provider",
     "created": 1609459200,
     "roles": [
-      "MAPPER"
+      "MAPPER",
+      "SHARER"
     ],
     "disabled": false,
     "site_id": 125
@@ -54,6 +55,18 @@
   {
     "key": "UID2-C-L-126-GMP9tD.jn2o3vmXzn7vmKRlTT6BEUrPUaPJuQmDBdq38=",
     "secret": "1ydXM0rEj+ROUazVpZjNZOGu2T5+f/BIiBfnK8xGh/A=",
+    "name": "Advertiser",
+    "contact": "Advertiser",
+    "created": 1609459200,
+    "roles": [
+      "MAPPER"
+    ],
+    "disabled": false,
+    "site_id": 126
+  },
+  {
+    "key": "UID2-C-L-127-aHVydH.JlZnVzZWRmYXN0ZW5lbXliYWdpZGVudGl0eWU=",
+    "secret": "c3VpdG9wcG9zaXRlaW1hZ2Vsb29rc2ltcGxlc3RmaXI=",
     "name": "OptOut",
     "contact": "OptOut",
     "created": 1609459200,
@@ -61,6 +74,6 @@
       "OPTOUT"
     ],
     "disabled": false,
-    "site_id": 126
+    "site_id": 127
   }
 ]
