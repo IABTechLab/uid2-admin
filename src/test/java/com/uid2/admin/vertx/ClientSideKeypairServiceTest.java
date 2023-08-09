@@ -107,10 +107,10 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("0123456789", new ClientSideKeypair("0123456789", pub1, priv1, 123, "test@example.com", Instant.now(), false));
-            put("8901234567", new ClientSideKeypair("8901234567", pub2, priv2, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub3, priv3, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub4, priv4, 125, "test-two@example.com", Instant.now(), false));
+            put("aZ23456789", new ClientSideKeypair("aZ23456789", pub1, priv1, 123, "test@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub2, priv2, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub3, priv3, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub4, priv4, 125, "test-two@example.com", Instant.now(), false));
         }};
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
 
@@ -132,11 +132,11 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         setKeypairs(new ArrayList<>());
 
-        get(vertx, "api/client_side_keypairs/0123456789", ar -> {
+        get(vertx, "api/client_side_keypairs/aZ23456789", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(404, response.statusCode());
-            assertEquals("Failed to find a keypair for subscription id: 0123456789", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Failed to find a keypair for subscription id: aZ23456789", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -145,17 +145,17 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     void listKeypair(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.ADMINISTRATOR);
 
-        ClientSideKeypair queryKeypair = new ClientSideKeypair("0123456789", pub1, priv1, 123, "test@example.com", Instant.now(), false);
+        ClientSideKeypair queryKeypair = new ClientSideKeypair("aZ23456789", pub1, priv1, 123, "test@example.com", Instant.now(), false);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("0123456789", queryKeypair);
-            put("8901234567", new ClientSideKeypair("8901234567", pub2, priv2, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub3, priv3, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub4, priv4, 125, "test-two@example.com", Instant.now(), false));
+            put("aZ23456789", queryKeypair);
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub2, priv2, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub3, priv3, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub4, priv4, 125, "test-two@example.com", Instant.now(), false));
         }};
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
 
-        get(vertx, "api/client_side_keypairs/0123456789", ar -> {
+        get(vertx, "api/client_side_keypairs/aZ23456789", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -171,9 +171,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -194,9 +194,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -218,9 +218,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true ));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true ));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -242,9 +242,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -267,9 +267,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -305,9 +305,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -341,9 +341,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -367,9 +367,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
@@ -394,16 +394,16 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
         setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
-        jo.put("subscription_id", "8901234567");
+        jo.put("subscription_id", "89aZ234567");
 
         post(vertx, "api/client_side_keypairs/update", jo.encode(), ar -> {
             assertTrue(ar.succeeded());
@@ -420,23 +420,23 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", time, true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
         setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
-        jo.put("subscription_id", "8901234567");
+        jo.put("subscription_id", "89aZ234567");
         jo.put("contact", "updated@email.com");
 
         post(vertx, "api/client_side_keypairs/update", jo.encode(), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            ClientSideKeypair expected = new ClientSideKeypair("8901234567", pub1, priv1, 124, "updated@email.com", time, true);
+            ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "updated@email.com", time, true);
             validateKeypair(expected, response.bodyAsJsonObject());
             testContext.completeNow();
         });
@@ -448,23 +448,23 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", time, true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
         setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
-        jo.put("subscription_id", "8901234567");
+        jo.put("subscription_id", "89aZ234567");
         jo.put("disabled", false);
 
         post(vertx, "api/client_side_keypairs/update", jo.encode(), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            ClientSideKeypair expected = new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", time, false);
+            ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, false);
             validateKeypair(expected, response.bodyAsJsonObject());
             testContext.completeNow();
         });
@@ -476,16 +476,16 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("8901234567", new ClientSideKeypair("8901234567", pub1, priv1, 124, "test-two@example.com", time, true));
-            put("9012345678", new ClientSideKeypair("9012345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("7890123456", new ClientSideKeypair("7890123456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
         setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
-        jo.put("subscription_id", "8901234567");
+        jo.put("subscription_id", "89aZ234567");
         jo.put("contact", "updated@email.com");
         jo.put("disabled", false);
 
@@ -493,7 +493,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
-            ClientSideKeypair expected = new ClientSideKeypair("8901234567", pub1, priv1, 124, "updated@email.com", time, false);
+            ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "updated@email.com", time, false);
             validateKeypair(expected, response.bodyAsJsonObject());
             testContext.completeNow();
         });

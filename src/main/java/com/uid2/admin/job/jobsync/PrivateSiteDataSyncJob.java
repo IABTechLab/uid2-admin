@@ -102,14 +102,14 @@ public class PrivateSiteDataSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager);
-
-        ClientSideKeypairStoreFactory keypairStoreFactory = new ClientSideKeypairStoreFactory(
-                cloudStorage,
-                new CloudPath(config.getString(Const.Config.ClientSideKeypairsMetadataPathProp)),
-                versionGenerator,
-                clock,
-                fileManager
-        );
+        // disabled for private operator
+//        ClientSideKeypairStoreFactory keypairStoreFactory = new ClientSideKeypairStoreFactory(
+//                cloudStorage,
+//                new CloudPath(config.getString(Const.Config.ClientSideKeypairsMetadataPathProp)),
+//                versionGenerator,
+//                clock,
+//                fileManager
+//        );
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
@@ -124,7 +124,7 @@ public class PrivateSiteDataSyncJob extends Job {
             keyAclStoreFactory.getGlobalReader().loadContent();
             keysetStoreFactory.getGlobalReader().loadContent();
             keysetKeyStoreFactory.getGlobalReader().loadContent();
-            keypairStoreFactory.getGlobalReader().loadContent();
+//            keypairStoreFactory.getGlobalReader().loadContent(); // disabled for private operator
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
@@ -136,7 +136,7 @@ public class PrivateSiteDataSyncJob extends Job {
         Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
         Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeysetKeys();
         Integer globalMaxKeysetKeyId = keysetKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
-        Collection<ClientSideKeypair> globalKeypairs = keypairStoreFactory.getGlobalReader().getSnapshot().getEnabledKeypairs();
+//        Collection<ClientSideKeypair> globalKeypairs = keypairStoreFactory.getGlobalReader().getSnapshot().getEnabledKeypairs(); // disabled for private operators
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
@@ -162,10 +162,11 @@ public class PrivateSiteDataSyncJob extends Job {
                 fileManager,
                 keysetKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
-        MultiScopeStoreWriter<Collection<ClientSideKeypair>> keypairWriter = new MultiScopeStoreWriter<>(
-                fileManager,
-                keypairStoreFactory,
-                MultiScopeStoreWriter::areCollectionsEqual);
+        // disabled for private operators
+//        MultiScopeStoreWriter<Collection<ClientSideKeypair>> keypairWriter = new MultiScopeStoreWriter<>(
+//                fileManager,
+//                keypairStoreFactory,
+//                MultiScopeStoreWriter::areCollectionsEqual);
 
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
@@ -180,7 +181,7 @@ public class PrivateSiteDataSyncJob extends Job {
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
         KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
         KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
-        ClientSideKeypairSyncJob keypairSyncJob = new ClientSideKeypairSyncJob(globalOperators, globalKeypairs, keypairWriter);
+//        ClientSideKeypairSyncJob keypairSyncJob = new ClientSideKeypairSyncJob(globalOperators, globalKeypairs, keypairWriter); // disabled for private opeartor
 
         siteSyncJob.execute();
         clientSyncJob.execute();
