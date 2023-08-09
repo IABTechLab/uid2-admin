@@ -53,20 +53,20 @@
         $('#doListSite').on('click', function () {
             const siteId = parseInt($('#siteId').val())
             if(!siteId) {
-                $('#errorOutput').html("required parameters: site_id")
+                $('#errorOutput').text("required parameters: site_id")
                 return
             }
             doApiCallWithCallback('GET', '/api/client_side_keypairs/list', function (text) {
                 let resp = JSON.parse(text)
                 resp = resp.filter(obj => obj.site_id === siteId)
-                $('#standardOutput').html(JSON.stringify(resp, null, 2));
+                $('#standardOutput').text(JSON.stringify(resp, null, 2));
             }, errorCallback);
         });
 
         $('#doListSubscription').on('click', function () {
             const subscriptionId = $('#subscriptionId').val()
             if(!subscriptionId) {
-                $('#errorOutput').html("required parameters: subscription_id")
+                $('#errorOutput').text("required parameters: subscription_id")
                 return
             }
             const url = '/api/client_side_keypairs/' + encodeURIComponent(subscriptionId);
@@ -79,7 +79,7 @@
             const contact = $('#contact').val();
             const disabled = ($('#disable').is(':checked'));
             if(!siteId || !contact) {
-                $('#errorOutput').html("required parameters: site_id, contact")
+                $('#errorOutput').text("required parameters: site_id, contact")
                 return
             }
 
@@ -94,7 +94,7 @@
             const disabled = ($('#disable').is(':checked'));
 
             if(!subscriptionId) {
-                $('#errorOutput').html("required parameters: subscription_id")
+                $('#errorOutput').text("required parameters: subscription_id")
                 return
             }
 
