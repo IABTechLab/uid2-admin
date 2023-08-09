@@ -114,6 +114,7 @@ public class SharingService implements IService {
                 }
                 if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
                     ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
+                    return;
                 }
                 keysetId = Collections.max(keysetsById.keySet()) + 1;
                 if (keysetsById.values().stream().anyMatch(item -> // for multiple keysets. See commented out SharingServiceTest#KeysetSetNewIdenticalNameAndSiteId
