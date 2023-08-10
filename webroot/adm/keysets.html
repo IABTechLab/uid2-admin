@@ -59,7 +59,7 @@
       const siteId = parseInt($('#siteId').val());
       const keysetId = parseInt($('#keysetId').val());
       if(isNaN(keysetId)) {
-        $("#standardOutput").html("Enter a keyset id");
+        $("#standardOutput").text("Enter a keyset id");
         return
       }
       const url = '/api/sharing/keyset';
@@ -86,7 +86,7 @@
 
         doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify({allowlist: allowlist, keyset_id: keysetId, site_id: siteId}))
       }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
+        $('#errorOutput').text('Error: ' + err.status + ': ' + err.statusText);
       });
 
     });
