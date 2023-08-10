@@ -1,0 +1,156 @@
+<html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <style>
+    label.bold {
+      font-weight: bold
+    }
+  </style>
+</head>
+
+<body>
+<h1>UID2 Admin - GCP Enclave ID Tool(V2)</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="imageId" class="bold">Operator Docker Image ID:</label>
+<br>
+<label for="imageId">The full digest for the image, with or without 'sha256:'</label>
+<br>
+<input type="text" id="imageId" name="imageId" size="100" value="">
+<br>
+<br>
+
+<label for="envId" class="bold">Environment:</label>
+<br>
+<select id="envId">
+  <option value="integ">Integration</option>
+  <option value="prod">Production</option>
+</select>
+<br>
+<br>
+
+<label for="debugMode" class="bold">DebugMode:</label>
+<br>
+<label for="debugMode">
+  Set this to true if you want to use DebugMode Confidential Space host image in integration env.
+  (You need to generate a new enclaveId.)
+</label>
+<br>
+<select id="debugMode">
+  <option value="false">False</option>
+  <option value="true">True</option>
+</select>
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+  <li><a href="#" id="doGenerate">Generate Enclave ID and gcloud command</a></li>
+</ul>
+<br>
+
+<h3>Outputs</h3>
+
+<label for="gcloudCli">Example gcloud command to bring up Confidential Space VM:</label>
+<br>
+<textarea id="gcloudCli" name="gcloudCli" rows="10" cols="120" readonly>
+</textarea>
+<br>
+<br>
+
+<label for="enclaveId">Generated GCP Enclave ID:</label>
+<br>
+<pre><label id="enclaveId">TBD</label></pre>
+<br>
+<br>
+
+<script language="JavaScript">
+  const gcloudCli = '$ gcloud compute instances create <INSTANCE_NAME> \\\n\
+    --confidential-compute \\\n\
+    --shielded-secure-boot \\\n\
+    --maintenance-policy Terminate \\\n\
+    --scopes cloud-platform \\\n\
+    --image-project confidential-space-images \\\n\
+    --image-family <IMAGE_FAMILY> \\\n\
+    --service-account <SERVICE_ACCOUNT> \\\n\
+    --metadata ^~^tee-image-reference=ghcr.io/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN=<API_TOKEN>'
+
+  $('#gcloudCli').val(gcloudCli);
+
+  $(document).ready(function () {
+    onEnvChange();
+    $('#envId').on('change', function () {
+      onEnvChange();
+    });
+
+    $('#doGenerate').on('click', function () {
+      onGenerate();
+    });
+  });
+
+  function onEnvChange() {
+    const env = $('#envId').val();
+    const $debugMode = $('#debugMode');
+    $debugMode.val('false');
+    if (env === 'prod') {
+      $debugMode.prop('disabled', true);
+    } else {
+      $debugMode.prop('disabled', false);
+    }
+  }
+
+  function onGenerate() {
+    let imageSha = $('#imageId').val();
+    if (!imageSha) {
+      alert("Operator Docker Image ID is empty");
+      return;
+    }
+    if (!imageSha.startsWith('sha256:')) {
+      imageSha = 'sha256:' + imageSha;
+    }
+
+    const env = $('#envId').val();
+    const isDebug = $('#debugMode').val() === 'true';
+
+    // generate and show enclaveId
+    generateEnclaveId(imageSha, isDebug).then(enclaveId => {
+      $('#enclaveId').text(enclaveId);
+    });
+
+    // update gcloud Cli
+    const imageFamily = isDebug ? 'confidential-space-debug' : 'confidential-space';
+    const cli = gcloudCli
+            .replaceAll('<IMAGE_FAMILY>', imageFamily)
+            .replaceAll('<IMAGE_SHA>', imageSha)
+            .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
+    $('#gcloudCli').val(cli);
+  }
+
+  function sha256base64(string) {
+    const utf8 = new TextEncoder().encode(string);
+    return crypto.subtle.digest('SHA-256', utf8).then((hashBuffer) => {
+      return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
+    });
+  }
+
+  // Check PolicyValidator.generateEnclaveId for enclaveId generation logic.
+  // image sha: string format "sha256:111111", start with "sha256"
+  // isDebug: true/false
+  function generateEnclaveId(imageSha, isDebug = false) {
+    const str = 'V1,' + isDebug + "," + imageSha;
+    return sha256base64(str);
+  }
+</script>
+
+</body>
+
+</html>

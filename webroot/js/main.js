@@ -16,7 +16,7 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).text(pretty);
         },
-        error: function (err) { standardErrorCallback(err, outputDiv) }
+        error: function (err) { standardErrorCallback(err, errorDiv) }
     });
 }
 function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {

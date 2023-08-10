@@ -31,6 +31,8 @@ import io.vertx.core.json.JsonObject;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
+
 /*
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl data type
  */
@@ -94,14 +96,16 @@ public class PrivateSiteDataSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager,
+                config.getBoolean(enableKeysetConfigProp));
 
         KeysetKeyStoreFactory keysetKeyStoreFactory = new KeysetKeyStoreFactory(
                 cloudStorage,
                 new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp)),
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager,
+                config.getBoolean(enableKeysetConfigProp));
         // disabled for private operator
 //        ClientSideKeypairStoreFactory keypairStoreFactory = new ClientSideKeypairStoreFactory(
 //                cloudStorage,
@@ -122,9 +126,11 @@ public class PrivateSiteDataSyncJob extends Job {
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
             keyAclStoreFactory.getGlobalReader().loadContent();
-            keysetStoreFactory.getGlobalReader().loadContent();
-            keysetKeyStoreFactory.getGlobalReader().loadContent();
 //            keypairStoreFactory.getGlobalReader().loadContent(); // disabled for private operator
+            if(config.getBoolean(enableKeysetConfigProp)) {
+                keysetStoreFactory.getGlobalReader().loadContent();
+                keysetKeyStoreFactory.getGlobalReader().loadContent();
+            }
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
@@ -133,9 +139,6 @@ public class PrivateSiteDataSyncJob extends Job {
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
         Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
-        Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
-        Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeysetKeys();
-        Integer globalMaxKeysetKeyId = keysetKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
 //        Collection<ClientSideKeypair> globalKeypairs = keypairStoreFactory.getGlobalReader().getSnapshot().getEnabledKeypairs(); // disabled for private operators
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
@@ -154,14 +157,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 fileManager,
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
-        MultiScopeStoreWriter<Map<Integer, Keyset>> keysetWriter = new MultiScopeStoreWriter<>(
-                fileManager,
-                keysetStoreFactory,
-                MultiScopeStoreWriter::areMapsEqual);
-        MultiScopeStoreWriter<Collection<KeysetKey>> keysetKeyWriter = new MultiScopeStoreWriter<>(
-                fileManager,
-                keysetKeyStoreFactory,
-                MultiScopeStoreWriter::areCollectionsEqual);
         // disabled for private operators
 //        MultiScopeStoreWriter<Collection<ClientSideKeypair>> keypairWriter = new MultiScopeStoreWriter<>(
 //                fileManager,
@@ -179,16 +174,30 @@ public class PrivateSiteDataSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
-        KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
-        KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
 //        ClientSideKeypairSyncJob keypairSyncJob = new ClientSideKeypairSyncJob(globalOperators, globalKeypairs, keypairWriter); // disabled for private opeartor
 
         siteSyncJob.execute();
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
         keyAclSyncJob.execute();
-        keysetSyncJob.execute();
-        keysetKeySyncJob.execute();
 //        keypairSyncJob.execute(); Keypair sync Job should not be executed until we want to enable CSTG for private operators
+        if(config.getBoolean(enableKeysetConfigProp)) {
+            Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
+            Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeysetKeys();
+            Integer globalMaxKeysetKeyId = keysetKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
+            MultiScopeStoreWriter<Map<Integer, Keyset>> keysetWriter = new MultiScopeStoreWriter<>(
+                    fileManager,
+                    keysetStoreFactory,
+                    MultiScopeStoreWriter::areMapsEqual);
+            MultiScopeStoreWriter<Collection<KeysetKey>> keysetKeyWriter = new MultiScopeStoreWriter<>(
+                    fileManager,
+                    keysetKeyStoreFactory,
+                    MultiScopeStoreWriter::areCollectionsEqual);
+            KeysetSyncJob keysetSyncJob = new KeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
+            KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
+
+            keysetSyncJob.execute();
+            keysetKeySyncJob.execute();
+        }
     }
 }

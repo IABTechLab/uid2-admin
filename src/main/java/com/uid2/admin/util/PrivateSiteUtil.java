@@ -7,6 +7,8 @@ import com.uid2.shared.auth.*;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
  * Note: only generate Private Site data for each site that has at least 1 private operator
  */
 public final class PrivateSiteUtil {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteUtil.class);
 
     private PrivateSiteUtil() {
     }
@@ -270,13 +274,18 @@ public final class PrivateSiteUtil {
 
         globalKeysetKeys.stream().forEach(keysetKey -> {
             //Add the key from keysets for its own site
-            int siteId = globalKeysets.get(keysetKey.getKeysetId()).getSiteId();
+            Keyset keyset = globalKeysets.get(keysetKey.getKeysetId());
+            if (keyset == null) {
+                LOGGER.error("Unable to find keyset with keyset id " + keysetKey.getKeysetId());
+                return;
+            };
+            int siteId = keyset.getSiteId();
             result.computeIfPresent(siteId, (privateSiteId, privateSiteSet) -> {
                 privateSiteSet.add(keysetKey);
                 return privateSiteSet;
             });
             //Add the key to all allowed sites
-            Set<Integer> allowedSites = globalKeysets.get(keysetKey.getKeysetId()).getAllowedSites();
+            Set<Integer> allowedSites = keyset.getAllowedSites();
             if(allowedSites != null)
             {
                 allowedSites.forEach(allowedSiteId -> {
