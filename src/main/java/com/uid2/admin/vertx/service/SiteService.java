@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.net.InternetDomainName;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,6 +68,11 @@ public class SiteService implements IService {
                 this.handleSiteEnable(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteDomains(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -90,9 +98,13 @@ public class SiteService implements IService {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                JsonArray domainNamesJa = new JsonArray();
+                site.getDomainNames().forEach(domainNamesJa::add);
+
                 jo.put("id", site.getId());
                 jo.put("name", site.getName());
                 jo.put("enabled", site.isEnabled());
+                jo.put("domain_names", domainNamesJa);
 
                 List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
                 JsonArray jr = new JsonArray();
@@ -195,5 +207,76 @@ public class SiteService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private void handleSiteDomains(RoutingContext rc) {
+        try {
+            // refresh manually
+            siteProvider.loadContent();
+
+            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+
+            JsonObject body = rc.body().asJsonObject();
+            JsonArray domainNamesJa = body.getJsonArray("domain_names");
+            if(domainNamesJa == null) {
+                ResponseUtil.error(rc, 400, "required parameters: domain_names");
+                return;
+            }
+            List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
+
+            List<String> normalizedDomainNames = new ArrayList<>();
+            for(String domain : domainNames) {
+                try {
+                    String tld = getTopLevelDomainName(domain);
+                    normalizedDomainNames.add(tld);
+                } catch (Exception e) {
+                    ResponseUtil.error(rc, 400, "invalid domain name: " + domain);
+                    return;
+                }
+            }
+
+            boolean containsDuplicates = normalizedDomainNames.stream().distinct().count() < normalizedDomainNames.size();
+            if (containsDuplicates) {
+                ResponseUtil.error(rc, 400, "duplicate domain_names not permitted");
+                return;
+            }
+
+            existingSite.setDomainNames(new HashSet<>(normalizedDomainNames));
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            storeWriter.upload(sites, null);
+
+            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "set site domain_names failed", e);
+        }
+    }
+
+    public static String getTopLevelDomainName(String origin) throws MalformedURLException {
+        String host;
+        try {
+            URL url = new URL(origin);
+            host = url.getHost();
+        } catch (Exception e) {
+            host = origin;
+        }
+        //InternetDomainName will normalise the domain name to lower case already
+        InternetDomainName name = InternetDomainName.from(host);
+        //if the domain name has a proper TLD suffix
+        if(name.isUnderPublicSuffix()) {
+            try {
+                return name.topPrivateDomain().toString();
+            }
+            catch(Exception e) {
+                throw e;
+            }
+        }
+        throw new MalformedURLException();
     }
 }
