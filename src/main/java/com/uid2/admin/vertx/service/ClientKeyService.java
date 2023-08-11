@@ -12,7 +12,7 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.store.reader.ISiteStore;
+import com.uid2.shared.store.ISiteStore;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;

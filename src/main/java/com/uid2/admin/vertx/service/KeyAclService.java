@@ -8,7 +8,7 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.store.reader.ISiteStore;
+import com.uid2.shared.store.ISiteStore;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SiteUtil;

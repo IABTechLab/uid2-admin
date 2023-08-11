@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.model.SiteUtil;
-import com.uid2.shared.store.reader.ISiteStore;
+import com.uid2.shared.store.ISiteStore;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.Duration;
