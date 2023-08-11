@@ -4,7 +4,6 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import org.slf4j.Logger;
