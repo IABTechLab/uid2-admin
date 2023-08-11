@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.SecureKeypairGenerator;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
@@ -8,6 +7,7 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientSideKeypair;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.secure.gcpoidc.Environment;
 import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import io.vertx.core.Vertx;

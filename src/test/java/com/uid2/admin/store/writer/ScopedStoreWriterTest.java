@@ -2,16 +2,16 @@ package com.uid2.admin.store.writer;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.cloud.InMemoryStorageMock;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.store.FileName;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import io.vertx.core.json.JsonObject;

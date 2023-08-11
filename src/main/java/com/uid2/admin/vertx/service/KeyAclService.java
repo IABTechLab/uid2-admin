@@ -1,14 +1,14 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.model.Site;
-import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.Site;
+import com.uid2.shared.store.reader.ISiteStore;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SiteUtil;
