@@ -298,19 +298,4 @@ public final class PrivateSiteUtil {
         });
         return result;
     }
-
-    public static PrivateSiteDataMap<ClientSideKeypair> getClientSideKeypairs(Collection<OperatorKey> globalOperators,Collection<ClientSideKeypair> globalKeypairs) {
-
-        final PrivateSiteDataMap<ClientSideKeypair> result = getPrivateSites(globalOperators);
-
-        globalKeypairs.stream().forEach(clientSideKeypair -> {
-            int siteId = clientSideKeypair.getSiteId();
-            result.computeIfPresent(siteId, (privateSiteId, privateSiteSet) -> {
-                privateSiteSet.add(clientSideKeypair);
-                return privateSiteSet;
-            });
-        });
-
-        return result;
-    }
 }
