@@ -1,8 +1,10 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
+import com.uid2.admin.util.KeysetUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
@@ -30,6 +32,7 @@ public class SharingService implements IService {
     private final RotatingKeysetProvider keysetProvider;
     private final RotatingSiteStore siteProvider;
     private final IKeysetKeyManager keyManager;
+    private final KeysetManager keysetManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     private final boolean enableKeysets;
@@ -39,6 +42,7 @@ public class SharingService implements IService {
                           KeysetStoreWriter storeWriter,
                           RotatingKeysetProvider keysetProvider,
                           IKeysetKeyManager keyManager,
+                          KeysetManager keysetManager,
                           RotatingSiteStore siteProvider,
                           boolean enableKeyset) {
         this.auth = auth;
@@ -46,6 +50,7 @@ public class SharingService implements IService {
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
         this.keyManager = keyManager;
+        this.keysetManager = keysetManager;
         this.siteProvider = siteProvider;
         this.enableKeysets = enableKeyset;
     }
@@ -160,11 +165,8 @@ public class SharingService implements IService {
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
 
-            keysetsById.put(keysetId, newKeyset);
             try {
-                storeWriter.upload(keysetsById, null);
-                //Create a new key
-                this.keyManager.addKeysetKey(keysetId);
+                this.keysetManager.addKeysetOrReplaceKeysets(newKeyset);
             } catch (Exception e) {
                 rc.fail(500, e);
                 return;
@@ -332,7 +334,7 @@ public class SharingService implements IService {
             String name;
 
             if (keyset == null) {
-                keysetId = Collections.max(collection.keySet()) + 1;
+                keysetId = KeysetUtil.getMaxKeyset(collection) + 1;
                 name = "";
             } else {
                 keysetId = keyset.getKeysetId();
@@ -346,11 +348,8 @@ public class SharingService implements IService {
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
 
-            collection.put(keysetId, newKeyset);
             try {
-                storeWriter.upload(collection, null);
-                //Create new key for keyset
-                this.keyManager.addKeysetKey(keysetId);
+                this.keysetManager.addKeysetOrReplaceKeysets(newKeyset);
             } catch (Exception e) {
                 rc.fail(500, e);
                 return;

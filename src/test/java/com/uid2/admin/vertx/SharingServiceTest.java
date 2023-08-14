@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
@@ -29,7 +30,8 @@ import static org.mockito.Mockito.*;
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, siteProvider, true);
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, keysetManager, siteProvider, true);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {
