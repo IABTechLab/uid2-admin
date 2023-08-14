@@ -1,8 +1,6 @@
 package com.uid2.admin.util;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import org.junit.jupiter.api.Test;
 
@@ -71,11 +69,11 @@ public class KeysetUtilTest {
     public void testKeysetNameCreation() {
 
         //expected cases of special keysets when site id and keyset id match our expectations
-        Keyset keyset = createDefaultKeyset(-1, 1);
+        Keyset keyset = createDefaultKeyset(-1, -1);
         assertEquals(keyset.getName(), KeysetUtil.MasterKeysetName);
-        keyset = createDefaultKeyset(-2, 2);
+        keyset = createDefaultKeyset(-2, -2);
         assertEquals(keyset.getName(), KeysetUtil.RefreshKeysetName);
-        keyset = createDefaultKeyset(2, 3);
+        keyset = createDefaultKeyset(2, 2);
         assertEquals(keyset.getName(), KeysetUtil.FallbackPublisherKeysetName);
 
         //only site id matches but keyset id aren't the same as what we expected
@@ -87,11 +85,11 @@ public class KeysetUtilTest {
         assertEquals(keyset.getName(), "");
 
         //only keyset id matches but site Id aren't the same as what we expected
-        keyset = createDefaultKeyset(-5, 1);
+        keyset = createDefaultKeyset(-5, -1);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(-3, 2);
+        keyset = createDefaultKeyset(-3, -2);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(20, 3);
+        keyset = createDefaultKeyset(20, 2);
         assertEquals(keyset.getName(), "");
 
         //for any other normal keyset creation

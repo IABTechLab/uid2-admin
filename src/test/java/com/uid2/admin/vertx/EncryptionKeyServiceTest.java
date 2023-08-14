@@ -4,6 +4,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.EncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EncryptionKey;
@@ -21,7 +22,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static javax.swing.UIManager.put;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -812,12 +812,9 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         // 6 keysets should be created
         assertEquals(6, keysets.keySet().size());
         //Special Keysets are set correctly
-        // Master key site id -1 : keyset id 1
-        assertEquals(-1, keysets.get(1).getSiteId());
-        // Master key site id -2 : keyset id 2
-        assertEquals(-2, keysets.get(2).getSiteId());
-        // Master key site id 2 : keyset id 3
-        assertEquals(2, keysets.get(3).getSiteId());
+        assertEquals(Const.Data.MasterKeySiteId, keysets.get(Const.Data.MasterKeysetId).getSiteId());
+        assertEquals(Const.Data.RefreshKeySiteId, keysets.get(Const.Data.RefreshKeysetId).getSiteId());
+        assertEquals(Const.Data.AdvertisingTokenSiteId, keysets.get(Const.Data.FallbackPublisherKeysetId).getSiteId());
     }
 
     @Test
