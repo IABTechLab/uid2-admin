@@ -13,10 +13,17 @@
 
 <h3>Inputs</h3>
 
-<label for="siteName">Name:</label>
-<input type="text" id="siteName" name="siteName">
-<label for="siteId">Site Id:</label>
-<input type="text" id="siteId" name="siteId">
+<div>
+    <label for="siteName">Name:</label>
+    <input type="text" id="siteName" name="siteName">
+    <label for="siteId">Site Id:</label>
+    <input type="text" id="siteId" name="siteId">
+</div>
+<br>
+<div>
+    <label for="domainNames">Domain Names:</label>
+    <input type="text" id="domainNames" name="domainNames" style="width: 500px;">
+</div>
 
 <br>
 <br>
@@ -28,6 +35,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
 </ul>
 
 <br>
@@ -64,6 +72,17 @@
             var url = '/api/site/enable?enabled=true&id=' + siteId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doDomainNames').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/site/domain_names?id=' + siteId;
+
+            let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+
+            const payload = { domain_names: domainNames }
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
         });
     });
 </script>
