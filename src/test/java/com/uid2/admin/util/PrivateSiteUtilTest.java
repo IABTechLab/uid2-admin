@@ -7,6 +7,7 @@ import com.uid2.admin.model.Site;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import org.junit.jupiter.api.Nested;
@@ -870,6 +871,7 @@ public class PrivateSiteUtilTest {
     final Set<OperatorKey> noOperators = ImmutableSet.of();
     final Set<ClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
+    final Set<ClientSideKeypair> noKeypairs = ImmutableSet.of();
     final Set<KeysetKey> noKeysetKeys = ImmutableSet.of();
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 

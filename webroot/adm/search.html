@@ -38,7 +38,7 @@
     });
 
     $( document ).on("ajaxComplete", function() {
-        const text = $('#standardOutput').html();
+        const text = $('#standardOutput').text();
         if (text != '') {
             const textToHighlight = $('#key').val();
             const highlightedText = text.replaceAll(textToHighlight, '<span style="background-color: yellow;">'+textToHighlight+'</span>');

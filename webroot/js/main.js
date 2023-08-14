@@ -1,6 +1,6 @@
 function doApiCall(method, url, outputDiv, errorDiv, body) {
-    $(outputDiv).html('');
-    $(errorDiv).html('');
+    $(outputDiv).text('');
+    $(errorDiv).text('');
 
     authHeader = "Bearer " + window.__uid2_admin_token;
 
@@ -14,14 +14,14 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
         data : body,
         success: function (text) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
-            $(outputDiv).html(pretty);
+            $(outputDiv).text(pretty);
         },
         error: function (err) { standardErrorCallback(err, errorDiv) }
     });
 }
 function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
-    $(outputDiv).html('');
-    $(errorDiv).html('');
+    $(outputDiv).text('');
+    $(errorDiv).text('');
 
     authHeader = "Bearer " + window.__uid2_admin_token;
 
@@ -34,8 +34,8 @@ function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
             "Authorization": authHeader
         },
         success: function (text) {
-            let pretty = JSON.stringify(JSON.parse(text),null,2);
-            $(outputDiv).html(pretty);
+            var pretty = JSON.stringify(JSON.parse(text),null,2);
+            $(outputDiv).text(pretty);
         },
         error: function (err) { standardErrorCallback(err, errorDiv) }
     });
@@ -44,7 +44,7 @@ function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
 function errorCallback(err) { standardErrorCallback(err, '#errorOutput') }
 
 function standardErrorCallback(err, errorDiv) {
-    $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
+    $(errorDiv).text('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
 }
 
 function isJsonString(str) {
@@ -83,7 +83,7 @@ function init() {
         dataType: 'text',
         success: function (text) {
             var u = JSON.parse(text);
-            $('#loginEmail').html(u.contact);
+            $('#loginEmail').text(u.contact);
             $('.authed').show();
             if (u.roles.findIndex(e => e === 'CLIENTKEY_ISSUER') >= 0) {
                 $('.ro-cki').show();
