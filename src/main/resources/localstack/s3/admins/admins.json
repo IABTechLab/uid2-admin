@@ -12,5 +12,19 @@
       "SHARING_PORTAL"
     ],
     "disabled": false
+  },
+  {
+    "key": "ADLCLWYHV5iSe6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=",
+    "name": "old.test.user@uidapi.com",
+    "contact": "old.test.user@uidapi.com",
+    "created": 1628834719,
+    "roles": [
+      "ADMINISTRATOR",
+      "CLIENTKEY_ISSUER",
+      "SECRET_MANAGER",
+      "OPERATOR_MANAGER",
+      "SHARING_PORTAL"
+    ],
+    "disabled": false
   }
 ]
