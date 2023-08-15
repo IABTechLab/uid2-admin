@@ -1,6 +1,6 @@
 [
   {
-    "key": "OPLCLdp9Dt0JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
+    "key": "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
     "name": "Special",
     "contact": "Special",
     "protocol": "trusted",
@@ -14,9 +14,9 @@
     "operator_type": "PUBLIC"
   },
   {
-    "key": "UID2-O-L-999-AjLRWc.VlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
-    "name": "Special Private",
-    "contact": "Special Private",
+    "key": "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
+    "name": "Special (Old, Private)",
+    "contact": "Special (Old, Private)",
     "protocol": "trusted",
     "created": 1618873215,
     "disabled": false,
@@ -43,8 +43,8 @@
   },
   {
     "key": "UID2-O-L-124-cr24Bt.dYP+Wpo6NWlP7CbvwpzHn0lXS3Cst6Y+qFDK4=",
-    "name": "Publisher Private GCP",
-    "contact": "Publisher Private GCP",
+    "name": "Publisher (Private, GCP)",
+    "contact": "Publisher (Private, GCP)",
     "protocol": "gcp-vmid",
     "created": 1618873215,
     "disabled": false,

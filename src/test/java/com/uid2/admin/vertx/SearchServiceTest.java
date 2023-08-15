@@ -85,8 +85,8 @@ public class SearchServiceTest extends ServiceTestBase {
     void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         ClientKey[] clientKeys = new ClientKey[3];
-        clientKeys[0] = new ClientKey("UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
-                .withNameAndContact("Special")
+        clientKeys[0] = new ClientKey("LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=")
+                .withNameAndContact("Special (Old)")
                 .withRoles(Role.OPERATOR)
                 .withSiteId(999);
         clientKeys[1] = new ClientKey("UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=", "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")
@@ -99,7 +99,7 @@ public class SearchServiceTest extends ServiceTestBase {
                 .withSiteId(124);
 
         setClientKeys(clientKeys);
-        post(vertx, searchUrl, "UID2-C-L-999-fCXrMM.fs", response -> {
+        post(vertx, searchUrl, "bGlvbnVu", response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
