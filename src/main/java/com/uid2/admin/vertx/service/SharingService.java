@@ -166,7 +166,7 @@ public class SharingService implements IService {
                     newlist, Instant.now().getEpochSecond(), true, true);
 
             try {
-                this.keysetManager.addKeysetOrReplaceKeysets(newKeyset);
+                this.keysetManager.addOrReplaceKeyset(newKeyset);
             } catch (Exception e) {
                 rc.fail(500, e);
                 return;
@@ -349,7 +349,7 @@ public class SharingService implements IService {
                     newlist, Instant.now().getEpochSecond(), true, true);
 
             try {
-                this.keysetManager.addKeysetOrReplaceKeysets(newKeyset);
+                this.keysetManager.addOrReplaceKeyset(newKeyset);
             } catch (Exception e) {
                 rc.fail(500, e);
                 return;

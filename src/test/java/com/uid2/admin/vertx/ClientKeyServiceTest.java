@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.ClientKeyService;
 import com.uid2.admin.vertx.service.IService;
@@ -27,7 +28,8 @@ import static org.mockito.Mockito.*;
 public class ClientKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keyManager, keyGenerator);
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator);
     }
 
     private void checkClientKeyResponse(ClientKey[] expectedClients, Object[] actualClients) {
@@ -131,9 +133,9 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             if (siteKeyShouldBeCreatedIfNoneExists) {
-                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+                verify(keysetKeyManager).addKeysetKey(4);
             }
-            verifyNoMoreInteractions(keyManager);
+            verifyNoMoreInteractions(keysetKeyManager);
 
             testContext.completeNow();
         })));
@@ -143,7 +145,9 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         return Stream.of(
             Arguments.of(Sets.set(Role.GENERATOR), true),
             Arguments.of(Sets.set(Role.ID_READER), false),
-            Arguments.of(Sets.set(Role.ID_READER, Role.GENERATOR), true)
+            Arguments.of(Sets.set(Role.ID_READER, Role.GENERATOR), true),
+            Arguments.of(Sets.set(Role.SHARER), true),
+            Arguments.of(Sets.set(Role.SHARER, Role.GENERATOR), true)
         );
     }
 
@@ -203,9 +207,9 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             if (siteKeyShouldBeCreatedIfNoneExists) {
-                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+                verify(keysetKeyManager).addKeysetKey(eq(4));
             }
-            verifyNoMoreInteractions(keyManager);
+            verifyNoMoreInteractions(keysetKeyManager);
 
             testContext.completeNow();
         })));
@@ -251,9 +255,9 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
 
             if (siteKeyShouldBeCreatedIfNoneExists) {
-                verify(keyManager).createSiteKeyIfNoneExists(eq(5));
+                verify(keysetKeyManager).addKeysetKey(4);
             }
-            verifyNoMoreInteractions(keyManager);
+            verifyNoMoreInteractions(keysetKeyManager);
 
             testContext.completeNow();
         })));
