@@ -105,14 +105,15 @@ public class SharingService implements IService {
             if(requestSiteId != null) {
                 siteId = requestSiteId;
                 name = requestName;
-                if (siteId == Const.Data.AdvertisingTokenSiteId
-                        || siteId == Const.Data.RefreshKeySiteId
-                        || siteId == Const.Data.MasterKeySiteId
-                        || siteProvider.getSite(siteId) == null)  {
+                // Check if the site id is valid
+                if (siteId == Const.Data.AdvertisingTokenSiteId || siteId == Const.Data.RefreshKeySiteId
+                        || siteId == Const.Data.MasterKeySiteId || siteProvider.getSite(siteId) == null)  {
                     ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
-                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
+
+                // Trying to add a keyset for a site that already has one
+                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) {
                     ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
                     return;
                 }
@@ -129,6 +130,11 @@ public class SharingService implements IService {
                     return;
                 }
                 keysetId = requestKeysetId;
+                if(keysetId == Const.Data.MasterKeysetId || keysetId == Const.Data.RefreshKeysetId
+                        || keysetId == Const.Data.FallbackPublisherKeysetId) {
+                    ResponseUtil.error(rc, 400, "Keyset id: " + keysetId + " is not valid");
+                    return;
+                }
                 siteId = keyset.getSiteId();
                 name = requestName.equals("") ? keyset.getName() : requestName;
             }
@@ -305,6 +311,12 @@ public class SharingService implements IService {
             } catch (Exception e) {
                 LOGGER.warn("Failed to parse a site id from list request", e);
                 rc.fail(400, e);
+                return;
+            }
+
+            if (siteId == Const.Data.AdvertisingTokenSiteId || siteId == Const.Data.RefreshKeySiteId
+                    || siteId == Const.Data.MasterKeySiteId)  {
+                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                 return;
             }
 
