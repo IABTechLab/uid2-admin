@@ -160,7 +160,7 @@ public abstract class ServiceTestBase {
         HashMap<Integer, KeysetKey> keyMap = new HashMap<>();
         keysetKeys.forEach(i -> keyMap.put(i.getId(), i));
         when(keysetKeyProvider.getMetadata()).thenReturn(metadata);
-        when(keysetKeyProviderSnapshot.getActiveKeysetKeys()).thenReturn(keysetKeys);
+        when(keysetKeyProviderSnapshot.getAllKeysetKeys()).thenReturn(keysetKeys);
         when(keysetKeyProviderSnapshot.getKey(anyInt())).thenAnswer(i -> {
             return keyMap.get(i.getArgument(0));
         });
