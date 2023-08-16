@@ -102,6 +102,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setKeysets(keysets);
+        mockSiteExistence(5,7,4);
 
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
@@ -136,6 +137,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setKeysets(keysets);
+        mockSiteExistence(5,7,4,8);
 
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
@@ -206,6 +208,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setKeysets(keysets);
+        mockSiteExistence(5,7,4);
 
         String body1 = "  {\n" +
                 "    \"allowed_sites\": [\n" +

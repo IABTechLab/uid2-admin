@@ -106,8 +106,7 @@ public class SharingService implements IService {
                 siteId = requestSiteId;
                 name = requestName;
                 // Check if the site id is valid
-                if (siteId == Const.Data.AdvertisingTokenSiteId || siteId == Const.Data.RefreshKeySiteId
-                        || siteId == Const.Data.MasterKeySiteId || siteProvider.getSite(siteId) == null)  {
+                if (!isSiteIdEditable(siteId))  {
                     ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
@@ -130,8 +129,7 @@ public class SharingService implements IService {
                     return;
                 }
                 keysetId = requestKeysetId;
-                if(keysetId == Const.Data.MasterKeysetId || keysetId == Const.Data.RefreshKeysetId
-                        || keysetId == Const.Data.FallbackPublisherKeysetId) {
+                if(isSpecialKeyset(keysetId)) {
                     ResponseUtil.error(rc, 400, "Keyset id: " + keysetId + " is not valid");
                     return;
                 }
@@ -182,6 +180,18 @@ public class SharingService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jo.encode());
         }
+    }
+
+    // Returns if a keyset is one of the reserved ones
+    private static boolean isSpecialKeyset(int keysetId) {
+        return keysetId == Const.Data.MasterKeysetId || keysetId == Const.Data.RefreshKeysetId
+                || keysetId == Const.Data.FallbackPublisherKeysetId;
+    }
+
+    // Returns if a site ID is not a special site and it does exist
+    private boolean isSiteIdEditable(int siteId) {
+        return !(siteId == Const.Data.AdvertisingTokenSiteId || siteId == Const.Data.RefreshKeySiteId
+                || siteId == Const.Data.MasterKeySiteId || siteProvider.getSite(siteId) == null);
     }
 
     private JsonObject jsonFullKeyset(Keyset keyset) {
@@ -314,8 +324,7 @@ public class SharingService implements IService {
                 return;
             }
 
-            if (siteId == Const.Data.AdvertisingTokenSiteId || siteId == Const.Data.RefreshKeySiteId
-                    || siteId == Const.Data.MasterKeySiteId)  {
+            if (!isSiteIdEditable(siteId))  {
                 ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                 return;
             }
