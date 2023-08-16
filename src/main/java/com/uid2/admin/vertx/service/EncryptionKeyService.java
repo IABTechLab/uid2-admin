@@ -37,7 +37,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
-import static com.uid2.admin.util.KeysetUtil.*;
+import static com.uid2.admin.managers.KeysetManager.*;
 import static java.util.stream.Collectors.*;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager, IKeysetKeyManager {

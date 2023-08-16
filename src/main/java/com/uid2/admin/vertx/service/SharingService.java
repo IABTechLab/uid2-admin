@@ -4,7 +4,6 @@ import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
-import com.uid2.admin.util.KeysetUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
@@ -334,7 +333,7 @@ public class SharingService implements IService {
             String name;
 
             if (keyset == null) {
-                keysetId = KeysetUtil.getMaxKeyset(collection) + 1;
+                keysetId = this.keysetManager.getNextKeysetId();
                 name = "";
             } else {
                 keysetId = keyset.getKeysetId();
