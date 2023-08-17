@@ -31,7 +31,7 @@ public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
         KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, keysetManager, siteProvider, true);
+        return new SharingService(auth, writeLock, keysetProvider, keysetManager, siteProvider, true);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {
