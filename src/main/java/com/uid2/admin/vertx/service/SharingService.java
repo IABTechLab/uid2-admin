@@ -191,7 +191,7 @@ public class SharingService implements IService {
 
     // Returns if a site ID is not a special site and it does exist
     private boolean isSiteIdEditable(int siteId) {
-        return !(!SiteUtil.isValidSiteId(siteId) || siteProvider.getSite(siteId) == null);
+        return SiteUtil.isValidSiteId(siteId) && siteProvider.getSite(siteId) != null;
     }
 
     private JsonObject jsonFullKeyset(Keyset keyset) {
