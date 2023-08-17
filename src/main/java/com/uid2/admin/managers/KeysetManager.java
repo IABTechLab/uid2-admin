@@ -88,7 +88,7 @@ public class KeysetManager {
         }
     }
 
-    public Keyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites) throws Exception{
+    private Keyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites) throws Exception{
         if(!enableKeysets) return null;
         int newKeysetId = getNextKeysetId();
         Keyset keyset = new Keyset(newKeysetId, siteId, "", allowedSites, Instant.now().getEpochSecond(), true, true);
@@ -100,7 +100,7 @@ public class KeysetManager {
         return KeysetManager.getMaxKeyset(this.keysetProvider.getSnapshot().getAllKeysets()) + 1;
     }
 
-    public Keyset createAndAddDefaultKeyset(Integer siteId) throws Exception{
+    private Keyset createAndAddDefaultKeyset(Integer siteId) throws Exception{
         if(!enableKeysets) return null;
 
         this.keysetProvider.loadContent();
