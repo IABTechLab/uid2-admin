@@ -958,7 +958,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        mockSiteExistence(5, 1);
+        mockSiteExistence(5, 3);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
@@ -967,7 +967,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"site_id\": 1" +
+                "    \"site_id\": 3" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -986,7 +986,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        mockSiteExistence(5, 1);
+        mockSiteExistence(5, 3);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
@@ -995,7 +995,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"site_id\": 1," +
+                "    \"site_id\": 3," +
                 "    \"allowed_sites\": null" +
                 "  }";
 

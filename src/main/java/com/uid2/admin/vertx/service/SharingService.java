@@ -9,6 +9,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -190,8 +191,7 @@ public class SharingService implements IService {
 
     // Returns if a site ID is not a special site and it does exist
     private boolean isSiteIdEditable(int siteId) {
-        return !(siteId == Const.Data.AdvertisingTokenSiteId || siteId == Const.Data.RefreshKeySiteId
-                || siteId == Const.Data.MasterKeySiteId || siteProvider.getSite(siteId) == null);
+        return !(!SiteUtil.isValidSiteId(siteId) || siteProvider.getSite(siteId) == null);
     }
 
     private JsonObject jsonFullKeyset(Keyset keyset) {
