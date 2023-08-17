@@ -78,8 +78,8 @@
             const siteId = $('#siteId').val();
             const contact = $('#contact').val();
             const disabled = ($('#disable').is(':checked'));
-            if(!siteId || !contact) {
-                $('#errorOutput').text("required parameters: site_id, contact")
+            if(!siteId) {
+                $('#errorOutput').text("required parameters: site_id")
                 return
             }
 
