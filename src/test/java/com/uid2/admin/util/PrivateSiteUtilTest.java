@@ -8,8 +8,14 @@ import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.model.EncryptionKey;
+import com.uid2.shared.model.KeysetKey;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 import java.time.Instant;
 import java.util.*;
@@ -590,6 +596,169 @@ public class PrivateSiteUtilTest {
     }
 
     @Nested
+    class KeysetKeys {
+
+        KeysetKey keysetKey1 = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 1);
+        KeysetKey keysetKey2 = new KeysetKey(2000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
+        KeysetKey keysetKey3 = new KeysetKey(3000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 3);
+
+        Keyset keyset1 = new Keyset(1, 123, "test-name-1", ImmutableSet.of(), 999999, true, true);
+        Keyset keyset2 = new Keyset(2, 124, "test-name-2", ImmutableSet.of(), 999999, true, true);
+        Keyset keyset3 = new Keyset(3, 125, "test-name-3", ImmutableSet.of(), 999999, true, true);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>();
+
+        @Test
+        public void returnsNoKeysetKeysForNoKeysetKeysOrOperators() {
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(noOperators, noKeysetKeys, keysets);
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void ignoresSitesWithOnlyPublicOperators() {
+            keysets.put(1, keyset1);
+
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId1)
+                            .withType(OperatorType.PUBLIC)
+                            .build()
+            );
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(
+                    operators,
+                    ImmutableSet.of(),
+                    keysets
+            );
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void siteHasOwnKeysetKeys() {
+
+            keysets.put(1, keyset1);
+            keysets.put(2, keyset2);
+            keysets.put(3, keyset3);
+
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+            expected.put(123, ImmutableSet.of(keysetKey1));
+            expected.put(124, ImmutableSet.of(keysetKey2));
+            expected.put(125, ImmutableSet.of(keysetKey3));
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(123)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(124)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(125)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(
+                    operators,
+                    ImmutableSet.of(keysetKey1, keysetKey2, keysetKey3),
+                    keysets
+            );
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void siteHasAllowedKeysetKeys() {
+
+            keysets.put(1, new Keyset(1, 123, "test-name-1", ImmutableSet.of(124, 125), 999999, true, true));
+            keysets.put(2, keyset2);
+            keysets.put(3, keyset3);
+
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+            expected.put(123, ImmutableSet.of(keysetKey1));
+            expected.put(124, ImmutableSet.of(keysetKey1, keysetKey2));
+            expected.put(125, ImmutableSet.of(keysetKey1, keysetKey3));
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(123)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(124)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(125)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(
+                    operators,
+                    ImmutableSet.of(keysetKey1, keysetKey2, keysetKey3),
+                    keysets
+            );
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void skipKeyWithKeysetIdNotFoundAndLogError() {
+            // setup test log output
+            Logger privateSiteUtilLogger = (Logger) LoggerFactory.getLogger(PrivateSiteUtil.class);
+            ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+            listAppender.start();
+            privateSiteUtilLogger.addAppender(listAppender);
+
+            keysets.put(1, new Keyset(1, 123, "test-name-1", ImmutableSet.of(124, 125), 999999, true, true));
+            keysets.put(2, keyset2);
+
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+            expected.put(123, ImmutableSet.of(keysetKey1));
+            expected.put(124, ImmutableSet.of(keysetKey1, keysetKey2));
+            expected.put(125, ImmutableSet.of(keysetKey1));
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(123)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(124)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(125)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(
+                    operators,
+                    ImmutableSet.of(keysetKey1, keysetKey2, keysetKey3),
+                    keysets
+            );
+
+            List<ILoggingEvent> logsList = listAppender.list;
+            assertEquals("Unable to find keyset with keyset id 3", logsList.get(0)
+                    .getMessage());
+            assertEquals(Level.ERROR, logsList.get(0)
+                    .getLevel());
+
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Nested
     class Sites {
         Site site1 = new Site(siteId1, "site1", true, new HashSet<>());
 
@@ -701,6 +870,7 @@ public class PrivateSiteUtilTest {
     final Set<OperatorKey> noOperators = ImmutableSet.of();
     final Set<ClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
+    final Set<KeysetKey> noKeysetKeys = ImmutableSet.of();
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
     static class OperatorBuilder {

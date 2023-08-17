@@ -12,15 +12,23 @@
 <br>
 
 <h3>Inputs</h3>
-
-<label for="siteId">Site Id:</label>
-<input type="text" id="siteId" name="siteId">
-<label for="keysetId">Keyset Id:</label>
-<input type="text" id="keysetId" name="keysetId">
-<label for="addSiteIds">Add Site Ids:</label>
-<input type="text" id="addSiteIds" name="addSiteIds">
-<label for="removeSiteIds">Remove Site Ids:</label>
-<input type="text" id="removeSiteIds" name="removeSiteIds">
+<div>
+  <label for="keysetId">Keyset Id:</label>
+  <input type="text" id="keysetId" name="keysetId">
+  <label for="siteId">Site Id:</label>
+  <input type="text" id="siteId" name="siteId">
+</div>
+<br>
+<div>
+  <label for="keysetName">Set Keyset Name:</label>
+  <input type="text" id="keysetName" name="keysetName">
+  <label for="addSiteIds">Add Allowed Sites:</label>
+  <input type="text" id="addSiteIds" name="addSiteIds">
+  <label for="removeSiteIds">Remove Allowed Sites:</label>
+  <input type="text" id="removeSiteIds" name="removeSiteIds">
+  <label for="nullify">Set allowed_sites to null:</label>
+  <input type="checkbox" id="nullify" name="nullify" value="true">
+</div>
 
 <br>
 <br>
@@ -28,10 +36,11 @@
 <h3>Operations</h3>
 
 <ul>
-  <li class="ro-adm" style="display: none"><a href="#" id="doListAll">List All</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doList">List</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doReset">Reset</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update</a></li>
+  <li class="ro-adm" style="display: none"><a href="#" id="doListAll">List All Keysets</a></li>
+  <li class="ro-adm" style="display: none"><a href="#" id="doListAllBySite">List All Keysets By Site Id</a></li>
+  <li class="ro-adm" style="display: none"><a href="#" id="doShowKeysetById">Show Keyset By Keyset Id</a></li>
+  <li class="ro-adm" style="display: none"><a href="#" id="doReset">Reset Keyset</a></li>
+  <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update Keyset</a></li>
   <li class="ro-adm" style="display: none"><a href="#" id="doMakeNew">Make New Keyset</a></li>
 </ul>
 
@@ -50,25 +59,52 @@
       doApiCall('GET', '/api/sharing/keysets', '#standardOutput', '#errorOutput');
     });
 
-    $('#doList').on('click', function () {
-      var keysetId = encodeURIComponent($('#keysetId').val());
+    $('#doListAllBySite').on('click', function () {
+      const siteId = parseInt($('#siteId').val());
+      if(!siteId) {
+        $('#errorOutput').html("Required Parameters: site_id")
+        return;
+      }
+      const url = '/api/sharing/keysets';
+
+      doApiCallWithCallback('GET', url, (text) => {
+        const ja = JSON.parse(text);
+
+        const filtered = ja.filter(function(keyset) {
+          return keyset.site_id === siteId
+        });
+        const pretty = JSON.stringify(filtered,null,2);
+        $('#standardOutput').html(pretty);
+
+      }, errorCallback );
+    });
+
+    $('#doShowKeysetById').on('click', function () {
+      const keysetId = parseInt($('#keysetId').val());
+      if(!keysetId) {
+        $('#errorOutput').html("Required Parameters: keyset_id")
+        return;
+      }
       doApiCall('GET', '/api/sharing/keyset/' + keysetId, '#standardOutput', '#errorOutput');
     });
 
     $('#doReset').on('click', function () {
-      const siteId = parseInt($('#siteId').val());
       const keysetId = parseInt($('#keysetId').val());
-      if(isNaN(keysetId)) {
-        $("#standardOutput").html("Enter a keyset id");
-        return
+      if(!keysetId) {
+        $('#errorOutput').html("Required Parameters: keyset_id")
+        return;
       }
       const url = '/api/sharing/keyset';
-      doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify({allowlist: [], keyset_id : keysetId, site_id: siteId}))
+      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({allowed_sites: [], keyset_id : keysetId}))
     });
 
     $('#doUpdate').on('click', function () {
-      const siteId = parseInt($('#siteId').val());
       const keysetId = parseInt($('#keysetId').val());
+      if(!keysetId) {
+        $('#errorOutput').html("Required Parameters: keyset_id")
+        return;
+      }
+      let name = $('#keysetName').val();
       const url = '/api/sharing/keyset/' + keysetId.toString();
 
       const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
@@ -76,24 +112,56 @@
 
       doApiCallWithCallback('GET', url, (text) => {
         const jo = JSON.parse(text);
-        let allowlist = jo.allowlist;
-
-        allowlist = allowlist.filter((value, _, __) => !remove.includes(value))
-        allowlist = allowlist.concat(add.filter((value, _, __) => !allowlist.includes(value)))
+        let allowedSites = jo.allowed_sites;
 
         const url = '/api/sharing/keyset';
 
+        let payload = {keyset_id: keysetId}
 
-        doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify({allowlist: allowlist, keyset_id: keysetId, site_id: siteId}))
-      }, (err) => {
-        $('#errorOutput').html('Error: ' + err.status + ': ' + err.statusText);
-      });
+        if ($('#nullify').is(':checked')){
+          allowedSites = null
+        } else if((add && add.length !== 0) || (remove && remove.length !== 0)) {
+          if(allowedSites !== undefined && allowedSites == null) {
+            $('#errorOutput').html('cannot set siteIds for null allowed_sites keyset. Please reset to [] first')
+          }
+          allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
+          allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
+        }
+
+        payload["allowed_sites"] = allowedSites
+
+        if(name && (name = $.trim(name))) {
+          payload["name"] = name
+        }
+
+        doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload))
+      }, errorCallback );
 
     });
     $('#doMakeNew').on('click', function () {
       const siteId = parseInt($('#siteId').val());
+      if(!siteId) {
+        $('#errorOutput').html("Required Parameters: site_id")
+        return;
+      }
+      let name = $('#keysetName').val();
       const url = '/api/sharing/keyset';
-      doApiCall('POST', url, '#standardOutput', 'errorOutput', JSON.stringify({allowlist: [] ,site_id: siteId}));
+
+      let payload = {site_id: siteId}
+      if(name && (name = $.trim(name))) {
+        payload['name'] = name
+      }
+
+      let allowedSites = []
+      const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
+      if ($('#nullify').is(':checked')){
+        allowedSites = null
+      } else if(add && add.length !== 0) {
+        allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
+      }
+      payload['allowed_sites'] = allowedSites
+
+      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
     });
   });
 

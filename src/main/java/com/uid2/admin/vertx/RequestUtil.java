@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.model.ClientType;
+import com.google.common.collect.ImmutableSet;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.shared.auth.Role;
@@ -12,6 +13,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RequestUtil {
+    private final static ImmutableSet<String> SupportedProtocols = ImmutableSet.of(
+            "trusted",
+            "aws-nitro",
+            "azure-sgx",
+            "gcp-vmid",
+            "gcp-oidc"
+    );
+
     public static String getRolesSpec(Set<Role> roles) {
         return String.join(",", roles.stream().map(r -> r.toString()).collect(Collectors.toList()));
     }
@@ -136,10 +145,10 @@ public class RequestUtil {
 
     public static String validateOperatorProtocol(String protocol) {
         protocol = protocol.toLowerCase();
-        if (!protocol.equals("trusted") && !protocol.equals("aws-nitro") && !protocol.equals("gcp-vmid") && !protocol.equals("azure-sgx"))
-            return null;
-        else
+        if (SupportedProtocols.contains(protocol)) {
             return protocol;
+        }
+        return null;
     }
 
     public static Duration getDuration(RoutingContext rc, String paramName) {

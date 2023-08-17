@@ -1,11 +1,22 @@
 package com.uid2.admin.vertx.service;
 
+<<<<<<< HEAD
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.model.ClientType;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.vertx.WriteLock;
+=======
+import com.uid2.admin.managers.KeysetManager;
+import com.uid2.admin.secret.IKeysetKeyManager;
+import com.uid2.admin.store.reader.RotatingSiteStore;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
+import com.uid2.admin.vertx.ResponseUtil;
+import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.Const;
+import com.uid2.shared.auth.Keyset;
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.http.HttpHeaders;
@@ -24,33 +35,55 @@ public class SharingService implements IService {
     private final AuthMiddleware auth;
 
     private final WriteLock writeLock;
+<<<<<<< HEAD
     private final AdminKeysetWriter storeWriter;
     private final RotatingAdminKeysetStore keysetProvider;
+=======
+    private final KeysetStoreWriter storeWriter;
+    private final RotatingKeysetProvider keysetProvider;
+    private final RotatingSiteStore siteProvider;
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
     private final IKeysetKeyManager keyManager;
+    private final KeysetManager keysetManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
+
+    private final boolean enableKeysets;
 
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
+<<<<<<< HEAD
                           AdminKeysetWriter storeWriter,
                           RotatingAdminKeysetStore keysetProvider,
                           IKeysetKeyManager keyManager) {
+=======
+                          KeysetStoreWriter storeWriter,
+                          RotatingKeysetProvider keysetProvider,
+                          IKeysetKeyManager keyManager,
+                          KeysetManager keysetManager,
+                          RotatingSiteStore siteProvider,
+                          boolean enableKeyset) {
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
         this.keyManager = keyManager;
+        this.keysetManager = keysetManager;
+        this.siteProvider = siteProvider;
+        this.enableKeysets = enableKeyset;
     }
 
     @Override
     public void setupRoutes(Router router) {
+        if(!enableKeysets) return;
         router.get("/api/sharing/lists").handler(
-                auth.handle(this::handleListAllAllowlist, Role.SHARING_PORTAL)
+                auth.handle(this::handleListAllAllowedSites, Role.SHARING_PORTAL)
         );
         router.get("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleListAllowlist, Role.SHARING_PORTAL)
+                auth.handle(this::handleListAllowedSites, Role.SHARING_PORTAL)
         );
         router.post("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleSetAllowlist, Role.SHARING_PORTAL)
+                auth.handle(this::handleSetAllowedSites, Role.SHARING_PORTAL)
         );
 
         router.get("/api/sharing/keysets").handler(
@@ -66,15 +99,19 @@ public class SharingService implements IService {
 
     private void handleSetKeyset(RoutingContext rc) {
         synchronized (writeLock) {
-           try {
-               keysetProvider.loadContent();
-           } catch (Exception e) {
-               LOGGER.error("Failed to load key acls");
-               rc.fail(500);
-           }
+            try {
+                keysetProvider.loadContent();
+                siteProvider.loadContent();
+            } catch (Exception e) {
+                ResponseUtil.errorInternal(rc, "Failed to load keysets", e);
+                return;
+            }
+
+            final Map<Integer, Keyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
 
             final JsonObject body = rc.body().asJsonObject();
 
+<<<<<<< HEAD
            final JsonArray allowlist = body.getJsonArray("allowlist");
            final JsonArray allowedTypes = body.getJsonArray("allowed_types");
            Integer keysetId = body.getInteger("keyset_id");
@@ -89,21 +126,115 @@ public class SharingService implements IService {
            } catch (Exception e) {
                rc.fail(500, e);
            }
+=======
+            final JsonArray allowedSites = body.getJsonArray("allowed_sites");
+            final Integer requestKeysetId = body.getInteger("keyset_id");
+            final Integer requestSiteId = body.getInteger("site_id");
+            final String requestName = body.getString("name", "");
 
-           JsonObject jo = jsonFullKeyset(newKeyset);
-           rc.response()
+            if ((requestKeysetId == null && requestSiteId == null)
+                    || (requestKeysetId != null && requestSiteId != null)) {
+                ResponseUtil.error(rc, 400, "You must specify exactly one of: keyset_id, site_id");
+                return;
+            }
+
+            final int siteId;
+            final int keysetId;
+            final String name;
+            if(requestSiteId != null) {
+                siteId = requestSiteId;
+                name = requestName;
+                if (siteId == Const.Data.AdvertisingTokenSiteId
+                        || siteId == Const.Data.RefreshKeySiteId
+                        || siteId == Const.Data.MasterKeySiteId
+                        || siteProvider.getSite(siteId) == null)  {
+                    ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
+                    return;
+                }
+                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
+                    ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
+                }
+                keysetId = Collections.max(keysetsById.keySet()) + 1;
+                if (keysetsById.values().stream().anyMatch(item -> // for multiple keysets. See commented out SharingServiceTest#KeysetSetNewIdenticalNameAndSiteId
+                        item.getSiteId() == siteId && item.getName().equalsIgnoreCase(name))) {
+                    ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
+                    return;
+                }
+            } else {
+                Keyset keyset = keysetsById.get(requestKeysetId);
+                if (keyset == null) {
+                    ResponseUtil.error(rc, 404, "Could not find keyset for keyset_id: " + requestKeysetId);
+                    return;
+                }
+                keysetId = requestKeysetId;
+                siteId = keyset.getSiteId();
+                name = requestName.equals("") ? keyset.getName() : requestName;
+            }
+
+
+            final Set<Integer> newlist;
+
+            if (allowedSites != null){
+                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+                if (firstInvalidSite.isPresent()) {
+                    ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
+                    return;
+                }
+
+                boolean containsDuplicates = allowedSites.stream().distinct().count() < allowedSites.stream().count();
+                if (containsDuplicates) {
+                    ResponseUtil.error(rc, 400, "Duplicate site_ids not permitted");
+                    return;
+                }
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
+
+                newlist = allowedSites.stream()
+                        .mapToInt(s -> (Integer) s)
+                        .filter(s -> !Objects.equals(s, siteId))
+                        .boxed()
+                        .collect(Collectors.toSet());
+            } else {
+                newlist = null;
+            }
+
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
+
+            try {
+                this.keysetManager.addOrReplaceKeyset(newKeyset);
+            } catch (Exception e) {
+                rc.fail(500, e);
+                return;
+            }
+
+            JsonObject jo = jsonFullKeyset(newKeyset);
+            rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jo.encode());
         }
     }
 
+<<<<<<< HEAD
+=======
+    private JsonObject jsonFullKeyset(Keyset keyset) {
+        JsonObject jo = new JsonObject();
+        jo.put("keyset_id", keyset.getKeysetId());
+        jo.put("site_id", keyset.getSiteId());
+        jo.put("name", keyset.getName());
+        jo.put("allowed_sites", keyset.getAllowedSites());
+        jo.put("created", keyset.getCreated());
+        jo.put("is_enabled", keyset.isEnabled());
+        jo.put("is_default", keyset.isDefault());
+        return jo;
+    }
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
 
     private void handleListKeyset(RoutingContext rc) {
         int keysetId;
         try {
             keysetId = Integer.parseInt(rc.pathParam("keyset_id"));
         } catch (Exception e) {
-            LOGGER.warn("Failed to parse a site id from list request", e);
+            LOGGER.warn("Failed to parse a keyset_id from list request", e);
             rc.fail(400, e);
             return;
         }
@@ -111,8 +242,7 @@ public class SharingService implements IService {
         AdminKeyset keyset = this.keysetProvider.getSnapshot().getAllKeysets().get(keysetId);
 
         if (keyset == null) {
-            LOGGER.warn("Failed to find keyset for keyset id: " + keyset);
-            rc.fail(404);
+            ResponseUtil.error(rc, 404, "Failed to find keyset for keyset_id: " + keysetId);
             return;
         }
 
@@ -148,7 +278,7 @@ public class SharingService implements IService {
         }
     }
 
-    private void handleListAllowlist(RoutingContext rc) {
+    private void handleListAllowedSites(RoutingContext rc) {
         int siteId;
         try {
             siteId = Integer.parseInt(rc.pathParam("siteId"));
@@ -168,11 +298,11 @@ public class SharingService implements IService {
 
         JsonArray listedSites = new JsonArray();
         Set<Integer> allowedSites = keyset.getAllowedSites();
-        if(allowedSites != null) {
+        if (allowedSites != null) {
             allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
         }
         JsonObject jo = new JsonObject();
-        jo.put("allowlist", listedSites);
+        jo.put("allowed_sites", listedSites);
         jo.put("allowed_types", keyset.getAllowedTypes());
         jo.put("hash", keyset.hashCode());
 
@@ -181,20 +311,20 @@ public class SharingService implements IService {
                 .end(jo.encode());
     }
 
-    private void handleListAllAllowlist(RoutingContext rc) {
+    private void handleListAllAllowedSites(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
             for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
                 JsonArray listedSites = new JsonArray();
                 Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
-                if(allowedSites != null) {
+                if (allowedSites != null) {
                     allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
                 }
                 JsonObject jo = new JsonObject();
                 jo.put("keyset_id", keyset.getValue().getKeysetId());
                 jo.put("site_id", keyset.getValue().getSiteId());
-                jo.put("allowlist", listedSites);
+                jo.put("allowed_sites", listedSites);
                 jo.put("allowed_types", keyset.getValue().getAllowedTypes());
                 jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);
@@ -208,39 +338,39 @@ public class SharingService implements IService {
         }
     }
 
-    private void handleSetAllowlist(RoutingContext rc) {
+    private void handleSetAllowedSites(RoutingContext rc) {
         synchronized (writeLock) {
-           int siteId;
-           try {
-               siteId = Integer.parseInt(rc.pathParam("siteId"));
-           } catch (Exception e) {
-               LOGGER.warn("Failed to parse a site id from list request", e);
-               rc.fail(400, e);
-               return;
-           }
+            int siteId;
+            try {
+                siteId = Integer.parseInt(rc.pathParam("siteId"));
+            } catch (Exception e) {
+                LOGGER.warn("Failed to parse a site id from list request", e);
+                rc.fail(400, e);
+                return;
+            }
 
-           try {
-               keysetProvider.loadContent();
-           } catch (Exception e) {
-               LOGGER.error("Failed to load key acls");
-               rc.fail(500);
-           }
+            try {
+                keysetProvider.loadContent();
+            } catch (Exception e) {
+                ResponseUtil.errorInternal(rc, "Failed to load keysets", e);
+                return;
+            }
 
 
            final Map<Integer, AdminKeyset> keysetsById = this.keysetProvider.getSnapshot().getAllKeysets();
            AdminKeyset keyset = getDefaultKeyset(keysetsById, siteId);
 
            final JsonObject body = rc.body().asJsonObject();
-
-           final JsonArray allowlist = body.getJsonArray("allowlist");
+           final JsonArray allowedSites = body.getJsonArray("allowed_sites");
            final JsonArray allowedTypes = body.getJsonArray("allowed_types");
            final int hash = body.getInteger("hash");
 
-           if (keyset != null &&  hash != keyset.hashCode()) {
-               rc.fail(409);
-               return;
-           }
+            if (keyset != null && hash != keyset.hashCode()) {
+                rc.fail(409);
+                return;
+            }
 
+<<<<<<< HEAD
             AdminKeyset newKeyset = null;
 
             try {
@@ -252,13 +382,43 @@ public class SharingService implements IService {
            JsonObject jo = new JsonObject();
            jo.put("allowlist", allowlist);
            jo.put("allowed_types", newKeyset.getAllowedTypes());
+=======
+            Integer keysetId;
+            String name;
+
+            if (keyset == null) {
+                keysetId = this.keysetManager.getNextKeysetId();
+                name = "";
+            } else {
+                keysetId = keyset.getKeysetId();
+                name = keyset.getName();
+            }
+
+            final Set<Integer> newlist = allowedSites.stream()
+                    .map(s -> (Integer) s)
+                    .collect(Collectors.toSet());
+
+            final Keyset newKeyset = new Keyset(keysetId, siteId, name,
+                    newlist, Instant.now().getEpochSecond(), true, true);
+
+            try {
+                this.keysetManager.addOrReplaceKeyset(newKeyset);
+            } catch (Exception e) {
+                rc.fail(500, e);
+                return;
+            }
+
+           JsonObject jo = new JsonObject();
+           jo.put("allowed_sites", allowedSites);
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
            jo.put("hash", newKeyset.hashCode());
 
-           rc.response()
-                   .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                   .end(jo.encode());
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(jo.encode());
         }
     }
+<<<<<<< HEAD
 
     private AdminKeyset setAdminKeyset(RoutingContext rc, JsonArray allowList, JsonArray allowedTypes, Integer siteId, Map<Integer, AdminKeyset> keysetsById, AdminKeyset keyset)
             throws Exception{
@@ -309,3 +469,6 @@ public class SharingService implements IService {
         return jo;
     }
 }
+=======
+}
+>>>>>>> cbc-UID2-1569-Sharer-creates-Keyset

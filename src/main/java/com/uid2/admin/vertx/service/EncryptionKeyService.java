@@ -39,7 +39,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.uid2.admin.util.KeysetUtil.*;
+import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
+import static com.uid2.admin.managers.KeysetManager.*;
 import static java.util.stream.Collectors.*;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager, IKeysetKeyManager {
@@ -79,6 +80,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private final Duration refreshKeyRotationCutOffTime;
     private final boolean filterKeyOverCutOffTime;
 
+    private final boolean enableKeysets;
+
     public EncryptionKeyService(JsonObject config,
                                 AuthMiddleware auth,
                                 WriteLock writeLock,
@@ -116,6 +119,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         if (siteKeyActivatesIn.compareTo(siteKeyExpiresAfter) >= 0) {
             throw new IllegalStateException(SITE_KEY_ACTIVATES_IN_SECONDS + " must be greater than " + SITE_KEY_EXPIRES_AFTER_SECONDS);
         }
+
+        enableKeysets = config.getBoolean(enableKeysetConfigProp);
     }
 
     @Override
@@ -123,8 +128,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         router.get("/api/key/list").handler(
                 auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
 
-        router.get("/api/key/list_keyset_keys").handler(
-                auth.handle(this::handleKeysetKeyList, Role.SECRET_MANAGER));
+        if(enableKeysets) {
+            router.get("/api/key/list_keyset_keys").handler(
+                    auth.handle(this::handleKeysetKeyList, Role.SECRET_MANAGER));
+        }
 
         router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -149,11 +156,15 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
                 this.handleRotateSiteKey(ctx);
             }
         }, Role.SECRET_MANAGER));
-        router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-            this.handleRotateKeysetKey(ctx);
-            }
-        }, Role.SECRET_MANAGER));
+
+        if(enableKeysets) {
+            router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
+                synchronized (writeLock) {
+                    this.handleRotateKeysetKey(ctx);
+                }
+            }, Role.SECRET_MANAGER));
+        }
+
         router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateAllSiteKeys(ctx);
@@ -187,7 +198,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
     @Override
     public KeysetKey addKeysetKey(int keysetId) throws Exception {
-        this.keysetKeyProvider.loadContent();
+        loadKeysetKeys();
         return addKeysetKeys(Arrays.asList(keysetId), siteKeyActivatesIn, siteKeyExpiresAfter, false).get(0);
     }
 
@@ -209,9 +220,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     }
 
     public void createKeysetKeys() throws Exception {
-        this.keyProvider.loadContent();
-        this.keysetProvider.loadContent();
-        this.keysetKeyProvider.loadContent();
+        loadAllContent();
 
         final List<EncryptionKey> encryptionKeys = this.keyProvider.getSnapshot().getActiveKeySet();
         List<EncryptionKey> addKeys = new ArrayList<>();
@@ -224,6 +233,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         }
         catchUpKeysetKeys(addKeys, false, this.keyProvider.getMetadata().getInteger("max_key_id"));
     }
+
 
     private void handleKeyList(RoutingContext rc) {
         try {
@@ -421,9 +431,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         RotationResult<EncryptionKey> result = new RotationResult();
 
         // force refresh manually
-        this.keyProvider.loadContent();
-        this.keysetProvider.loadContent();
-        this.keysetKeyProvider.loadContent();
+        loadAllContent();
 
         final List<EncryptionKey> allKeys = this.keyProvider.getSnapshot().getActiveKeySet();
 
@@ -462,9 +470,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             throws Exception {
         RotationResult<KeysetKey> result = new RotationResult();
 
-        this.keyProvider.loadContent();
-        this.keysetProvider.loadContent();
-        this.keysetKeyProvider.loadContent();
+        loadAllContent();
 
         final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys();
 
@@ -551,6 +557,15 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         AdminKeyset keyset = lookUpKeyset(siteId, currentKeysets);
         if(keyset == null) {
             int newKeysetId = getMaxKeyset(currentKeysets)+1;
+            if(siteId == Const.Data.MasterKeySiteId) {
+                newKeysetId = Const.Data.MasterKeysetId;
+            }
+            else if(siteId == Const.Data.RefreshKeySiteId) {
+                newKeysetId = Const.Data.RefreshKeysetId;
+            }
+            else if(siteId == Const.Data.AdvertisingTokenSiteId) {
+                newKeysetId = Const.Data.FallbackPublisherKeysetId;
+            }
             keyset = createDefaultKeyset(siteId, newKeysetId);
             currentKeysets.put(newKeysetId, keyset);
             keysetStoreWriter.upload(currentKeysets, null);
@@ -597,6 +612,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
     private void catchUpKeysetKeys(Iterable<EncryptionKey> missingKeys, boolean isDuringRotation, int maxKeyId)
         throws Exception {
+        if(!enableKeysets) return;
         final Instant now = clock.now();
 
         final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
@@ -662,4 +678,22 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         Duration cutoffTime = siteKeyRotationCutOffTime;
         return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
     }
- }
+
+    private void loadAllContent() throws Exception {
+        this.keyProvider.loadContent();
+        loadKeysets();
+        loadKeysetKeys();
+    }
+
+    private void loadKeysetKeys() throws Exception {
+        if(enableKeysets){
+            this.keysetKeyProvider.loadContent();
+        }
+    }
+
+    private void loadKeysets() throws Exception {
+        if(enableKeysets) {
+            this.keysetProvider.loadContent();
+        }
+    }
+}
