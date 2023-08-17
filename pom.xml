@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-admin</artifactId>
-    <version>2.12.5-a5934ed67a-gdm-UID2-1527-key-prefix</version>
+    <version>2.12.6-aa972bb586-gdm-UID2-1527-key-prefix</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
