@@ -99,28 +99,27 @@ public class KeysetManagerTest {
         }};
 
         setKeysets(keysets);
-        int nextId = keysetManager.getNextKeysetId();
         // Sharer makes an empty list
         ClientKey sharer = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.SHARER), 7, false);
-        keysetManager.createKeysetForClient(sharer);
-        Keyset sharerKeyset = keysets.get(nextId);
+        Keyset returnedKeyset = keysetManager.createKeysetForClient(sharer);
+        Keyset sharerKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertEquals(sharerKeyset.getAllowedSites(), Set.of());
         // Generator makes a null list
-        nextId = keysetManager.getNextKeysetId();
         ClientKey generator = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
-        keysetManager.createKeysetForClient(generator);
-        Keyset generatorKeyset = keysets.get(nextId);
+        returnedKeyset = keysetManager.createKeysetForClient(generator);
+        Keyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertNull(generatorKeyset.getAllowedSites());
         // Generator takes priority of sharer
-        nextId = keysetManager.getNextKeysetId();
         ClientKey sharerGenerator = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
-        keysetManager.createKeysetForClient(sharerGenerator);
-        Keyset bothKeyset = keysets.get(nextId);
+        returnedKeyset = keysetManager.createKeysetForClient(sharerGenerator);
+        Keyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertNull(bothKeyset.getAllowedSites());
         // If keyset already exists none gets added
-        nextId = keysetManager.getNextKeysetId();
-        keysetManager.createKeysetForClient(sharer);
-        assertFalse(keysets.containsKey(nextId));
+        returnedKeyset = keysetManager.createKeysetForClient(sharer);
+        assertTrue(sharerKeyset.equals(returnedKeyset));
+
+        //There should only be 7 keysets
+        assertEquals(7, keysets.keySet().size());
     }
 
 

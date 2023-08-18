@@ -71,21 +71,23 @@ public class KeysetManager {
         return new Keyset(keysetId, siteId, name, null, Instant.now().getEpochSecond(), true, true);
     }
 
-    public void createKeysetForClient(ClientKey client) throws Exception{
-        if(!enableKeysets) return;
+    public Keyset createKeysetForClient(ClientKey client) throws Exception{
+        if(!enableKeysets) return null;
         final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
         for(Keyset keyset : collection.values()) {
             if(keyset.getSiteId() == client.getSiteId()) {
                 // A keyset already exists for the site ID
-                return;
+                return keyset;
             }
         }
 
         if(client.hasRole(Role.GENERATOR)) {
-            createAndAddDefaultKeyset(client.getSiteId());
-        } else if(client.hasRole(Role.SHARER)) {
-            createAndAddKeyset(client.getSiteId(), new HashSet<>());
+            return createAndAddDefaultKeyset(client.getSiteId());
         }
+        if(client.hasRole(Role.SHARER)) {
+            return createAndAddKeyset(client.getSiteId(), new HashSet<>());
+        }
+        return null;
     }
 
     private Keyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites) throws Exception{
