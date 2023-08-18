@@ -20,7 +20,7 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.IKeyStore;
-import com.uid2.shared.store.IKeysetKeyStore;
+import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -78,7 +78,7 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingClientKeyProvider clientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
-    @Mock protected IKeysetKeyStore.IkeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
+    @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
     @Mock protected RotatingKeyAclProvider keyAclProvider;
     @Mock protected RotatingKeysetProvider keysetProvider;
     @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
@@ -160,7 +160,7 @@ public abstract class ServiceTestBase {
         HashMap<Integer, KeysetKey> keyMap = new HashMap<>();
         keysetKeys.forEach(i -> keyMap.put(i.getId(), i));
         when(keysetKeyProvider.getMetadata()).thenReturn(metadata);
-        when(keysetKeyProviderSnapshot.getActiveKeysetKeys()).thenReturn(keysetKeys);
+        when(keysetKeyProviderSnapshot.getAllKeysetKeys()).thenReturn(keysetKeys);
         when(keysetKeyProviderSnapshot.getKey(anyInt())).thenAnswer(i -> {
             return keyMap.get(i.getArgument(0));
         });
