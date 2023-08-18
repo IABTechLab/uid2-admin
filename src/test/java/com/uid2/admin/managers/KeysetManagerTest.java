@@ -103,17 +103,23 @@ public class KeysetManagerTest {
         ClientKey sharer = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.SHARER), 7, false);
         Keyset returnedKeyset = keysetManager.createKeysetForClient(sharer);
         Keyset sharerKeyset = keysets.get(returnedKeyset.getKeysetId());
+        assertTrue(sharerKeyset.equals(returnedKeyset));
         assertEquals(sharerKeyset.getAllowedSites(), Set.of());
+
         // Generator makes a null list
         ClientKey generator = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
         returnedKeyset = keysetManager.createKeysetForClient(generator);
         Keyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
+        assertTrue(generatorKeyset.equals(returnedKeyset));
         assertNull(generatorKeyset.getAllowedSites());
+
         // Generator takes priority of sharer
         ClientKey sharerGenerator = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
         returnedKeyset = keysetManager.createKeysetForClient(sharerGenerator);
         Keyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());
+        assertTrue(bothKeyset.equals(returnedKeyset));
         assertNull(bothKeyset.getAllowedSites());
+
         // If keyset already exists none gets added
         returnedKeyset = keysetManager.createKeysetForClient(sharer);
         assertTrue(sharerKeyset.equals(returnedKeyset));
