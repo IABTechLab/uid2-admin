@@ -184,11 +184,11 @@ public class KeysetManagerTest {
     public void testKeysetNameCreation() {
 
         //expected cases of special keysets when site id and keyset id match our expectations
-        Keyset keyset = createDefaultKeyset(-1, 1);
+        Keyset keyset = createDefaultKeyset(-1, -1);
         assertEquals(keyset.getName(), KeysetManager.MasterKeysetName);
-        keyset = createDefaultKeyset(-2, 2);
+        keyset = createDefaultKeyset(-2, -2);
         assertEquals(keyset.getName(), KeysetManager.RefreshKeysetName);
-        keyset = createDefaultKeyset(2, 3);
+        keyset = createDefaultKeyset(2, 2);
         assertEquals(keyset.getName(), KeysetManager.FallbackPublisherKeysetName);
 
         //only site id matches but keyset id aren't the same as what we expected
