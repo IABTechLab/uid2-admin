@@ -178,7 +178,7 @@ public class Main {
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, adminKeysetProvider, adminKeysetStoreWriter, keyGenerator, clock);
             KeysetManager keysetManager = new KeysetManager(
-                    keysetProvider, keysetStoreWriter, encryptionKeyService, enableKeysets
+                    adminKeysetProvider, adminKeysetStoreWriter, encryptionKeyService, enableKeysets
             );
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
@@ -186,7 +186,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
-                    new SharingService(auth, writeLock, adminKeysetStoreWriter, adminKeysetProvider, encryptionKeyService, keysetManager, siteProvider, enableKeysets),
+                    new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),

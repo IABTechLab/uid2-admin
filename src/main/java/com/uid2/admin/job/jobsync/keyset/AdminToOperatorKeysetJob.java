@@ -1,8 +1,10 @@
 package com.uid2.admin.job.jobsync.keyset;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.job.model.Job;
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.ClientType;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.store.*;
@@ -26,15 +28,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import static com.uid2.admin.util.KeysetUtil.adminKeysetToKeyset;
 
 public class AdminToOperatorKeysetJob extends Job {
     public final JsonObject config;
     private final WriteLock writeLock;
+    private final boolean enableKeysets;
 
     public AdminToOperatorKeysetJob(JsonObject config, WriteLock writeLock) {
         this.config = config;
         this.writeLock = writeLock;
+        this.enableKeysets = config.getBoolean(AdminConst.enableKeysetConfigProp);
     }
     @Override
     public String getId() {
@@ -64,7 +67,8 @@ public class AdminToOperatorKeysetJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager,
+                this.enableKeysets);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
@@ -98,7 +102,7 @@ public class AdminToOperatorKeysetJob extends Job {
         Map<Integer, Keyset> keysetMap = new HashMap<>();
 
         for (AdminKeyset adminKeyset : allAdminKeysets.values()) {
-            Keyset keyset = adminKeysetToKeyset(adminKeyset, siteIdsByClientType);
+            Keyset keyset = KeysetManager.adminKeysetToKeyset(adminKeyset, siteIdsByClientType);
             keysetMap.put(keyset.getKeysetId(), keyset);
         }
 

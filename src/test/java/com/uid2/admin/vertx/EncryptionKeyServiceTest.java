@@ -156,17 +156,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setEncryptionKeys(123);
         setKeysetKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
-<<<<<<< HEAD
 
-        AdminKeyset expected = new AdminKeyset(2, 5, "", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
-        assertNotNull(keysets.get(2));
-        assertTrue(keysets.get(2).equals(expected));
-=======
-        
-        Keyset expected = new Keyset(4, 5, "", null, Instant.now().getEpochSecond(), true, true);
+        AdminKeyset expected = new AdminKeyset(4, 5, "", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
         assertNotNull(keysets.get(4));
         assertTrue(keysets.get(4).equals(expected));
->>>>>>> cbc-UID2-1569-Sharer-creates-Keyset
         verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
     }
 
@@ -821,11 +814,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         assertEquals(6, keysets.keySet().size());
         //Special Keysets are set correctly
         // Master key site id -1 : keyset id 1
-        assertEquals(-1, keysets.get(1).getSiteId());
+        assertEquals(-1, keysets.get(-1).getSiteId());
         // Master key site id -2 : keyset id 2
-        assertEquals(-2, keysets.get(2).getSiteId());
+        assertEquals(-2, keysets.get(-2).getSiteId());
         // Master key site id 2 : keyset id 3
-        assertEquals(2, keysets.get(3).getSiteId());
+        assertEquals(2, keysets.get(2).getSiteId());
     }
 
     @Test

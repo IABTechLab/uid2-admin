@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 public class ClientKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+        KeysetManager keysetManager = new KeysetManager(adminKeysetProvider, adminKeysetWriter, keysetKeyManager, true);
         return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator);
     }
 

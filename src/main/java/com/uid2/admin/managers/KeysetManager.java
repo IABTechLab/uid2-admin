@@ -6,6 +6,7 @@ import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.ClientKey;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.admin.auth.AdminKeyset;
 
@@ -71,6 +72,19 @@ public class KeysetManager {
         }
         return new AdminKeyset(keysetId, siteId, name, null, Instant.now().getEpochSecond(),
                 true, true, Set.of());
+    }
+
+    public static Keyset adminKeysetToKeyset(AdminKeyset adminKeyset, Map<ClientType, Set<Integer>> siteIdsByType) {
+        Set<Integer> allowedList = adminKeyset.getAllowedSites();
+        if(allowedList == null) {
+            return adminKeyset;
+        }
+
+        for (ClientType type : adminKeyset.getAllowedTypes()) {
+            allowedList.addAll(siteIdsByType.get(type));
+        }
+        return new Keyset(adminKeyset.getKeysetId(), adminKeyset.getSiteId(), adminKeyset.getName(), allowedList,
+                adminKeyset.getCreated(), adminKeyset.isEnabled(), adminKeyset.isDefault());
     }
 
     public void createKeysetForClient(ClientKey client) throws Exception{
