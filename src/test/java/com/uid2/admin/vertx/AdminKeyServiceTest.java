@@ -24,19 +24,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 public class AdminKeyServiceTest extends ServiceTestBase {
-    private static final String ADMIN_KEY_PREFIX = "UID2-A-L-";
-    private static final String EXPECTED_ADMIN_KEY = ADMIN_KEY_PREFIX + "abcdef.abcdefabcdefabcdef";
+    private static final String KEY_PREFIX = "UID2-A-L-";
+    private static final String EXPECTED_ADMIN_KEY = "UID2-A-L-abcdef.abcdefabcdefabcdef";
 
     @Override
     protected IService createService() {
-        this.config.put("admin_key_prefix", ADMIN_KEY_PREFIX);
+        this.config.put("admin_key_prefix", KEY_PREFIX);
         return new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter);
     }
 
     @Test
     void addAdminUsesKeyPrefixAndFormattedKeyString(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.ADMINISTRATOR);
-        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(EXPECTED_ADMIN_KEY, ""));
+//        when(this.keyGenerator.generateFormattedKeyStringAndKeyHash(anyString(), anyInt())).thenReturn(new KeyGenerationResult(EXPECTED_ADMIN_KEY, ""));
 
         AdminUser expectedAdminUser = this.getAdminUser(EXPECTED_ADMIN_KEY);
 

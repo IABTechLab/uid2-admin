@@ -2,7 +2,7 @@
   {
     "keyset_id" : 1,
     "site_id": -1,
-    "name" : "My keyset",
+    "name" : "Master keyset",
     "allowed_sites" : [],
     "created" : 1617149276,
     "enabled" : true,
@@ -11,8 +11,8 @@
   {
     "keyset_id" : 2,
     "site_id": -2,
-    "name" : "My keyset",
-    "allowed_sites" : [5, 7, 8, 9],
+    "name" : "Refresh keyset",
+    "allowed_sites" : [999, 123, 124, 125, 126],
     "created" : 1617149276,
     "enabled" : true,
     "default" : true
@@ -20,27 +20,34 @@
   {
     "keyset_id" : 3,
     "site_id": 2,
-    "name" : "My keyset",
-    "allowed_sites" : [5, 7, 8, 9],
+    "name" : "Fallback Publisher keyset",
+    "allowed_sites" : [999, 123, 124, 125, 126],
     "created" : 1617149276,
     "enabled" : true,
     "default" : true
   },
   {
     "keyset_id" : 4,
-    "site_id": 123,
-    "name" : "My keyset",
-    "allowed_sites" : [5, 7, 8, 9],
+    "site_id": 999,
+    "name" : "Special keyset",
+    "allowed_sites" : [],
     "created" : 1617149276,
     "enabled" : true,
     "default" : true
-
   },
   {
-    "keyset_id" : 821,
-    "site_id": 5,
-    "name" : "My keyset",
-    "allowed_sites" : [2, 3, 4],
+    "keyset_id" : 5,
+    "site_id": 124,
+    "name" : "Publisher keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+  },
+  {
+    "keyset_id" : 6,
+    "site_id": 125,
+    "name" : "Data Provider keyset",
+    "allowed_sites" : [126],
     "created" : 1617149276,
     "enabled" : true,
     "default" : true

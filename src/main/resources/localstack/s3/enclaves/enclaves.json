@@ -1,8 +1,8 @@
 [
   {
-    "name" : "MegaTest Enclave 1",
-    "protocol" : "aws-nitro",
-    "identifier" : "ABC123",
+    "name" : "Publisher Enclave",
+    "protocol" : "gcp-vmid",
+    "identifier" : "GCP124",
     "created" : 1622080847
   }
 ]

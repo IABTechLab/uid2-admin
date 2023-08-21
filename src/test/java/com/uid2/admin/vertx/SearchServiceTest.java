@@ -86,26 +86,26 @@ public class SearchServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
         ClientKey[] clientKeys = new ClientKey[3];
         clientKeys[0] = new ClientKey(
-                "UID2-C-L-997-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
-                "UID2-C-L-997-P7MIM/IqqkdIKFnm7T6dFSlL5DdZOAi11ll5/kVZk9SPc/CsLxziRRfklj7hEcOi99GOB/ynxZIgZP0Pwf7dYQ==$qJ+O3DQmu2elWU+WvvFJZtiPJVIcNd507gkgptSCo4C=",
-                "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
-                .withNameAndContact("MegaTest Client")
+                "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=",
+                "",
+                "$")
+                .withNameAndContact("Special (Old)")
                 .withRoles(Role.OPERATOR)
-                .withSiteId(5);
+                .withSiteId(999);
         clientKeys[1] = new ClientKey(
-                "UID2-C-L-998-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
-                "UID2-C-L-998-P7MIM/IqqkdIKFnm7T6dFSlL5DdZOAi11ll5/kVZk9SPc/CsLxziRRfklj7hEcOi99GOB/ynxZIgZP0Pwf7dYQ==$qJ+O3DQmu2elWU+WvvFJZtiPJVIcNd507gkgptSCo4B=",
+                "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
+                "",
                 "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")
-                .withNameAndContact("MegaTest Client 2")
+                .withNameAndContact("DSP")
                 .withRoles(Role.MAPPER)
-                .withSiteId(5);
+                .withSiteId(123);
         clientKeys[2] = new ClientKey(
-                "UID2-C-L-999-H8VwqX.l2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
-                "UID2-C-L-999-P7MIM/IqqkdIKFnm7T6dFSlL5DdZOAi11ll5/kVZk9SPc/CsLxziRRfklj7hEcOi99GOB/ynxZIgZP0Pwf7dYQ==$qJ+O3DQmu2elWU+WvvFJZtiPJVIcNd507gkgptSCo4A=",
+                "UID2-C-L-124-H8VwqX.l2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
+                "",
                 "NcMgi6Y8C80SlxvV7pYlfcvEIo+2b0508tYQ3pKK8HM=")
-                .withNameAndContact("TestCorp Client")
+                .withNameAndContact("Publisher")
                 .withRoles(Role.OPERATOR)
-                .withSiteId(5);
+                .withSiteId(124);
 
         setClientKeys(clientKeys);
         post(vertx, searchUrl, "UID2-C-L-997-", response -> {
@@ -514,13 +514,13 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"OPLCLXt/gh", "/ght6tOD", "t/ght6tOD+8", "+8mmodEtI3J6", "oqMMFk="})
+    @ValueSource(strings = {"UID2-O-L-999-dp9", "dp9Dt0", "9Dt0.JVoG", "xJa8B9H74y9", "74y9xdEE="})
     void searchBySpecialCharactersSuccess(String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
                 .size(1)
-                .set(field(ClientKey::getSecret), "OPLCLXt/ght6tOD+8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=")
+                .set(field(ClientKey::getSecret), "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=")
                 .create().toArray(new ClientKey[0]);
         setClientKeys(clientKeys);
 

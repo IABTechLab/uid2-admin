@@ -6,6 +6,7 @@ import com.uid2.admin.auth.GithubAuthFactory;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.secret.SaltRotation;
@@ -58,6 +59,8 @@ import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
+import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
+
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
@@ -71,6 +74,7 @@ public class Main {
 
     public void run() {
         try {
+            boolean enableKeysets = config.getBoolean(enableKeysetConfigProp);
             AuthFactory authFactory = new GithubAuthFactory(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
@@ -111,30 +115,34 @@ public class Main {
             CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
-            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
-            try {
-                keysetProvider.loadContent();
-            } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")){
-                    keysetStoreWriter.upload(new HashMap<>(), null);
+            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
+            if(enableKeysets) {
+                try {
                     keysetProvider.loadContent();
-                } else {
-                    throw e;
+                } catch (CloudStorageException e) {
+                    if (e.getMessage().contains("The specified key does not exist")) {
+                        keysetStoreWriter.upload(new HashMap<>(), null);
+                        keysetProvider.loadContent();
+                    } else {
+                        throw e;
+                    }
                 }
             }
 
             CloudPath keysetKeyMetadataPath = new CloudPath(config.getString(Const.Config.KeysetKeysMetadataPathProp));
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
             RotatingKeysetKeyStore keysetKeysProvider = new RotatingKeysetKeyStore(cloudStorage, keysetKeysGlobalScope);
-            KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope);
-            try {
-                keysetKeysProvider.loadContent();
-            } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
-                    keysetKeyStoreWriter.upload(new HashSet<>(), 0);
+            KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope, enableKeysets);
+            if(enableKeysets) {
+                try {
                     keysetKeysProvider.loadContent();
-                } else {
-                    throw e;
+                } catch (CloudStorageException e) {
+                    if (e.getMessage().contains("The specified key does not exist")) {
+                        keysetKeyStoreWriter.upload(new HashSet<>(), 0);
+                        keysetKeysProvider.loadContent();
+                    } else {
+                        throw e;
+                    }
                 }
             }
 
@@ -169,13 +177,16 @@ public class Main {
 
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
+            KeysetManager keysetManager = new KeysetManager(
+                    keysetProvider, keysetStoreWriter, encryptionKeyService, enableKeysets
+            );
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
-                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, encryptionKeyService, keyGenerator),
+                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator),
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
-                    new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, encryptionKeyService),
+                    new SharingService(auth, writeLock, keysetProvider, keysetManager, siteProvider, enableKeysets),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
@@ -198,8 +209,10 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
 
-            //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
-            encryptionKeyService.createKeysetKeys();
+            if(enableKeysets) {
+                //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
+                encryptionKeyService.createKeysetKeys();
+            }
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);

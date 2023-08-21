@@ -80,6 +80,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+
     @Test
     void operatorAddUsesConfigPrefix(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);

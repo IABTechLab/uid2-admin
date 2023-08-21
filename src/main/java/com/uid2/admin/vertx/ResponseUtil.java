@@ -25,4 +25,9 @@ public class ResponseUtil {
         rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
+
+    public static void errorInternal(RoutingContext rc, String message, Exception e) {
+        LOGGER.error(message, e);
+        rc.fail(500);
+    }
 }

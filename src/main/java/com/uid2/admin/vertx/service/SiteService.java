@@ -54,7 +54,7 @@ public class SiteService implements IService {
         }, Role.CLIENTKEY_ISSUER));
 
         router.get("/api/site/list").handler(
-                auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER));
+                auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
