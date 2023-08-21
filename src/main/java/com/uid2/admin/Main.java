@@ -8,8 +8,7 @@ import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.Site;
-import com.uid2.admin.secret.ISaltRotation;
-import com.uid2.admin.secret.SaltRotation;
+import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.reader.RotatingSiteStore;
@@ -31,6 +30,8 @@ import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.secure.gcpoidc.Environment;
+import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
@@ -146,6 +147,21 @@ public class Main {
                 }
             }
 
+            CloudPath clientSideKeypairMetadataPath = new CloudPath(config.getString(Const.Config.ClientSideKeypairsMetadataPathProp));
+            GlobalScope clientSideKeypairGlobalScope = new GlobalScope(clientSideKeypairMetadataPath);
+            RotatingClientSideKeypairStore clientSideKeypairProvider = new RotatingClientSideKeypairStore(cloudStorage, clientSideKeypairGlobalScope);
+            ClientSideKeypairStoreWriter clientSideKeypairStoreWriter = new ClientSideKeypairStoreWriter(clientSideKeypairProvider, fileManager, versionGenerator, clock, clientSideKeypairGlobalScope);
+            try {
+                clientSideKeypairProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")) {
+                    clientSideKeypairStoreWriter.upload(new HashSet<>(), null);
+                    clientSideKeypairProvider.loadContent();
+                } else {
+                    throw e;
+                }
+            }
+
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
             GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
             RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -170,6 +186,7 @@ public class Main {
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
+            IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
 
             JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
@@ -186,6 +203,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
+                    new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
                     new SharingService(auth, writeLock, keysetProvider, keysetManager, siteProvider, enableKeysets),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
