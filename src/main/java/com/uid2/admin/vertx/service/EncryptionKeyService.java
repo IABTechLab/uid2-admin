@@ -37,7 +37,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
-import static com.uid2.admin.util.KeysetUtil.*;
+import static com.uid2.admin.managers.KeysetManager.*;
 import static java.util.stream.Collectors.*;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager, IKeysetKeyManager {
@@ -250,7 +250,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private void handleKeysetKeyList(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();
-            this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
+            this.keysetKeyProvider.getSnapshot().getAllKeysetKeys().stream()
                     .sorted(Comparator.comparingInt(KeysetKey::getKeysetId).thenComparing(KeysetKey::getActivates))
                     .forEachOrdered(k -> ja.add(toJson(k)));
 
@@ -469,7 +469,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
         loadAllContent();
 
-        final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys();
+        final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys();
 
         result.rotatedIds = keysetKeys.stream()
                 .map(KeysetKey::getKeysetId)
@@ -580,13 +580,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         throws Exception {
         final Instant now = clock.now();
 
-        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
+        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys().stream()
                 .sorted(Comparator.comparingInt(KeysetKey::getId))
                 .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
                 .collect(Collectors.toList());
 
 
-        int maxKeyId = MaxKeyUtil.getMaxKeysetKeyId(this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys(),
+        int maxKeyId = MaxKeyUtil.getMaxKeysetKeyId(this.keysetKeyProvider.getSnapshot().getAllKeysetKeys(),
                 this.keysetKeyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<KeysetKey> addedKeys = new ArrayList<>();
@@ -612,7 +612,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         if(!enableKeysets) return;
         final Instant now = clock.now();
 
-        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getActiveKeysetKeys().stream()
+        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys().stream()
                 .sorted(Comparator.comparingInt(KeysetKey::getId))
                 .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
                 .collect(Collectors.toList());
