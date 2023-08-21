@@ -101,6 +101,8 @@ public class SharingService implements IService {
             final int siteId;
             final int keysetId;
             final String name;
+            Set<Integer> existingSites = new HashSet<>();
+
             if(requestSiteId != null) {
                 siteId = requestSiteId;
                 name = requestName;
@@ -134,13 +136,18 @@ public class SharingService implements IService {
                 }
                 siteId = keyset.getSiteId();
                 name = requestName.equals("") ? keyset.getName() : requestName;
+                existingSites = keyset.getAllowedSites();
             }
 
 
             final Set<Integer> newlist;
 
             if (allowedSites != null){
-                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+                final Set<Integer> existingAllowedSites = existingSites;
+                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> {
+                    if(existingAllowedSites.contains(s)) return false;
+                    return !isSiteIdEditable(s);
+                }).findFirst();
                 if (firstInvalidSite.isPresent()) {
                     ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
                     return;
