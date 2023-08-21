@@ -4,7 +4,7 @@ import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.FileManager;
@@ -100,6 +100,7 @@ public abstract class ServiceTestBase {
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
+        when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
