@@ -1,6 +1,7 @@
 package com.uid2.admin.secret;
 
 import com.uid2.shared.model.SaltEntry;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.json.JsonObject;
 

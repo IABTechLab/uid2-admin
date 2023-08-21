@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
@@ -9,6 +10,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -26,26 +28,23 @@ public class SharingService implements IService {
     private final AuthMiddleware auth;
 
     private final WriteLock writeLock;
-    private final KeysetStoreWriter storeWriter;
     private final RotatingKeysetProvider keysetProvider;
     private final RotatingSiteStore siteProvider;
-    private final IKeysetKeyManager keyManager;
+    private final KeysetManager keysetManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     private final boolean enableKeysets;
 
     public SharingService(AuthMiddleware auth,
                           WriteLock writeLock,
-                          KeysetStoreWriter storeWriter,
                           RotatingKeysetProvider keysetProvider,
-                          IKeysetKeyManager keyManager,
+                          KeysetManager keysetManager,
                           RotatingSiteStore siteProvider,
                           boolean enableKeyset) {
         this.auth = auth;
         this.writeLock = writeLock;
-        this.storeWriter = storeWriter;
         this.keysetProvider = keysetProvider;
-        this.keyManager = keyManager;
+        this.keysetManager = keysetManager;
         this.siteProvider = siteProvider;
         this.enableKeysets = enableKeyset;
     }
@@ -105,14 +104,14 @@ public class SharingService implements IService {
             if(requestSiteId != null) {
                 siteId = requestSiteId;
                 name = requestName;
-                if (siteId == Const.Data.AdvertisingTokenSiteId
-                        || siteId == Const.Data.RefreshKeySiteId
-                        || siteId == Const.Data.MasterKeySiteId
-                        || siteProvider.getSite(siteId) == null)  {
+                // Check if the site id is valid
+                if (!isSiteIdEditable(siteId))  {
                     ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
-                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
+
+                // Trying to add a keyset for a site that already has one
+                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) {
                     ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
                     return;
                 }
@@ -129,6 +128,10 @@ public class SharingService implements IService {
                     return;
                 }
                 keysetId = requestKeysetId;
+                if(isSpecialKeyset(keysetId)) {
+                    ResponseUtil.error(rc, 400, "Keyset id: " + keysetId + " is not valid");
+                    return;
+                }
                 siteId = keyset.getSiteId();
                 name = requestName.equals("") ? keyset.getName() : requestName;
             }
@@ -161,11 +164,8 @@ public class SharingService implements IService {
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
 
-            keysetsById.put(keysetId, newKeyset);
             try {
-                storeWriter.upload(keysetsById, null);
-                //Create a new key
-                this.keyManager.addKeysetKey(keysetId);
+                this.keysetManager.addOrReplaceKeyset(newKeyset);
             } catch (Exception e) {
                 rc.fail(500, e);
                 return;
@@ -176,6 +176,17 @@ public class SharingService implements IService {
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(jo.encode());
         }
+    }
+
+    // Returns if a keyset is one of the reserved ones
+    private static boolean isSpecialKeyset(int keysetId) {
+        return keysetId == Const.Data.MasterKeysetId || keysetId == Const.Data.RefreshKeysetId
+                || keysetId == Const.Data.FallbackPublisherKeysetId;
+    }
+
+    // Returns if a site ID is not a special site and it does exist
+    private boolean isSiteIdEditable(int siteId) {
+        return SiteUtil.isValidSiteId(siteId) && siteProvider.getSite(siteId) != null;
     }
 
     private JsonObject jsonFullKeyset(Keyset keyset) {
@@ -308,6 +319,11 @@ public class SharingService implements IService {
                 return;
             }
 
+            if (!isSiteIdEditable(siteId))  {
+                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
+                return;
+            }
+
             try {
                 keysetProvider.loadContent();
             } catch (Exception e) {
@@ -333,7 +349,7 @@ public class SharingService implements IService {
             String name;
 
             if (keyset == null) {
-                keysetId = Collections.max(collection.keySet()) + 1;
+                keysetId = this.keysetManager.getNextKeysetId();
                 name = "";
             } else {
                 keysetId = keyset.getKeysetId();
@@ -347,11 +363,8 @@ public class SharingService implements IService {
             final Keyset newKeyset = new Keyset(keysetId, siteId, name,
                     newlist, Instant.now().getEpochSecond(), true, true);
 
-            collection.put(keysetId, newKeyset);
             try {
-                storeWriter.upload(collection, null);
-                //Create new key for keyset
-                this.keyManager.addKeysetKey(keysetId);
+                this.keysetManager.addOrReplaceKeyset(newKeyset);
             } catch (Exception e) {
                 rc.fail(500, e);
                 return;

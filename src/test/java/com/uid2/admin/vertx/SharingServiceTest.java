@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
@@ -29,7 +30,8 @@ import static org.mockito.Mockito.*;
 public class SharingServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SharingService(auth, writeLock, keysetStoreWriter, keysetProvider, keysetKeyManager, siteProvider, true);
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+        return new SharingService(auth, writeLock, keysetProvider, keysetManager, siteProvider, true);
     }
 
     private void compareKeysetToResult(Keyset keyset, JsonArray actualKeyset) {
@@ -96,12 +98,13 @@ public class SharingServiceTest extends ServiceTestBase {
         fakeAuth(Role.SHARING_PORTAL);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
-            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
-            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
-            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+            put(1, new Keyset(3, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
         setKeysets(keysets);
+        mockSiteExistence(5,7,4);
 
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
@@ -117,10 +120,10 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            Keyset expected = new Keyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
+            Keyset expected = new Keyset(3, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true);
             compareKeysetToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
-            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
+            assertEquals(expected.getAllowedSites(), keysets.get(3).getAllowedSites());
             testContext.completeNow();
         });
     }
@@ -130,12 +133,13 @@ public class SharingServiceTest extends ServiceTestBase {
         fakeAuth(Role.SHARING_PORTAL);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
-            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
-            put(2, new Keyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
-            put(3, new Keyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+            put(1, new Keyset(3, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
         }};
 
         setKeysets(keysets);
+        mockSiteExistence(5,7,4,8);
 
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
@@ -167,6 +171,35 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void listSiteSetNotAllowed(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.SHARING_PORTAL);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(-1, -1, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(2, new Keyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true));
+            put(3, new Keyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowed_sites\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"hash\": 0\n" +
+                "  }";
+
+        post(vertx, "api/sharing/list/-1", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void listSiteSetConcurrency(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
@@ -177,6 +210,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setKeysets(keysets);
+        mockSiteExistence(5,7,4);
 
         String body1 = "  {\n" +
                 "    \"allowed_sites\": [\n" +
@@ -720,6 +754,35 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
+    @ValueSource(ints = {Const.Data.MasterKeysetId, Const.Data.RefreshKeysetId, Const.Data.FallbackPublisherKeysetId})
+    void KeysetSetReservedKeyset(int input, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
+
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(input, new Keyset(input, input, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowed_sites\": [],\n" +
+                String.format("    \"keyset_id\": %d,", input) +
+                "    \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Keyset id: " + input + " is not valid", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
     @ValueSource(ints = {Const.Data.AdvertisingTokenSiteId, Const.Data.RefreshKeySiteId, Const.Data.MasterKeySiteId})
     void KeysetSetUpdateReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
@@ -897,7 +960,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        mockSiteExistence(5, 1);
+        mockSiteExistence(5, 3);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
@@ -906,7 +969,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"site_id\": 1" +
+                "    \"site_id\": 3" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -925,7 +988,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        mockSiteExistence(5, 1);
+        mockSiteExistence(5, 3);
 
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
@@ -934,7 +997,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"site_id\": 1," +
+                "    \"site_id\": 3," +
                 "    \"allowed_sites\": null" +
                 "  }";
 

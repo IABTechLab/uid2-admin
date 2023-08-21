@@ -4,7 +4,7 @@ import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
@@ -23,7 +23,7 @@ import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
-import com.uid2.shared.store.IKeysetKeyStore;
+import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -82,7 +82,7 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingClientKeyProvider clientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
-    @Mock protected IKeysetKeyStore.IkeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
+    @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
     @Mock protected RotatingKeyAclProvider keyAclProvider;
     @Mock protected RotatingKeysetProvider keysetProvider;
     @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
@@ -105,6 +105,7 @@ public abstract class ServiceTestBase {
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
+        when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
@@ -165,7 +166,7 @@ public abstract class ServiceTestBase {
         HashMap<Integer, KeysetKey> keyMap = new HashMap<>();
         keysetKeys.forEach(i -> keyMap.put(i.getId(), i));
         when(keysetKeyProvider.getMetadata()).thenReturn(metadata);
-        when(keysetKeyProviderSnapshot.getActiveKeysetKeys()).thenReturn(keysetKeys);
+        when(keysetKeyProviderSnapshot.getAllKeysetKeys()).thenReturn(keysetKeys);
         when(keysetKeyProviderSnapshot.getKey(anyInt())).thenAnswer(i -> {
             return keyMap.get(i.getArgument(0));
         });

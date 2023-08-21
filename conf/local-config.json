@@ -18,11 +18,11 @@
   "keyset_keys_metadata_path": "keyset_keys/metadata.json",
   "aws_access_key_id": "no access key needed for test",
   "aws_secret_access_key": "no secret key needed for test",
-  "client_key_prefix": "LOCAL",
-  "operator_key_prefix": "OPLCL",
-  "admin_key_prefix": "ADLCL",
   "client_side_keypair_public_prefix": "UID2-X-T-",
   "client_side_keypair_private_prefix": "UID2-Y-T-",
+  "client_key_prefix": "UID2-C-L-",
+  "operator_key_prefix": "UID2-O-L-",
+  "admin_key_prefix": "UID2-A-L-",
   "master_key_activates_in_seconds": 30,
   "master_key_expires_after_seconds": 60000,
   "master_key_rotation_cut_off_days": 37,
@@ -37,5 +37,5 @@
   "github_client_id": "generate client id",
   "github_client_secret": "generate client secret",
   "filter_key_over_cut_off_days": true,
-  "enable_keysets": false
+  "enable_keysets": true
 }

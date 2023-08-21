@@ -1,17 +1,32 @@
 [
   {
+    "id": 999,
+    "name": "Special",
+    "enabled": true
+  },
+  {
     "id": 123,
-    "name": "MegaTest Site",
+    "name": "DSP",
     "enabled": true
   },
   {
     "id": 124,
-    "name": "TestCorp Site",
+    "name": "Publisher",
     "enabled": true
   },
   {
     "id": 125,
-    "name": "LoremTestIpsum Site",
+    "name": "Data Provider",
+    "enabled": true
+  },
+  {
+    "id": 126,
+    "name": "Advertiser",
+    "enabled": true
+  },
+  {
+    "id": 127,
+    "name": "OptOut",
     "enabled": true
   }
 ]
