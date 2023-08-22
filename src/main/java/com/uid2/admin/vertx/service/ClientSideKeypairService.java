@@ -80,10 +80,10 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private void handleAddKeypair(RoutingContext rc) {
         final JsonObject body = rc.body().asJsonObject();
         final Integer siteId = body.getInteger("site_id");
-        final String contact = body.getString("contact");
+        final String contact = body.getString("contact", "");
         final boolean disabled = body.getBoolean("disabled", false);
-        if (contact == null || siteId == null) {
-            ResponseUtil.error(rc, 400, "Required parameters: site_id, contact");
+        if (siteId == null) {
+            ResponseUtil.error(rc, 400, "Required parameters: site_id");
             return;
         }
         if (siteProvider.getSite(siteId) == null) {

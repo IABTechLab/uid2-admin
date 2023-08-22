@@ -4,8 +4,7 @@
     "created" : 1609459200,
     "activates" : 1609459200,
     "expires" : 1893456000,
-    "secret" : "vPdQIoN1nTwXIQoH4/GcHOAct7ymyrGUKXNQhgmq+E8=",
-    "keyset_id" : 1
+    "secret" : "vPdQIoN1nTwXIQoH4/GcHOAct7ymyrGUKXNQhgmq+E8="
   },
   {
     "id" : 2000,
@@ -48,4 +47,3 @@
     "keyset_id": 6
   }
 ]
-

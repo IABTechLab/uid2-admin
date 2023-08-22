@@ -871,7 +871,6 @@ public class PrivateSiteUtilTest {
     final Set<OperatorKey> noOperators = ImmutableSet.of();
     final Set<ClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
-    final Set<ClientSideKeypair> noKeypairs = ImmutableSet.of();
     final Set<KeysetKey> noKeysetKeys = ImmutableSet.of();
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
