@@ -6,7 +6,7 @@ import com.uid2.admin.auth.GithubAuthFactory;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
-import com.uid2.admin.job.jobsync.keyset.AdminToOperatorKeysetJob;
+import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.model.Site;
 import com.uid2.admin.secret.*;
@@ -32,8 +32,6 @@ import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.secure.gcpoidc.Environment;
-import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
@@ -221,8 +219,8 @@ public class Main {
             AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
-            AdminToOperatorKeysetJob adminToOperatorKeysetJob = new AdminToOperatorKeysetJob(config, writeLock);
-            jobDispatcher.enqueue(adminToOperatorKeysetJob);
+            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
+            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
             jobDispatcher.executeNextJob();
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes

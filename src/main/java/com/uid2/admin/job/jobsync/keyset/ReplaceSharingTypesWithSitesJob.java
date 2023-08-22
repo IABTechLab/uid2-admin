@@ -27,14 +27,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public class AdminToOperatorKeysetJob extends Job {
+public class ReplaceSharingTypesWithSitesJob extends Job {
     public final JsonObject config;
     private final WriteLock writeLock;
     private final boolean enableKeysets;
 
-    public AdminToOperatorKeysetJob(JsonObject config, WriteLock writeLock) {
+    public ReplaceSharingTypesWithSitesJob(JsonObject config, WriteLock writeLock) {
         this.config = config;
         this.writeLock = writeLock;
         this.enableKeysets = config.getBoolean(AdminConst.enableKeysetConfigProp);
@@ -63,7 +62,7 @@ public class AdminToOperatorKeysetJob extends Job {
 
         KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
                 cloudStorage,
-                new CloudPath(config.getString("admin_keyset_metadata_path")),
+                new CloudPath(config.getString("admin_keysets_metadata_path")),
                 jsonWriter,
                 versionGenerator,
                 clock,

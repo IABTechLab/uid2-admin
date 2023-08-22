@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.uid2.admin.model.ClientType;
 import com.uid2.shared.auth.Keyset;
 
+import java.util.Arrays;
 import java.util.Set;
 
 public class AdminKeyset extends Keyset {
@@ -28,5 +29,10 @@ public class AdminKeyset extends Keyset {
         if (!(o instanceof AdminKeyset)) return false;
         AdminKeyset b = (AdminKeyset) o;
         return allowedTypes.equals(b.getAllowedTypes());
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode() + Arrays.hashCode(this.allowedTypes.toArray());
     }
 }

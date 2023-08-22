@@ -1,5 +1,6 @@
 package com.uid2.admin.model;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 
@@ -42,11 +43,11 @@ public class Site {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Site site = (Site) o;
-        return id == site.id && name.equals(site.name) && enabled.equals(site.enabled);
+        return id == site.id && name.equals(site.name) && enabled.equals(site.enabled) && types.equals(site.types);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, enabled);
+        return Objects.hash(id, name, enabled) + Arrays.hashCode(types.toArray());
     }
 }

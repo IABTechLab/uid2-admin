@@ -19,7 +19,7 @@ public class AdminKeysetParser implements Parser<AdminKeysetSnapshot> {
     @Override
     public ParsingResult<AdminKeysetSnapshot> deserialize(InputStream inputStream) throws IOException {
         final JsonArray keysetsSpec = Utils.toJsonArray(inputStream);
-        final HashMap<Integer, AdminKeyset> keysetMap = new HashMap<>();
+        final HashMap<Integer, AdminKeyset> keysetIdToAdminKeyset = new HashMap<>();
         for(int i = 0; i < keysetsSpec.size(); i++) {
             final JsonObject keysetSpec = keysetsSpec.getJsonObject(i);
             final Integer keysetId = keysetSpec.getInteger("keyset_id");
@@ -48,8 +48,8 @@ public class AdminKeysetParser implements Parser<AdminKeysetSnapshot> {
             final boolean enabled = keysetSpec.getBoolean("enabled");
             final boolean isDefault = keysetSpec.getBoolean("default");
 
-            keysetMap.put(keysetId, new AdminKeyset(keysetId, siteId, name, allowedSites, created, enabled, isDefault, allowedTypes));
+            keysetIdToAdminKeyset.put(keysetId, new AdminKeyset(keysetId, siteId, name, allowedSites, created, enabled, isDefault, allowedTypes));
         }
-        return new ParsingResult<>(new AdminKeysetSnapshot(keysetMap), keysetsSpec.size());
+        return new ParsingResult<>(new AdminKeysetSnapshot(keysetIdToAdminKeyset), keysetsSpec.size());
     }
 }
