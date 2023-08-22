@@ -3,7 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.AdminUserStoreWriter;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
@@ -189,7 +189,7 @@ public class AdminKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String key = keyGenerator.generateRandomKeyString(32);
+            String key = keyGenerator.generateFormattedKeyString(32);
             if (this.adminKeyPrefix != null) key = this.adminKeyPrefix + key;
 
             // create new admin

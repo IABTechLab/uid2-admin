@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -229,8 +229,8 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String key = keyGenerator.generateRandomKeyString(32);
-            if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + key;
+            String key = keyGenerator.generateFormattedKeyString(32);
+            if (this.operatorKeyPrefix != null) key = this.operatorKeyPrefix + siteId + "-" + key;
 
             // create new operator
             long created = Instant.now().getEpochSecond();

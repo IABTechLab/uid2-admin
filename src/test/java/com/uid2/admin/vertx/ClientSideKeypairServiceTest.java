@@ -184,7 +184,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
-            assertEquals("Required parameters: site_id, contact", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Required parameters: site_id", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -208,31 +208,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
-            assertEquals("Required parameters: site_id, contact", response.bodyAsJsonObject().getString("message"));
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void addKeypairNoContact(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
-            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true ));
-            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
-            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
-        }};
-
-        setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-
-        JsonObject jo = new JsonObject();
-        jo.put("site_id", 123);
-
-        post(vertx, "api/client_side_keypairs/add", jo.encode(), ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
-            assertEquals("Required parameters: site_id, contact", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Required parameters: site_id", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -286,6 +262,43 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             JsonObject resp = response.bodyAsJsonObject();
             assertEquals(123, resp.getInteger("site_id"));
             assertEquals("email@email.com", resp.getString("contact"));
+            assertEquals(10, resp.getString("subscription_id").length());
+            assertNotNull(resp.getString("public_key"));
+            assertNotNull(resp.getString("private_key"));
+            assertTrue(resp.getString("public_key").length() > 9);
+            assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, 9));
+            assertTrue(resp.getString("private_key").length() > 9);
+            assertEquals("UID2-Y-T-", resp.getString("private_key").substring(0, 9));
+            assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
+            assertEquals(false, resp.getBoolean("disabled"));
+            assertEquals(false, resp.getBoolean("disabled"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addKeypairNoContact(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 123, "test@example.com", Instant.now(), true));
+            put("789aZ23456", new ClientSideKeypair("789aZ23456", pub3, priv3, 125, "test-two@example.com", Instant.now(), false));
+        }};
+
+        setKeypairs(new ArrayList<>(expectedKeypairs.values()));
+        setSites(new Site(123, "test", true));
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 123);
+
+        post(vertx, "api/client_side_keypairs/add", jo.encode(), ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            JsonObject resp = response.bodyAsJsonObject();
+            assertEquals(123, resp.getInteger("site_id"));
+            assertEquals("", resp.getString("contact"));
             assertEquals(10, resp.getString("subscription_id").length());
             assertNotNull(resp.getString("public_key"));
             assertNotNull(resp.getString("private_key"));
