@@ -593,6 +593,41 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    void KeysetSetIgnoresAlreadySetSitesWhenChecking(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        // 25 is not an existing site
+        mockSiteExistence(5, 22, 6);
+
+        // But 25 is already in the list here
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(3, new Keyset(3, 7, "test", Set.of(12, 25), Instant.now().getEpochSecond(),true, true));
+            put(4, new Keyset(4, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
+        }};
+
+        setKeysets(keysets);
+
+        // Resend 25
+        String body = "  {\n" +
+                "    \"allowed_sites\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"keyset_id\": 3," +
+                "     \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            testContext.completeNow();
+        });
+    }
+
     // This test should be enabled when multiple keysets is enabled
     @Test
     @Disabled
