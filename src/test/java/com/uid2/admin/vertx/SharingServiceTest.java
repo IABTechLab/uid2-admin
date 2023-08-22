@@ -597,8 +597,10 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetIgnoresAlreadySetSitesWhenChecking(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
+        // 25 is not an existing site
         mockSiteExistence(5, 22, 6);
 
+        // But 25 is already in the list here
         Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(3, new Keyset(3, 7, "test", Set.of(12, 25), Instant.now().getEpochSecond(),true, true));
             put(4, new Keyset(4, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true));
@@ -606,6 +608,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
         setKeysets(keysets);
 
+        // Resend 25
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
                 "      22,\n" +
