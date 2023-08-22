@@ -27,8 +27,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class ClientKeyServiceTest extends ServiceTestBase {
+    private final static String KEY_PREFIX = "UID2-C-L-";
+    private final static String EXPECTED_CLIENT_KEY = KEY_PREFIX + "5-abcdef.abcdefabcdefabcdef";
+
     @Override
     protected IService createService() {
+        this.config.put("client_key_prefix", KEY_PREFIX);
         KeysetManager keysetManager = new KeysetManager(adminKeysetProvider, adminKeysetWriter, keysetKeyManager, true);
         return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator);
     }
@@ -59,7 +63,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         setSites(new Site(5, "test_site", true, new HashSet<>()));
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
         ClientKey[] expectedClients = {
-                new ClientKey("", "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
+                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
         };
 
         post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
@@ -83,10 +87,10 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true, new HashSet<>()));
         setClientKeys(
-                new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5),
-                new ClientKey("", "","test_client1").withRoles(Role.GENERATOR).withSiteId(5));
+                new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(5),
+                new ClientKey(EXPECTED_CLIENT_KEY, "","test_client1").withRoles(Role.GENERATOR).withSiteId(5));
         ClientKey[] expectedClients = {
-                new ClientKey("", "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
+                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
         };
 
         post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
@@ -103,7 +107,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true, new HashSet<>()));
         ClientKey[] expectedClients = {
-                new ClientKey("", "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
+                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
         };
 
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=5", "", ar -> {
@@ -176,7 +180,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         setSites(new Site(5, "test_site", true, new HashSet<>()));
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         ClientKey[] expectedClients = {
-                new ClientKey("", "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
+                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
         };
 
         post(vertx, "api/client/update?name=test_client&site_id=5", "", ar -> {
@@ -226,21 +230,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
     }
 
     @Test
     void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=1", "", expectHttpError(testContext, 400));
     }
 
     @Test
     void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=2", "", expectHttpError(testContext, 400));
     }
 
@@ -248,7 +252,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     void clientRolesCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
 
         final String endpoint = String.format("api/client/roles?name=test_client&roles=%s", RequestUtil.getRolesSpec(roles));
 

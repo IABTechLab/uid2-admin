@@ -2,8 +2,9 @@ package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.*;
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.secret.IKeyGenerator;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.model.Site;
+import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
@@ -16,8 +17,10 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
+import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
 import com.uid2.shared.store.IKeysetKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
@@ -64,6 +67,7 @@ public abstract class ServiceTestBase {
     @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
+    @Mock protected ClientSideKeypairStoreWriter keypairStoreWriter;
     @Mock protected KeyAclStoreWriter keyAclStoreWriter;
     @Mock protected KeysetStoreWriter keysetStoreWriter;
     @Mock protected AdminKeysetWriter adminKeysetWriter;
@@ -84,6 +88,7 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingKeysetProvider keysetProvider;
     @Mock protected RotatingAdminKeysetStore adminKeysetProvider;
     @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
+    @Mock protected RotatingClientSideKeypairStore keypairProvider;
     @Mock protected KeysetSnapshot keysetSnapshot;
     @Mock protected AdminKeysetSnapshot adminKeysetSnapshot;
     @Mock protected AclSnapshot keyAclProviderSnapshot;
@@ -104,6 +109,7 @@ public abstract class ServiceTestBase {
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
+        when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
@@ -168,6 +174,20 @@ public abstract class ServiceTestBase {
         when(keysetKeyProviderSnapshot.getKey(anyInt())).thenAnswer(i -> {
             return keyMap.get(i.getArgument(0));
         });
+    }
+
+    protected void setKeypairs(List<ClientSideKeypair> keypairs) throws Exception {
+        JsonObject metadata = new JsonObject();
+        HashMap<String, ClientSideKeypair> keypairMap = new HashMap<>();
+        HashMap<Integer, List<ClientSideKeypair>> siteKeypairMap = new HashMap<>();
+        keypairs.forEach(k -> {
+            keypairMap.put(k.getSubscriptionId(), k);
+            siteKeypairMap.computeIfAbsent(k.getSiteId(), id -> new ArrayList<>()).add(k);
+        });
+        when(keypairProvider.getMetadata()).thenReturn(metadata);
+        when(keypairProvider.getAll()).thenReturn(keypairMap.values());
+        ClientSideKeypairStoreSnapshot snapshot = new ClientSideKeypairStoreSnapshot(keypairMap, siteKeypairMap);
+        when(keypairProvider.getSnapshot()).thenReturn(snapshot);
     }
 
     protected void setEncryptionKeyAcls(Map<Integer, EncryptionKeyAcl> acls) {

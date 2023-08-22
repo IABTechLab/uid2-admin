@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.admin.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
@@ -21,6 +20,7 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.SiteUtil;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;

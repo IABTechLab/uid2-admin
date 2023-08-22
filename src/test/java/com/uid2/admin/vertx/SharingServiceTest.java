@@ -127,6 +127,7 @@ public class SharingServiceTest extends ServiceTestBase {
         mockSiteExistence(5,7,4,22,25,6);
 
         setAdminKeysets(keysets);
+        mockSiteExistence(5,7,4);
 
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
@@ -276,6 +277,35 @@ public class SharingServiceTest extends ServiceTestBase {
             } catch (Exception ex) {
                 fail(ex);
             }
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void listSiteSetNotAllowed(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.SHARING_PORTAL);
+
+        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+            put(1, new AdminKeyset(-1, -1, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(2, new AdminKeyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(3, new AdminKeyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        }};
+
+        setAdminKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowed_sites\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"hash\": 0\n" +
+                "  }";
+
+        post(vertx, "api/sharing/list/-1", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
             testContext.completeNow();
         });
     }
@@ -890,6 +920,35 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
+    @ValueSource(ints = {Const.Data.MasterKeysetId, Const.Data.RefreshKeysetId, Const.Data.FallbackPublisherKeysetId})
+    void KeysetSetReservedKeyset(int input, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        doReturn(new Site(input, "test", true, new HashSet<>())).when(siteProvider).getSite(input);
+
+        Map<Integer, AdminKeyset> keysets = new HashMap<Integer,AdminKeyset >() {{
+            put(input, new AdminKeyset(input, input, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        }};
+
+        setAdminKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowed_sites\": [],\n" +
+                String.format("    \"keyset_id\": %d,", input) +
+                "    \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Keyset id: " + input + " is not valid", response.bodyAsJsonObject().getString("message"));
+
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
     @ValueSource(ints = {Const.Data.AdvertisingTokenSiteId, Const.Data.RefreshKeySiteId, Const.Data.MasterKeySiteId})
     void KeysetSetUpdateReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
@@ -1068,7 +1127,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        mockSiteExistence(5, 1);
+        mockSiteExistence(5, 3);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -1077,7 +1136,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setAdminKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"site_id\": 1" +
+                "    \"site_id\": 3" +
                 "  }";
 
         post(vertx, "api/sharing/keyset", body, ar -> {
@@ -1096,7 +1155,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        mockSiteExistence(5, 1);
+        mockSiteExistence(5, 3);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -1105,7 +1164,7 @@ public class SharingServiceTest extends ServiceTestBase {
         setAdminKeysets(keysets);
 
         String body = "  {\n" +
-                "    \"site_id\": 1," +
+                "    \"site_id\": 3," +
                 "    \"allowed_sites\": null" +
                 "  }";
 

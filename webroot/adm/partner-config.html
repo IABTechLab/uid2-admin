@@ -37,7 +37,7 @@
 <script language="JavaScript">
     function getConfig(outputText, errorDiv) {
         $(outputText).val('');
-        $(errorDiv).html('');
+        $(errorDiv).text('');
 
         authHeader = "Bearer " + window.__uid2_admin_token;
 
@@ -53,7 +53,7 @@
                 $(outputText).val(pretty);
             },
             error: function (err) {
-                $(errorDiv).html('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
+                $(errorDiv).text('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
             }
         });
     }
@@ -68,8 +68,8 @@
     }
 
     function updateConfig(jsonStr, outputDiv, errorDiv) {
-        $(outputDiv).html('');
-        $(errorDiv).html('');
+        $(outputDiv).text('');
+        $(errorDiv).text('');
 
         authHeader = "Bearer " + window.__uid2_admin_token;
 
@@ -84,10 +84,10 @@
             data: jsonStr,
             success: function (text) {
                 var pretty = JSON.stringify(JSON.parse(text),null,2);
-                $(outputDiv).html(pretty);
+                $(outputDiv).text(pretty);
             },
             error: function (err) {
-                $(errorDiv).html('Error: ' + err.status + ': ' + JSON.parse(err).message);
+                $(errorDiv).text('Error: ' + err.status + ': ' + JSON.parse(err).message);
             }
         });
     }

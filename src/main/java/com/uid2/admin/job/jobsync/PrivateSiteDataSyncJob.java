@@ -146,7 +146,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
 
-
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
         EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(

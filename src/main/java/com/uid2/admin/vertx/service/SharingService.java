@@ -13,6 +13,7 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.SiteUtil;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -106,14 +107,14 @@ public class SharingService implements IService {
             if(requestSiteId != null) {
                 siteId = requestSiteId;
                 name = requestName;
-                if (siteId == Const.Data.AdvertisingTokenSiteId
-                        || siteId == Const.Data.RefreshKeySiteId
-                        || siteId == Const.Data.MasterKeySiteId
-                        || siteProvider.getSite(siteId) == null)  {
+                // Check if the site id is valid
+                if (!isSiteIdEditable(siteId))  {
                     ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                     return;
                 }
-                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) { // enforce single keyset per site
+
+                // Trying to add a keyset for a site that already has one
+                if (keysetsById.values().stream().anyMatch(k -> k.getSiteId() == siteId)) {
                     ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
                     return;
                 }
@@ -130,6 +131,10 @@ public class SharingService implements IService {
                     return;
                 }
                 keysetId = requestKeysetId;
+                if(isSpecialKeyset(keysetId)) {
+                    ResponseUtil.error(rc, 400, "Keyset id: " + keysetId + " is not valid");
+                    return;
+                }
                 siteId = keyset.getSiteId();
                 name = requestName.equals("") ? keyset.getName() : requestName;
             }
@@ -146,6 +151,18 @@ public class SharingService implements IService {
             }
         }
     }
+
+    // Returns if a keyset is one of the reserved ones
+    private static boolean isSpecialKeyset(int keysetId) {
+        return keysetId == Const.Data.MasterKeysetId || keysetId == Const.Data.RefreshKeysetId
+                || keysetId == Const.Data.FallbackPublisherKeysetId;
+    }
+
+    // Returns if a site ID is not a special site and it does exist
+    private boolean isSiteIdEditable(int siteId) {
+        return SiteUtil.isValidSiteId(siteId) && siteProvider.getSite(siteId) != null;
+    }
+
 
     private void handleListKeyset(RoutingContext rc) {
         int keysetId;
@@ -264,6 +281,11 @@ public class SharingService implements IService {
             } catch (Exception e) {
                 LOGGER.warn("Failed to parse a site id from list request", e);
                 rc.fail(400, e);
+                return;
+            }
+
+            if (!isSiteIdEditable(siteId))  {
+                ResponseUtil.error(rc, 400, "Site id " + siteId + " not valid");
                 return;
             }
 
