@@ -58,7 +58,7 @@
             var url = '/api/site/add?name=' + siteName;
 
             let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', url, '#standardOutput', '#errorOutput',JSON.stringify({domain_names : domainNames}));
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames}));
         });
 
         $('#doDisable').on('click', function () {
