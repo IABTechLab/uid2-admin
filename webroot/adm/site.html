@@ -57,7 +57,8 @@
             var siteName = encodeURIComponent($('#siteName').val());
             var url = '/api/site/add?name=' + siteName;
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            doApiCall('POST', url, '#standardOutput', '#errorOutput',JSON.stringify({domain_names : domainNames}));
         });
 
         $('#doDisable').on('click', function () {

@@ -143,6 +143,17 @@ public class SiteService implements IService {
                 return;
             }
 
+            List<String> normalizedDomainNames = new ArrayList<>();
+
+            JsonObject body = rc.body().asJsonObject();
+            if (body != null) {
+                JsonArray domainNamesJa = body.getJsonArray("domain_names");
+                if (domainNamesJa != null) {
+                    normalizedDomainNames = getNormalizedDomainNames(rc, domainNamesJa);
+                    if(normalizedDomainNames == null) return;
+                }
+            }
+
             boolean enabled = false;
             List<String> enabledFlags = rc.queryParam("enabled");
             if (!enabledFlags.isEmpty()) {
@@ -158,7 +169,7 @@ public class SiteService implements IService {
                     .stream().sorted(Comparator.comparingInt(Site::getId))
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
-            final Site newSite = new Site(siteId, name, enabled);
+            final Site newSite = new Site(siteId, name, enabled, new HashSet<>(normalizedDomainNames));
 
             // add site to the array
             sites.add(newSite);
@@ -225,24 +236,8 @@ public class SiteService implements IService {
                 ResponseUtil.error(rc, 400, "required parameters: domain_names");
                 return;
             }
-            List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
-
-            List<String> normalizedDomainNames = new ArrayList<>();
-            for(String domain : domainNames) {
-                try {
-                    String tld = getTopLevelDomainName(domain);
-                    normalizedDomainNames.add(tld);
-                } catch (Exception e) {
-                    ResponseUtil.error(rc, 400, "invalid domain name: " + domain);
-                    return;
-                }
-            }
-
-            boolean containsDuplicates = normalizedDomainNames.stream().distinct().count() < normalizedDomainNames.size();
-            if (containsDuplicates) {
-                ResponseUtil.error(rc, 400, "duplicate domain_names not permitted");
-                return;
-            }
+            List<String> normalizedDomainNames = getNormalizedDomainNames(rc, domainNamesJa);
+            if (normalizedDomainNames == null) return;
 
             existingSite.setDomainNames(new HashSet<>(normalizedDomainNames));
 
@@ -256,6 +251,28 @@ public class SiteService implements IService {
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "set site domain_names failed", e);
         }
+    }
+
+    private static List<String> getNormalizedDomainNames(RoutingContext rc, JsonArray domainNamesJa) {
+        List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
+
+        List<String> normalizedDomainNames = new ArrayList<>();
+        for(String domain : domainNames) {
+            try {
+                String tld = getTopLevelDomainName(domain);
+                normalizedDomainNames.add(tld);
+            } catch (Exception e) {
+                ResponseUtil.error(rc, 400, "invalid domain name: " + domain);
+                return null;
+            }
+        }
+
+        boolean containsDuplicates = normalizedDomainNames.stream().distinct().count() < normalizedDomainNames.size();
+        if (containsDuplicates) {
+            ResponseUtil.error(rc, 400, "duplicate domain_names not permitted");
+            return null;
+        }
+        return normalizedDomainNames;
     }
 
     public static String getTopLevelDomainName(String origin) throws MalformedURLException {
