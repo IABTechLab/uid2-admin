@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -12,6 +11,7 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

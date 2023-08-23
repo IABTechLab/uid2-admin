@@ -1,7 +1,6 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -9,6 +8,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.Site;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

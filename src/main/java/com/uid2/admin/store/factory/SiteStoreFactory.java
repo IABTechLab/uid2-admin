@@ -1,15 +1,15 @@
 package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.SiteStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
