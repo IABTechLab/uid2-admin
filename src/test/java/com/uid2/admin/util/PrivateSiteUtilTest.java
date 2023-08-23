@@ -338,9 +338,9 @@ public class PrivateSiteUtilTest {
                     new EncryptionKey(6, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 7)
             };
             final ClientKey[] clientKeys = {
-                    new ClientKey("key3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
-                    new ClientKey("key4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
-                    new ClientKey("key7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
+                    new ClientKey("key3", "", "name3", "contact3", Instant.now(), readerRole, 3, false, null),
+                    new ClientKey("key4", "", "name4", "contact4", Instant.now(), readerRole, 4, false, null),
+                    new ClientKey("key7", "", "name7", "contact7", Instant.now(), readerRole, 7, false, null)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -932,7 +932,7 @@ public class PrivateSiteUtilTest {
         }
 
         public ClientKey build() {
-            return new ClientKey("key3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
+            return new ClientKey("key3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled, null);
         }
     }
 }

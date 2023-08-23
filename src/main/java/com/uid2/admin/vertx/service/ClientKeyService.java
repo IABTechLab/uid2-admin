@@ -41,6 +41,9 @@ public class ClientKeyService implements IService {
     private final String clientKeyPrefix;
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
 
+    private static final String PARAM_CLOUD_ACCOUNT_ID = "cloud_account_id";
+    private static final String CLOUD_PROVIDER_AWS_PREFIX = "aws";
+
     public ClientKeyService(JsonObject config,
                             AuthMiddleware auth,
                             WriteLock writeLock,
@@ -151,6 +154,7 @@ public class ClientKeyService implements IService {
                 jo.put("created", c.getCreated());
                 jo.put("site_id", c.getSiteId());
                 jo.put("disabled", c.isDisabled());
+                jo.put(PARAM_CLOUD_ACCOUNT_ID, c.getCloudAccountId());
             }
 
             rc.response()
@@ -203,6 +207,15 @@ public class ClientKeyService implements IService {
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
             if (site == null) return;
 
+            String cloudAccountId = null;
+            if (!rc.queryParam(PARAM_CLOUD_ACCOUNT_ID).isEmpty()) {
+                cloudAccountId = rc.queryParam(PARAM_CLOUD_ACCOUNT_ID).get(0);
+                // Todo validate account Id by checking its a valid
+                // Questions : Can you replace the account id for a client key with an existing account Id ?
+                // Can you associated multiple client keys with an account ID ?
+                cloudAccountId = CLOUD_PROVIDER_AWS_PREFIX + cloudAccountId;
+            }
+
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
@@ -218,7 +231,9 @@ public class ClientKeyService implements IService {
             ClientKey newClient = new ClientKey(key, secret, created)
                     .withNameAndContact(name)
                     .withSiteId(site.getId())
-                    .withRoles(roles);
+                    .withRoles(roles)
+                    .withCloudAccountId(cloudAccountId);
+
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
                 return;
@@ -289,6 +304,11 @@ public class ClientKeyService implements IService {
             if (site == null) return;
 
             existingClient.withSiteId(site.getId());
+
+            /**
+             * TODO Fetch Cloud Account ID from query params if present
+             * Validate it, then update the ClientKey
+             */
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))

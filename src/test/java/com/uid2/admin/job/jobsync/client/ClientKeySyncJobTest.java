@@ -49,7 +49,8 @@ class ClientKeySyncJobTest {
             Instant.MIN,
             ImmutableSet.of(Role.OPERATOR),
             scopedSiteId,
-            false);
+            false,
+            null);
     private ClientKeyStoreFactory clientKeyStoreFactory;
     private FileManager fileManager;
 
