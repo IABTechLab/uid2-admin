@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.model.Site;
-import com.uid2.shared.model.KeyGenerationResult;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -12,6 +11,8 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.secret.KeyHashResult;
+import com.uid2.shared.secret.KeyHasher;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
-
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
     private static final Set<Set<Role>> VALID_ROLE_COMBINATIONS = (Set.of(
             new TreeSet<>(Set.of()), // Empty role input is accepted as OPERATOR will be automatically added
             new TreeSet<>(Set.of(Role.OPERATOR)),
@@ -41,7 +42,7 @@ public class OperatorKeyService implements IService {
     private final RotatingOperatorKeyProvider operatorKeyProvider;
     private final RotatingSiteStore siteProvider;
     private final IKeyGenerator keyGenerator;
-    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private final KeyHasher keyHasher;
     private final String operatorKeyPrefix;
 
     public OperatorKeyService(JsonObject config,
@@ -50,13 +51,15 @@ public class OperatorKeyService implements IService {
                               OperatorKeyStoreWriter operatorKeyStoreWriter,
                               RotatingOperatorKeyProvider operatorKeyProvider,
                               RotatingSiteStore siteProvider,
-                              IKeyGenerator keyGenerator) {
+                              IKeyGenerator keyGenerator,
+                              KeyHasher keyHasher) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.operatorKeyStoreWriter = operatorKeyStoreWriter;
         this.operatorKeyProvider = operatorKeyProvider;
         this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
+        this.keyHasher = keyHasher;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
     }
@@ -149,14 +152,14 @@ public class OperatorKeyService implements IService {
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
-            if (!existingOperator.isPresent()) {
+            if (existingOperator.isEmpty()) {
                 ResponseUtil.error(rc, 404, "operator not exist");
                 return;
             }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(jsonWriter.writeValueAsString(existingOperator.get()));
+                    .end(JSON_WRITER.writeValueAsString(existingOperator.get()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -231,11 +234,12 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            KeyGenerationResult kgr = keyGenerator.generateFormattedKeyStringAndKeyHash(this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "", 32);
+            String key = (this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+            KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(kgr.getKey(), kgr.getKeyHash(), name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(key, khr.hash, khr.salt, name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);
@@ -244,7 +248,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with new key
-            rc.response().end(jsonWriter.writeValueAsString(newOperator));
+            rc.response().end(JSON_WRITER.writeValueAsString(newOperator));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -259,7 +263,7 @@ public class OperatorKeyService implements IService {
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
-            if (!existingOperator.isPresent()) {
+            if (existingOperator.isEmpty()) {
                 ResponseUtil.error(rc, 404, "operator name not found");
                 return;
             }
@@ -276,7 +280,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with client deleted
-            rc.response().end(jsonWriter.writeValueAsString(o));
+            rc.response().end(JSON_WRITER.writeValueAsString(o));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -299,7 +303,7 @@ public class OperatorKeyService implements IService {
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
-            if (!existingOperator.isPresent()) {
+            if (existingOperator.isEmpty()) {
                 ResponseUtil.error(rc, 404, "operator name not found");
                 return;
             }
@@ -380,7 +384,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(existingOperator));
+            rc.response().end(JSON_WRITER.writeValueAsString(existingOperator));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -395,7 +399,7 @@ public class OperatorKeyService implements IService {
             Optional<OperatorKey> existingOperator = this.operatorKeyProvider.getAll()
                     .stream().filter(o -> o.getName().equals(name))
                     .findFirst();
-            if (!existingOperator.isPresent()) {
+            if (existingOperator.isEmpty()) {
                 ResponseUtil.error(rc, 404, "operator key not found");
                 return;
             }
@@ -419,7 +423,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(o));
+            rc.response().end(JSON_WRITER.writeValueAsString(o));
         } catch (Exception e) {
             rc.fail(500, e);
         }

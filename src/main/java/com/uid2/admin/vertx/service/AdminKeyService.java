@@ -3,7 +3,6 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.shared.model.KeyGenerationResult;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.AdminUserStoreWriter;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
@@ -15,6 +14,8 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.secret.KeyHashResult;
+import com.uid2.shared.secret.KeyHasher;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -29,17 +30,18 @@ import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminKeyService.class);
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final AdminUserStoreWriter storeWriter;
     private final AdminUserProvider adminUserProvider;
     private final IKeyGenerator keyGenerator;
-    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
-    private final String adminKeyPrefix;
+    private final KeyHasher keyHasher;
     private final ClientKeyStoreWriter clientKeyStoreWriter;
     private final EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     private final KeyAclStoreWriter keyAclStoreWriter;
+    private final String adminKeyPrefix;
 
     public AdminKeyService(JsonObject config,
                            AuthMiddleware auth,
@@ -47,6 +49,7 @@ public class AdminKeyService implements IService {
                            AdminUserStoreWriter storeWriter,
                            AdminUserProvider adminUserProvider,
                            IKeyGenerator keyGenerator,
+                           KeyHasher keyHasher,
                            ClientKeyStoreWriter clientKeyStoreWriter,
                            EncryptionKeyStoreWriter encryptionKeyStoreWriter,
                            KeyAclStoreWriter keyAclStoreWriter) {
@@ -55,9 +58,11 @@ public class AdminKeyService implements IService {
         this.storeWriter = storeWriter;
         this.adminUserProvider = adminUserProvider;
         this.keyGenerator = keyGenerator;
+        this.keyHasher = keyHasher;
         this.clientKeyStoreWriter = clientKeyStoreWriter;
         this.encryptionKeyStoreWriter = encryptionKeyStoreWriter;
         this.keyAclStoreWriter = keyAclStoreWriter;
+
         this.adminKeyPrefix = config.getString("admin_key_prefix");
     }
 
@@ -147,14 +152,14 @@ public class AdminKeyService implements IService {
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
-            if (!existingAdmin.isPresent()) {
+            if (existingAdmin.isEmpty()) {
                 ResponseUtil.error(rc, 404, "admin not found");
                 return;
             }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(jsonWriter.writeValueAsString(existingAdmin.get()));
+                    .end(JSON_WRITER.writeValueAsString(existingAdmin.get()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -166,7 +171,7 @@ public class AdminKeyService implements IService {
             adminUserProvider.loadContent(adminUserProvider.getMetadata());
 
             final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
-            if (name == null || name.isEmpty()) {
+            if (name.isEmpty()) {
                 ResponseUtil.error(rc, 400, "must specify a valid admin name");
                 return;
             }
@@ -190,11 +195,12 @@ public class AdminKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            KeyGenerationResult kgr = keyGenerator.generateFormattedKeyStringAndKeyHash(this.adminKeyPrefix != null ? this.adminKeyPrefix : "", 32);
+            String key = (this.adminKeyPrefix != null ? this.adminKeyPrefix : "") + keyGenerator.generateFormattedKeyString(32);
+            KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new admin
             long created = Instant.now().getEpochSecond();
-            AdminUser newAdmin = new AdminUser(kgr.getKey(), name, name, created, roles, false);
+            AdminUser newAdmin = new AdminUser(key, khr.hash, khr.salt, name, name, created, roles, false);
 
             // add admin to the array
             admins.add(newAdmin);
@@ -203,7 +209,7 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // respond with new admin created
-            rc.response().end(jsonWriter.writeValueAsString(newAdmin));
+            rc.response().end(JSON_WRITER.writeValueAsString(newAdmin));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
@@ -219,7 +225,7 @@ public class AdminKeyService implements IService {
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
-            if (!existingAdmin.isPresent()) {
+            if (existingAdmin.isEmpty()) {
                 ResponseUtil.error(rc, 404, "admin not found");
                 return;
             }
@@ -236,7 +242,7 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // respond with admin deleted
-            rc.response().end(jsonWriter.writeValueAsString(a));
+            rc.response().end(JSON_WRITER.writeValueAsString(a));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
@@ -260,7 +266,7 @@ public class AdminKeyService implements IService {
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
-            if (!existingAdmin.isPresent()) {
+            if (existingAdmin.isEmpty()) {
                 ResponseUtil.error(rc, 404, "admin not found");
                 return;
             }
@@ -303,7 +309,7 @@ public class AdminKeyService implements IService {
             Optional<AdminUser> existingAdmin = this.adminUserProvider.getAll()
                     .stream().filter(a -> a.getName().equals(name))
                     .findFirst();
-            if (!existingAdmin.isPresent()) {
+            if (existingAdmin.isEmpty()) {
                 ResponseUtil.error(rc, 404, "admin not found");
                 return;
             }
@@ -325,7 +331,7 @@ public class AdminKeyService implements IService {
             storeWriter.upload(admins);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(a));
+            rc.response().end(JSON_WRITER.writeValueAsString(a));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
@@ -341,7 +347,7 @@ public class AdminKeyService implements IService {
             json.put("Result", "Successfully rewrote global metadata files of Client Keys/Encryption Keys/Encryption Key ACLs");
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(jsonWriter.writeValueAsString(json));
+                    .end(JSON_WRITER.writeValueAsString(json));
 
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);

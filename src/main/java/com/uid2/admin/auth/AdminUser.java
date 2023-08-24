@@ -1,5 +1,6 @@
 package com.uid2.admin.auth;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.uid2.shared.auth.IRoleAuthorizable;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.auth.Roles;
@@ -12,14 +13,20 @@ import java.util.Set;
 
 public class AdminUser implements IRoleAuthorizable<Role> {
     private final String key;
+    @JsonProperty("key_hash")
+    private final String keyHash;
+    @JsonProperty("key_salt")
+    private final String keySalt;
     private final String name;
     private final String contact;
     private final long created; // epochSeconds
     private Set<Role> roles;
     private boolean disabled;
 
-    public AdminUser(String key, String name, String contact, long created, Set<Role> roles, boolean disabled) {
+    public AdminUser(String key, String keyHash, String keySalt, String name, String contact, long created, Set<Role> roles, boolean disabled) {
         this.key = key;
+        this.keyHash = keyHash;
+        this.keySalt = keySalt;
         this.name = name;
         this.contact = contact;
         this.created = created;
@@ -28,13 +35,15 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     }
 
     public static AdminUser unknown(String unknown) {
-        return new AdminUser(unknown, unknown, unknown,
+        return new AdminUser(unknown, unknown, unknown, unknown, unknown,
                 Instant.now().getEpochSecond(), Collections.emptySet(), false);
     }
 
     public static AdminUser valueOf(JsonObject json) {
         return new AdminUser(
                 json.getString("key"),
+                json.getString("key_hash"),
+                json.getString("key_salt"),
                 json.getString("name"),
                 json.getString("contact"),
                 json.getLong("created"),
@@ -46,6 +55,16 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     @Override
     public String getKey() {
         return key;
+    }
+
+    @Override
+    public String getKeyHash() {
+        return keyHash;
+    }
+
+    @Override
+    public String getKeySalt() {
+        return keySalt;
     }
 
     public String getName() {
@@ -99,14 +118,18 @@ public class AdminUser implements IRoleAuthorizable<Role> {
         AdminUser b = (AdminUser) o;
 
         // Compare the data members and return accordingly, intentionally don't compare keys
-        return this.name.equals(b.name)
+        return this.key.equals(b.key)
+                && this.keyHash.equals(b.keyHash)
+                && this.keySalt.equals(b.keySalt)
+                && this.name.equals(b.name)
                 && this.contact.equals(b.contact)
+                && this.created == b.created
                 && this.roles.equals(b.roles)
-                && this.created == b.created;
+                && this.disabled == b.disabled;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, name, contact, created);
+        return Objects.hash(key, keyHash, keySalt, name, contact, created, roles, disabled);
     }
 }
