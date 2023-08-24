@@ -75,10 +75,12 @@ public class KeysetManager {
     }
 
     public static Keyset adminKeysetToKeyset(AdminKeyset adminKeyset, Map<ClientType, Set<Integer>> siteIdsByType) {
-        Set<Integer> allowedList = adminKeyset.getAllowedSites();
-        if(allowedList == null) {
+        Set<Integer> allowedList = new HashSet<>();
+        if(adminKeyset.getAllowedSites() == null) {
             return adminKeyset;
         }
+
+        allowedList.addAll(adminKeyset.getAllowedSites());
 
         for (ClientType type : adminKeyset.getAllowedTypes()) {
             allowedList.addAll(siteIdsByType.get(type));

@@ -113,10 +113,10 @@ public class Main {
             keyAclProvider.loadContent();
             KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, versionGenerator, clock, keyAclGlobalScope);
 
-            CloudPath keysetMetadataPath = new CloudPath(config.getString("admin_keysets_metadata_path"));
-            GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
-            RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, keysetGlobalScope);
-            AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope);
+            CloudPath adminKeysetMetadataPath = new CloudPath(config.getString("admin_keysets_metadata_path"));
+            GlobalScope adminKeysetGlobalScope = new GlobalScope(adminKeysetMetadataPath);
+            RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, adminKeysetGlobalScope);
+            AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, adminKeysetGlobalScope);
             try {
                 adminKeysetProvider.loadContent();
             } catch (CloudStorageException e) {
@@ -219,7 +219,13 @@ public class Main {
             AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
-            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
+            CloudPath keysetMetadataPath = new CloudPath(config.getString("keysets_metadata_path"));
+            GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
+            RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
+            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
+
+
+            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
             jobDispatcher.executeNextJob();
 

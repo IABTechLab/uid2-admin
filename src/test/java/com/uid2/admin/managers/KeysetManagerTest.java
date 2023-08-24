@@ -242,8 +242,8 @@ public class KeysetManagerTest {
         );
 
         for(int i = 0; i < adminKeysets.size(); i++) {
-            Keyset result = KeysetManager.adminKeysetToKeyset(adminKeysets.get(0), clientTypeSetMap);
-            assertTrue(expectedKeysets.get(0).equals(result));
+            Keyset result = KeysetManager.adminKeysetToKeyset(adminKeysets.get(i), clientTypeSetMap);
+            assertTrue(expectedKeysets.get(i).equals(result));
         }
     }
 
