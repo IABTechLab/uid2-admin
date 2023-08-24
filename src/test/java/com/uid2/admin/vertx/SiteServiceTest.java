@@ -1,13 +1,14 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.admin.model.Site;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SiteService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.Site;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,6 +44,13 @@ public class SiteServiceTest extends ServiceTestBase {
                 () -> assertEquals(expectedSite.getId(), actualSite.getInteger("id")),
                 () -> assertEquals(expectedSite.getName(), actualSite.getString("name")),
                 () -> assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled")));
+    }
+
+    private void checkSiteResponse(Site expectedSite, JsonObject actualSite){
+        assertEquals(expectedSite.getId(), actualSite.getInteger("id"));
+        assertEquals(expectedSite.getName(), actualSite.getString("name"));
+        assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
+        assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
     }
 
     private void checkSiteResponseWithKeys(Object[] actualSites, int siteId, int nkeys, Role... roles) {
@@ -83,7 +92,7 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
-                new Site(13, "site3", false),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
         };
         setSites(sites);
 
@@ -106,7 +115,7 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
-                new Site(13, "site3", false),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
         };
         setSites(sites);
@@ -356,4 +365,257 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites();
         post(vertx, "api/site/enable?id=2&enabled=true", "", expectHttpError(testContext, 400));
     }
+
+    @Test
+    void domainNameNoSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites();
+        post(vertx, "api/site/domain_names", "", ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameMissingSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites();
+        post(vertx, "api/site/domain_names?id=123", "", ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(404, response.statusCode());
+            assertEquals("site not found", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameInvalidSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites();
+        post(vertx, "api/site/domain_names?id=2", "", ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify a valid site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameBadSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites();
+        post(vertx, "api/site/domain_names?id=asdf", "", ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("unable to parse site id For input string: \"asdf\"", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameNoDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setSites(new Site(123, "name", true));
+        JsonObject reqBody = new JsonObject();
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameters: domain_names", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameEmptyNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+        JsonObject reqBody = new JsonObject();
+        reqBody.put("domain_names", new JsonArray());
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameInvalidDomainName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("bad");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameInvalidTld(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("bad.doesntexist");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid domain name: bad.doesntexist", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameDuplicateDomainName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("bad.com");
+        names.add("http://bad.com");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("duplicate domain_names not permitted", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameMultipleDomainName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("test.com");
+        names.add("http://test.net");
+        names.add("https://test.org");
+        names.add("https://something.something.test2.org/asdf/asdf");
+        names.add("blah.test3.com");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            s.setDomainNames(Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void domainNameOverWrite(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true, Set.of("qwerty.com"));
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("test.com");
+        names.add("http://test.net");
+        names.add("https://test.org");
+        names.add("https://something.something.test2.org/asdf/asdf");
+        names.add("blah.test3.com");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            s.setDomainNames(Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setSites(new Site(123, "name", true, Set.of("qwerty.com")));
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("test.com");
+        names.add("http://test.net");
+        names.add("https://test.org");
+        names.add("https://something.something.test2.org/asdf/asdf");
+        names.add("blah.test3.com");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            Site expected = new Site(124, "test_name", true, Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
+            checkSiteResponse(expected, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithBadDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setSites(new Site(123, "name", true, Set.of("qwerty.com")));
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("test.com");
+        names.add("bad");
+        names.add("https://test.org");
+        names.add("https://something.something.test2.org/asdf/asdf");
+        names.add("blah.test3.com");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithDuplicateDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("test.com");
+        names.add("http://test.com");
+        names.add("https://test.org");
+        names.add("https://something.something.test2.org/asdf/asdf");
+        names.add("blah.test3.com");
+        reqBody.put("domain_names", names);
+
+        post(vertx, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("duplicate domain_names not permitted", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+
 }

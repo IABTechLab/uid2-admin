@@ -1,9 +1,8 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.model.Site;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -13,6 +12,7 @@ import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -353,8 +353,7 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
-            if (!rc.queryParam("site_id").isEmpty())
-            {
+            if (!rc.queryParam("site_id").isEmpty()) {
                 final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
                 if (site == null) {
                     ResponseUtil.error(rc, 404, "site id not found");
@@ -363,8 +362,7 @@ public class OperatorKeyService implements IService {
                 existingOperator.setSiteId(site.getId());
             }
 
-            if (!rc.queryParam("operator_type").isEmpty() && rc.queryParam("operator_type").get(0) != null)
-            {
+            if (!rc.queryParam("operator_type").isEmpty() && rc.queryParam("operator_type").get(0) != null) {
                 OperatorType operatorType;
                 try {
                     operatorType = OperatorType.valueOf(rc.queryParam("operator_type").get(0).toUpperCase());

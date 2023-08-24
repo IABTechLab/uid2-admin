@@ -8,10 +8,8 @@ import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
 import com.uid2.admin.job.jobsync.keyset.KeysetSyncJob;
 import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.job.model.Job;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.*;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.vertx.JsonUtil;
@@ -22,7 +20,9 @@ import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.JsonObject;
 
@@ -146,7 +146,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
 
-
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
         EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(
@@ -158,6 +157,7 @@ public class PrivateSiteDataSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
+
         siteSyncJob.execute();
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();

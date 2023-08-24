@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -12,6 +11,7 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -101,6 +101,8 @@ public class SharingService implements IService {
             final int siteId;
             final int keysetId;
             final String name;
+            Set<Integer> existingSites = new HashSet<>();
+
             if(requestSiteId != null) {
                 siteId = requestSiteId;
                 name = requestName;
@@ -134,13 +136,16 @@ public class SharingService implements IService {
                 }
                 siteId = keyset.getSiteId();
                 name = requestName.equals("") ? keyset.getName() : requestName;
+                existingSites = keyset.getAllowedSites();
             }
 
 
             final Set<Integer> newlist;
 
             if (allowedSites != null){
-                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+                final Set<Integer> existingAllowedSites = existingSites;
+                OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s)
+                        .filter(s -> !existingAllowedSites.contains(s) && !isSiteIdEditable(s)).findFirst();
                 if (firstInvalidSite.isPresent()) {
                     ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
                     return;
