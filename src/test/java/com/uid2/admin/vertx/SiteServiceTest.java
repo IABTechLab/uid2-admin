@@ -7,6 +7,7 @@ import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
@@ -25,15 +26,22 @@ public class SiteServiceTest extends ServiceTestBase {
         return new SiteService(auth, writeLock, storeWriter, siteProvider, clientKeyProvider);
     }
 
-    private void checkSitesResponse(Site[] expectedSites, Object[] actualSites) {
-        assertEquals(expectedSites.length, actualSites.length);
-        for (int i = 0; i < expectedSites.length; ++i) {
-            Site expectedSite = expectedSites[i];
-            JsonObject actualSite = (JsonObject) actualSites[i];
-            assertEquals(expectedSite.getId(), actualSite.getInteger("id"));
-            assertEquals(expectedSite.getName(), actualSite.getString("name"));
-            assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
-        }
+    private void checkSiteResponse(Site[] expectedSites, Object[] actualSites) {
+        assertAll(
+                "checkSiteResponse",
+                () -> assertEquals(expectedSites.length, actualSites.length),
+                () -> {
+                    for (int i = 0; i < expectedSites.length; ++i) {
+                        checkSiteJson(expectedSites[i], (JsonObject) actualSites[i]);
+                    }});
+    }
+
+    private void checkSiteJson(Site expectedSite, JsonObject actualSite) {
+        assertAll(
+                "checkSiteJson",
+                () -> assertEquals(expectedSite.getId(), actualSite.getInteger("id")),
+                () -> assertEquals(expectedSite.getName(), actualSite.getString("name")),
+                () -> assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled")));
     }
 
     private void checkSiteResponseWithKeys(Object[] actualSites, int siteId, int nkeys, Role... roles) {
@@ -41,14 +49,15 @@ public class SiteServiceTest extends ServiceTestBase {
                 .map(s -> (JsonObject) s)
                 .filter(s -> s.getInteger("id") == siteId)
                 .findFirst().get();
-        assertEquals(nkeys, site.getInteger("client_count"));
         List<Role> actualRoles = site.getJsonArray("roles").stream()
                 .map(r -> Role.valueOf((String) r))
                 .collect(Collectors.toList());
-        assertEquals(roles.length, actualRoles.size());
-        for (Role role : roles) {
-            assertTrue(actualRoles.contains(role));
-        }
+
+        assertAll(
+                "checkSiteResponseWithKeys",
+                () -> assertEquals(nkeys, site.getInteger("client_count")),
+                () -> assertEquals(roles.length, actualRoles.size()),
+                () -> assertTrue(actualRoles.containsAll(List.of(roles))));
     }
 
     @Test
@@ -56,10 +65,13 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         get(vertx, "api/site/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            assertEquals(0, response.bodyAsJsonArray().size());
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "listSitesNoSites",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(0, response.bodyAsJsonArray().stream().count()));
+
             testContext.completeNow();
         });
     }
@@ -76,10 +88,13 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(sites);
 
         get(vertx, "api/site/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(sites, response.bodyAsJsonArray().stream().toArray());
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "listSitesHaveSites",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(sites, response.bodyAsJsonArray().stream().toArray()));
+
             testContext.completeNow();
         });
     }
@@ -97,22 +112,25 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(sites);
 
         ClientKey[] clientKeys = {
-                new ClientKey("ck1", "ckh1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
-                new ClientKey("ck2", "ckh2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
-                new ClientKey("ck3", "ckh3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
-                new ClientKey("ck4", "ckh4", "cs4").withSiteId(13).withRoles(Role.SHARER),
+                new ClientKey("ck1", "ckh1", "cks1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
+                new ClientKey("ck2", "ckh2", "cks2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
+                new ClientKey("ck3", "ckh3", "cks3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
+                new ClientKey("ck4", "ckh4", "cks4", "cs4").withSiteId(13).withRoles(Role.SHARER),
         };
         setClientKeys(clientKeys);
 
         get(vertx, "api/site/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(sites, response.bodyAsJsonArray().stream().toArray());
-            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 11, 2, Role.GENERATOR, Role.ID_READER, Role.MAPPER);
-            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 12, 1, Role.MAPPER);
-            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 13, 1, Role.SHARER);
-            checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 14, 0);
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "listSitesWithKeys",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(sites, response.bodyAsJsonArray().stream().toArray()),
+                    () -> checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 11, 2, Role.GENERATOR, Role.ID_READER, Role.MAPPER),
+                    () -> checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 12, 1, Role.MAPPER),
+                    () -> checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 13, 1, Role.SHARER),
+                    () -> checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 14, 0));
+
             testContext.completeNow();
         });
     }
@@ -130,10 +148,12 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(initialSites);
 
         post(vertx, "api/site/add?name=test_site", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "addSiteNoExistingSites",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()}));
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
@@ -159,10 +179,12 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(initialSites);
 
         post(vertx, "api/site/add?name=test_site", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "addSiteExistingSites",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()}));
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
@@ -183,14 +205,15 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] addedSites = {
                 new Site(3, "test_site", true),
         };
-
         setSites(initialSites);
 
         post(vertx, "api/site/add?name=test_site&enabled=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "addSiteEnabled",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()}));
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
@@ -233,14 +256,15 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] updatedSites = {
                 new Site(3, "test_site", true),
         };
-
         setSites(initialSites);
 
         post(vertx, "api/site/enable?id=3&enabled=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "enableSite",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(updatedSites, new Object[]{response.bodyAsJsonObject()}));
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length), isNull());
@@ -262,14 +286,15 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] updatedSites = {
                 new Site(3, "test_site", false),
         };
-
         setSites(initialSites);
 
         post(vertx, "api/site/enable?id=3&enabled=false", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "disableSite",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(updatedSites, new Object[]{response.bodyAsJsonObject()}));
 
             try {
                 verify(storeWriter).upload(collectionOfSize(initialSites.length), isNull());
@@ -291,14 +316,15 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] updatedSites = {
                 new Site(3, "test_site", true),
         };
-
         setSites(initialSites);
 
         post(vertx, "api/site/enable?id=3&enabled=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkSitesResponse(updatedSites, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "enableSiteAlreadyEnabled",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(updatedSites, new Object[]{response.bodyAsJsonObject()}));
 
             try {
                 verify(storeWriter, times(0)).upload(any(), isNull());

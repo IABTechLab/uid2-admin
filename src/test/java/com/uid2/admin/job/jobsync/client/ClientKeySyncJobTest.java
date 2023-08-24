@@ -34,6 +34,7 @@ class ClientKeySyncJobTest {
             new OperatorKey(
                     "key",
                     "keyHash",
+                    "keySalt",
                     "name",
                     "contact",
                     "protocol",
@@ -45,6 +46,7 @@ class ClientKeySyncJobTest {
     private final ClientKey client = new ClientKey(
             "key",
             "keyHash",
+            "keySalt",
             "secret",
             "name",
             "contact",

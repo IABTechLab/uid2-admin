@@ -39,6 +39,7 @@ public class SiteSyncJobTest {
             new OperatorKey(
                     "key",
                     "keyHash",
+                    "keySalt",
                     "name",
                     "contact",
                     "protocol",
