@@ -18,10 +18,11 @@ import java.util.HashSet;
 public class AdminKeysetParser implements Parser<AdminKeysetSnapshot> {
     @Override
     public ParsingResult<AdminKeysetSnapshot> deserialize(InputStream inputStream) throws IOException {
-        final JsonArray keysetsSpec = Utils.toJsonArray(inputStream);
+        final JsonArray adminKeysetsSpec = Utils.toJsonArray(inputStream);
         final HashMap<Integer, AdminKeyset> keysetIdToAdminKeyset = new HashMap<>();
-        for(int i = 0; i < keysetsSpec.size(); i++) {
-            final JsonObject keysetSpec = keysetsSpec.getJsonObject(i);
+        for(int i = 0; i < adminKeysetsSpec.size(); i++) {
+            final JsonObject adminKeysetSpec = adminKeysetsSpec.getJsonObject(i);
+            final JsonObject keysetSpec = adminKeysetSpec.getJsonObject("keyset");
             final Integer keysetId = keysetSpec.getInteger("keyset_id");
             final Integer siteId = keysetSpec.getInteger("site_id");
             final String name = keysetSpec.getString("name");
@@ -36,7 +37,7 @@ public class AdminKeysetParser implements Parser<AdminKeysetSnapshot> {
                 }
             }
 
-            final JsonArray allowedTypeSpec = keysetSpec.getJsonArray("allowed_types");
+            final JsonArray allowedTypeSpec = adminKeysetSpec.getJsonArray("allowed_types");
 
             HashSet<ClientType> allowedTypes = new HashSet<>();
             for (int j = 0; j < allowedTypeSpec.size(); ++j) {
@@ -50,6 +51,6 @@ public class AdminKeysetParser implements Parser<AdminKeysetSnapshot> {
 
             keysetIdToAdminKeyset.put(keysetId, new AdminKeyset(keysetId, siteId, name, allowedSites, created, enabled, isDefault, allowedTypes));
         }
-        return new ParsingResult<>(new AdminKeysetSnapshot(keysetIdToAdminKeyset), keysetsSpec.size());
+        return new ParsingResult<>(new AdminKeysetSnapshot(keysetIdToAdminKeyset), adminKeysetsSpec.size());
     }
 }

@@ -4,7 +4,8 @@
     "created" : 1609459200,
     "activates" : 1609459200,
     "expires" : 1893456000,
-    "secret" : "vPdQIoN1nTwXIQoH4/GcHOAct7ymyrGUKXNQhgmq+E8="
+    "secret" : "vPdQIoN1nTwXIQoH4/GcHOAct7ymyrGUKXNQhgmq+E8=",
+    "keyset_id": -1
   },
   {
     "id" : 2000,
@@ -12,7 +13,7 @@
     "activates" : 1609459200,
     "expires" : 1893456000,
     "secret" : "c2yMYeezHfDvZ6haknCFaj0t+eAEJp/C/uh+fUAm1fo=",
-    "keyset_id": 2
+    "keyset_id": -2
   },
   {
     "id" : 3000,
@@ -20,7 +21,7 @@
     "activates" : 1609459200,
     "expires" : 1893456000,
     "secret" : "RgyxkP4yP1gYhCINq7O9PxM6jX+etPqSQluZxjB1aG8=",
-    "keyset_id": 3
+    "keyset_id": 2
   },
   {
     "id" : 4000,
