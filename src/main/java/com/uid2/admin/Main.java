@@ -238,6 +238,8 @@ public class Main {
             if(enableKeysets) {
                 //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
                 encryptionKeyService.createKeysetKeys();
+                keysetProvider.loadContent();
+                keysetManager.createAdminKeysets(keysetProvider.getAll());
             }
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);

@@ -77,7 +77,7 @@ public class KeysetManager {
     public static Keyset adminKeysetToKeyset(AdminKeyset adminKeyset, Map<ClientType, Set<Integer>> siteIdsByType) {
         Set<Integer> allowedList = new HashSet<>();
         if(adminKeyset.getAllowedSites() == null) {
-            return adminKeyset;
+            return adminKeyset.getKeyset();
         }
 
         allowedList.addAll(adminKeyset.getAllowedSites());
@@ -139,5 +139,20 @@ public class KeysetManager {
         collection.put(keyset.getKeysetId(), keyset);
         keysetStoreWriter.upload(collection, null);
         this.keysetKeyManager.addKeysetKey(keyset.getKeysetId());
+    }
+
+    public void createAdminKeysets(Map<Integer, Keyset> keysets) throws  Exception{
+        this.keysetProvider.loadContent();
+
+        Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+
+        for (Keyset keyset: keysets.values()) {
+            if(!collection.keySet().contains(keyset.getKeysetId())) {
+                collection.put(keyset.getKeysetId(),  new AdminKeyset(keyset));
+                this.keysetKeyManager.addKeysetKey(keyset.getKeysetId());
+            }
+        }
+
+        keysetStoreWriter.upload(collection, null);
     }
 }

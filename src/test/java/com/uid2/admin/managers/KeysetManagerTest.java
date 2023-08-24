@@ -247,6 +247,121 @@ public class KeysetManagerTest {
         }
     }
 
+    @Test
+    public void testCreateAdminKeysetsAllNew() throws Exception {
+        Map<Integer, Keyset> keysets = Map.of(
+                1, new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
+                2, new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
+                3, new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
+                4, new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
+                5, new Keyset(5, 5, "", null, 0, true, true)
+        );
+
+        Map<Integer, AdminKeyset> adminKeysetMap = new HashMap<>();
+        setKeysets(adminKeysetMap);
+
+        List<AdminKeyset> expectedKeysets =List.of(
+                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
+                new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()),
+                new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()),
+                new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()),
+                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
+        );
+
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
+                keysetKeyManager, true);
+
+        keysetManager.createAdminKeysets(keysets);
+
+        verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
+
+        for(AdminKeyset expectedKeyset : expectedKeysets) {
+            AdminKeyset result = adminKeysetMap.get(expectedKeyset.getKeysetId());
+            assertTrue(expectedKeyset.equals(result));
+        }
+    }
+
+    @Test
+    public void testCreateAdminKeysetsOneNew() throws Exception {
+        Map<Integer, Keyset> keysets = Map.of(
+                1, new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
+                2, new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
+                3, new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
+                4, new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
+                5, new Keyset(5, 5, "", null, 0, true, true)
+        );
+
+        Map<Integer, AdminKeyset> adminKeysetMap = new HashMap<>();
+
+        adminKeysetMap.put(1, new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()));
+        adminKeysetMap.put(2, new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()));
+        adminKeysetMap.put(3, new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()));
+        adminKeysetMap.put(4, new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()));
+
+        setKeysets(adminKeysetMap);
+
+        List<AdminKeyset> expectedKeysets =List.of(
+                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
+                new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()),
+                new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()),
+                new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()),
+                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
+        );
+
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
+                keysetKeyManager, true);
+
+        keysetManager.createAdminKeysets(keysets);
+
+        verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
+
+        for(AdminKeyset expectedKeyset : expectedKeysets) {
+            AdminKeyset result = adminKeysetMap.get(expectedKeyset.getKeysetId());
+            assertTrue(expectedKeyset.equals(result));
+        }
+    }
+
+    @Test
+    public void testCreateAdminKeysetsNoNew() throws Exception {
+        Map<Integer, Keyset> keysets = Map.of(
+                1, new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
+                2, new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
+                3, new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
+                4, new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
+                5, new Keyset(5, 5, "", null, 0, true, true)
+        );
+
+        Map<Integer, AdminKeyset> adminKeysetMap = new HashMap<>();
+
+        adminKeysetMap.put(1, new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()));
+        adminKeysetMap.put(2, new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()));
+        adminKeysetMap.put(3, new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()));
+        adminKeysetMap.put(4, new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()));
+        adminKeysetMap.put(5, new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>()));
+
+        setKeysets(adminKeysetMap);
+
+        List<AdminKeyset> expectedKeysets =List.of(
+                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
+                new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()),
+                new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()),
+                new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()),
+                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
+        );
+
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
+                keysetKeyManager, true);
+
+        keysetManager.createAdminKeysets(keysets);
+
+        verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
+
+        for(AdminKeyset expectedKeyset : expectedKeysets) {
+            AdminKeyset result = adminKeysetMap.get(expectedKeyset.getKeysetId());
+            assertTrue(expectedKeyset.equals(result));
+        }
+    }
+
     protected static class MapOfSize implements ArgumentMatcher<Map> {
         private final int expectedSize;
 
