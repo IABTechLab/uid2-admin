@@ -26,6 +26,10 @@
   <input type="text" id="addSiteIds" name="addSiteIds">
   <label for="removeSiteIds">Remove Allowed Sites:</label>
   <input type="text" id="removeSiteIds" name="removeSiteIds">
+  <label for="addTypes">Add Allowed Types:</label>
+  <input type="text" id="addTypes" name="addSiteIds">
+  <label for="removeTypes">Remove Allowed Types:</label>
+  <input type="text" id="removeTypes" name="removeSiteIds">
 </div>
 
 <br>
@@ -119,9 +123,13 @@
       const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
       const remove = ($('#removeSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
 
+      const addTypes = ($('#addTypes').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(String);
+      const removeTypes = ($('#removeTypes').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(String);
+
       doApiCallWithCallback('GET', url, (text) => {
         const jo = JSON.parse(text);
         let allowedSites = jo.allowed_sites;
+        let allowedTypes = jo.allowed_types;
 
         const url = '/api/sharing/keyset';
 
@@ -136,7 +144,17 @@
           allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
         }
 
+        if((addTypes && addTypes.length !== 0) || (removeTypes && removeTypes.length !== 0)) {
+          if(allowedTypes == null) {
+            $('#errorOutput').html('cannot add/remove types from null. If this was intentional, please reset allowed_sites to empty then try again.')
+            return
+          }
+          allowedTypes = allowedTypes.filter((value, _, __) => !removeTypes.includes(value))
+          allowedTypes = allowedTypes.concat(addTypes.filter((value, _, __) => !allowedTypes.includes(value)))
+        }
+
         payload["allowed_sites"] = allowedSites
+        payload['allowed_types'] = allowedTypes
 
         if(name && (name = $.trim(name))) {
           payload["name"] = name
@@ -162,14 +180,21 @@
 
       let allowedSites = []
       const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
+      const addTypes = ($('#addTypes').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(String);
       if(add && add.length !== 0) {
         allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
       }
       payload['allowed_sites'] = allowedSites
+      payload['allowed_types'] = addTypes
 
       doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
     });
   });
+
+  function checkTypes(type) {
+    let allowed_types = ["DSP", "PUBLISHER", "ADVERTISER", "DATA_PROVIDER"];
+
+  }
 
 </script>
 

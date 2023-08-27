@@ -832,7 +832,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewEmptyAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(8, "test", true, new HashSet<>())).when(siteProvider).getSite(8);
+        doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -863,7 +863,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetUpdateEmptyAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(5, "test", true, new HashSet<>())).when(siteProvider).getSite(5);
+        doReturn(new Site(5, "test", true)).when(siteProvider).getSite(5);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -895,7 +895,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(input, "test", true, new HashSet<>())).when(siteProvider).getSite(input);
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -924,7 +924,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetReservedKeyset(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(input, "test", true, new HashSet<>())).when(siteProvider).getSite(input);
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer,AdminKeyset >() {{
             put(input, new AdminKeyset(input, input, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -953,7 +953,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetUpdateReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(input, "test", true, new HashSet<>())).when(siteProvider).getSite(input);
+        doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4, 6, 7), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
@@ -981,7 +981,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetNewDisallowDuplicates(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(8, "test", true, new HashSet<>())).when(siteProvider).getSite(8);
+        doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -1009,7 +1009,7 @@ public class SharingServiceTest extends ServiceTestBase {
     void KeysetSetUpdateDisallowDuplicates(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        doReturn(new Site(5, "test", true, new HashSet<>())).when(siteProvider).getSite(8);
+        doReturn(new Site(5, "test", true)).when(siteProvider).getSite(8);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));

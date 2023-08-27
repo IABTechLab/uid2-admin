@@ -60,7 +60,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientRename(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
         ClientKey[] expectedClients = {
                 new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
@@ -85,7 +85,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientRenameWithExistingName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
         setClientKeys(
                 new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(5),
                 new ClientKey(EXPECTED_CLIENT_KEY, "","test_client1").withRoles(Role.GENERATOR).withSiteId(5));
@@ -105,7 +105,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
         ClientKey[] expectedClients = {
                 new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
         };
@@ -130,7 +130,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     void clientAddCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
 
         final String endpoint = String.format("api/client/add?name=test_client&site_id=5&roles=%s", RequestUtil.getRolesSpec(roles));
 
@@ -177,7 +177,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
         setClientKeys(new ClientKey("", "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         ClientKey[] expectedClients = {
                 new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
@@ -203,7 +203,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     void clientUpdateCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
         setClientKeys(new ClientKey("", "","test_client")
                 .withRoles(roles)
                 .withSiteId(4));
@@ -223,7 +223,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(5, "test_site", true, new HashSet<>()));
+        setSites(new Site(5, "test_site", true));
         post(vertx, "api/client/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
     }
 

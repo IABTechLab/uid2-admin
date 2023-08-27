@@ -375,9 +375,14 @@ public class SharingService implements IService {
         if(allowedTypes == null || allowedTypes.isEmpty()) {
             newAllowedTypes = new HashSet<>();
         } else {
-            newAllowedTypes = allowedTypes.stream()
-                    .map(s -> Enum.valueOf(ClientType.class, s.toString()))
-                    .collect(Collectors.toSet());
+            try {
+                newAllowedTypes = allowedTypes.stream()
+                        .map(s -> Enum.valueOf(ClientType.class, s.toString()))
+                        .collect(Collectors.toSet());
+            } catch (Exception e) {
+                ResponseUtil.error(rc, 400, "Invalid Client Type");
+                return null;
+            }
         }
 
         final AdminKeyset newKeyset = new AdminKeyset(keysetId, siteId, name,

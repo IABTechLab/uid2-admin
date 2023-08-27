@@ -761,7 +761,7 @@ public class PrivateSiteUtilTest {
 
     @Nested
     class Sites {
-        Site site1 = new Site(siteId1, "site1", true, new HashSet<>());
+        Site site1 = new Site(siteId1, "site1", true);
 
         @Test
         public void returnsNoSitesForNoData() {
@@ -804,7 +804,7 @@ public class PrivateSiteUtilTest {
         public void doesNotShareSitesDataWithEachOther() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator, site2PrivateOperator);
 
-            Site site2 = new Site(siteId2, "Site 2", true, new HashSet<>());
+            Site site2 = new Site(siteId2, "Site 2", true);
             Set<Site> sites = ImmutableSet.of(site1, site2);
 
             PrivateSiteDataMap<Site> actual = getSites(sites, operators);
@@ -819,7 +819,7 @@ public class PrivateSiteUtilTest {
         public void siteWithId2IsSharedWithEveryone() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
 
-            Site siteWithId2 = new Site(2, "Site with ID 2", true, new HashSet<>());
+            Site siteWithId2 = new Site(2, "Site with ID 2", true);
             Set<Site> sites = ImmutableSet.of(site1, siteWithId2);
 
             PrivateSiteDataMap<Site> actual = getSites(sites, operators);
@@ -832,10 +832,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateSiteData() {
             final Site[] sites = {
-                    new Site(Const.Data.AdvertisingTokenSiteId, "1", true, new HashSet<>()),
-                    new Site(3, "2", true, new HashSet<>()),
-                    new Site(4, "3", true, new HashSet<>()),
-                    new Site(5, "4", true, new HashSet<>())
+                    new Site(Const.Data.AdvertisingTokenSiteId, "1", true),
+                    new Site(3, "2", true),
+                    new Site(4, "3", true),
+                    new Site(5, "4", true)
             };
             final OperatorKey[] publicOperatorKeys = {
                     new OperatorKey("key2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),

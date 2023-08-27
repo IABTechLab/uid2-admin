@@ -223,8 +223,8 @@ class ScopedStoreWriterTest {
     private RotatingSiteStore globalStore;
     private InMemoryStorageMock cloudStorage;
     private FileManager fileManager;
-    private final List<Site> oneSite = ImmutableList.of(new Site(1, "site 1", true, new HashSet<>()));
-    private final List<Site> anotherSite = ImmutableList.of(new Site(2, "site 2", true, new HashSet<>()));
+    private final List<Site> oneSite = ImmutableList.of(new Site(1, "site 1", true));
+    private final List<Site> anotherSite = ImmutableList.of(new Site(2, "site 2", true));
     private final String sitesDir = "sites";
     private final String metadataFileName = "test-metadata.json";
     private final CloudPath globalMetadataPath = new CloudPath(sitesDir).resolve(metadataFileName);

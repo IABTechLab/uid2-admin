@@ -1,6 +1,7 @@
 package com.uid2.admin.model;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -16,6 +17,13 @@ public class Site {
         this.name = name;
         this.enabled = enabled;
         this.types = types;
+    }
+
+    public Site(int id, String name, Boolean enabled) {
+        this.id = id;
+        this.name = name;
+        this.enabled = enabled;
+        this.types = new HashSet<>();
     }
 
     public int getId() { return id; }

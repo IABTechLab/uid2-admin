@@ -72,9 +72,9 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
-                new Site(11, "site1", false, new HashSet<>()),
-                new Site(12, "site2", true, new HashSet<>()),
-                new Site(13, "site3", false, new HashSet<>()),
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false),
         };
         setSites(sites);
 
@@ -92,10 +92,10 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
-                new Site(11, "site1", false, new HashSet<>()),
-                new Site(12, "site2", true, new HashSet<>()),
-                new Site(13, "site3", false, new HashSet<>()),
-                new Site(14, "site3", false, new HashSet<>()),
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false),
+                new Site(14, "site3", false),
         };
         setSites(sites);
 
@@ -127,7 +127,7 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] initialSites = {
         };
         Site[] addedSites = {
-                new Site(3, "test_site", false, new HashSet<>()),
+                new Site(3, "test_site", false),
         };
 
         setSites(initialSites);
@@ -153,10 +153,10 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
-                new Site(7, "initial_site", false, new HashSet<>()),
+                new Site(7, "initial_site", false),
         };
         Site[] addedSites = {
-                new Site(8, "test_site", false, new HashSet<>()),
+                new Site(8, "test_site", false),
         };
 
         setSites(initialSites);
@@ -182,7 +182,7 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
-                new Site(7, "initial_site", false, new HashSet<>()),
+                new Site(7, "initial_site", false),
         };
         Site[] addedSites = {
                 new Site(8, "test_site", false, Set.of(ClientType.DSP, ClientType.ADVERTISER)),
@@ -213,7 +213,7 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] initialSites = {
         };
         Site[] addedSites = {
-                new Site(3, "test_site", true, new HashSet<>()),
+                new Site(3, "test_site", true),
         };
 
         setSites(initialSites);
@@ -237,21 +237,21 @@ public class SiteServiceTest extends ServiceTestBase {
     @Test
     void addSiteExistingName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(3, "test_site", false, new HashSet<>()));
+        setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/add?name=test_site", "", expectHttpError(testContext, 400));
     }
 
     @Test
     void addSiteEmptyName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(3, "test_site", false, new HashSet<>()));
+        setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/add?name=", "", expectHttpError(testContext, 400));
     }
 
     @Test
     void addSiteWhitespaceName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(3, "test_site", false, new HashSet<>()));
+        setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/add?name=%20", "", expectHttpError(testContext, 400));
     }
 
@@ -260,10 +260,10 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
-                new Site(3, "test_site", false, new HashSet<>()),
+                new Site(3, "test_site", false),
         };
         Site[] updatedSites = {
-                new Site(3, "test_site", true, new HashSet<>()),
+                new Site(3, "test_site", true),
         };
 
         setSites(initialSites);
@@ -289,10 +289,10 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
-                new Site(3, "test_site", true, new HashSet<>()),
+                new Site(3, "test_site", true),
         };
         Site[] updatedSites = {
-                new Site(3, "test_site", false, new HashSet<>()),
+                new Site(3, "test_site", false),
         };
 
         setSites(initialSites);
@@ -318,10 +318,10 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
-                new Site(3, "test_site", true, new HashSet<>()),
+                new Site(3, "test_site", true),
         };
         Site[] updatedSites = {
-                new Site(3, "test_site", true, new HashSet<>()),
+                new Site(3, "test_site", true),
         };
 
         setSites(initialSites);
@@ -347,7 +347,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
-                new Site(3, "test_site", true, new HashSet<>()),
+                new Site(3, "test_site", true),
         };
         Site[] updatedSites = {
                 new Site(3, "test_site", true, Set.of(ClientType.DSP, ClientType.ADVERTISER)),
@@ -374,7 +374,7 @@ public class SiteServiceTest extends ServiceTestBase {
     @Test
     void enableSiteUnknownSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setSites(new Site(3, "test_site", false, new HashSet<>()));
+        setSites(new Site(3, "test_site", false));
         post(vertx, "api/site/enable?id=5&enabled=true", "", expectHttpError(testContext, 404));
     }
 

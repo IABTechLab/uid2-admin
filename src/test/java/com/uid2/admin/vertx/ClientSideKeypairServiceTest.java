@@ -249,7 +249,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
@@ -287,7 +287,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
@@ -324,7 +324,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
@@ -360,7 +360,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("contact", "email@email.com");
@@ -386,7 +386,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", "bad-id");
@@ -413,7 +413,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", "89aZ234567");
@@ -439,7 +439,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", "89aZ234567");
@@ -467,7 +467,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", "89aZ234567");
@@ -495,7 +495,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
 
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
-        setSites(new Site(123, "test", true, new HashSet<>()));
+        setSites(new Site(123, "test", true));
 
         JsonObject jo = new JsonObject();
         jo.put("subscription_id", "89aZ234567");

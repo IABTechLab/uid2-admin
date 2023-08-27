@@ -28,7 +28,7 @@ class MultiScopeStoreWriterTest {
     Integer scopedSiteId = 10;
     private SiteStoreFactory siteStoreFactory;
 
-    Site site = new Site(scopedSiteId, "site 1", true, new HashSet<>());
+    Site site = new Site(scopedSiteId, "site 1", true);
     private FileManager fileManager;
 
     @BeforeEach
@@ -96,7 +96,7 @@ class MultiScopeStoreWriterTest {
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
-        Site updatedSite = new Site(scopedSiteId, "site 1 updated", true, new HashSet<>());
+        Site updatedSite = new Site(scopedSiteId, "site 1 updated", true);
         MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
         multiStore.uploadIfChanged(ImmutableMap.of(

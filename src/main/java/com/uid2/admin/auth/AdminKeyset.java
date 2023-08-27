@@ -7,6 +7,7 @@ import org.checkerframework.checker.units.qual.K;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class AdminKeyset {
@@ -63,15 +64,14 @@ public class AdminKeyset {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof AdminKeyset)) return false;
-        AdminKeyset b = (AdminKeyset) o;
-        boolean result = keyset.equals(b.keyset);
-        if(!result) return false;
-        return allowedTypes.equals(b.getAllowedTypes());
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AdminKeyset that = (AdminKeyset) o;
+        return Objects.equals(allowedTypes, that.allowedTypes) && Objects.equals(keyset, that.keyset);
     }
 
     @Override
     public int hashCode() {
-        return keyset.hashCode() + Arrays.hashCode(this.allowedTypes.toArray());
+        return Objects.hash(allowedTypes, keyset);
     }
 }
