@@ -1,14 +1,14 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.model.ClientType;
+import com.uid2.shared.model.ClientType;
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
-import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.model.Site;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.Site;
+import com.uid2.admin.auth.AdminKeyset;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -759,6 +759,41 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    void KeysetSetIgnoresAlreadySetSitesWhenChecking(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        // 25 is not an existing site
+        mockSiteExistence(5, 22, 6);
+
+        // But 25 is already in the list here
+        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+            put(3, new AdminKeyset(3, 7, "test", Set.of(12, 25), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(4, new AdminKeyset(4, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        }};
+
+        setAdminKeysets(keysets);
+
+        // Resend 25
+        String body = "  {\n" +
+                "    \"allowed_sites\": [\n" +
+                "      22,\n" +
+                "      25,\n" +
+                "      6\n" +
+                "    ],\n" +
+                "    \"keyset_id\": 3," +
+                "     \"name\": \"test-name\"" +
+                "  }";
+
+        post(vertx, "api/sharing/keyset", body, ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+
+            testContext.completeNow();
+        });
+    }
+
     // This test should be enabled when multiple keysets is enabled
     @Test
     @Disabled
@@ -835,7 +870,7 @@ public class SharingServiceTest extends ServiceTestBase {
         doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(2, new AdminKeyset(2, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
         }};
 
         setAdminKeysets(keysets);
@@ -851,10 +886,10 @@ public class SharingServiceTest extends ServiceTestBase {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(2, 8, "test", Set.of(), Instant.now().getEpochSecond(), true, true, new HashSet<>());
+            AdminKeyset expected = new AdminKeyset(4, 8, "test", Set.of(), Instant.now().getEpochSecond(), true, true, new HashSet<>());
             compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
-            assertEquals(expected.getAllowedSites(), keysets.get(2).getAllowedSites());
+            assertEquals(expected.getAllowedSites(), keysets.get(4).getAllowedSites());
             testContext.completeNow();
         });
     }

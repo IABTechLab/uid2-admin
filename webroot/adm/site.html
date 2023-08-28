@@ -13,12 +13,26 @@
 
 <h3>Inputs</h3>
 
+<<<<<<< HEAD
 <label for="siteName">Name:</label>
 <input type="text" id="siteName" name="siteName">
 <label for="siteId">Site Id:</label>
 <input type="text" id="siteId" name="siteId">
 <label for="types">Types:</label>
 <input type="text" id="types" name="types">
+=======
+<div>
+    <label for="siteName">Name:</label>
+    <input type="text" id="siteName" name="siteName">
+    <label for="siteId">Site Id:</label>
+    <input type="text" id="siteId" name="siteId">
+</div>
+<br>
+<div>
+    <label for="domainNames">Domain Names:</label>
+    <input type="text" id="domainNames" name="domainNames" style="width: 500px;">
+</div>
+>>>>>>> master
 
 <br>
 <br>
@@ -30,7 +44,11 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
+<<<<<<< HEAD
     <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
+=======
+    <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
+>>>>>>> master
 </ul>
 
 <br>
@@ -53,7 +71,8 @@
             var types = encodeURIComponent($('#types').val());
             var url = '/api/site/add?name=' + siteName + '&types=' + types;
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames}));
         });
 
         $('#doDisable').on('click', function () {
@@ -69,12 +88,25 @@
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
+<<<<<<< HEAD
         $('#doSetTypes').on('click', function () {
             var siteId = encodeURIComponent($('#siteId').val());
             var types = encodeURIComponent($('#types').val());
             var url = '/api/site/set-types?id=' + siteId + '&types=' + types;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutpout');
+=======
+
+        $('#doDomainNames').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/site/domain_names?id=' + siteId;
+
+            let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+
+            const payload = { domain_names: domainNames }
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
+>>>>>>> master
         });
     });
 </script>

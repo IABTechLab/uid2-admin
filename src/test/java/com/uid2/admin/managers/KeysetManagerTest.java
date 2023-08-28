@@ -3,14 +3,15 @@ package com.uid2.admin.managers;
 import com.google.common.collect.ImmutableMap;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.auth.AdminKeysetSnapshot;
-import com.uid2.admin.model.ClientType;
 import com.uid2.admin.secret.IKeysetKeyManager;
+import com.uid2.shared.auth.Role;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,21 +102,21 @@ public class KeysetManagerTest {
 
         setKeysets(keysets);
         // Sharer makes an empty list
-        ClientKey sharer = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.SHARER), 7, false);
+        ClientKey sharer = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.SHARER), 7, false);
         AdminKeyset returnedKeyset = keysetManager.createKeysetForClient(sharer);
         AdminKeyset sharerKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(sharerKeyset.equals(returnedKeyset));
         assertEquals(sharerKeyset.getAllowedSites(), Set.of());
 
         // Generator makes a null list
-        ClientKey generator = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
+        ClientKey generator = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
         returnedKeyset = keysetManager.createKeysetForClient(generator);
         AdminKeyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(generatorKeyset.equals(returnedKeyset));
         assertNull(generatorKeyset.getAllowedSites());
 
         // Generator takes priority of sharer
-        ClientKey sharerGenerator = new ClientKey("", "", "",  "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
+        ClientKey sharerGenerator = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
         keysetManager.createKeysetForClient(sharerGenerator);
         returnedKeyset = keysetManager.createKeysetForClient(sharerGenerator);
         AdminKeyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());

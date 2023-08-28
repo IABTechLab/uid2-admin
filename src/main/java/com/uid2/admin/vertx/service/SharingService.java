@@ -1,19 +1,19 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.model.ClientType;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -102,8 +102,9 @@ public class SharingService implements IService {
             }
 
             final int siteId;
-            final int keysetId;
+            final Integer keysetId;
             final String name;
+
             if(requestSiteId != null) {
                 siteId = requestSiteId;
                 name = requestName;
@@ -118,7 +119,7 @@ public class SharingService implements IService {
                     ResponseUtil.error(rc, 400, "Keyset already exists for site: " + siteId);
                     return;
                 }
-                keysetId = Collections.max(keysetsById.keySet()) + 1;
+                keysetId = null;
                 if (keysetsById.values().stream().anyMatch(item -> // for multiple keysets. See commented out SharingServiceTest#KeysetSetNewIdenticalNameAndSiteId
                         item.getSiteId() == siteId && item.getName().equalsIgnoreCase(name))) {
                     ResponseUtil.error(rc, 400, "Keyset with same site_id and name already exists");
@@ -310,11 +311,10 @@ public class SharingService implements IService {
                 return;
             }
 
-            Integer keysetId;
+            Integer keysetId = null;
             String name;
 
             if (keyset == null) {
-                keysetId = this.keysetManager.getNextKeysetId();
                 name = "";
             } else {
                 keysetId = keyset.getKeysetId();
@@ -341,16 +341,21 @@ public class SharingService implements IService {
     private AdminKeyset setAdminKeyset(RoutingContext rc, JsonArray allowedSites, JsonArray allowedTypes,
                                        Integer siteId, Integer keysetId, String name)
             throws Exception{
+        Set<Integer> existingSites = new HashSet<>();
 
         if (keysetId == null) {
             keysetId = this.keysetManager.getNextKeysetId();
             name = "";
+        } else {
+            existingSites = this.keysetProvider.getSnapshot().getAllKeysets().get(keysetId).getAllowedSites();
         }
 
         final Set<Integer> newlist;
 
         if (allowedSites != null){
-            OptionalInt firstInvalidSite = allowedSites.stream().mapToInt(s -> (Integer) s).filter(s -> siteProvider.getSite(s) == null).findFirst();
+            final Set<Integer> existingAllowedSites = existingSites;
+            OptionalInt firstInvalidSite = allowedSites.stream()
+                    .mapToInt(s -> (Integer) s).filter(s -> !existingAllowedSites.contains(s) && !isSiteIdEditable(s)).findFirst();
             if (firstInvalidSite.isPresent()) {
                 ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
                 return null;

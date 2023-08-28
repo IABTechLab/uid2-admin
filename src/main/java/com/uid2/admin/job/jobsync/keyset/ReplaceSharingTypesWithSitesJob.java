@@ -3,16 +3,12 @@ package com.uid2.admin.job.jobsync.keyset;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.auth.AdminKeysetSnapshot;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.model.ClientType;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.AdminKeysetStoreFactory;
 import com.uid2.admin.store.factory.KeysetStoreFactory;
 import com.uid2.admin.store.factory.SiteStoreFactory;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
@@ -23,9 +19,11 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.model.ClientType;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.json.JsonObject;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 
@@ -123,7 +121,7 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
         );
         for(Site site: this.siteGlobalReader.getAllSites()) {
             int siteId = site.getId();
-            for(ClientType type: site.getTypes()) {
+            for(ClientType type: site.getClientTypes()) {
                 siteIdsByClientType.get(type).add(siteId);
             }
         }

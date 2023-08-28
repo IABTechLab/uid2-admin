@@ -3,12 +3,9 @@ package com.uid2.admin.job.jobsync.keyset;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.model.ClientType;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.InstantClock;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
@@ -20,8 +17,11 @@ import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.InMemoryStorageMock;
+import com.uid2.shared.model.ClientType;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -42,12 +42,12 @@ public class TestReplaceSharingtypesWithSitesJob {
 
     List<Site> sites = List.of(
             new Site(3, "site 3", true,  new HashSet<>()),
-            new Site(4, "site 4", true,  Set.of(ClientType.DSP)),
-            new Site(5, "site 5", true,  Set.of(ClientType.ADVERTISER)),
-            new Site(6, "site 6", true,  Set.of(ClientType.DATA_PROVIDER)),
-            new Site(7, "site 7", true,  Set.of(ClientType.PUBLISHER)),
-            new Site(8, "site 8", true,  Set.of(ClientType.DSP, ClientType.ADVERTISER)),
-            new Site(9, "site 9", true,  Set.of(ClientType.DSP, ClientType.ADVERTISER, ClientType.PUBLISHER, ClientType.DATA_PROVIDER))
+            new Site(4, "site 4", true,  Set.of(ClientType.DSP),  new HashSet<>()),
+            new Site(5, "site 5", true,  Set.of(ClientType.ADVERTISER),  new HashSet<>()),
+            new Site(6, "site 6", true,  Set.of(ClientType.DATA_PROVIDER),  new HashSet<>()),
+            new Site(7, "site 7", true,  Set.of(ClientType.PUBLISHER),  new HashSet<>()),
+            new Site(8, "site 8", true,  Set.of(ClientType.DSP, ClientType.ADVERTISER),  new HashSet<>()),
+            new Site(9, "site 9", true,  Set.of(ClientType.DSP, ClientType.ADVERTISER, ClientType.PUBLISHER, ClientType.DATA_PROVIDER),  new HashSet<>())
     );
 
     Map<Integer, AdminKeyset> adminKeysets = Map.of(

@@ -3,13 +3,13 @@ package com.uid2.admin.util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
+import com.uid2.shared.model.Site;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -322,11 +322,11 @@ public class PrivateSiteUtilTest {
             readerRole.add(Role.ID_READER);
 
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
+                    new OperatorKey("key3", "", "","name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key4", "", "","name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key5", "", "","name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("key6", "", "","name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key7", "", "","name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
             };
             final EncryptionKey[] encryptionKeys = {
                     new EncryptionKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), Const.Data.RefreshKeySiteId),
@@ -338,9 +338,9 @@ public class PrivateSiteUtilTest {
                     new EncryptionKey(6, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 7)
             };
             final ClientKey[] clientKeys = {
-                    new ClientKey("key3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
-                    new ClientKey("key4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
-                    new ClientKey("key7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
+                    new ClientKey("key3", "", "","", "name3", "contact3", Instant.now(), readerRole, 3, false),
+                    new ClientKey("key4", "", "","", "name4", "contact4", Instant.now(), readerRole, 4, false),
+                    new ClientKey("key7", "", "","", "name7", "contact7", Instant.now(), readerRole, 7, false)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -523,10 +523,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclData() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("key3","", "", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key4", "", "","name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key5", "", "","name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("key6", "", "","name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -558,10 +558,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclDataForEachSite() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("key3", "", "","name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key4", "", "","name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key5", "", "","name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("key6", "", "","name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -838,12 +838,12 @@ public class PrivateSiteUtilTest {
                     new Site(5, "4", true)
             };
             final OperatorKey[] publicOperatorKeys = {
-                    new OperatorKey("key2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("key2", "", "","name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("key5", "", "","name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
             };
             final OperatorKey[] privateOperatorKeys = {
-                    new OperatorKey("key3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key3", "", "","name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("key4", "", "","name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
             };
             final List<OperatorKey> allOperatorKeys = new ArrayList<>(Arrays.asList(publicOperatorKeys));
             allOperatorKeys.addAll(Arrays.asList(privateOperatorKeys));
@@ -875,7 +875,7 @@ public class PrivateSiteUtilTest {
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
     static class OperatorBuilder {
-        private final OperatorKey operator = new OperatorKey("key3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
+        private final OperatorKey operator = new OperatorKey("key3","", "", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
 
         OperatorBuilder() {
         }
@@ -932,7 +932,7 @@ public class PrivateSiteUtilTest {
         }
 
         public ClientKey build() {
-            return new ClientKey("key3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
+            return new ClientKey("key3_1","", "","", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
         }
     }
 }

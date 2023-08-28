@@ -1,11 +1,11 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.admin.model.ClientType;
 import com.google.common.collect.ImmutableSet;
-import com.uid2.admin.model.Site;
-import com.uid2.admin.store.reader.ISiteStore;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.ClientType;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.model.SiteUtil;
+import com.uid2.shared.store.ISiteStore;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.Duration;

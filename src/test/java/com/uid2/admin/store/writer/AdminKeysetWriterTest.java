@@ -1,7 +1,6 @@
 package com.uid2.admin.store.writer;
 
 import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.model.ClientType;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
@@ -9,6 +8,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.InMemoryStorageMock;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,8 +1,8 @@
 package com.uid2.admin.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.uid2.admin.model.ClientType;
 import com.uid2.shared.auth.Keyset;
+import com.uid2.shared.model.ClientType;
 import org.checkerframework.checker.units.qual.K;
 
 import java.util.Arrays;

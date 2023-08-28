@@ -1,6 +1,5 @@
 package com.uid2.admin.managers;
 
-import com.uid2.admin.model.ClientType;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
@@ -9,6 +8,7 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.shared.model.ClientType;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -71,7 +71,7 @@ public class KeysetManager {
             name = FallbackPublisherKeysetName;
         }
         return new AdminKeyset(keysetId, siteId, name, null, Instant.now().getEpochSecond(),
-                true, true, Set.of());
+                true, true, new HashSet<>());
     }
 
     public static Keyset adminKeysetToKeyset(AdminKeyset adminKeyset, Map<ClientType, Set<Integer>> siteIdsByType) {

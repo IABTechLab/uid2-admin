@@ -3,7 +3,6 @@ package com.uid2.admin.job.sitesync;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
 import com.uid2.admin.job.jobsync.site.SiteSyncJob;
-import com.uid2.admin.model.Site;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.InstantClock;
@@ -17,6 +16,7 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.cloud.InMemoryStorageMock;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.StoreReader;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,7 @@ public class SiteSyncJobTest {
     Integer scopedSiteId = 10;
     ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
-                    "key",
+                    "key", "", "",
                     "name",
                     "contact",
                     "protocol",

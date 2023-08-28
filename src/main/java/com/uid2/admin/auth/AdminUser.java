@@ -48,6 +48,16 @@ public class AdminUser implements IRoleAuthorizable<Role> {
         return key;
     }
 
+    @Override
+    public String getKeyHash() {
+        return null;
+    }
+
+    @Override
+    public String getKeySalt() {
+        return null;
+    }
+
     public String getName() {
         return name;
     }

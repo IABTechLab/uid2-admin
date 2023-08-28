@@ -1,9 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.admin.store.reader.RotatingSiteStore;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -11,6 +9,8 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.Site;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -234,7 +234,7 @@ public class OperatorKeyService implements IService {
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(key, "", "", name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);

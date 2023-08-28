@@ -2,7 +2,7 @@ package com.uid2.admin.store.parser;
 
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.auth.AdminKeysetSnapshot;
-import com.uid2.admin.model.ClientType;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.store.parser.Parser;
 import com.uid2.shared.store.parser.ParsingResult;
 import com.uid2.shared.Utils;
