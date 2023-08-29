@@ -200,7 +200,7 @@ public class AdminKeyService implements IService {
 
             // create new admin
             long created = Instant.now().getEpochSecond();
-            AdminUser newAdmin = new AdminUser(key, khr.hash, khr.salt, name, name, created, roles, false);
+            AdminUser newAdmin = new AdminUser(key, khr.getHash(), khr.getSalt(), name, name, created, roles, false);
 
             // add admin to the array
             admins.add(newAdmin);

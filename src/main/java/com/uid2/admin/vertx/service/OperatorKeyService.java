@@ -239,7 +239,7 @@ public class OperatorKeyService implements IService {
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, khr.hash, khr.salt, name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(key, khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);
