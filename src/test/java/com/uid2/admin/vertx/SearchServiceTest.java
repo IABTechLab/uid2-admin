@@ -49,7 +49,7 @@ public class SearchServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
         post(vertx, searchUrl, "123456", response -> {
             assertAll(
-                    "SearchAsAdminPasses",
+                    "searchAsAdminPasses",
                     () -> assertTrue(response.succeeded()),
                     () -> assertEquals(200, response.result().statusCode())
             );
@@ -81,25 +81,38 @@ public class SearchServiceTest extends ServiceTestBase {
         });
     }
 
+    // TODO: Add keyHash and keySalt after localstack data is updated
     @Test
     void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         ClientKey[] clientKeys = new ClientKey[3];
-        clientKeys[0] = new ClientKey("LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", "", "", "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=")
+        clientKeys[0] = new ClientKey(
+                "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=",
+                "abc",
+                "def",
+                "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=")
                 .withNameAndContact("Special (Old)")
                 .withRoles(Role.OPERATOR)
                 .withSiteId(999);
-        clientKeys[1] = new ClientKey("UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=","", "", "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")
+        clientKeys[1] = new ClientKey(
+                "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
+                "ghi",
+                "jkl",
+                "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")
                 .withNameAndContact("DSP")
                 .withRoles(Role.MAPPER)
                 .withSiteId(123);
-        clientKeys[2] = new ClientKey("UID2-C-L-124-H8VwqX.l2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=","", "", "NcMgi6Y8C80SlxvV7pYlfcvEIo+2b0508tYQ3pKK8HM=")
+        clientKeys[2] = new ClientKey(
+                "UID2-C-L-124-H8VwqX.l2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
+                "mno",
+                "pqr",
+                "NcMgi6Y8C80SlxvV7pYlfcvEIo+2b0508tYQ3pKK8HM=")
                 .withNameAndContact("Publisher")
                 .withRoles(Role.OPERATOR)
                 .withSiteId(124);
 
         setClientKeys(clientKeys);
-        post(vertx, searchUrl, "bGlvbnVu", response -> {
+        post(vertx, searchUrl, "bGlvbn", response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();

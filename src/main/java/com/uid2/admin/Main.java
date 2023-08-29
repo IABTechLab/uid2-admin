@@ -22,6 +22,7 @@ import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.secret.IKeyGenerator;
+import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.secret.SecureKeyGenerator;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
@@ -185,26 +186,28 @@ public class Main {
             AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
+            KeyHasher keyHasher = new KeyHasher();
             IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
-
-            JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
-            jobDispatcher.start();
-
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, adminKeysetProvider, adminKeysetStoreWriter, keyGenerator, clock);
             KeysetManager keysetManager = new KeysetManager(
                     adminKeysetProvider, adminKeysetStoreWriter, encryptionKeyService, enableKeysets
             );
+
+            JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
+            jobDispatcher.start();
+
+
             IService[] services = {
-                    new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
-                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator),
+                    new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, keyHasher, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
+                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
                     new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
-                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator),
+                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),

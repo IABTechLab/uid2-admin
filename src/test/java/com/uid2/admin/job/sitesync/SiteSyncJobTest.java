@@ -37,7 +37,9 @@ public class SiteSyncJobTest {
     Integer scopedSiteId = 10;
     ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
-                    "key", "", "",
+                    "key",
+                    "keyHash",
+                    "keySalt",
                     "name",
                     "contact",
                     "protocol",

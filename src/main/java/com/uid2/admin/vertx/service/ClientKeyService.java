@@ -1,8 +1,8 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.managers.KeysetManager;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
@@ -12,7 +12,8 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.model.Site;
+import com.uid2.shared.secret.KeyHashResult;
+import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ISiteStore;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.core.http.HttpHeaders;
@@ -31,6 +32,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
+
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
     private final ClientKeyStoreWriter storeWriter;
@@ -38,9 +42,8 @@ public class ClientKeyService implements IService {
     private final ISiteStore siteProvider;
     private final KeysetManager keysetManager;
     private final IKeyGenerator keyGenerator;
-    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private final KeyHasher keyHasher;
     private final String clientKeyPrefix;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
 
     public ClientKeyService(JsonObject config,
                             AuthMiddleware auth,
@@ -49,7 +52,8 @@ public class ClientKeyService implements IService {
                             RotatingClientKeyProvider clientKeyProvider,
                             ISiteStore siteProvider,
                             KeysetManager keysetManager,
-                            IKeyGenerator keyGenerator) {
+                            IKeyGenerator keyGenerator,
+                            KeyHasher keyHasher) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
@@ -57,6 +61,7 @@ public class ClientKeyService implements IService {
         this.siteProvider = siteProvider;
         this.keysetManager = keysetManager;
         this.keyGenerator = keyGenerator;
+        this.keyHasher = keyHasher;
 
         this.clientKeyPrefix = config.getString("client_key_prefix");
     }
@@ -168,14 +173,14 @@ public class ClientKeyService implements IService {
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
-            if (!existingClient.isPresent()) {
+            if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;
             }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(jsonWriter.writeValueAsString(existingClient.get()));
+                    .end(JSON_WRITER.writeValueAsString(existingClient.get()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -209,14 +214,13 @@ public class ClientKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create random key and secret
-            String key = keyGenerator.generateFormattedKeyString(32);
-            if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + site.getId() + "-" + key;
-
+            String key = (this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+            KeyHashResult khr = keyHasher.hashKey(key);
             String secret = keyGenerator.generateRandomKeyString(32);
 
             // add new client to array
             Instant created = Instant.now();
-            ClientKey newClient = new ClientKey(key, "", "",  secret, created)
+            ClientKey newClient = new ClientKey(key, khr.getHash(), khr.getSalt(), secret, created)
                     .withNameAndContact(name)
                     .withSiteId(site.getId())
                     .withRoles(roles);
@@ -234,7 +238,7 @@ public class ClientKeyService implements IService {
             this.keysetManager.createKeysetForClient(newClient);
 
             // respond with new client created
-            rc.response().end(jsonWriter.writeValueAsString(newClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(newClient));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -249,7 +253,7 @@ public class ClientKeyService implements IService {
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
-            if (!existingClient.isPresent()) {
+            if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client key not found");
                 return;
             }
@@ -266,7 +270,7 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // respond with client deleted
-            rc.response().end(jsonWriter.writeValueAsString(c));
+            rc.response().end(JSON_WRITER.writeValueAsString(c));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -301,7 +305,7 @@ public class ClientKeyService implements IService {
             this.keysetManager.createKeysetForClient(existingClient);
 
             // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(existingClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(existingClient));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -324,7 +328,7 @@ public class ClientKeyService implements IService {
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
-            if (!existingClient.isPresent()) {
+            if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client key not found");
                 return;
             }
@@ -366,7 +370,7 @@ public class ClientKeyService implements IService {
             Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
-            if (!existingClient.isPresent()) {
+            if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;
             }
@@ -390,7 +394,7 @@ public class ClientKeyService implements IService {
             this.keysetManager.createKeysetForClient(c);
 
             // return client with new key
-            rc.response().end(jsonWriter.writeValueAsString(c));
+            rc.response().end(JSON_WRITER.writeValueAsString(c));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -428,7 +432,7 @@ public class ClientKeyService implements IService {
             storeWriter.upload(clients, null);
 
             // return the updated client
-            rc.response().end(jsonWriter.writeValueAsString(existingClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(existingClient));
         } catch (Exception e) {
             rc.fail(500, e);
         }
