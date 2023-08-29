@@ -8,6 +8,7 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
@@ -28,48 +29,52 @@ import static org.mockito.Mockito.*;
 public class ClientKeyServiceTest extends ServiceTestBase {
     private final static String KEY_PREFIX = "UID2-C-L-";
     private final static String EXPECTED_CLIENT_KEY = KEY_PREFIX + "5-abcdef.abcdefabcdefabcdef";
+    private final static String EXPECTED_CLIENT_KEY_HASH = "abcdefabcdefabcdefabcdef";
+    private final static String EXPECTED_CLIENT_KEY_SALT = "ghijklghijklghijklghijkl";
 
     @Override
     protected IService createService() {
         this.config.put("client_key_prefix", KEY_PREFIX);
         KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
-        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator);
+        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher);
     }
 
-    private void checkClientKeyResponse(ClientKey[] expectedClients, Object[] actualClients) {
-        assertEquals(expectedClients.length, actualClients.length);
-        for (int i = 0; i < expectedClients.length; ++i) {
-            ClientKey expectedClient = expectedClients[i];
-            JsonObject actualClient = (JsonObject) actualClients[i];
-            assertEquals(expectedClient.getName(), actualClient.getString("name"));
-            assertEquals(expectedClient.getContact(), actualClient.getString("contact"));
-            assertEquals(expectedClient.isDisabled(), actualClient.getBoolean("disabled"));
-            assertEquals(expectedClient.getSiteId(), actualClient.getInteger("site_id"));
+    private void checkClientKeyJson(ClientKey expectedClient, JsonObject actualClient) {
+        List<Role> actualRoles = actualClient.getJsonArray("roles").stream()
+                .map(r -> Role.valueOf((String) r))
+                .collect(Collectors.toList());
 
-            List<Role> actualRoles = actualClient.getJsonArray("roles").stream()
-                    .map(r -> Role.valueOf((String) r))
-                    .collect(Collectors.toList());
-            assertEquals(expectedClient.getRoles().size(), actualRoles.size());
-            for (Role role : expectedClient.getRoles()) {
-                assertTrue(actualRoles.contains(role));
-            }
-        }
+        assertAll(
+                "checkAdminUserJson",
+                () -> assertEquals(expectedClient.getKey(), actualClient.getString("key")),
+                () -> assertEquals(expectedClient.getKeyHash(), actualClient.getString("key_hash")),
+                () -> assertEquals(expectedClient.getKeySalt(), actualClient.getString("key_salt")),
+                () -> assertEquals(expectedClient.getName(), actualClient.getString("name")),
+                () -> assertEquals(expectedClient.getContact(), actualClient.getString("contact")),
+                () -> assertEquals(expectedClient.getRoles().size(), actualRoles.size()),
+                () -> assertTrue(actualRoles.containsAll(expectedClient.getRoles())),
+                () -> assertEquals(expectedClient.getSiteId(), actualClient.getInteger("site_id")),
+                () -> assertEquals(expectedClient.isDisabled(), actualClient.getBoolean("disabled")));
     }
 
     @Test
     void clientRename(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
+
+
         setSites(new Site(5, "test_site", true));
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
-        ClientKey[] expectedClients = {
-                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
-        };
+
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
+
+        ClientKey expectedClient = new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5);
 
         post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "clientRename",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkClientKeyJson(expectedClient, response.bodyAsJsonObject()));
 
             try {
                 verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
@@ -86,16 +91,15 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
         setClientKeys(
-                new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(5),
-                new ClientKey(EXPECTED_CLIENT_KEY, "","test_client1").withRoles(Role.GENERATOR).withSiteId(5));
-        ClientKey[] expectedClients = {
-                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client1").withRoles(Role.GENERATOR).withSiteId(5)
-        };
+                new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(5),
+                new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client1").withRoles(Role.GENERATOR).withSiteId(5));
 
         post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "clientRenameWithExistingName",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(400, response.statusCode()));
 
             testContext.completeNow();
         });
@@ -104,16 +108,18 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
+
         setSites(new Site(5, "test_site", true));
-        ClientKey[] expectedClients = {
-                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
-        };
+
+        ClientKey expectedClient = new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5);
 
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=5", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "clientAdd",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkClientKeyJson(expectedClient, response.bodyAsJsonObject()));
 
             try {
                 verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
@@ -129,6 +135,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     void clientAddCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
+
         setSites(new Site(5, "test_site", true));
 
         final String endpoint = String.format("api/client/add?name=test_client&site_id=5&roles=%s", RequestUtil.getRolesSpec(roles));
@@ -147,11 +154,11 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     static Stream<Arguments> createSiteKeyIfNoneExistsTestData() {
         return Stream.of(
-            Arguments.of(Sets.set(Role.GENERATOR), true),
-            Arguments.of(Sets.set(Role.ID_READER), false),
-            Arguments.of(Sets.set(Role.ID_READER, Role.GENERATOR), true),
-            Arguments.of(Sets.set(Role.SHARER), true),
-            Arguments.of(Sets.set(Role.SHARER, Role.GENERATOR), true)
+                Arguments.of(Sets.set(Role.GENERATOR), true),
+                Arguments.of(Sets.set(Role.ID_READER), false),
+                Arguments.of(Sets.set(Role.ID_READER, Role.GENERATOR), true),
+                Arguments.of(Sets.set(Role.SHARER), true),
+                Arguments.of(Sets.set(Role.SHARER, Role.GENERATOR), true)
         );
     }
 
@@ -176,17 +183,20 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
+
         setSites(new Site(5, "test_site", true));
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
-        ClientKey[] expectedClients = {
-                new ClientKey(EXPECTED_CLIENT_KEY, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5)
-        };
+
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+
+        ClientKey expectedClient = new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "", "test_client").withRoles(Role.GENERATOR).withSiteId(5);
 
         post(vertx, "api/client/update?name=test_client&site_id=5", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-            checkClientKeyResponse(expectedClients, new Object[]{response.bodyAsJsonObject()});
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "clientUpdate",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkClientKeyJson(expectedClient, response.bodyAsJsonObject()));
 
             try {
                 verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
@@ -203,7 +213,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     void clientUpdateCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client")
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client")
                 .withRoles(roles)
                 .withSiteId(4));
 
@@ -229,21 +239,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
     }
 
     @Test
     void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=1", "", expectHttpError(testContext, 400));
     }
 
     @Test
     void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(4));
         post(vertx, "api/client/update?name=test_client&site_id=2", "", expectHttpError(testContext, 400));
     }
 
@@ -251,7 +261,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     void clientRolesCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
+        setClientKeys(new ClientKey(EXPECTED_CLIENT_KEY, EXPECTED_CLIENT_KEY_HASH, EXPECTED_CLIENT_KEY_SALT, "","test_client").withRoles(Role.GENERATOR).withSiteId(5));
 
         final String endpoint = String.format("api/client/roles?name=test_client&roles=%s", RequestUtil.getRolesSpec(roles));
 

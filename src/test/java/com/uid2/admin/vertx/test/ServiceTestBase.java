@@ -4,8 +4,8 @@ import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.writer.*;
@@ -19,7 +19,8 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
-import com.uid2.shared.model.Site;
+import com.uid2.shared.secret.KeyHashResult;
+import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
@@ -91,6 +92,7 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
+    @Mock protected KeyHasher keyHasher;
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -105,6 +107,7 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
         when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
+        when(keyHasher.hashKey(anyString())).thenReturn(new KeyHashResult("abcdefabcdefabcdefabcdef", "ghijklghijklghijklghijkl"));
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
@@ -124,7 +127,7 @@ public abstract class ServiceTestBase {
     }
 
     protected void fakeAuth(Role... roles) {
-        AdminUser adminUser = new AdminUser(null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false);
+        AdminUser adminUser = new AdminUser(null, null, null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false);
         when(adminUserProvider.get(any())).thenReturn(adminUser);
     }
 
