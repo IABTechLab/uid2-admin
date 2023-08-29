@@ -10,12 +10,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KeysetSyncJob extends Job {
+public class SiteKeysetSyncJob extends Job {
     private final Collection<OperatorKey> globalOperators;
     private final Map<Integer, Keyset> globalKeysets;
     private final MultiScopeStoreWriter<Map<Integer, Keyset>> multiScopeStoreWriter;
 
-    public KeysetSyncJob(
+    public SiteKeysetSyncJob(
             MultiScopeStoreWriter<Map<Integer, Keyset>> multiScopeStoreWriter,
             Collection<OperatorKey> globalOperators,
             Map<Integer, Keyset> globalKeysets) {
