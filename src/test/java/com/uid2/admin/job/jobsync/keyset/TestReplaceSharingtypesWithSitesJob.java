@@ -41,7 +41,7 @@ public class TestReplaceSharingtypesWithSitesJob {
     GlobalScope siteScope = new GlobalScope(globalSiteMetadataPath);
 
     List<Site> sites = List.of(
-            new Site(3, "site 3", true,  new HashSet<>()),
+            new Site(3, "site 3", true),
             new Site(4, "site 4", true,  Set.of(ClientType.DSP),  new HashSet<>()),
             new Site(5, "site 5", true,  Set.of(ClientType.ADVERTISER),  new HashSet<>()),
             new Site(6, "site 6", true,  Set.of(ClientType.DATA_PROVIDER),  new HashSet<>()),
@@ -51,6 +51,9 @@ public class TestReplaceSharingtypesWithSitesJob {
     );
 
     Map<Integer, AdminKeyset> adminKeysets = Map.of(
+            -2, new AdminKeyset(-2, -2, "master", null, 0L, true, true, Set.of()),
+            -1, new AdminKeyset(-1, -1, "refresh", null, 0L, true, true, Set.of()),
+            2, new AdminKeyset(2, 2, "Publisher General", null, 0L, true, true, Set.of()),
             3, new AdminKeyset(3, 3, "keyset_3", Set.of(), 0L, true, true, Set.of()),
             4, new AdminKeyset(4, 4, "keyset_4", Set.of(3, 5), 0L, true, true, Set.of()),
             5, new AdminKeyset(5, 5, "keyset_5", Set.of(3, 4), 0L, true, true, Set.of(ClientType.DSP)),
@@ -61,6 +64,9 @@ public class TestReplaceSharingtypesWithSitesJob {
     );
 
     Map<Integer, Keyset> expectedKeysets = Map.of(
+            -2, new Keyset(-2, -2, "master", null, 0L, true, true),
+            -1, new Keyset(-1, -1, "refresh", null, 0L, true, true),
+            2, new Keyset(2, 2, "Publisher General", null, 0L, true, true),
             3, new Keyset(3, 3, "keyset_3", Set.of(), 0L, true, true),
             4, new Keyset(4, 4, "keyset_4", Set.of(3, 5), 0L, true, true),
             5, new Keyset(5, 5, "keyset_5", Set.of(3, 4, 8, 9), 0L, true, true),
