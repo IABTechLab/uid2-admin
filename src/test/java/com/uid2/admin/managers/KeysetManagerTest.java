@@ -1,17 +1,12 @@
 package com.uid2.admin.managers;
 
 import com.google.common.collect.ImmutableMap;
-import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.auth.AdminKeysetSnapshot;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.shared.auth.Role;
-import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
-import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
+import com.uid2.shared.auth.KeysetSnapshot;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.model.ClientType;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +16,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Map;
 
 import static com.uid2.admin.managers.KeysetManager.*;
 import static com.uid2.admin.managers.KeysetManager.createDefaultKeyset;
@@ -33,11 +31,11 @@ import static org.mockito.Mockito.*;
 public class KeysetManagerTest {
     protected AutoCloseable mocks;
 
-    @Mock protected AdminKeysetWriter keysetStoreWriter;
-    @Mock protected RotatingAdminKeysetStore keysetProvider;
+    @Mock protected KeysetStoreWriter keysetStoreWriter;
+    @Mock protected RotatingKeysetProvider keysetProvider;
     @Mock
     protected IKeysetKeyManager keysetKeyManager;
-    protected AdminKeysetSnapshot keysetSnapshot;
+    protected KeysetSnapshot keysetSnapshot;
 
     @BeforeEach
     public void setupMocks() {
@@ -50,8 +48,8 @@ public class KeysetManagerTest {
         mocks.close();
     }
 
-    protected void setKeysets(Map<Integer, AdminKeyset> keysets) {
-        keysetSnapshot = new AdminKeysetSnapshot(keysets);
+    protected void setKeysets(Map<Integer, Keyset> keysets) {
+        keysetSnapshot = new KeysetSnapshot(keysets);
         when(keysetProvider.getSnapshot()).thenReturn(keysetSnapshot);
     }
 
@@ -60,7 +58,7 @@ public class KeysetManagerTest {
         KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
                 keysetKeyManager, true);
 
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
                 put(1, KeysetManager.createDefaultKeyset(3, 1));
                 put(2, KeysetManager.createDefaultKeyset(4, 2));
                 put(3, KeysetManager.createDefaultKeyset(5, 3));
@@ -70,7 +68,7 @@ public class KeysetManagerTest {
         setKeysets(keysets);
         final int keysetId = 5;
         // add new keyset
-        AdminKeyset keyset1 = KeysetManager.createDefaultKeyset(7, keysetId);
+        Keyset keyset1 = KeysetManager.createDefaultKeyset(7, keysetId);
         keysetManager.addOrReplaceKeyset(keyset1);
         assertTrue(keysets.containsKey(5));
         assertTrue(keyset1.equals(keysets.get(5)));
@@ -79,8 +77,8 @@ public class KeysetManagerTest {
         //Reset between tests so verify works
         reset(keysetStoreWriter);
 
-        // add existing AdminKeyset
-        AdminKeyset keyset2 = new AdminKeyset(keysetId, 7, "newKeyset", Set.of(1, 2, 3), 1 , true, true, new HashSet<>());
+        // add existing Keyset
+        Keyset keyset2 = new Keyset(keysetId, 7, "newKeyset", Set.of(1, 2, 3), 1 , true, true);
         keysetManager.addOrReplaceKeyset(keyset2);
         assertTrue(keysets.containsKey(5));
         assertFalse(keyset1.equals(keysets.get(5)));
@@ -93,7 +91,7 @@ public class KeysetManagerTest {
         KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
                 keysetKeyManager, true);
 
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
             put(1, KeysetManager.createDefaultKeyset(3, 1));
             put(2, KeysetManager.createDefaultKeyset(4, 2));
             put(3, KeysetManager.createDefaultKeyset(5, 3));
@@ -102,24 +100,23 @@ public class KeysetManagerTest {
 
         setKeysets(keysets);
         // Sharer makes an empty list
-        ClientKey sharer = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.SHARER), 7, false);
-        AdminKeyset returnedKeyset = keysetManager.createKeysetForClient(sharer);
-        AdminKeyset sharerKeyset = keysets.get(returnedKeyset.getKeysetId());
+        ClientKey sharer = new ClientKey("" , "", "", "", "",  "", Instant.now(), Set.of(Role.SHARER), 7, false);
+        Keyset returnedKeyset = keysetManager.createKeysetForClient(sharer);
+        Keyset sharerKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(sharerKeyset.equals(returnedKeyset));
         assertEquals(sharerKeyset.getAllowedSites(), Set.of());
 
         // Generator makes a null list
-        ClientKey generator = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
+        ClientKey generator = new ClientKey("" , "", "", "", "",  "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
         returnedKeyset = keysetManager.createKeysetForClient(generator);
-        AdminKeyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
+        Keyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(generatorKeyset.equals(returnedKeyset));
         assertNull(generatorKeyset.getAllowedSites());
 
         // Generator takes priority of sharer
-        ClientKey sharerGenerator = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
-        keysetManager.createKeysetForClient(sharerGenerator);
+        ClientKey sharerGenerator = new ClientKey("" , "", "", "", "",  "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
         returnedKeyset = keysetManager.createKeysetForClient(sharerGenerator);
-        AdminKeyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());
+        Keyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(bothKeyset.equals(returnedKeyset));
         assertNull(bothKeyset.getAllowedSites());
 
@@ -134,14 +131,14 @@ public class KeysetManagerTest {
 
     @Test
     public void testLookUpKeyset() {
-        Map<Integer, AdminKeyset> keysets = Map.of(
-                1, new AdminKeyset(1, 1, "", new HashSet<>(), 0, true, true, new HashSet<>()),
-                2, new AdminKeyset(2, 2, "", new HashSet<>(), 0, true, false, new HashSet<>()),
-                3, new AdminKeyset(3, 2, "", new HashSet<>(), 0, true, true, new HashSet<>()),
-                4, new AdminKeyset(4, 3, "", new HashSet<>(), 0, true, true, new HashSet<>())
+        Map<Integer, Keyset> keysets = Map.of(
+                1, new Keyset(1, 1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, 2, "", new HashSet<>(), 0, true, false),
+                3, new Keyset(3, 2, "", new HashSet<>(), 0, true, true),
+                4, new Keyset(4, 3, "", new HashSet<>(), 0, true, true)
         );
 
-        AdminKeyset result = lookUpKeyset(2, keysets);
+        Keyset result = lookUpKeyset(2, keysets);
         assertEquals(result, keysets.get(3));
 
         result = lookUpKeyset(4, keysets);
@@ -152,33 +149,33 @@ public class KeysetManagerTest {
     // so we always reserve these 3 keyset ids for them
     @Test
     public void testGetMaxKeyset() {
-        Map<Integer, AdminKeyset> emptyKeysets = ImmutableMap.of();
+        Map<Integer, Keyset> emptyKeysets = ImmutableMap.of();
         assertEquals(3, getMaxKeyset(emptyKeysets));
 
 
-        Map<Integer, AdminKeyset> singleKeyset = Map.of(
-                1, new AdminKeyset(1, 1, "", new HashSet<>(), 0, true, true, new HashSet<>())
+        Map<Integer, Keyset> singleKeyset = Map.of(
+                1, new Keyset(1, 1, "", new HashSet<>(), 0, true, true)
         );
         assertEquals(3, getMaxKeyset(singleKeyset));
 
-        Map<Integer, AdminKeyset> twoKeysets = Map.of(
-                1, new AdminKeyset(1, -1, "", new HashSet<>(), 0, true, true, new HashSet<>()),
-                2, new AdminKeyset(2, -2, "", new HashSet<>(), 0, true, false, new HashSet<>())
+        Map<Integer, Keyset> twoKeysets = Map.of(
+                1, new Keyset(1, -1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, -2, "", new HashSet<>(), 0, true, false)
         );
         assertEquals(3, getMaxKeyset(twoKeysets));
 
-        Map<Integer, AdminKeyset> threeKeysets = Map.of(
-                1, new AdminKeyset(1, -1, "", new HashSet<>(), 0, true, true, new HashSet<>()),
-                2, new AdminKeyset(2, -2, "", new HashSet<>(), 0, true, false, new HashSet<>()),
-                3, new AdminKeyset(3, 2, "", new HashSet<>(), 0, true, true, new HashSet<>())
+        Map<Integer, Keyset> threeKeysets = Map.of(
+                1, new Keyset(1, -1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, -2, "", new HashSet<>(), 0, true, false),
+                3, new Keyset(3, 2, "", new HashSet<>(), 0, true, true)
         );
         assertEquals(3, getMaxKeyset(threeKeysets));
 
-        Map<Integer, AdminKeyset> fourKeysets = Map.of(
-                1, new AdminKeyset(1, -1, "", new HashSet<>(), 0, true, true, new HashSet<>()),
-                2, new AdminKeyset(2, -2, "", new HashSet<>(), 0, true, false, new HashSet<>()),
-                3, new AdminKeyset(3, 2, "", new HashSet<>(), 0, true, true, new HashSet<>()),
-                4, new AdminKeyset(4, 3, "", new HashSet<>(), 0, true, true, new HashSet<>())
+        Map<Integer, Keyset> fourKeysets = Map.of(
+                1, new Keyset(1, -1, "", new HashSet<>(), 0, true, true),
+                2, new Keyset(2, -2, "", new HashSet<>(), 0, true, false),
+                3, new Keyset(3, 2, "", new HashSet<>(), 0, true, true),
+                4, new Keyset(4, 3, "", new HashSet<>(), 0, true, true)
         );
         assertEquals(4, getMaxKeyset(fourKeysets));
     }
@@ -187,7 +184,7 @@ public class KeysetManagerTest {
     public void testKeysetNameCreation() {
 
         //expected cases of special keysets when site id and keyset id match our expectations
-        AdminKeyset keyset = createDefaultKeyset(-1, -1);
+        Keyset keyset = createDefaultKeyset(-1, -1);
         assertEquals(keyset.getName(), KeysetManager.MasterKeysetName);
         keyset = createDefaultKeyset(-2, -2);
         assertEquals(keyset.getName(), KeysetManager.RefreshKeysetName);
@@ -215,152 +212,6 @@ public class KeysetManagerTest {
         assertEquals(keyset.getName(), "");
         keyset = createDefaultKeyset(9, 23);
         assertEquals(keyset.getName(), "");
-    }
-
-    @Test
-    public void testAdminKeysetToKeyset() {
-        Map<ClientType, Set<Integer>> clientTypeSetMap = Map.of(
-                ClientType.DSP, Set.of(44,45,46),
-                ClientType.ADVERTISER, Set.of(56,77,89),
-                ClientType.PUBLISHER, Set.of(67,94,35),
-                ClientType.DATA_PROVIDER, Set.of(66,34)
-        );
-
-        List<AdminKeyset> adminKeysets = List.of(
-                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
-                new AdminKeyset(2, 2, "", Set.of(1), 0, true, false, Set.of(ClientType.DSP)),
-                new AdminKeyset(3, 3, "", Set.of(1), 0, true, false, Set.of(ClientType.DSP, ClientType.ADVERTISER, ClientType.PUBLISHER, ClientType.DATA_PROVIDER)),
-                new AdminKeyset(4, 4, "", new HashSet<>(), 0, true, true, Set.of(ClientType.DSP)),
-                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
-        );
-
-        List<Keyset> expectedKeysets = List.of(
-                new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
-                new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
-                new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
-                new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
-                new Keyset(5, 5, "", null, 0, true, true)
-        );
-
-        for(int i = 0; i < adminKeysets.size(); i++) {
-            Keyset result = KeysetManager.adminKeysetToKeyset(adminKeysets.get(i), clientTypeSetMap);
-            assertTrue(expectedKeysets.get(i).equals(result));
-        }
-    }
-
-    @Test
-    public void testCreateAdminKeysetsAllNew() throws Exception {
-        Map<Integer, Keyset> keysets = Map.of(
-                1, new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
-                2, new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
-                3, new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
-                4, new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
-                5, new Keyset(5, 5, "", null, 0, true, true)
-        );
-
-        Map<Integer, AdminKeyset> adminKeysetMap = new HashMap<>();
-        setKeysets(adminKeysetMap);
-
-        List<AdminKeyset> expectedKeysets =List.of(
-                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
-                new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()),
-                new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()),
-                new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()),
-                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
-        );
-
-        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
-                keysetKeyManager, true);
-
-        keysetManager.createAdminKeysets(keysets);
-
-        verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
-
-        for(AdminKeyset expectedKeyset : expectedKeysets) {
-            AdminKeyset result = adminKeysetMap.get(expectedKeyset.getKeysetId());
-            assertTrue(expectedKeyset.equals(result));
-        }
-    }
-
-    @Test
-    public void testCreateAdminKeysetsOneNew() throws Exception {
-        Map<Integer, Keyset> keysets = Map.of(
-                1, new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
-                2, new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
-                3, new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
-                4, new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
-                5, new Keyset(5, 5, "", null, 0, true, true)
-        );
-
-        Map<Integer, AdminKeyset> adminKeysetMap = new HashMap<>();
-
-        adminKeysetMap.put(1, new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()));
-        adminKeysetMap.put(2, new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()));
-        adminKeysetMap.put(3, new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()));
-        adminKeysetMap.put(4, new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()));
-
-        setKeysets(adminKeysetMap);
-
-        List<AdminKeyset> expectedKeysets =List.of(
-                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
-                new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()),
-                new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()),
-                new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()),
-                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
-        );
-
-        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
-                keysetKeyManager, true);
-
-        keysetManager.createAdminKeysets(keysets);
-
-        verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
-
-        for(AdminKeyset expectedKeyset : expectedKeysets) {
-            AdminKeyset result = adminKeysetMap.get(expectedKeyset.getKeysetId());
-            assertTrue(expectedKeyset.equals(result));
-        }
-    }
-
-    @Test
-    public void testCreateAdminKeysetsNoNew() throws Exception {
-        Map<Integer, Keyset> keysets = Map.of(
-                1, new Keyset(1, 1, "", Set.of(1,2,3), 0, true, true),
-                2, new Keyset(2, 2, "", Set.of(1,44,45,46), 0, true, false),
-                3, new Keyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false),
-                4, new Keyset(4, 4, "", Set.of(44,45,46), 0, true, true),
-                5, new Keyset(5, 5, "", null, 0, true, true)
-        );
-
-        Map<Integer, AdminKeyset> adminKeysetMap = new HashMap<>();
-
-        adminKeysetMap.put(1, new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()));
-        adminKeysetMap.put(2, new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()));
-        adminKeysetMap.put(3, new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()));
-        adminKeysetMap.put(4, new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()));
-        adminKeysetMap.put(5, new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>()));
-
-        setKeysets(adminKeysetMap);
-
-        List<AdminKeyset> expectedKeysets =List.of(
-                new AdminKeyset(1, 1, "", Set.of(1,2,3), 0, true, true, new HashSet<>()),
-                new AdminKeyset(2, 2, "", Set.of(1,44,45,46), 0, true, false, new HashSet<>()),
-                new AdminKeyset(3, 3, "", Set.of(1,44,45,46,56,77,89,67,94,35,66,34), 0, true, false, new HashSet<>()),
-                new AdminKeyset(4, 4, "", Set.of(44,45,46), 0, true, true, new HashSet<>()),
-                new AdminKeyset(5, 5, "", null, 0, true, true, new HashSet<>())
-        );
-
-        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
-                keysetKeyManager, true);
-
-        keysetManager.createAdminKeysets(keysets);
-
-        verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
-
-        for(AdminKeyset expectedKeyset : expectedKeysets) {
-            AdminKeyset result = adminKeysetMap.get(expectedKeyset.getKeysetId());
-            assertTrue(expectedKeyset.equals(result));
-        }
     }
 
     protected static class MapOfSize implements ArgumentMatcher<Map> {

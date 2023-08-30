@@ -63,6 +63,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         roles.add(Role.OPERATOR);
 
         setSites(new Site(5, "test_site", true));
+
         OperatorKey expectedOperator = new OperatorKey(EXPECTED_OPERATOR_KEY, EXPECTED_OPERATOR_KEY_HASH, EXPECTED_OPERATOR_KEY_SALT, "test_operator", "test_operator", "trusted", 0, false, 5, roles, OperatorType.PUBLIC);
 
         post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {

@@ -1,12 +1,13 @@
 package com.uid2.admin.vertx.test;
 
-import com.uid2.admin.auth.*;
+import com.uid2.admin.auth.AdminUser;
+import com.uid2.admin.auth.AdminUserProvider;
+import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.WriteLock;
@@ -68,7 +69,6 @@ public abstract class ServiceTestBase {
     @Mock protected ServiceLinkStoreWriter serviceLinkStoreWriter;
     @Mock protected KeyAclStoreWriter keyAclStoreWriter;
     @Mock protected KeysetStoreWriter keysetStoreWriter;
-    @Mock protected AdminKeysetWriter adminKeysetWriter;
     @Mock protected OperatorKeyStoreWriter operatorKeyStoreWriter;
     @Mock protected EnclaveStoreWriter enclaveStoreWriter;
     @Mock protected SaltStoreWriter saltStoreWriter;
@@ -84,13 +84,11 @@ public abstract class ServiceTestBase {
     @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
     @Mock protected RotatingKeyAclProvider keyAclProvider;
     @Mock protected RotatingKeysetProvider keysetProvider;
-    @Mock protected RotatingAdminKeysetStore adminKeysetProvider;
     @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
     @Mock protected RotatingClientSideKeypairStore keypairProvider;
     @Mock protected RotatingServiceStore serviceProvider;
     @Mock protected RotatingServiceLinkStore serviceLinkProvider;
     @Mock protected KeysetSnapshot keysetSnapshot;
-    @Mock protected AdminKeysetSnapshot adminKeysetSnapshot;
     @Mock protected AclSnapshot keyAclProviderSnapshot;
     @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
@@ -105,7 +103,6 @@ public abstract class ServiceTestBase {
         when(keysetKeyProvider.getSnapshot()).thenReturn(keysetKeyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
         when(keysetProvider.getSnapshot()).thenReturn(keysetSnapshot);
-        when(adminKeysetProvider.getSnapshot()).thenReturn(adminKeysetSnapshot);
         when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
                 .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
@@ -180,8 +177,8 @@ public abstract class ServiceTestBase {
         when(keyProviderSnapshot.getActiveKeySet()).thenReturn(Arrays.asList(keys));
     }
 
-    protected void setAdminKeysets(Map<Integer, AdminKeyset> adminKeysets) {
-        when(adminKeysetSnapshot.getAllKeysets()).thenReturn(adminKeysets);
+    protected void setKeysets(Map<Integer, Keyset> keysets) {
+        when(keysetSnapshot.getAllKeysets()).thenReturn(keysets);
     }
 
     protected void setKeysetKeys(int maxKeyId, KeysetKey... keys) throws Exception {

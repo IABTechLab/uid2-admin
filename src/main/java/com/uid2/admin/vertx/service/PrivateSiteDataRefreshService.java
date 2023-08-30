@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
-import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -53,8 +52,6 @@ public class PrivateSiteDataRefreshService implements IService {
 
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {
         try {
-            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
-            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
             rc.response().end("OK");
@@ -66,9 +63,6 @@ public class PrivateSiteDataRefreshService implements IService {
 
     private void handlePrivateSiteDataGenerateNow(RoutingContext rc) {
         try {
-            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
-            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
-            jobDispatcher.executeNextJob();
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();

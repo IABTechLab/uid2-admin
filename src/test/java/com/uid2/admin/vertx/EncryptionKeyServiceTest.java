@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.EncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
@@ -65,7 +64,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         this.config.put("enable_keysets", true);
 
         keyService = new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter,
-                keyProvider, keysetKeyProvider, adminKeysetProvider, adminKeysetWriter, keyGenerator, clock);
+                keyProvider, keysetKeyProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
         return keyService;
     }
 
@@ -149,15 +148,15 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteKeyAddsKeysetAndKey() throws Exception {
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 2, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 2, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         setEncryptionKeys(123);
         setKeysetKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
-
-        AdminKeyset expected = new AdminKeyset(4, 5, "", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
+        
+        Keyset expected = new Keyset(4, 5, "", null, Instant.now().getEpochSecond(), true, true);
         assertNotNull(keysets.get(4));
         assertTrue(keysets.get(4).equals(expected));
         verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
@@ -165,10 +164,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteKeyUsesKeysetAndAddsKey() throws Exception {
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         setEncryptionKeys(123);
         setKeysetKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
@@ -181,10 +180,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     @Test
     void addKeysetKey() throws Exception {
         setKeysetKeys(123);
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         final KeysetKey key = keyService.addKeysetKey(1);
         verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));
         assertSiteKeyActivation(key, clock.now());
@@ -193,10 +192,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     @Test
     void addKeysetKeyAddsSiteKey() throws Exception {
         setKeysetKeys(123);
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         final KeysetKey key = keyService.addKeysetKey(1);
         verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
     }
@@ -482,11 +481,11 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new KeysetKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+1), 5)
         };
         setKeysetKeys(MAX_KEY_ID, keys);
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(4, new AdminKeyset(4, 2, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
-            put(5, new AdminKeyset(5, 3, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(4, new Keyset(4, 2, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
+            put(5, new Keyset(5, 3, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
 
         post(vertx, "api/key/rotate_keyset_key?keyset_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
@@ -802,9 +801,9 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new EncryptionKey(17, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         final KeysetKey[] keysetKeys = {};
         setKeysetKeys(0, keysetKeys);
         keyService.createKeysetKeys();
@@ -813,12 +812,6 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         // 6 keysets should be created
         assertEquals(6, keysets.keySet().size());
         //Special Keysets are set correctly
-        // Master key site id -1 : keyset id 1
-        assertEquals(-1, keysets.get(-1).getSiteId());
-        // Master key site id -2 : keyset id 2
-        assertEquals(-2, keysets.get(-2).getSiteId());
-        // Master key site id 2 : keyset id 3
-        assertEquals(2, keysets.get(2).getSiteId());
         assertEquals(Const.Data.MasterKeySiteId, keysets.get(Const.Data.MasterKeysetId).getSiteId());
         assertEquals(Const.Data.RefreshKeySiteId, keysets.get(Const.Data.RefreshKeysetId).getSiteId());
         assertEquals(Const.Data.AdvertisingTokenSiteId, keysets.get(Const.Data.FallbackPublisherKeysetId).getSiteId());
@@ -833,9 +826,9 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new EncryptionKey(14, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 7),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         final KeysetKey[] keysetKeys = {
                 new KeysetKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 1),
                 new KeysetKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
@@ -860,10 +853,10 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
                 new EncryptionKey(16, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 8),
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
-        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 7, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+        Map<Integer, Keyset> keysets = new HashMap<Integer, Keyset>() {{
+            put(1, new Keyset(1, 7, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true));
         }};
-        setAdminKeysets(keysets);
+        setKeysets(keysets);
         // Missing 2 keys, 1 without a keyset
         final KeysetKey[] keysetKeys = {
                 new KeysetKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 1),
