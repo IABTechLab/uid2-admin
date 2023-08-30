@@ -57,7 +57,7 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
 
         AdminKeysetStoreFactory adminKeysetStoreFactory = new AdminKeysetStoreFactory(
                 cloudStorage,
-                new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp)),
+                new CloudPath(config.getString("admin_keysets_metadata_path")),
                 jsonWriter,
                 versionGenerator,
                 clock,
@@ -65,7 +65,7 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
 
         KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
                 cloudStorage,
-                new CloudPath(config.getString("admin_keysets_metadata_path")),
+                new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp)),
                 jsonWriter,
                 versionGenerator,
                 clock,

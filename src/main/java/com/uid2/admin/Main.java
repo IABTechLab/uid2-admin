@@ -228,6 +228,12 @@ public class Main {
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
 
+            if(enableKeysets) {
+                //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
+                keysetProvider.loadContent();
+                keysetManager.createAdminKeysets(keysetProvider.getAll());
+                encryptionKeyService.createKeysetKeys();
+            }
 
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
@@ -239,12 +245,6 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
 
-            if(enableKeysets) {
-                //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
-                keysetProvider.loadContent();
-                keysetManager.createAdminKeysets(keysetProvider.getAll());
-                encryptionKeyService.createKeysetKeys();
-            }
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
