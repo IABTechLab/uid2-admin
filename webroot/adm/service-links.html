@@ -67,8 +67,8 @@
             const serviceId = parseInt($('#serviceId').val())
             const siteId = parseInt($('#siteId').val())
             const linkName = $('#linkName').val()
-            if(!siteId || !serviceId) {
-                $('#errorOutput').text("required parameters: service_id, site_id")
+            if(!linkId || !siteId || !serviceId) {
+                $('#errorOutput').text("required parameters: link_id, service_id, site_id")
                 return
             }
             doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
