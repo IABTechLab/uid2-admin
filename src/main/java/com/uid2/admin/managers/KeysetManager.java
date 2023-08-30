@@ -1,14 +1,12 @@
 package com.uid2.admin.managers;
 
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
-import com.uid2.admin.store.writer.AdminKeysetWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
-import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.shared.model.ClientType;
+import com.uid2.shared.store.reader.RotatingKeysetProvider;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -20,13 +18,13 @@ import static java.lang.Math.max;
 
 public class KeysetManager {
 
-    private final RotatingAdminKeysetStore keysetProvider;
-    private final AdminKeysetWriter keysetStoreWriter;
+    private final RotatingKeysetProvider keysetProvider;
+    private final KeysetStoreWriter keysetStoreWriter;
     private final IKeysetKeyManager keysetKeyManager;
 
     private final boolean enableKeysets;
 
-    public KeysetManager(RotatingAdminKeysetStore keysetProvider, AdminKeysetWriter keysetStoreWriter,
+    public KeysetManager(RotatingKeysetProvider keysetProvider, KeysetStoreWriter keysetStoreWriter,
                          IKeysetKeyManager keysetKeyManager, boolean enableKeysets) {
         this.keysetProvider = keysetProvider;
         this.keysetStoreWriter = keysetStoreWriter;
@@ -40,8 +38,8 @@ public class KeysetManager {
     public static final String FallbackPublisherKeysetName = "Fallback Publisher";
 
 
-    public static AdminKeyset lookUpKeyset(int siteId, Map<Integer, AdminKeyset> keysets) {
-        for (AdminKeyset keyset: keysets.values()) {
+    public static Keyset lookUpKeyset(int siteId, Map<Integer, Keyset> keysets) {
+        for (Keyset keyset: keysets.values()) {
             if(keyset.getSiteId() == siteId && keyset.isDefault()) {
                 return keyset;
             }
@@ -49,14 +47,14 @@ public class KeysetManager {
         return null;
     }
 
-    public static Integer getMaxKeyset(Map<Integer, AdminKeyset> keysets) {
+    public static Integer getMaxKeyset(Map<Integer, Keyset> keysets) {
         // keyset id 1/2/3 are assigned for master/refresh/default publisher encryption key ids,
         // so we always reserve these 3 keyset ids for them
         if(keysets.isEmpty()) return 3;
         return max(Collections.max(keysets.keySet()), 3);
     }
 
-    public static AdminKeyset createDefaultKeyset(int siteId, int keysetId) {
+    public static Keyset createDefaultKeyset(int siteId, int keysetId) {
         String name = "";
 
         //only set if both siteId and keysetId match our expectation according to the requirements
@@ -70,29 +68,13 @@ public class KeysetManager {
         else if(siteId == Const.Data.AdvertisingTokenSiteId && keysetId == Const.Data.FallbackPublisherKeysetId) {
             name = FallbackPublisherKeysetName;
         }
-        return new AdminKeyset(keysetId, siteId, name, null, Instant.now().getEpochSecond(),
-                true, true, new HashSet<>());
+        return new Keyset(keysetId, siteId, name, null, Instant.now().getEpochSecond(), true, true);
     }
 
-    public static Keyset adminKeysetToKeyset(AdminKeyset adminKeyset, Map<ClientType, Set<Integer>> siteIdsByType) {
-        Set<Integer> allowedList = new HashSet<>();
-        if(adminKeyset.getAllowedSites() == null) {
-            return adminKeyset.getKeyset();
-        }
-
-        allowedList.addAll(adminKeyset.getAllowedSites());
-
-        for (ClientType type : adminKeyset.getAllowedTypes()) {
-            allowedList.addAll(siteIdsByType.get(type));
-        }
-        return new Keyset(adminKeyset.getKeysetId(), adminKeyset.getSiteId(), adminKeyset.getName(), allowedList,
-                adminKeyset.getCreated(), adminKeyset.isEnabled(), adminKeyset.isDefault());
-    }
-
-    public AdminKeyset createKeysetForClient(ClientKey client) throws Exception{
+    public Keyset createKeysetForClient(ClientKey client) throws Exception{
         if(!enableKeysets) return null;
-        final Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-        for(AdminKeyset keyset : collection.values()) {
+        final Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+        for(Keyset keyset : collection.values()) {
             if(keyset.getSiteId() == client.getSiteId()) {
                 // A keyset already exists for the site ID
                 return keyset;
@@ -103,16 +85,15 @@ public class KeysetManager {
             return createAndAddDefaultKeyset(client.getSiteId());
         }
         if(client.hasRole(Role.SHARER)) {
-            return createAndAddKeyset(client.getSiteId(), new HashSet<>(), new HashSet<>());
+            return createAndAddKeyset(client.getSiteId(), new HashSet<>());
         }
         return null;
     }
 
-    public AdminKeyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites, Set<ClientType> allowedTypes) throws Exception{
+    private Keyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites) throws Exception{
         if(!enableKeysets) return null;
         int newKeysetId = getNextKeysetId();
-        AdminKeyset keyset = new AdminKeyset(newKeysetId, siteId, "", allowedSites,
-                Instant.now().getEpochSecond(), true, true, allowedTypes);
+        Keyset keyset = new Keyset(newKeysetId, siteId, "", allowedSites, Instant.now().getEpochSecond(), true, true);
         addOrReplaceKeyset(keyset);
         return keyset;
     }
@@ -121,38 +102,23 @@ public class KeysetManager {
         return KeysetManager.getMaxKeyset(this.keysetProvider.getSnapshot().getAllKeysets()) + 1;
     }
 
-    public AdminKeyset createAndAddDefaultKeyset(Integer siteId) throws Exception{
+    private Keyset createAndAddDefaultKeyset(Integer siteId) throws Exception{
         if(!enableKeysets) return null;
 
         this.keysetProvider.loadContent();
         int newKeysetId = getNextKeysetId();
-        AdminKeyset newKeyset = KeysetManager.createDefaultKeyset(siteId, newKeysetId);
+        Keyset newKeyset = KeysetManager.createDefaultKeyset(siteId, newKeysetId);
         addOrReplaceKeyset(newKeyset);
         return newKeyset;
     }
 
-    public void addOrReplaceKeyset(AdminKeyset keyset) throws Exception{
+    public void addOrReplaceKeyset(Keyset keyset) throws Exception{
         if(!enableKeysets) return;
 
-        Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+        Map<Integer, Keyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
 
         collection.put(keyset.getKeysetId(), keyset);
         keysetStoreWriter.upload(collection, null);
         this.keysetKeyManager.addKeysetKey(keyset.getKeysetId());
-    }
-
-    public void createAdminKeysets(Map<Integer, Keyset> keysets) throws  Exception{
-        this.keysetProvider.loadContent();
-
-        Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-
-        for (Keyset keyset: keysets.values()) {
-            if(!collection.keySet().contains(keyset.getKeysetId())) {
-                collection.put(keyset.getKeysetId(),  new AdminKeyset(keyset));
-                this.keysetKeyManager.addKeysetKey(keyset.getKeysetId());
-            }
-        }
-
-        keysetStoreWriter.upload(collection, null);
     }
 }

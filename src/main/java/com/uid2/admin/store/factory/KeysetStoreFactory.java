@@ -24,7 +24,6 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingKeysetProvider globalReader;
-    private final KeysetStoreWriter globalWriter;
     private final boolean enableKeysets;
 
     public KeysetStoreFactory(ICloudStorage fileStreamProvider,
@@ -42,15 +41,6 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
         this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeysetProvider(fileStreamProvider, globalScope);
-        globalWriter = new KeysetStoreWriter(
-                globalReader,
-                this.fileManager,
-                objectWriter,
-                versionGenerator,
-                clock,
-                globalScope,
-                enableKeysets
-        );
         this.enableKeysets = enableKeysets;
     }
 
@@ -73,6 +63,4 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
     }
 
     public RotatingKeysetProvider getGlobalReader() { return globalReader; }
-
-    public StoreWriter<Map<Integer, Keyset>> getGlobalWriter() { return globalWriter; }
 }
