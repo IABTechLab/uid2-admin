@@ -32,8 +32,6 @@ import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.secure.gcpoidc.Environment;
-import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
