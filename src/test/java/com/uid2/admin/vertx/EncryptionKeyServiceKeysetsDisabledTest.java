@@ -63,7 +63,7 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         this.config.put("enable_keysets", false);
 
         keyService = new EncryptionKeyService(config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter,
-                keyProvider, keysetKeyProvider, adminKeysetProvider, adminKeysetWriter, keyGenerator, clock);
+                keyProvider, keysetKeyProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
         return keyService;
     }
 
