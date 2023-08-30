@@ -5,7 +5,6 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.model.Service;
 import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.store.reader.RotatingServiceLinkStore;
 import com.uid2.shared.store.reader.RotatingServiceStore;
@@ -21,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ServiceLinkService implements IService {
@@ -85,17 +83,17 @@ public class ServiceLinkService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             if (linkId == null || serviceId == null || siteId == null || name == null) {
-                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name, roles");
+                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name");
                 return;
             }
 
             if (serviceProvider.getService(serviceId) == null) {
-                ResponseUtil.error(rc, 404, "service_id: " + serviceId + " not valid");
+                ResponseUtil.error(rc, 404, "service_id " + serviceId + " not valid");
                 return;
             }
 
             if (siteProvider.getSite(siteId) == null) {
-                ResponseUtil.error(rc, 404, "site_id: " + siteId + " not valid");
+                ResponseUtil.error(rc, 404, "site_id " + siteId + " not valid");
                 return;
             }
 
@@ -105,7 +103,7 @@ public class ServiceLinkService implements IService {
 
             ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name);
 
-            if (serviceLinks.stream().anyMatch(l -> l.equals(serviceLink))) {
+            if (serviceLinks.stream().anyMatch(sl -> sl.equals(serviceLink))) {
                 ResponseUtil.error(rc, 400, "service link already exists");
                 return;
             }

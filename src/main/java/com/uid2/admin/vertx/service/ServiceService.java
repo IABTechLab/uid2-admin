@@ -132,7 +132,7 @@ public class ServiceService implements IService {
 
             final Service service = serviceProvider.getService(serviceId);
             if (service == null) {
-                ResponseUtil.error(rc, 404, "failed to find a service for service id: " + serviceId);
+                ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
                 return;
             }
 

@@ -19,7 +19,6 @@ import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
-import com.uid2.shared.store.IKeysetKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
 import io.vertx.core.AsyncResult;
@@ -153,6 +152,16 @@ public abstract class ServiceTestBase {
 
     protected void setServices(Service... services) {
         when(serviceProvider.getAllServices()).thenReturn(Arrays.asList(services));
+        for (Service s : services) {
+            when(serviceProvider.getService(eq(s.getServiceId()))).thenReturn(s);
+        }
+    }
+
+    protected void setServiceLinks(ServiceLink... serviceLinks) {
+        when(serviceLinkProvider.getAllServiceLinks()).thenReturn(Arrays.asList(serviceLinks));
+        for (ServiceLink sl : serviceLinks) {
+            when(serviceLinkProvider.getServiceLink(eq(sl.getLinkId()))).thenReturn(sl);
+        }
     }
 
     protected void setSites(Site... sites) {
