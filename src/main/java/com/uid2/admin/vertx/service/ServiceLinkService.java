@@ -103,7 +103,7 @@ public class ServiceLinkService implements IService {
 
             ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name);
 
-            if (serviceLinks.stream().anyMatch(sl -> sl.equals(serviceLink))) {
+            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceLink.getServiceId() && sl.getLinkId().equals(serviceLink.getLinkId()))) {
                 ResponseUtil.error(rc, 400, "service link already exists");
                 return;
             }
