@@ -31,6 +31,7 @@
 <ul>
     <li class="ro-cki" style="display: none"><a href="#" id="doListAll">List Services</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doListBySite">List Services By Site Id</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doListByServiceId">Get Service By Service Id</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doRoles">Set Service Roles</a></li>
 </ul>
@@ -61,6 +62,15 @@
                 resp = resp.filter(obj => obj.site_id === siteId)
                 $('#standardOutput').text(JSON.stringify(resp, null, 2));
             }, errorCallback);
+        });
+
+        $('#doListByServiceId').on('click', function () {
+            const serviceId = $('#serviceId').val()
+            if(!serviceId) {
+                $('#errorOutput').text("required parameters: service_id")
+                return
+            }
+            doApiCall('GET', '/api/service/list/' + serviceId, '#standardOutput', '#errorOutput');
         });
 
         $('#doAdd').on('click', function () {
