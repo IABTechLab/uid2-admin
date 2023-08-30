@@ -229,10 +229,12 @@ public class Main {
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
 
             if(enableKeysets) {
-                //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
-                keysetProvider.loadContent();
-                keysetManager.createAdminKeysets(keysetProvider.getAll());
-                encryptionKeyService.createKeysetKeys();
+                synchronized (writeLock) {
+                    //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
+                    keysetProvider.loadContent();
+                    keysetManager.createAdminKeysets(keysetProvider.getAll());
+                    encryptionKeyService.createKeysetKeys();
+                }
             }
 
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
