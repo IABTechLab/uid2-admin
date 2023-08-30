@@ -3,6 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
@@ -45,7 +46,8 @@ public class ServiceService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/service/list").handler(auth.handle(this::handleServiceList, Role.ADMINISTRATOR));
+        router.get("/api/service/list").handler(auth.handle(this::handleServiceListAll, Role.ADMINISTRATOR));
+        router.get("/api/service/list/:service_id").handler(auth.handle(this::handleServiceList, Role.ADMINISTRATOR));
         router.post("/api/service/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceAdd(ctx);
@@ -58,7 +60,7 @@ public class ServiceService implements IService {
         }, Role.ADMINISTRATOR));
     }
 
-    private void handleServiceList(RoutingContext rc) {
+    private void handleServiceListAll(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
             this.serviceProvider.getAllServices().forEach(s -> ja.add(toJson(s)));
@@ -68,6 +70,26 @@ public class ServiceService implements IService {
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "Internal Server Error", e);
         }
+    }
+
+    private void handleServiceList(RoutingContext rc) {
+        final int serviceId;
+        try {
+            serviceId = Integer.parseInt(rc.pathParam("service_id"));
+        } catch (Exception e) {
+            ResponseUtil.error(rc, 400, "failed to parse a service_id from request");
+            return;
+        }
+
+        Service service = serviceProvider.getService(serviceId);
+        if (service == null) {
+            ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
+            return;
+        }
+
+        rc.response()
+                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .end(toJson(service).encodePrettily());
     }
 
     private void handleServiceAdd(RoutingContext rc) {

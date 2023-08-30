@@ -95,6 +95,51 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void listIndividualBadServiceId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
+        setServices(existingService);
+
+        get(vertx, "api/service/list/asdf", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("failed to parse a service_id from request", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void listIndividualServiceIdNotFound(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
+        setServices(existingService);
+
+        get(vertx, "api/service/list/3", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service for service_id: 3", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void listIndividualService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
+        setServices(existingService);
+
+        get(vertx, "api/service/list/3", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
     void addServiceMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 

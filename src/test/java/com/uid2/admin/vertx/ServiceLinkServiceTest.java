@@ -1,7 +1,8 @@
-package com.uid2.admin.vertx.test;
+package com.uid2.admin.vertx;
 
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.ServiceLinkService;
+import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Service;
 import com.uid2.shared.model.ServiceLink;
