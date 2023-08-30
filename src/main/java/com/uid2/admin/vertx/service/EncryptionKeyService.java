@@ -1,8 +1,11 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.Clock;
+import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
+import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
@@ -64,8 +67,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private final RotatingKeyStore keyProvider;
     private final RotatingKeysetKeyStore keysetKeyProvider;
 
-    private final RotatingKeysetProvider keysetProvider;
-    private final KeysetStoreWriter keysetStoreWriter;
+    private final RotatingAdminKeysetStore keysetProvider;
+    private final AdminKeysetWriter keysetStoreWriter;
     private final IKeyGenerator keyGenerator;
 
     private final Duration masterKeyActivatesIn;
@@ -86,8 +89,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
                                 KeysetKeyStoreWriter keysetKeyStoreWriter,
                                 RotatingKeyStore keyProvider,
                                 RotatingKeysetKeyStore keysetKeyProvider,
-                                RotatingKeysetProvider keysetProvider,
-                                KeysetStoreWriter keysetStoreWriter,
+                                RotatingAdminKeysetStore keysetProvider,
+                                AdminKeysetWriter keysetStoreWriter,
                                 IKeyGenerator keyGenerator,
                                 Clock clock) {
         this.auth = auth;
@@ -550,8 +553,8 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
     private int getOrCreateKeysetId(int siteId)
         throws Exception {
-        Map<Integer, Keyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
-        Keyset keyset = lookUpKeyset(siteId, currentKeysets);
+        Map<Integer, AdminKeyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
+        AdminKeyset keyset = lookUpKeyset(siteId, currentKeysets);
         if(keyset == null) {
             int newKeysetId = getMaxKeyset(currentKeysets)+1;
             if(siteId == Const.Data.MasterKeySiteId) {
@@ -572,7 +575,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     }
 
     private int getSiteId(int keysetId) throws Exception {
-        Map<Integer, Keyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
+        Map<Integer, AdminKeyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
         return currentKeysets.get(keysetId).getSiteId();
     }
 

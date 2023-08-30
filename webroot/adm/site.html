@@ -18,6 +18,8 @@
     <input type="text" id="siteName" name="siteName">
     <label for="siteId">Site Id:</label>
     <input type="text" id="siteId" name="siteId">
+    <label for="types">Types:</label>
+    <input type="text" id="types" name="types">
 </div>
 <br>
 <div>
@@ -35,6 +37,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
 </ul>
 
@@ -55,7 +58,8 @@
 
         $('#doAdd').on('click', function () {
             var siteName = encodeURIComponent($('#siteName').val());
-            var url = '/api/site/add?name=' + siteName;
+            var types = encodeURIComponent($('#types').val());
+            var url = '/api/site/add?name=' + siteName + '&types=' + types;
 
             let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
             doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames}));
@@ -73,6 +77,13 @@
             var url = '/api/site/enable?enabled=true&id=' + siteId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+        $('#doSetTypes').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var types = encodeURIComponent($('#types').val());
+            var url = '/api/site/set-types?id=' + siteId + '&types=' + types;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutpout');
         });
 
         $('#doDomainNames').on('click', function () {
