@@ -2,7 +2,7 @@ package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.*;
 import com.uid2.admin.secret.IEncryptionKeyManager;
-import com.uid2.shared.model.Site;
+import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.FileManager;
@@ -15,9 +15,6 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.model.ClientSideKeypair;
-import com.uid2.shared.model.EncryptionKey;
-import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
@@ -68,6 +65,8 @@ public abstract class ServiceTestBase {
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
     @Mock protected ClientSideKeypairStoreWriter keypairStoreWriter;
+    @Mock protected ServiceStoreWriter serviceStoreWriter;
+    @Mock protected ServiceLinkStoreWriter serviceLinkStoreWriter;
     @Mock protected KeyAclStoreWriter keyAclStoreWriter;
     @Mock protected KeysetStoreWriter keysetStoreWriter;
     @Mock protected AdminKeysetWriter adminKeysetWriter;
@@ -89,6 +88,8 @@ public abstract class ServiceTestBase {
     @Mock protected RotatingAdminKeysetStore adminKeysetProvider;
     @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
     @Mock protected RotatingClientSideKeypairStore keypairProvider;
+    @Mock protected RotatingServiceStore serviceProvider;
+    @Mock protected RotatingServiceLinkStore serviceLinkProvider;
     @Mock protected KeysetSnapshot keysetSnapshot;
     @Mock protected AdminKeysetSnapshot adminKeysetSnapshot;
     @Mock protected AclSnapshot keyAclProviderSnapshot;
@@ -143,6 +144,15 @@ public abstract class ServiceTestBase {
     protected void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         WebClient client = WebClient.create(vertx);
         client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(Buffer.buffer(body), handler);
+    }
+
+    protected void postWithoutBody(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(null, handler);
+    }
+
+    protected void setServices(Service... services) {
+        when(serviceProvider.getAllServices()).thenReturn(Arrays.asList(services));
     }
 
     protected void setSites(Site... sites) {
