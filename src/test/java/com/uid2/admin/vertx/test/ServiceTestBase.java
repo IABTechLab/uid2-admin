@@ -156,9 +156,6 @@ public abstract class ServiceTestBase {
 
     protected void setServiceLinks(ServiceLink... serviceLinks) {
         when(serviceLinkProvider.getAllServiceLinks()).thenReturn(Arrays.asList(serviceLinks));
-        for (ServiceLink sl : serviceLinks) {
-            when(serviceLinkProvider.getServiceLink(eq(sl.getLinkId()))).thenReturn(sl);
-        }
     }
 
     protected void setSites(Site... sites) {
