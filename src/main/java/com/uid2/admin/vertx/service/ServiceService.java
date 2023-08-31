@@ -114,6 +114,17 @@ public class ServiceService implements IService {
                 return;
             }
 
+            if (name.equals("")) {
+                ResponseUtil.error(rc, 400, "name cannot be empty");
+                return;
+            }
+
+            boolean exists = serviceProvider.getAllServices().stream().anyMatch(s -> s.getSiteId() == siteId && s.getName().equals(name));
+            if (exists) {
+                ResponseUtil.error(rc, 400, "site_id " + siteId + " already has service of name " + name);
+                return;
+            }
+
             final Set<Role> roles;
             try {
                 roles = rolesSpec.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());

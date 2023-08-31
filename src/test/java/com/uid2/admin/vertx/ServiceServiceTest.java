@@ -189,6 +189,45 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void addServiceEmptyName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 123);
+        jo.put("name", "");
+        jo.put("roles", new JsonArray());
+
+        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("name cannot be empty", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void addServiceAlreadyExists(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "testName1", Set.of(Role.ID_READER)));
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 123);
+        jo.put("name", "testName1");
+        jo.put("roles", new JsonArray());
+
+        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("site_id 123 already has service of name testName1", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
     void addServiceBadRoles(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -269,12 +308,12 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
-        jo.put("name", "name1");
+        jo.put("name", "name2");
         jo.put("roles", ja);
 
         post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
-            Service expectedService = new Service(2, 123, "name1", Set.of(Role.GENERATOR, Role.ID_READER));
+            Service expectedService = new Service(2, 123, "name2", Set.of(Role.GENERATOR, Role.ID_READER));
             checkServiceJson(expectedService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService, expectedService), null);
             testContext.completeNow();
