@@ -75,11 +75,12 @@
 
         $('#doAdd').on('click', function () {
             const siteId = parseInt($('#siteId').val())
-            if(!siteId) {
+            const serviceName = $('#serviceName').val()
+            if(!siteId || !serviceName) {
                 $('#errorOutput').text("required parameters: site_id, name")
                 return
             }
-            const serviceName = $('#serviceName').val()
+
             const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
 
             doApiCall('POST', '/api/service/add', '#standardOutput', '#errorOutput', JSON.stringify({site_id: siteId, name: serviceName, roles: roles}));
