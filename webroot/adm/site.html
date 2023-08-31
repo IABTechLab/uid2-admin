@@ -82,8 +82,10 @@
             var siteId = encodeURIComponent($('#siteId').val());
             var types = encodeURIComponent($('#types').val());
             if(types.length < 1) {
-                $('#errorOutput').html('Can not set types with empty types');
-                return;
+                if (!confirm("You are about to set the Client Types of this to empty. Are you sure?")) {
+                    return;
+                }
+                types = ""
             }
             var url = '/api/site/set-types?id=' + siteId + '&types=' + types;
 

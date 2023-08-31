@@ -112,7 +112,7 @@ public class SiteService implements IService {
                 jo.put("id", site.getId());
                 jo.put("name", site.getName());
                 jo.put("enabled", site.isEnabled());
-                jo.put("Client Types", site.getClientTypes());
+                jo.put("clientTypes", site.getClientTypes());
                 jo.put("domain_names", domainNamesJa);
 
                 List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
@@ -209,6 +209,7 @@ public class SiteService implements IService {
             Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
             if(types == null) {
                 ResponseUtil.error(rc, 400, "Invalid Types");
+                return;
             }
 
             final List<Site> sites = this.siteProvider.getAllSites()

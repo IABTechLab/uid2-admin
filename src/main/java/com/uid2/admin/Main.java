@@ -228,6 +228,16 @@ public class Main {
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
 
+
+            /*
+            This if statement will:
+            1. create all copy keysets to admin keysets
+            2. Create all the keyset keys from the encryption keys
+            This should only need to happen the first time Admin starts and either of the files has not been caught up for that ENV.
+            It is synchronized so that this completes before any other operation is started.
+            The jobs are executed after because they copy data from these files locations consumed by public and private operators.
+            This caused an issue because the files were empty and the job started to fail so the operators got empty files.
+             */
             if(enableKeysets) {
                 synchronized (writeLock) {
                     //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up

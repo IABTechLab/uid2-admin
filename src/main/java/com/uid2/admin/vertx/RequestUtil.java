@@ -38,6 +38,9 @@ public class RequestUtil {
     }
 
     public static Set<ClientType> getTypes(String typeSpec) {
+        if(typeSpec.isEmpty()) {
+            return new HashSet<>();
+        }
         try {
             Set<ClientType> types = Arrays.stream(typeSpec.split(","))
                     .map(r -> r.trim().toUpperCase())
