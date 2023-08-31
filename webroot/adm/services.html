@@ -76,7 +76,7 @@
         $('#doAdd').on('click', function () {
             const siteId = parseInt($('#siteId').val())
             if(!siteId) {
-                $('#errorOutput').text("required parameters: site_id")
+                $('#errorOutput').text("required parameters: site_id, name")
                 return
             }
             const serviceName = $('#serviceName').val()
