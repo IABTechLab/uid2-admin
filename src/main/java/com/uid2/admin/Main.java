@@ -7,6 +7,7 @@ import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.managers.KeysetManager;
+import com.uid2.admin.monitoring.DataStoreMetrics;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
@@ -222,6 +223,20 @@ public class Main {
 
             AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
+
+            // Data type keys should be matching uid2_config_store_version reported by operator, core, etc
+            DataStoreMetrics.addDataStoreMetrics("admins", adminUserProvider);
+            DataStoreMetrics.addDataStoreMetrics("site", siteProvider);
+            DataStoreMetrics.addDataStoreMetrics("auth", clientKeyProvider);
+            DataStoreMetrics.addDataStoreMetrics("key", keyProvider);
+            DataStoreMetrics.addDataStoreMetrics("keys_acl", keyAclProvider);
+            DataStoreMetrics.addDataStoreMetrics("keyset", keysetProvider);
+            DataStoreMetrics.addDataStoreMetrics("keysetkey", keysetKeysProvider);
+            DataStoreMetrics.addDataStoreMetrics("cskeypair", clientSideKeypairProvider);
+            DataStoreMetrics.addDataStoreMetrics("operators", operatorKeyProvider);
+            DataStoreMetrics.addDataStoreMetrics("enclaves", enclaveIdProvider);
+            DataStoreMetrics.addDataStoreMetrics("salt", saltProvider);
+            DataStoreMetrics.addDataStoreMetrics("partners", partnerConfigProvider);
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
