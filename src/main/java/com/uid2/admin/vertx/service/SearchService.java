@@ -1,9 +1,9 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.vertx.ResponseUtil;
-import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.RotatingOperatorKeyProvider;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.ext.web.Router;
@@ -58,19 +58,27 @@ public class SearchService implements IService {
             results.put("OperatorKeys", operatorKeyResults);
             results.put("AdministratorKeys", adminUserResults);
 
+            AuthorizableStore<ClientKey> clientKeyStore = new AuthorizableStore<>();
+            AuthorizableStore<OperatorKey> operatorKeyStore = new AuthorizableStore<>();
+            AuthorizableStore<AdminUser> adminKeyStore = new AuthorizableStore<>();
+            
+            ClientKey clientKey = clientKeyStore.getFromKey(queryParam);
+            OperatorKey operatorKey = operatorKeyStore.getFromKey(queryParam);
+            AdminUser adminKey = adminKeyStore.getFromKey(queryParam);
+
             this.clientKeyProvider.getAll()
                     .stream()
-                    .filter(c -> c.getKey().contains(queryParam) || c.getSecret().contains(queryParam))
+                    .filter(c -> c.getKeyHash().contains(clientKey.getKeyHash()) || c.getSecret().contains(queryParam))
                     .forEach(clientKeyResults::add);
 
             this.operatorKeyProvider.getAll()
                     .stream()
-                    .filter(o -> o.getKey().contains(queryParam))
+                    .filter(o -> o.getKeyHash().contains(operatorKey.getKeyHash()))
                     .forEach(operatorKeyResults::add);
 
             this.adminUserProvider.getAll()
                     .stream()
-                    .filter(a -> a.getKey().contains(queryParam))
+                    .filter(a -> a.getKeyHash().contains(adminKey.getKeyHash()))
                     .forEach(adminUserResults::add);
 
             rc.response()
