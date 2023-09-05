@@ -33,5 +33,25 @@
     "id": 127,
     "name": "OptOut",
     "enabled": true
+  },
+  {
+    "id": 128,
+    "name": "Legacy DSP",
+    "enabled": true
+  },
+  {
+    "id": 129,
+    "name": "Legacy Publisher",
+    "enabled": true
+  },
+  {
+    "id": 130,
+    "name": "Legacy Data Provider",
+    "enabled": true
+  },
+  {
+    "id": 130,
+    "name": "Legacy Advertiser",
+    "enabled": true
   }
 ]

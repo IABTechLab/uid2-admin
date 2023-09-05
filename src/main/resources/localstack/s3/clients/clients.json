@@ -93,5 +93,17 @@
     ],
     "disabled": false,
     "site_id": 127
+  },
+  {
+    "key": "UID2-C-L-129-XA2QDk.vF9sceoPzudU4srfVAvy4XyycZX2KAxc9mlYo=",
+    "secret": "WuIF7YRAB9tfBF4dt+Bj4ddUe2XU5ImOGarSv2y7J6E=",
+    "name": "Legacy Publisher",
+    "contact": "Legacy Publisher",
+    "created": 1609459200,
+    "roles": [
+      "GENERATOR"
+    ],
+    "disabled": false,
+    "site_id": 129
   }
 ]
