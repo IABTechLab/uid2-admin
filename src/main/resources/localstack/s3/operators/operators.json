@@ -11,7 +11,9 @@
       "OPTOUT"
     ],
     "site_id": 999,
-    "operator_type": "PUBLIC"
+    "operator_type": "PUBLIC",
+    "key_hash": "up4UeBTF8uqGBzIuDFmV0YhHGHNOyEve+lhX+9m0bnznk2BCtbuGH4xFBfXliIGGmIy3rNQvGna7GxnPjqJubw==",
+    "key_salt": "erLKpOM2KmHjm5WnJcEVKb8t8Oq6nCNOC22A7cTHwF4="
   },
   {
     "key": "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
@@ -25,7 +27,9 @@
       "OPTOUT"
     ],
     "site_id": 999,
-    "operator_type": "PRIVATE"
+    "operator_type": "PRIVATE",
+    "key_hash": "88tp2FCHQdQ3g8uwQhvtiXOzhizj8xh0dsmfD/UpVBLkk/mnTO944yKne4j3a+Ymb4LT5YG6+AHl9Qi/b2zqBQ==",
+    "key_salt": "h50xq+sFkkVioTgMUXMZfcR22LJn4n2cxqR8pnk4S6Y="
   },
   {
     "key": "UID2-O-L-123-Xt/ght.6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=",
@@ -39,7 +43,9 @@
       "OPTOUT"
     ],
     "site_id": 123,
-    "operator_type": "PUBLIC"
+    "operator_type": "PUBLIC",
+    "key_hash": "JVZjSVxMjM95wcVKgRJ0+bH4I/8qhHCg6aeSsv/wOAen84HAPJevhPBcHIt7jca23mUV3uH5e5vrITcH2kH3aA==",
+    "key_salt": "4ztuzew4Cv4P5UHd2CGJ9qF4DMoiOehvR2xd4DcQxiU="
   },
   {
     "key": "UID2-O-L-124-cr24Bt.dYP+Wpo6NWlP7CbvwpzHn0lXS3Cst6Y+qFDK4=",
@@ -52,7 +58,9 @@
       "OPERATOR"
     ],
     "site_id": 124,
-    "operator_type": "PRIVATE"
+    "operator_type": "PRIVATE",
+    "key_hash": "HfZS+oLwd5+R5+LUHB9DPbrlwxliDtRb66G/UXzrk7Q8Gc2G1l9dlyhYK06HjRaDQq3bQAL0B7D1T0VOmlhGGA==",
+    "key_salt": "5iRO0dp0wIV8h4Pt8uBVFc7Dj3qo3oOuG/oEwXEscy4="
   },
   {
     "key": "UID2-O-L-127-pDqphU.6FuXzThQMY8YEsCA8crqvAlzyGrjcF8P6XO84=",
@@ -65,6 +73,8 @@
       "OPTOUT_SERVICE"
     ],
     "site_id": 127,
-    "operator_type": "PUBLIC"
+    "operator_type": "PUBLIC",
+    "key_hash": "5Wl/P6hWy+qK0SxZWO1GSkbJP/iDv8+tSZ+hryb+c9kO2gfYxvAnaHZcqGahSpgGVcX+Siyus9B0trkkV5p5Uw==",
+    "key_salt": "PpmlmZ89Iz5bU70E+qv3rFCyuzKHU08iYhjAkfJwpvY="
   }
 ]
