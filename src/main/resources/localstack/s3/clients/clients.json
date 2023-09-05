@@ -13,7 +13,9 @@
       "OPTOUT"
     ],
     "disabled": false,
-    "site_id": 999
+    "site_id": 999,
+    "key_hash": "CgUKckILGsdQ4nFjKPKYDjn4ZpDu/rRyckkbNQRUGSPgSh42buQGzS+DLZtox+nBzCunOCy5hF6m5Iv/1DOzLg==",
+    "key_salt": "Vdogp86EHmSalKIwCxIVxZXBHkevKxoP45HTfxsFQyc="
   },
   {
     "key": "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=",
@@ -29,7 +31,9 @@
       "OPTOUT"
     ],
     "disabled": false,
-    "site_id": 999
+    "site_id": 999,
+    "key_hash": "Af9nndPpFcj1RrFTBSzb3uCtvxWZfwcncE81QfGGeYTsUGpHm6zRh6AGNyt1Dm1bWfQ6Kl8mzFWQBTY7rJ2Hfw==",
+    "key_salt": "nO/QncrnabOHb3LiMQ2akctOsbevjJd8W2iNlSTHOLE="
   },
   {
     "key": "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
@@ -41,7 +45,9 @@
       "ID_READER"
     ],
     "disabled": false,
-    "site_id": 123
+    "site_id": 123,
+    "key_hash": "PowSv45tlNTiw3Xp3mKVRN7AN67ykjtjm8IvvGpLgWJstAG1dY3p3bMOP6YRbclaDzCBZqhkwMli5oJy1kRMFA==",
+    "key_salt": "2TtxzVU+fI1trxeRh8JOTDUg0z5MV+3IO6iZRrt38+s="
   },
   {
     "key": "UID2-C-L-124-H8VwqX.l2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
@@ -54,7 +60,9 @@
       "SHARER"
     ],
     "disabled": false,
-    "site_id": 124
+    "site_id": 124,
+    "key_hash": "XaIF0qFitKD30ug6NdUUsLda/0Y0VBtUS/nR4QjEbO+gwcHHcu4eLmDrsFYtnx5SqR18KitQ4rFKH+D3K1t3nQ==",
+    "key_salt": "FCF1ZzBhMEnXCnZMlDHSkK03i3ahud8nvG79pCPGtyM="
   },
   {
     "key": "UID2-C-L-125-E5w9L8.T5og45yFqQeoj4ubh9IVqXcaSVwk7A5XyG958=",
@@ -67,7 +75,9 @@
       "SHARER"
     ],
     "disabled": false,
-    "site_id": 125
+    "site_id": 125,
+    "key_hash": "kWzvwahbQBm2iB5MgMfvw6laUewuReK+EE+C9iaHL1r0JjbxgdOnVijAien68qM2jx1TLzr2l21Xrhu/Wm9rjw==",
+    "key_salt": "hqASwtMhK2mzFBWWUKZmTEDw9Qpo6+hb8FvVAoJjwKc="
   },
   {
     "key": "UID2-C-L-126-GMP9tD.jn2o3vmXzn7vmKRlTT6BEUrPUaPJuQmDBdq38=",
@@ -80,7 +90,9 @@
       "SHARER"
     ],
     "disabled": false,
-    "site_id": 126
+    "site_id": 126,
+    "key_hash": "eMhwjGBR6jL1WNpnnruYbANx10o29m4I2d6HHKtM2jDK+e0nVYpH+T088oMoo1ACWumjqBmX6Pxb9zNWEtC0OA==",
+    "key_salt": "kFITw5bhhzaUnunTUng9sNihbt5vUii+ob7LQW/lPjE="
   },
   {
     "key": "UID2-C-L-127-aHVydH.JlZnVzZWRmYXN0ZW5lbXliYWdpZGVudGl0eWU=",
@@ -92,7 +104,9 @@
       "OPTOUT"
     ],
     "disabled": false,
-    "site_id": 127
+    "site_id": 127,
+    "key_hash": "24dFTOy7uywu+pxp1yKOGb9oOt2D+Kl9iGMi6K85BS1X9WsnF/0C0GsPxHCBaVM1CxbgbrR1yL8I2ILW1dQAoQ==",
+    "key_salt": "XgZnOhVEZ8yvt3IVpAkAx3aNSrIcIqFFX2P7wfOh8Qo="
   },
   {
     "key": "UID2-C-L-129-XA2QDk.vF9sceoPzudU4srfVAvy4XyycZX2KAxc9mlYo=",
@@ -104,6 +118,8 @@
       "GENERATOR"
     ],
     "disabled": false,
-    "site_id": 129
+    "site_id": 129,
+    "key_hash": "X0R5gbmmbCf2sdGc7fUWk8npdGFQ7iN1/zwmaQt7oBKNy/1lQ79VKB6Yjzygs3UK4sCTuHnssiEZLcOibZ7VXA==",
+    "key_salt": "BI2d0JcQL1czzSCG9jD+pzT0wRmmSY5FGW1qP3vzXik="
   }
 ]
