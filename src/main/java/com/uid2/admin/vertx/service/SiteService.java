@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.shared.model.ClientType;
 import com.google.common.net.InternetDomainName;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
@@ -17,10 +18,12 @@ import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
+
+import static com.uid2.admin.vertx.RequestUtil.getTypes;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -68,6 +71,11 @@ public class SiteService implements IService {
                 this.handleSiteEnable(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
+                    synchronized (writeLock) {
+                        this.handleSiteTypesSet(ctx);
+                    }
+                    }, Role.CLIENTKEY_ISSUER));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
@@ -104,6 +112,7 @@ public class SiteService implements IService {
                 jo.put("id", site.getId());
                 jo.put("name", site.getName());
                 jo.put("enabled", site.isEnabled());
+                jo.put("clientTypes", site.getClientTypes());
                 jo.put("domain_names", domainNamesJa);
 
                 List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
@@ -165,11 +174,17 @@ public class SiteService implements IService {
                 }
             }
 
+            Set<ClientType> types = new HashSet<>();
+            if(!rc.queryParam("types").isEmpty())
+            {
+                types = getTypes(rc.queryParam("types").get(0));
+            }
+
             final List<Site> sites = this.siteProvider.getAllSites()
                     .stream().sorted(Comparator.comparingInt(Site::getId))
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
-            final Site newSite = new Site(siteId, name, enabled, new HashSet<>(normalizedDomainNames));
+            final Site newSite = new Site(siteId, name, enabled, types, new HashSet<>(normalizedDomainNames));
 
             // add site to the array
             sites.add(newSite);
@@ -179,6 +194,33 @@ public class SiteService implements IService {
 
             // respond with new client created
             rc.response().end(jsonWriter.writeValueAsString(newSite));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSiteTypesSet(RoutingContext rc) {
+        try {
+            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+
+            Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
+            if(types == null) {
+                ResponseUtil.error(rc, 400, "Invalid Types");
+                return;
+            }
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            existingSite.setClientTypes(types);
+
+            storeWriter.upload(sites, null);
+
+            rc.response().end(jsonWriter.writeValueAsString(existingSite));
         } catch (Exception e) {
             rc.fail(500, e);
         }
