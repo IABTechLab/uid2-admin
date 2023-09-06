@@ -75,6 +75,7 @@
 
 <script language="JavaScript">
   const gcloudCli = '$ gcloud compute instances create <INSTANCE_NAME> \\\n\
+    --machine-type <MACHINE_TYPE> \\\n\
     --confidential-compute \\\n\
     --shielded-secure-boot \\\n\
     --maintenance-policy Terminate \\\n\
@@ -83,6 +84,8 @@
     --image-family <IMAGE_FAMILY> \\\n\
     --service-account <SERVICE_ACCOUNT> \\\n\
     --metadata ^~^tee-image-reference=ghcr.io/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN=<API_TOKEN>'
+
+  const logRedirectCli= '~tee-container-log-redirect=true'
 
   $('#gcloudCli').val(gcloudCli);
 
@@ -120,6 +123,7 @@
 
     const env = $('#envId').val();
     const isDebug = $('#debugMode').val() === 'true';
+    const isProd = env === 'prod';
 
     // generate and show enclaveId
     generateEnclaveId(imageSha, isDebug).then(enclaveId => {
@@ -128,10 +132,16 @@
 
     // update gcloud Cli
     const imageFamily = isDebug ? 'confidential-space-debug' : 'confidential-space';
-    const cli = gcloudCli
+    const machineType = isProd ? 'n2d-standard-16' : 'n2d-standard-2';
+    let cli = gcloudCli
+            .replaceAll('<MACHINE_TYPE>', machineType)
             .replaceAll('<IMAGE_FAMILY>', imageFamily)
             .replaceAll('<IMAGE_SHA>', imageSha)
             .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
+
+    if(isDebug){
+      cli += logRedirectCli;
+    }
     $('#gcloudCli').val(cli);
   }
 
