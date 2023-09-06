@@ -6,10 +6,12 @@ import com.uid2.admin.auth.GithubAuthFactory;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
+import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
+import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
@@ -114,20 +116,18 @@ public class Main {
             keyAclProvider.loadContent();
             KeyAclStoreWriter keyAclStoreWriter = new KeyAclStoreWriter(keyAclProvider, fileManager, jsonWriter, versionGenerator, clock, keyAclGlobalScope);
 
-            CloudPath keysetMetadataPath = new CloudPath(config.getString(Const.Config.KeysetsMetadataPathProp));
-            GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
-            RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
-            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
-            if(enableKeysets) {
-                try {
-                    keysetProvider.loadContent();
-                } catch (CloudStorageException e) {
-                    if (e.getMessage().contains("The specified key does not exist")) {
-                        keysetStoreWriter.upload(new HashMap<>(), null);
-                        keysetProvider.loadContent();
-                    } else {
-                        throw e;
-                    }
+            CloudPath adminKeysetMetadataPath = new CloudPath(config.getString("admin_keysets_metadata_path"));
+            GlobalScope adminKeysetGlobalScope = new GlobalScope(adminKeysetMetadataPath);
+            RotatingAdminKeysetStore adminKeysetProvider = new RotatingAdminKeysetStore(cloudStorage, adminKeysetGlobalScope);
+            AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetProvider, fileManager, jsonWriter, versionGenerator, clock, adminKeysetGlobalScope);
+            try {
+                adminKeysetProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")){
+                    adminKeysetStoreWriter.upload(new HashMap<>(), null);
+                    adminKeysetProvider.loadContent();
+                } else {
+                    throw e;
                 }
             }
 
@@ -191,9 +191,9 @@ public class Main {
             IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
-                    config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, keysetProvider, keysetStoreWriter, keyGenerator, clock);
+                    config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, adminKeysetProvider, adminKeysetStoreWriter, keyGenerator, clock);
             KeysetManager keysetManager = new KeysetManager(
-                    keysetProvider, keysetStoreWriter, encryptionKeyService, enableKeysets
+                    adminKeysetProvider, adminKeysetStoreWriter, encryptionKeyService, enableKeysets
             );
 
             JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
@@ -206,8 +206,8 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
+                    new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
                     new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
-                    new SharingService(auth, writeLock, keysetProvider, keysetManager, siteProvider, enableKeysets),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
@@ -224,6 +224,33 @@ public class Main {
             AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
             vertx.deployVerticle(adminVerticle);
 
+            CloudPath keysetMetadataPath = new CloudPath(config.getString("keysets_metadata_path"));
+            GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
+            RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
+            KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
+
+
+            /*
+            This if statement will:
+            1. create all copy keysets to admin keysets
+            2. Create all the keyset keys from the encryption keys
+            This should only need to happen the first time Admin starts and either of the files has not been caught up for that ENV.
+            It is synchronized so that this completes before any other operation is started.
+            The jobs are executed after because they copy data from these files locations consumed by public and private operators.
+            This caused an issue because the files were empty and the job started to fail so the operators got empty files.
+             */
+            if(enableKeysets) {
+                synchronized (writeLock) {
+                    //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
+                    keysetProvider.loadContent();
+                    keysetManager.createAdminKeysets(keysetProvider.getAll());
+                    encryptionKeyService.createKeysetKeys();
+                }
+            }
+
+            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
+            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
+            jobDispatcher.executeNextJob();
             // Data type keys should be matching uid2_config_store_version reported by operator, core, etc
             DataStoreMetrics.addDataStoreMetrics("admins", adminUserProvider);
             DataStoreMetrics.addDataStoreMetrics("site", siteProvider);
@@ -244,10 +271,6 @@ public class Main {
             jobDispatcher.enqueue(job);
             jobDispatcher.executeNextJob();
 
-            if(enableKeysets) {
-                //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
-                encryptionKeyService.createKeysetKeys();
-            }
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
