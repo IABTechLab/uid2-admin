@@ -81,6 +81,7 @@ public class AdminKeyServiceTest extends ServiceTestBase {
                 .set(field(AdminUser::getName), "test")
                 .set(field(AdminUser::getContact), "test")
                 .set(field(AdminUser::getRoles), new HashSet<>(List.of(Role.ADMINISTRATOR)))
+                .set(field(AdminUser::isDisabled), false)
                 .create();
     }
 }
