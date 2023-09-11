@@ -106,7 +106,7 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        if(enableKeysets) return;
+        if(!enableKeysets) return;
         synchronized (writeLock) {
             this.adminKeysetGlobalReader.loadContent();
             this.keysetGlobalReader.loadContent();
