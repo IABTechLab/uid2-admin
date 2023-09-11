@@ -139,9 +139,7 @@
             .replaceAll('<IMAGE_SHA>', imageSha)
             .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
 
-    if(isDebug){
-      cli += logRedirectCli;
-    }
+    cli += logRedirectCli;
     $('#gcloudCli').val(cli);
   }
 
