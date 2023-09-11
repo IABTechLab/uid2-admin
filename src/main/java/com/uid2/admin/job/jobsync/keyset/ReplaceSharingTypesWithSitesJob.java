@@ -42,8 +42,6 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
     private final StoreWriter keysetGlobalWriter;
     private final RotatingSiteStore siteGlobalReader;
 
-    private final boolean enableKeysets;
-
     public ReplaceSharingTypesWithSitesJob(JsonObject config, WriteLock writeLock) {
 
         this.config = config;
