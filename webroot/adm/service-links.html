@@ -1,0 +1,80 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - Service Link Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<div>
+    <label for="linkId">Link Id:</label>
+    <input type="text" id="linkId" name="linkId">
+    <label for="serviceId">Service Id:</label>
+    <input type="text" id="serviceId" name="serviceId">
+    <label for="siteId">Site Id:</label>
+    <input type="text" id="siteId" name="siteId">
+    <label for="linkName">Link Name:</label>
+    <input type="text" id="linkName" name="linkName">
+</div>
+
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doListAll">List Service Links</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doListBySite">List Service Links By Site Id</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service Link</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doListAll').on('click', function () {
+            doApiCall('GET', '/api/service_link/list', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doListBySite').on('click', function () {
+            const siteId = parseInt($('#siteId').val())
+            if(!siteId) {
+                $('#errorOutput').text("required parameters: site_id")
+                return
+            }
+            doApiCallWithCallback('GET', '/api/service_link/list', function (text) {
+                let resp = JSON.parse(text)
+                resp = resp.filter(obj => obj.site_id === siteId)
+                $('#standardOutput').text(JSON.stringify(resp, null, 2));
+            }, errorCallback);
+        });
+
+        $('#doAdd').on('click', function () {
+            const linkId = $('#linkId').val()
+            const serviceId = parseInt($('#serviceId').val())
+            const siteId = parseInt($('#siteId').val())
+            const linkName = $('#linkName').val()
+            if(!linkId || !siteId || !serviceId) {
+                $('#errorOutput').text("required parameters: link_id, service_id, site_id")
+                return
+            }
+            doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
+        });
+    });
+</script>
+
+</body>
+</html>
