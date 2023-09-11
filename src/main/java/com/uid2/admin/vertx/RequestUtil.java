@@ -2,6 +2,7 @@ package com.uid2.admin.vertx;
 
 import com.google.common.collect.ImmutableSet;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.ISiteStore;
@@ -31,6 +32,21 @@ public class RequestUtil {
                     .map(r -> Role.valueOf(r))
                     .collect(Collectors.toSet());
             return roles;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static Set<ClientType> getTypes(String typeSpec) {
+        if(typeSpec.isEmpty()) {
+            return new HashSet<>();
+        }
+        try {
+            Set<ClientType> types = Arrays.stream(typeSpec.split(","))
+                    .map(r -> r.trim().toUpperCase())
+                    .map(r -> ClientType.valueOf(r))
+                    .collect(Collectors.toSet());
+            return types;
         } catch (Exception e) {
             return null;
         }

@@ -52,7 +52,6 @@ public class AdminUser implements IRoleAuthorizable<Role> {
         );
     }
 
-    @Override
     public String getKey() {
         return key;
     }
