@@ -42,6 +42,8 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
     private final StoreWriter keysetGlobalWriter;
     private final RotatingSiteStore siteGlobalReader;
 
+    private final boolean enableKeysets;
+
     public ReplaceSharingTypesWithSitesJob(JsonObject config, WriteLock writeLock) {
 
         this.config = config;
@@ -106,6 +108,7 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
 
     @Override
     public void execute() throws Exception {
+        if(enableKeysets) return;
         synchronized (writeLock) {
             this.adminKeysetGlobalReader.loadContent();
             this.keysetGlobalReader.loadContent();
