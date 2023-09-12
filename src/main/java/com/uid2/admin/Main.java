@@ -33,8 +33,6 @@ import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.secure.gcpoidc.Environment;
-import com.uid2.shared.secure.gcpoidc.IdentityScope;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
@@ -163,6 +161,36 @@ public class Main {
                 }
             }
 
+            CloudPath serviceMetadataPath = new CloudPath(config.getString(Const.Config.ServiceMetadataPathProp));
+            GlobalScope serviceGlobalScope= new GlobalScope(serviceMetadataPath);
+            RotatingServiceStore serviceProvider = new RotatingServiceStore(cloudStorage, serviceGlobalScope);
+            ServiceStoreWriter serviceStoreWriter = new ServiceStoreWriter(serviceProvider, fileManager, jsonWriter, versionGenerator, clock, serviceGlobalScope);
+            try {
+                serviceProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")) {
+                    serviceStoreWriter.upload(new HashSet<>(), null);
+                    serviceProvider.loadContent();
+                } else {
+                    throw e;
+                }
+            }
+
+            CloudPath serviceLinkMetadataPath = new CloudPath(config.getString(Const.Config.ServiceLinkMetadataPathProp));
+            GlobalScope serviceLinkGlobalScope= new GlobalScope(serviceLinkMetadataPath);
+            RotatingServiceLinkStore serviceLinkProvider = new RotatingServiceLinkStore(cloudStorage, serviceLinkGlobalScope);
+            ServiceLinkStoreWriter serviceLinkStoreWriter = new ServiceLinkStoreWriter(serviceLinkProvider, fileManager, jsonWriter, versionGenerator, clock, serviceLinkGlobalScope);
+            try {
+                serviceLinkProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")) {
+                    serviceLinkStoreWriter.upload(new HashSet<>(), null);
+                    serviceLinkProvider.loadContent();
+                } else {
+                    throw e;
+                }
+            }
+
             CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
             GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
             RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -208,6 +236,8 @@ public class Main {
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
                     new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
+                    new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider),
+                    new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
