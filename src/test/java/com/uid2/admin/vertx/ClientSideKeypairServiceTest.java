@@ -31,19 +31,19 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     private final Clock clock = mock(Clock.class);
     private static final long KEY_CREATE_TIME_IN_SECONDS = 1690680355L;
 
-    private final String pub1 = "UID2-X-T-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhQ9i767j9beaz8sUhxkgrnW38gIUgG07+8+4ubb80NnikzLhVE7ZHd22haNF6iNNu8O7t7h21IizIifRkCC8OQ==";
-    private final String pub2 = "UID2-X-T-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+igludojFNfaFcidrG13OdO8NnzMv6DfqCogaEP1JoQ/ciOA4RLx4djje8BtXddafFMPU8nG5qMomTSg67Lp+A==";
-    private final String pub3 = "UID2-X-T-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoy42kazyAedMNvXoakdZWAMqbkr2TICCsAJzOpOtbYbxwsJgAFJso9NCJTSsvpb0ChivMkA6mesicVlGdLy1ng==";
-    private final String pub4 = "UID2-X-T-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEP5F7PslSFDWcTgasIc1x6183/JqI8WGOqXYxV2n7F6fAdZe8jLVvYtNhub2R+ZfXIDwdDepEZkuNSxfgwM27GA==";
-    private final String priv1 = "UID2-Y-T-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCAtmOklUGeCTv9XRp9cS9PIZAKW3bcntTVtzewaFw9/2A==";
-    private final String priv2 = "UID2-Y-T-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCAshNg/7jgVzpyueRlF73Y4YvH18P+4EUed5Pw5ZAbnqA==";
-    private final String priv3 = "UID2-Y-T-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCBt5EM8QQfaegeYWzxbFTkn+HRZmZ3kR0Eqeesv6aMHMA==";
-    private final String priv4 = "UID2-Y-T-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDe6TIHd+Eyoczq1a8xeNGw17OWjeJHZwSLXtuMcqCXZQ==";
+    private final String pub1 = "UID2-X-L-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhQ9i767j9beaz8sUhxkgrnW38gIUgG07+8+4ubb80NnikzLhVE7ZHd22haNF6iNNu8O7t7h21IizIifRkCC8OQ==";
+    private final String pub2 = "UID2-X-L-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+igludojFNfaFcidrG13OdO8NnzMv6DfqCogaEP1JoQ/ciOA4RLx4djje8BtXddafFMPU8nG5qMomTSg67Lp+A==";
+    private final String pub3 = "UID2-X-L-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoy42kazyAedMNvXoakdZWAMqbkr2TICCsAJzOpOtbYbxwsJgAFJso9NCJTSsvpb0ChivMkA6mesicVlGdLy1ng==";
+    private final String pub4 = "UID2-X-L-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEP5F7PslSFDWcTgasIc1x6183/JqI8WGOqXYxV2n7F6fAdZe8jLVvYtNhub2R+ZfXIDwdDepEZkuNSxfgwM27GA==";
+    private final String priv1 = "UID2-Y-L-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCAtmOklUGeCTv9XRp9cS9PIZAKW3bcntTVtzewaFw9/2A==";
+    private final String priv2 = "UID2-Y-L-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCAshNg/7jgVzpyueRlF73Y4YvH18P+4EUed5Pw5ZAbnqA==";
+    private final String priv3 = "UID2-Y-L-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCBt5EM8QQfaegeYWzxbFTkn+HRZmZ3kR0Eqeesv6aMHMA==";
+    private final String priv4 = "UID2-Y-L-MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDe6TIHd+Eyoczq1a8xeNGw17OWjeJHZwSLXtuMcqCXZQ==";
     @Override
     protected IService createService() {
         JsonObject config = new JsonObject();
-        config.put("client_side_keypair_public_prefix", "UID2-X-T-");
-        config.put("client_side_keypair_private_prefix", "UID2-Y-T-");
+        config.put("client_side_keypair_public_prefix", "UID2-X-L-");
+        config.put("client_side_keypair_private_prefix", "UID2-Y-L-");
         return new ClientSideKeypairService(config, auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, new SecureKeypairGenerator(), clock);
     }
     @BeforeEach
@@ -67,7 +67,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         assertEquals(expectedKeypair.getContact(), resp.getString("contact"));
         assertEquals(expectedKeypair.getCreated().getEpochSecond(), resp.getLong("created"));
         assertEquals(expectedKeypair.isDisabled(), resp.getBoolean("disabled"));
-        assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
+        assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
         assertEquals(expectedKeypair.encodePublicKeyToString(), resp.getString("public_key"));
     }
 
@@ -79,8 +79,8 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         assertEquals(expectedKeypair.getContact(), resp.getString("contact"));
         assertEquals(expectedKeypair.getCreated().getEpochSecond(), resp.getLong("created"));
         assertEquals(expectedKeypair.isDisabled(), resp.getBoolean("disabled"));
-        assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
-        assertEquals("UID2-Y-T-", resp.getString("private_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
+        assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
+        assertEquals("UID2-Y-L-", resp.getString("private_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
         assertEquals(expectedKeypair.encodePublicKeyToString(), resp.getString("public_key"));
         assertEquals(expectedKeypair.encodePrivateKeyToString(), resp.getString("private_key"));
     }
@@ -266,9 +266,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertNotNull(resp.getString("public_key"));
             assertNotNull(resp.getString("private_key"));
             assertTrue(resp.getString("public_key").length() > 9);
-            assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, 9));
+            assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, 9));
             assertTrue(resp.getString("private_key").length() > 9);
-            assertEquals("UID2-Y-T-", resp.getString("private_key").substring(0, 9));
+            assertEquals("UID2-Y-L-", resp.getString("private_key").substring(0, 9));
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
             assertEquals(false, resp.getBoolean("disabled"));
@@ -303,9 +303,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertNotNull(resp.getString("public_key"));
             assertNotNull(resp.getString("private_key"));
             assertTrue(resp.getString("public_key").length() > 9);
-            assertEquals("UID2-X-T-", resp.getString("public_key").substring(0, 9));
+            assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, 9));
             assertTrue(resp.getString("private_key").length() > 9);
-            assertEquals("UID2-Y-T-", resp.getString("private_key").substring(0, 9));
+            assertEquals("UID2-Y-L-", resp.getString("private_key").substring(0, 9));
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
             assertEquals(false, resp.getBoolean("disabled"));
