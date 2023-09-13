@@ -597,6 +597,90 @@ public class PrivateSiteUtilTest {
     }
 
     @Nested
+    class Keysets {
+        Map<Integer, Keyset> keysets = Map.of(
+                -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                4, new Keyset(4, 10, "Site 10", null, 999999, true, true),
+                5, new Keyset(5, 11, "Site 11", Set.of(12), 999999, true, true),
+                6, new Keyset(6, 12, "Site 12", null, 999999, true, true)
+        );
+
+        @Test
+        public void nullKeysetGetsOwnPlusDefault() {
+
+            Map<Integer, Keyset> expected = Map.of(
+                -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                4, new Keyset(4, 10, "Site 10", null, 999999, true, true)
+            );
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId1)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            Map<Integer, Keyset> actual = getKeysetForEachSite(operators, keysets).get(siteId1);
+            assertEquals(expected.size(), actual.size());
+            for (Integer siteId : expected.keySet()) {
+                assertEquals(expected.get(siteId), actual.get(siteId));
+            }
+        }
+
+        @Test
+        public void OperatorGetsOwnSharedAndDefault() {
+
+            Map<Integer, Keyset> expected = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    5, new Keyset(5, 11, "Site 11", Set.of(12), 999999, true, true),
+                    6, new Keyset(6, 12, "Site 12", null, 999999, true, true)
+            );
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId3)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            Map<Integer, Keyset> actual = getKeysetForEachSite(operators, keysets).get(siteId3);
+            assertEquals(expected.size(), actual.size());
+            for (Integer siteId : expected.keySet()) {
+                assertEquals(expected.get(siteId), actual.get(siteId));
+            }
+        }
+
+        @Test
+        public void OperatorNoKeyGetsDefault() {
+
+            Map<Integer, Keyset> expected = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true)
+            );
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId4)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            Map<Integer, Keyset> actual = getKeysetForEachSite(operators, keysets).get(siteId4);
+            assertEquals(expected.size(), actual.size());
+            for (Integer siteId : expected.keySet()) {
+                assertEquals(expected.get(siteId), actual.get(siteId));
+            }
+        }
+    }
+
+    @Nested
     class KeysetKeys {
 
         KeysetKey keysetKey1 = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 1);
@@ -671,6 +755,56 @@ public class PrivateSiteUtilTest {
                     operators,
                     ImmutableSet.of(keysetKey1, keysetKey2, keysetKey3),
                     keysets
+            );
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void siteGetsDefaultKeys() {
+            Map<Integer, Keyset> localKeysets = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    4, new Keyset(4, 10, "Site 10", null, 999999, true, true),
+                    5, new Keyset(5, 11, "Site 11", Set.of(12), 999999, true, true),
+                    6, new Keyset(6, 12, "Site 12", null, 999999, true, true)
+            );
+
+            KeysetKey refreshKey = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), -2);
+            KeysetKey masterKey = new KeysetKey(1001, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), -1);
+            KeysetKey publisherKey = new KeysetKey(1002, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
+            KeysetKey site1Key = new KeysetKey(1003, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 4);
+            KeysetKey site2Key = new KeysetKey(1004, new byte[]{}, Instant.now(), Instant.now(), Instant.now(),  5);
+            KeysetKey site3Key = new KeysetKey(1005, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 6);
+            Set<KeysetKey> keysetKeys = Set.of( refreshKey, masterKey, publisherKey, site1Key, site2Key, site3Key);
+
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+            expected.put(siteId1, ImmutableSet.of(refreshKey, masterKey, publisherKey, site1Key));
+            expected.put(siteId3, ImmutableSet.of(refreshKey, masterKey, publisherKey, site2Key, site3Key));
+            expected.put(siteId4, ImmutableSet.of(refreshKey, masterKey, publisherKey));
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId1)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(siteId3)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(siteId4)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(
+                    operators,
+                    keysetKeys,
+                    localKeysets
             );
 
             assertEquals(expected, actual);
@@ -868,6 +1002,7 @@ public class PrivateSiteUtilTest {
     static int siteId1 = 10;
     static int siteId2 = 11;
     static int siteId3 = 12;
+    static int siteId4 = 13;
     final Set<OperatorKey> noOperators = ImmutableSet.of();
     final Set<ClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();

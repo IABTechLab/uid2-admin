@@ -160,6 +160,12 @@ public final class PrivateSiteUtil {
                 return privateKeysetMap;
             });
 
+            // Add special sites to all operators
+            if(isSpecialSite(siteId)) {
+                result.forEach((privateSiteId, privateSiteMap) -> {
+                    privateSiteMap.put(keysetId, keyset);
+                });
+            }
             // Add to list of all allowed sites
             Set<Integer> allowedSites = keyset.getAllowedSites();
             if(allowedSites != null)
@@ -283,6 +289,12 @@ public final class PrivateSiteUtil {
                 privateSiteSet.add(keysetKey);
                 return privateSiteSet;
             });
+            // Add special site keyset keys to all operators
+            if(isSpecialSite(siteId)) {
+                result.forEach((privateSiteId, privateSiteSet) -> {
+                    privateSiteSet.add(keysetKey);
+                });
+            }
             //Add the key to all allowed sites
             Set<Integer> allowedSites = keyset.getAllowedSites();
             if(allowedSites != null)
