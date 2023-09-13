@@ -35,7 +35,7 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
         this.metadataStreamProvider = cloudStorage;
         this.contentStreamProvider = cloudStorage;
         this.metadataPath = metadataPath;
-        this.adminUserStore = new AuthorizableStore<>();
+        this.adminUserStore = new AuthorizableStore<>(AdminUser.class);
     }
 
     public String getMetadataPath() {
@@ -71,7 +71,7 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
 
     @Override
     public AdminUser getAdminUser(String token) {
-        return adminUserStore.getFromKey(token);
+        return adminUserStore.getAuthorizableByKey(token);
     }
 
     @Override
