@@ -258,7 +258,16 @@ public class Main {
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
-
+            try {
+                keysetProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")){
+                    keysetStoreWriter.upload(new HashMap<>(), null);
+                    keysetProvider.loadContent();
+                } else {
+                    throw e;
+                }
+            }
 
             /*
             This if statement will:
