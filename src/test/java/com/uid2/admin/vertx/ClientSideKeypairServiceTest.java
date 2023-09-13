@@ -261,7 +261,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             try {
                 verify(this.keysetManager).createKeysetForClientSideKeypair(keypair.capture());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                fail(e);
             }
             assertEquals(123, keypair.getValue().getSiteId());
             HttpResponse response = ar.result();
