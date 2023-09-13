@@ -89,7 +89,7 @@ public class KeysetManager {
 
     public AdminKeyset createKeysetForClientSideKeypair(ClientSideKeypair keypair) throws Exception {
         if (!enableKeysets) return null;
-        Optional<AdminKeyset> keyset = getAdminKeyset(keypair.getSiteId());
+        Optional<AdminKeyset> keyset = getAdminKeysetBySiteId(keypair.getSiteId());
         if (keyset.isPresent()) return keyset.get();
 
         return createAndAddDefaultKeyset(keypair.getSiteId());
@@ -97,7 +97,7 @@ public class KeysetManager {
 
     public AdminKeyset createKeysetForClient(ClientKey client) throws Exception{
         if(!enableKeysets) return null;
-        Optional<AdminKeyset> keyset = getAdminKeyset(client.getSiteId());
+        Optional<AdminKeyset> keyset = getAdminKeysetBySiteId(client.getSiteId());
         if (keyset.isPresent()) return keyset.get();
 
         if(client.hasRole(Role.GENERATOR)) {
@@ -109,7 +109,7 @@ public class KeysetManager {
         return null;
     }
 
-    private Optional<AdminKeyset> getAdminKeyset(int siteId) {
+    private Optional<AdminKeyset> getAdminKeysetBySiteId(int siteId) {
         return this.keysetProvider.getSnapshot()
                 .getAllKeysets()
                 .values()
