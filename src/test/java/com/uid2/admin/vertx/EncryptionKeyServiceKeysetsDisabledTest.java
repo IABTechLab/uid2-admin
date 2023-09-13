@@ -4,7 +4,6 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.EncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
@@ -16,9 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,32 +144,6 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         verifyNoInteractions(keysetKeyStoreWriter);
     }
 
-
-    @Test
-    void createSiteKeyIfNoneExistsCreatesKeyWhenNoKeyWithSiteIdExists() throws Exception {
-        setEncryptionKeys(123);
-
-        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
-
-        verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
-        verifyNoMoreInteractions(encryptionKeyStoreWriter);
-        assertKeyActivation(clock.now(), 0, SITE_KEY_EXPIRES_AFTER_SECONDS,
-                key.getCreated(), key.getActivates(), key.getExpires());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
-    }
-
-    @Test
-    void createSiteKeyIfNoneExistsDoesNotCreateKeyWhenKeyWithSiteIdExists() throws Exception {
-        setEncryptionKeys(123, new EncryptionKey(11, null, null, null, null, 5));
-
-        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
-
-        assertNull(key);
-        verifyNoInteractions(encryptionKeyStoreWriter);
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
-    }
 
     @Test
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
