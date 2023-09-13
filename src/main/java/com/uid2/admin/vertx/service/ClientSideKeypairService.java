@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeypairManager;
 import com.uid2.admin.store.Clock;
@@ -34,6 +35,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private final ClientSideKeypairStoreWriter storeWriter;
     private final RotatingClientSideKeypairStore keypairStore;
     private final RotatingSiteStore siteProvider;
+    private final KeysetManager keysetManager;
     private final IKeypairGenerator keypairGenerator;
     private final String publicKeyPrefix;
     private final String privateKeyPrefix;
@@ -45,6 +47,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                                     ClientSideKeypairStoreWriter storeWriter,
                                     RotatingClientSideKeypairStore keypairStore,
                                     RotatingSiteStore siteProvider,
+                                    KeysetManager keysetManager,
                                     IKeypairGenerator keypairGenerator,
                                     Clock clock) {
         this.auth = auth;
@@ -53,6 +56,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         this.keypairStore = keypairStore;
         this.keypairGenerator = keypairGenerator;
         this.siteProvider = siteProvider;
+        this.keysetManager = keysetManager;
         this.clock = clock;
         this.publicKeyPrefix = config.getString("client_side_keypair_public_prefix");
         this.privateKeyPrefix = config.getString("client_side_keypair_private_prefix");
@@ -98,6 +102,14 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             ResponseUtil.errorInternal(rc, "failed to upload keypairs", e);
             return;
         }
+
+        try {
+            this.keysetManager.createKeysetForClientSideKeypair(newKeypair);
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "failed to create keyset", e);
+            return;
+        }
+
         final JsonObject json = toJsonWithPrivateKey(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());

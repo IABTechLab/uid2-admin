@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.*;
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -76,6 +77,7 @@ public abstract class ServiceTestBase {
     @Mock protected PartnerStoreWriter partnerStoreWriter;
 
     @Mock protected IEncryptionKeyManager keyManager;
+    @Mock protected KeysetManager keysetManager;
     @Mock protected IKeysetKeyManager keysetKeyManager;
     @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;

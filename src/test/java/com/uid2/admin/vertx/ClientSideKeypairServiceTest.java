@@ -18,13 +18,13 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
@@ -44,7 +44,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         JsonObject config = new JsonObject();
         config.put("client_side_keypair_public_prefix", "UID2-X-L-");
         config.put("client_side_keypair_private_prefix", "UID2-Y-L-");
-        return new ClientSideKeypairService(config, auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, new SecureKeypairGenerator(), clock);
+        return new ClientSideKeypairService(config, auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, keysetManager, new SecureKeypairGenerator(), clock);
     }
     @BeforeEach
     void setUp() {
@@ -257,6 +257,13 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         post(vertx, "api/client_side_keypairs/add", jo.encode(), ar -> {
             assertTrue(ar.succeeded());
+            final ArgumentCaptor<ClientSideKeypair> keypair = ArgumentCaptor.forClass(ClientSideKeypair.class);
+            try {
+                verify(this.keysetManager).createKeysetForClientSideKeypair(keypair.capture());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            assertEquals(123, keypair.getValue().getSiteId());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
             JsonObject resp = response.bodyAsJsonObject();

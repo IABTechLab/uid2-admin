@@ -235,7 +235,7 @@ public class Main {
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
-                    new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keypairGenerator, clock),
+                    new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock),
                     new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider),
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
