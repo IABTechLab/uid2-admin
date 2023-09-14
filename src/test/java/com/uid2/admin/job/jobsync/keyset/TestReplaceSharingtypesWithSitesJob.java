@@ -80,7 +80,7 @@ public class TestReplaceSharingtypesWithSitesJob {
     FileManager fileManager = new FileManager(cloudStorage,  fileStorage);
     Clock clock = new InstantClock();
     VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
-    ObjectWriter objectWriter = ObjectWriterFactory.createJsonWriter();
+    ObjectWriter objectWriter = ObjectWriterFactory.build();
     RotatingAdminKeysetStore adminKeysetStore = new RotatingAdminKeysetStore(cloudStorage, adminKeysetScope);
     AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetStore, fileManager, objectWriter, versionGenerator,  clock, adminKeysetScope);
     RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetScope);

@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.admin.store.FileName;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
@@ -217,7 +217,7 @@ class ScopedStoreWriterTest {
     }
 
     private Clock clock;
-    ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
+    ObjectWriter jsonWriter = ObjectWriterFactory.build();
     private VersionGenerator versionGenerator;
     private RotatingSiteStore globalStore;
     private InMemoryStorageMock cloudStorage;

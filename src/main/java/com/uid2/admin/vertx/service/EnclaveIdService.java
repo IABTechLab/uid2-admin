@@ -27,7 +27,7 @@ public class EnclaveIdService implements IService {
     private final WriteLock writeLock;
     private final EnclaveStoreWriter storeWriter;
     private final EnclaveIdentifierProvider enclaveIdProvider;
-    private final ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
+    private final ObjectWriter jsonWriter = ObjectWriterFactory.build();
 
     public EnclaveIdService(AuthMiddleware auth,
                             WriteLock writeLock,

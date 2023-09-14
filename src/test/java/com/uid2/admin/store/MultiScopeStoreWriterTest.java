@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MultiScopeStoreWriterTest {
     private InMemoryStorageMock cloudStorage;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
-    ObjectWriter objectWriter = ObjectWriterFactory.createJsonWriter();
+    ObjectWriter objectWriter = ObjectWriterFactory.build();
     Integer scopedSiteId = 10;
     private SiteStoreFactory siteStoreFactory;
 

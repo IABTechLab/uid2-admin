@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminKeyService.class);
-    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.createJsonWriter();
+    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;

@@ -36,7 +36,7 @@ public class SiteService implements IService {
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
     private final IClientKeyProvider clientKeyProvider;
-    private final ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
+    private final ObjectWriter jsonWriter = ObjectWriterFactory.build();
     private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
     public SiteService(AuthMiddleware auth,

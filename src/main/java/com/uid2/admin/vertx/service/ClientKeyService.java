@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
-    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.createJsonWriter();
+    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;

@@ -8,7 +8,7 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.ext.web.Router;
 
 public class JobDispatcherService implements IService {
-    private final ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
+    private final ObjectWriter jsonWriter = ObjectWriterFactory.build();
     private final AuthMiddleware auth;
     private final JobDispatcher jobDispatcher;
 

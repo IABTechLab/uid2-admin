@@ -20,48 +20,45 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
-class ClientKeySyncJobTest {
-    private final CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/clients/metadata.json");
-    private final ObjectWriter objectWriter = ObjectWriterFactory.createJsonWriter();
-    private final Integer scopedSiteId = 10;
-    private final ImmutableList<OperatorKey> operators = ImmutableList.of(
+public class ClientKeySyncJobTest {
+    private static final Instant NOW = Instant.now();
+    private static final CloudPath GLOBAL_SITE_METADATA_PATH = new CloudPath("/some/test/path/clients/metadata.json");
+    private static final ObjectWriter OBJECT_WRITER = ObjectWriterFactory.build();
+    private static final Integer SCOPED_SITE_ID = 10;
+    private static final ImmutableList<OperatorKey> OPERATORS = ImmutableList.of(
             new OperatorKey(
-                    "key",
                     "keyHash",
                     "keySalt",
                     "name",
                     "contact",
                     "protocol",
-                    1618873215,
+                    NOW.toEpochMilli(),
                     false,
-                    scopedSiteId,
-                    new HashSet<>(Collections.singletonList(Role.OPERATOR)),
+                    SCOPED_SITE_ID,
+                    Set.of(Role.OPERATOR),
                     OperatorType.PRIVATE));
-    private final ClientKey client = new ClientKey(
+    private static final ClientKey CLIENT = new ClientKey(
             "key",
             "keyHash",
             "keySalt",
             "secret",
             "name",
             "contact",
-            Instant.MIN,
+            NOW,
             ImmutableSet.of(Role.OPERATOR),
-            scopedSiteId,
+            SCOPED_SITE_ID,
             false);
-    private ClientKeyStoreFactory clientKeyStoreFactory;
-    private FileManager fileManager;
 
-    ClientKeySyncJobTest() {
-    }
+    private FileManager fileManager;
+    private ClientKeyStoreFactory clientKeyStoreFactory;
 
     @BeforeEach
-    void setUp() {
+    public void setup() {
         InMemoryStorageMock cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
@@ -69,19 +66,20 @@ class ClientKeySyncJobTest {
         fileManager = new FileManager(cloudStorage, fileStorage);
         clientKeyStoreFactory = new ClientKeyStoreFactory(
                 cloudStorage,
-                globalSiteMetadataPath,
-                objectWriter,
+                GLOBAL_SITE_METADATA_PATH,
+                OBJECT_WRITER,
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager
+        );
     }
 
     @Test
     public void doesNotSyncClientsThatAreNotChanged() throws Exception {
-        clientKeyStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(client), null);
-        clientKeyStoreFactory.getGlobalWriter().upload(ImmutableList.of(client), null);
+        clientKeyStoreFactory.getWriter(SCOPED_SITE_ID).upload(ImmutableList.of(CLIENT), null);
+        clientKeyStoreFactory.getGlobalWriter().upload(ImmutableList.of(CLIENT), null);
 
-        StoreReader<Collection<ClientKey>> reader = clientKeyStoreFactory.getReader(scopedSiteId);
+        StoreReader<Collection<ClientKey>> reader = clientKeyStoreFactory.getReader(SCOPED_SITE_ID);
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
@@ -89,15 +87,15 @@ class ClientKeySyncJobTest {
                 fileManager,
                 clientKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(client), operators
+                ImmutableList.of(CLIENT), OPERATORS
         );
-
         job.execute();
 
         reader.loadContent();
-        assertThat(reader.getAll()).containsExactly(client);
-        Long newVersion = reader.getMetadata().getLong("version");
-        assertThat(newVersion).isEqualTo(oldVersion);
-    }
 
+        assertAll(
+                "doesNotSyncClientsThatAreNotChanged",
+                () -> assertThat(reader.getAll()).containsExactly(CLIENT),
+                () -> assertThat(reader.getMetadata().getLong("version")).isEqualTo(oldVersion));
+    }
 }

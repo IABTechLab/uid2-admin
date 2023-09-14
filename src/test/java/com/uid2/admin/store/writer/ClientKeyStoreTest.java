@@ -6,35 +6,63 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
-import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
-import static com.uid2.admin.vertx.ObjectWriterFactory.createJsonWriter;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ClientKeyStoreTest {
+public class ClientKeyStoreTest {
+    private static final Instant NOW = Instant.now();
+    private static final String ROOT_DIR = "this-test-data-type";
+    private static final String METADATA_FILE_NAME = "test-metadata.json";
+    private static final CloudPath GLOBAL_METADATA_PATH = new CloudPath(ROOT_DIR).resolve(METADATA_FILE_NAME);
+    private static final GlobalScope GLOBAL_SCOPE = new GlobalScope(GLOBAL_METADATA_PATH);
+    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
+    private static final KeyHasher KEY_HASHER = new KeyHasher();
+
+    @Mock private Clock clock;
+    @Mock private VersionGenerator versionGenerator;
+
+    private InMemoryStorageMock cloudStorage;
+    private FileManager fileManager;
+    private RotatingClientKeyProvider globalStore;
+    private List<ClientKey> oneClient;
+    private List<ClientKey> anotherClient;
+
+    @BeforeEach
+    public void setup() {
+        cloudStorage = new InMemoryStorageMock();
+        fileManager = new FileManager(cloudStorage, new FileStorageMock(cloudStorage));
+        globalStore = new RotatingClientKeyProvider(cloudStorage, GLOBAL_SCOPE);
+        oneClient = generateOneClient("1");
+        anotherClient = generateOneClient("2");
+    }
+
     @Nested
-    class WithGlobalScope {
+    public class WithGlobalScope {
         @Test
-        void uploadsClients() throws Exception {
-            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+        public void uploadsClients() throws Exception {
+            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, JSON_WRITER, versionGenerator, clock, GLOBAL_SCOPE);
 
             writer.upload(oneClient, null);
 
@@ -43,8 +71,8 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void overridesWithNewDataOnSubsequentUploads() throws Exception {
-            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+        public void overridesWithNewDataOnSubsequentUploads() throws Exception {
+            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, JSON_WRITER, versionGenerator, clock, GLOBAL_SCOPE);
 
             writer.upload(oneClient, null);
             writer.upload(anotherClient, null);
@@ -54,16 +82,16 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void doesNotBackUpOldData() throws Exception {
+        public void doesNotBackUpOldData() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
-            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, JSON_WRITER, versionGenerator, clock, GLOBAL_SCOPE);
 
             writer.upload(oneClient, null);
             writer.upload(anotherClient, null);
 
-            List<String> files = cloudStorage.list(rootDir);
+            List<String> files = cloudStorage.list(ROOT_DIR);
             String datedBackup = "this-test-data-type/clients.json." + now + ".bak";
             String latestBackup = "this-test-data-type/clients.json.bak";
             assertThat(files).doesNotContain(datedBackup, latestBackup);
@@ -74,11 +102,11 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void assignsNewVersionOnEveryWrite() throws Exception {
+        public void assignsNewVersionOnEveryWrite() throws Exception {
             Long now = 1L; // seconds since epoch
             when(clock.getEpochSecond()).thenReturn(now);
 
-            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, JSON_WRITER, versionGenerator, clock, GLOBAL_SCOPE);
 
             when(versionGenerator.getVersion()).thenReturn(10L);
             writer.upload(oneClient, null);
@@ -92,29 +120,36 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void savesGlobalFilesToCorrectLocation() throws Exception {
-            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+        public void savesGlobalFilesToCorrectLocation() throws Exception {
+            ClientKeyStoreWriter writer = new ClientKeyStoreWriter(globalStore, fileManager, JSON_WRITER, versionGenerator, clock, GLOBAL_SCOPE);
 
             writer.upload(oneClient, null);
 
-            List<String> files = cloudStorage.list(rootDir);
-            String dataFile = rootDir + "/clients.json";
-            String metaFile = rootDir + "/" + metadataFileName;
+            List<String> files = cloudStorage.list(ROOT_DIR);
+            String dataFile = ROOT_DIR + "/clients.json";
+            String metaFile = ROOT_DIR + "/" + METADATA_FILE_NAME;
             assertThat(files).contains(dataFile, metaFile);
         }
     }
 
     @Nested
-    class WithSiteScope {
-        private final int siteInScope = 5;
-        private final SiteScope siteScope = new SiteScope(globalMetadataPath, siteInScope);
+    public class WithSiteScope {
+        private static final int SCOPED_SITE_ID = 5;
+        private final SiteScope siteScope = new SiteScope(GLOBAL_METADATA_PATH, SCOPED_SITE_ID);
+
+        private RotatingClientKeyProvider clientStore;
+
+        @BeforeEach
+        public void setup() {
+            clientStore = new RotatingClientKeyProvider(cloudStorage, siteScope);
+        }
 
         @Test
-        void doesNotWriteToGlobalScope() throws Exception {
-            ClientKeyStoreWriter globalWriter = new ClientKeyStoreWriter(globalStore, fileManager, jsonWriter, versionGenerator, clock, globalScope);
+        public void doesNotWriteToGlobalScope() throws Exception {
+            ClientKeyStoreWriter globalWriter = new ClientKeyStoreWriter(globalStore, fileManager, JSON_WRITER, versionGenerator, clock, GLOBAL_SCOPE);
             globalWriter.upload(Collections.emptyList(), null);
 
-            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
+            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, JSON_WRITER, versionGenerator, clock, siteScope);
             clientWriter.upload(oneClient, null);
 
             Collection<ClientKey> actual = globalStore.getAll();
@@ -122,8 +157,8 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void writesToSiteScope() throws Exception {
-            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
+        public void writesToSiteScope() throws Exception {
+            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, JSON_WRITER, versionGenerator, clock, siteScope);
 
             clientWriter.upload(oneClient, null);
 
@@ -132,14 +167,14 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
-            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
+        public void writingToMultipleSiteScopesDoesntOverwrite() throws Exception {
+            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, JSON_WRITER, versionGenerator, clock, siteScope);
             clientWriter.upload(oneClient, null);
 
             int siteInScope2 = 6;
-            SiteScope scope2 = new SiteScope(globalMetadataPath, siteInScope2);
+            SiteScope scope2 = new SiteScope(GLOBAL_METADATA_PATH, siteInScope2);
             RotatingClientKeyProvider siteStore2 = new RotatingClientKeyProvider(cloudStorage, scope2);
-            ClientKeyStoreWriter siteWriter2 = new ClientKeyStoreWriter(siteStore2, fileManager, jsonWriter, versionGenerator, clock, scope2);
+            ClientKeyStoreWriter siteWriter2 = new ClientKeyStoreWriter(siteStore2, fileManager, JSON_WRITER, versionGenerator, clock, scope2);
             siteWriter2.upload(anotherClient, null);
 
             Collection<ClientKey> actual1 = clientStore.getAll();
@@ -150,56 +185,30 @@ class ClientKeyStoreTest {
         }
 
         @Test
-        void savesClientFilesToCorrectLocation() throws Exception {
-            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, jsonWriter, versionGenerator, clock, siteScope);
+        public void savesClientFilesToCorrectLocation() throws Exception {
+            ClientKeyStoreWriter clientWriter = new ClientKeyStoreWriter(clientStore, fileManager, JSON_WRITER, versionGenerator, clock, siteScope);
             clientWriter.upload(oneClient, null);
 
-            String scopedSiteDir = rootDir + "/site/" + siteInScope;
+            String scopedSiteDir = ROOT_DIR + "/site/" + SCOPED_SITE_ID;
             List<String> files = cloudStorage.list(scopedSiteDir);
             String dataFile = scopedSiteDir + "/clients.json";
-            String metaFile = scopedSiteDir + "/" + metadataFileName;
+            String metaFile = scopedSiteDir + "/" + METADATA_FILE_NAME;
             assertThat(files).contains(dataFile, metaFile);
         }
-
-        private RotatingClientKeyProvider clientStore;
-
-        @BeforeEach
-        void setUp() {
-            clientStore = new RotatingClientKeyProvider(cloudStorage, siteScope);
-        }
     }
-
-    @BeforeEach
-    void setUp() {
-        cloudStorage = new InMemoryStorageMock();
-        FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
-        fileManager = new FileManager(cloudStorage, fileStorage);
-        globalStore = new RotatingClientKeyProvider(cloudStorage, globalScope);
-        versionGenerator = mock(VersionGenerator.class);
-        clock = mock(Clock.class);
-        oneClient = generateOneClient("1");
-        anotherClient = generateOneClient("2");
-    }
-
-    private Clock clock;
-    private VersionGenerator versionGenerator;
-    private RotatingClientKeyProvider globalStore;
-    private InMemoryStorageMock cloudStorage;
-    private FileManager fileManager;
-
-    private List<ClientKey> oneClient;
-    private List<ClientKey> anotherClient;
 
     private List<ClientKey> generateOneClient(String suffix) {
-        KeyHashResult result = new KeyHasher().hashKey("key" + suffix);
-        ClientKey key = new ClientKey("key" + suffix, result.getHash(), result.getSalt(), "secret" + suffix, "contact" + suffix)
-                .withRoles(Role.GENERATOR)
-                .withSiteId(5);
+        KeyHashResult result = KEY_HASHER.hashKey("key" + suffix);
+        ClientKey key = new ClientKey(
+                "key" + suffix,
+                result.getHash(),
+                result.getSalt(),
+                "secret" + suffix,
+                "name" + suffix,
+                NOW,
+                Set.of(Role.GENERATOR),
+                5
+        );
         return ImmutableList.of(key);
     }
-    private final String rootDir = "this-test-data-type";
-    private final String metadataFileName = "test-metadata.json";
-    private final CloudPath globalMetadataPath = new CloudPath(rootDir).resolve(metadataFileName);
-    private final GlobalScope globalScope = new GlobalScope(globalMetadataPath);
-    private final ObjectWriter jsonWriter = createJsonWriter();
 }

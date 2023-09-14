@@ -50,7 +50,7 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
 
         ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
         FileStorage fileStorage = new TmpFileStorage();
-        ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
+        ObjectWriter jsonWriter = ObjectWriterFactory.build();
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
         FileManager fileManager = new FileManager(cloudStorage, fileStorage);
