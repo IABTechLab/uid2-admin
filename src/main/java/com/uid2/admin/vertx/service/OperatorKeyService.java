@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.model.RevealedKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -60,7 +61,6 @@ public class OperatorKeyService implements IService {
         this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
         this.keyHasher = keyHasher;
-
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
     }
 
@@ -248,7 +248,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with new key
-            rc.response().end(JSON_WRITER.writeValueAsString(newOperator));
+            rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
         } catch (Exception e) {
             rc.fail(500, e);
         }
