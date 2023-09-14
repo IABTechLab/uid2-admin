@@ -157,6 +157,7 @@ public class ClientKeyService implements IService {
                 jo.put("created", c.getCreated());
                 jo.put("site_id", c.getSiteId());
                 jo.put("disabled", c.isDisabled());
+                jo.put("service_id", c.getServiceId());
             }
 
             rc.response()
@@ -209,6 +210,8 @@ public class ClientKeyService implements IService {
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
             if (site == null) return;
 
+            final int serviceId = this.getServiceId(rc);
+
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
@@ -223,7 +226,8 @@ public class ClientKeyService implements IService {
             ClientKey newClient = new ClientKey(key, khr.getHash(), khr.getSalt(), secret, created)
                     .withNameAndContact(name)
                     .withSiteId(site.getId())
-                    .withRoles(roles);
+                    .withRoles(roles)
+                    .withServiceId(serviceId);
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
                 return;
@@ -293,7 +297,11 @@ public class ClientKeyService implements IService {
             final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
             if (site == null) return;
 
-            existingClient.withSiteId(site.getId());
+            final int serviceId = this.getServiceId(rc);
+
+            existingClient
+                    .withSiteId(site.getId())
+                    .withServiceId(serviceId);
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
@@ -436,5 +444,18 @@ public class ClientKeyService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private int getServiceId(RoutingContext rc) {
+        int serviceId = 0;
+        try {
+            if (rc.queryParam("service_id") == null || rc.queryParam("service_id").size() == 0 || rc.queryParam("service_id").get(0) == null) {
+                return serviceId;
+            }
+            serviceId = Integer.parseInt(rc.queryParam("service_id").get(0));
+        } catch (NumberFormatException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+        return serviceId;
     }
 }
