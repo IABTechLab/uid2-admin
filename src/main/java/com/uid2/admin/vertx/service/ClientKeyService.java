@@ -299,11 +299,9 @@ public class ClientKeyService implements IService {
 
             final int serviceId = this.getServiceId(rc);
 
-            existingClient.withSiteId(site.getId());
-
-            if (serviceId != 0) {
-                existingClient.withServiceId(serviceId);
-            }
+            existingClient
+                    .withSiteId(site.getId())
+                    .withServiceId(serviceId);
 
             List<ClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
@@ -449,7 +447,7 @@ public class ClientKeyService implements IService {
     }
 
     private int getServiceId(RoutingContext rc) {
-        Integer serviceId = 0;
+        int serviceId = 0;
         try {
             if (rc.queryParam("service_id") == null || rc.queryParam("service_id").size() == 0 || rc.queryParam("service_id").get(0) == null) {
                 return serviceId;
