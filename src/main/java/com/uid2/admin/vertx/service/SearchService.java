@@ -65,7 +65,7 @@ public class SearchService implements IService {
 
             this.operatorKeyProvider.getAll()
                     .stream()
-                    .filter(o -> o.getKey().contains(queryParam))
+                    .filter(o -> o.getKeyHash().contains(queryParam))
                     .forEach(operatorKeyResults::add);
 
             this.adminUserProvider.getAll()
