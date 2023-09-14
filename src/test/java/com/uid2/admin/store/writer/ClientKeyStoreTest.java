@@ -186,8 +186,8 @@ class ClientKeyStoreTest {
     private RotatingClientKeyProvider globalStore;
     private InMemoryStorageMock cloudStorage;
     private FileManager fileManager;
-    private List<ClientKey> oneClient;
 
+    private List<ClientKey> oneClient;
     private List<ClientKey> anotherClient;
 
     private List<ClientKey> generateOneClient(String suffix) {

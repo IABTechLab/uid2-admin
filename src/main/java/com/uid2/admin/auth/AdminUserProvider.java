@@ -28,6 +28,7 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage contentStreamProvider;
     private final String metadataPath;
+    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact = new AtomicReference<>(null);
     private final AuthorizableStore<AdminUser> adminUserStore;
 
     public AdminUserProvider(ICloudStorage cloudStorage, String metadataPath) {
@@ -65,6 +66,12 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
         List<AdminUser> adminUsers = Arrays.asList(OBJECT_MAPPER.readValue(adminUsersJson, AdminUser[].class));
         adminUserStore.refresh(adminUsers);
         LOGGER.info("Loaded " + adminUsers.size() + " operator profiles");
+
+        Map<String, AdminUser> contactMap = new HashMap<>();
+        for (AdminUser adminUser : adminUsers){
+            contactMap.put(adminUser.getContact(), adminUser);
+        }
+        this.latestSnapshotByContact.set(contactMap);
         return adminUsers.size();
     }
 
@@ -80,12 +87,7 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
 
     @Override
     public AdminUser getAdminUserByContact(String contact) {
-        for (AdminUser adminUser : this.getAll()) {
-            if (adminUser.getContact().equals(contact)) {
-                return adminUser;
-            }
-        }
-        return null;
+        return this.latestSnapshotByContact.get().get(contact);
     }
 
     @Override
