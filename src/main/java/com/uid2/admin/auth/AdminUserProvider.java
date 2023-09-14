@@ -28,10 +28,11 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage contentStreamProvider;
     private final String metadataPath;
-    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact = new AtomicReference<>(null);
+    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact;
     private final AuthorizableStore<AdminUser> adminUserStore;
 
     public AdminUserProvider(ICloudStorage cloudStorage, String metadataPath) {
+        this.latestSnapshotByContact = new AtomicReference<>(new HashMap<>());
         this.metadataStreamProvider = cloudStorage;
         this.contentStreamProvider = cloudStorage;
         this.metadataPath = metadataPath;
