@@ -6,16 +6,14 @@ import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.ClientType;
-import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import static com.uid2.admin.vertx.JsonUtil.createJsonWriter;
+import static com.uid2.admin.vertx.ObjectWriterFactory.createJsonWriter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 

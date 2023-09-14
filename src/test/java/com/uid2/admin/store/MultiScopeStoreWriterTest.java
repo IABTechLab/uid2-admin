@@ -7,7 +7,7 @@ import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MultiScopeStoreWriterTest {
     private InMemoryStorageMock cloudStorage;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
-    ObjectWriter objectWriter = JsonUtil.createJsonWriter();
+    ObjectWriter objectWriter = ObjectWriterFactory.createJsonWriter();
     Integer scopedSiteId = 10;
     private SiteStoreFactory siteStoreFactory;
 

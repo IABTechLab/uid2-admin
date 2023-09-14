@@ -6,7 +6,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -218,7 +217,7 @@ class ScopedStoreWriterTest {
     }
 
     private Clock clock;
-    ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
     private VersionGenerator versionGenerator;
     private RotatingSiteStore globalStore;
     private InMemoryStorageMock cloudStorage;

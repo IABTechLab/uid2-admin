@@ -29,7 +29,7 @@ public class AdminVerticle extends AbstractVerticle {
     private final AuthFactory authFactory;
     private final IAdminUserProvider adminUserProvider;
     private final IService[] services;
-    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private final ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
 
     public AdminVerticle(JsonObject config,
                          AuthFactory authFactory,

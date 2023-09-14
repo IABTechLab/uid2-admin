@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.shared.model.ClientType;
 import com.google.common.net.InternetDomainName;
 import com.uid2.admin.store.writer.StoreWriter;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -36,7 +36,7 @@ public class SiteService implements IService {
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
     private final IClientKeyProvider clientKeyProvider;
-    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private final ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
     private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
     public SiteService(AuthMiddleware auth,

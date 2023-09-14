@@ -12,7 +12,7 @@ import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.*;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
@@ -52,7 +52,7 @@ public class PrivateSiteDataSyncJob extends Job {
     public void execute() throws Exception {
         ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
         FileStorage fileStorage = new TmpFileStorage();
-        ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+        ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
         FileManager fileManager = new FileManager(cloudStorage, fileStorage);

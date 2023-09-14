@@ -11,7 +11,7 @@ import com.uid2.admin.store.factory.ClientKeyStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ClientKeySyncJobTest {
     private final CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/clients/metadata.json");
-    private final ObjectWriter objectWriter = JsonUtil.createJsonWriter();
+    private final ObjectWriter objectWriter = ObjectWriterFactory.createJsonWriter();
     private final Integer scopedSiteId = 10;
     private final ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(

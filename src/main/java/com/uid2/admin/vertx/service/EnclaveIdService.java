@@ -2,7 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.writer.EnclaveStoreWriter;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -27,7 +27,7 @@ public class EnclaveIdService implements IService {
     private final WriteLock writeLock;
     private final EnclaveStoreWriter storeWriter;
     private final EnclaveIdentifierProvider enclaveIdProvider;
-    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private final ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
 
     public EnclaveIdService(AuthMiddleware auth,
                             WriteLock writeLock,

@@ -5,7 +5,7 @@ import com.uid2.admin.managers.KeysetManager;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
-    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
+    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.createJsonWriter();
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;

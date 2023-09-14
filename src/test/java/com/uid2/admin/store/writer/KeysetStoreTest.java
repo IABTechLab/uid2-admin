@@ -1,6 +1,5 @@
 package com.uid2.admin.store.writer;
 
-import com.google.common.collect.ImmutableList;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
@@ -13,12 +12,11 @@ import org.junit.jupiter.api.Test;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import static com.uid2.admin.vertx.JsonUtil.createJsonWriter;
+import static com.uid2.admin.vertx.ObjectWriterFactory.createJsonWriter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 

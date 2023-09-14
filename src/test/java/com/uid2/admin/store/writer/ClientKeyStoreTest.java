@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.uid2.admin.vertx.JsonUtil.createJsonWriter;
+import static com.uid2.admin.vertx.ObjectWriterFactory.createJsonWriter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

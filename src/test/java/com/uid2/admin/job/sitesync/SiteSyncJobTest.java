@@ -11,7 +11,7 @@ import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SiteSyncJobTest {
     private InMemoryStorageMock cloudStorage;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
-    ObjectWriter objectWriter = JsonUtil.createJsonWriter();
+    ObjectWriter objectWriter = ObjectWriterFactory.createJsonWriter();
     Integer scopedSiteId = 10;
     ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(

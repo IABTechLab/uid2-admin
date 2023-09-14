@@ -17,7 +17,7 @@ import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
-import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.admin.vertx.ObjectWriterFactory;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
@@ -80,7 +80,7 @@ public class Main {
             AuthFactory authFactory = new GithubAuthFactory(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
-            ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+            ObjectWriter jsonWriter = ObjectWriterFactory.createJsonWriter();
             FileManager fileManager = new FileManager(cloudStorage, fileStorage);
             Clock clock = new InstantClock();
             VersionGenerator versionGenerator = new EpochVersionGenerator(clock);

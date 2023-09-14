@@ -6,10 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.uid2.shared.utils.ObjectMapperFactory;
 
-public class JsonUtil {
-    public static ObjectWriter createJsonWriter() {
-        ObjectMapper mapper = new ObjectMapper()
+public class ObjectWriterFactory {
+    public static ObjectWriter build() {
+        ObjectMapper mapper = ObjectMapperFactory.build()
                 .registerModule(new JavaTimeModule())
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
