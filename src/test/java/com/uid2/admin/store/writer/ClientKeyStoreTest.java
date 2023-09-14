@@ -8,6 +8,8 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.secret.KeyHashResult;
+import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
@@ -175,6 +177,8 @@ class ClientKeyStoreTest {
         globalStore = new RotatingClientKeyProvider(cloudStorage, globalScope);
         versionGenerator = mock(VersionGenerator.class);
         clock = mock(Clock.class);
+        oneClient = generateOneClient("1");
+        anotherClient = generateOneClient("2");
     }
 
     private Clock clock;
@@ -182,16 +186,17 @@ class ClientKeyStoreTest {
     private RotatingClientKeyProvider globalStore;
     private InMemoryStorageMock cloudStorage;
     private FileManager fileManager;
-    private final List<ClientKey> oneClient = ImmutableList.of(
-            new ClientKey("key1", "keyHash1", "keySalt1", "secret1", "contact1")
-                    .withRoles(Role.GENERATOR)
-                    .withSiteId(5)
-    );
-    private final List<ClientKey> anotherClient = ImmutableList.of(
-            new ClientKey("key2", "keyHash2", "keySalt2", "secret2", "contact2")
-                    .withRoles(Role.CLIENTKEY_ISSUER)
-                    .withSiteId(5)
-    );
+
+    private List<ClientKey> oneClient;
+    private List<ClientKey> anotherClient;
+
+    private List<ClientKey> generateOneClient(String suffix) {
+        KeyHashResult result = new KeyHasher().hashKey("key" + suffix);
+        ClientKey key = new ClientKey("key" + suffix, result.getHash(), result.getSalt(), "secret" + suffix, "contact" + suffix)
+                .withRoles(Role.GENERATOR)
+                .withSiteId(5);
+        return ImmutableList.of(key);
+    }
     private final String rootDir = "this-test-data-type";
     private final String metadataFileName = "test-metadata.json";
     private final CloudPath globalMetadataPath = new CloudPath(rootDir).resolve(metadataFileName);
