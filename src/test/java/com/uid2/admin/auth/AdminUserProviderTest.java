@@ -1,7 +1,6 @@
 package com.uid2.admin.auth;
 
 import com.uid2.shared.auth.AuthorizableStore;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.secret.KeyHashResult;
@@ -9,16 +8,12 @@ import com.uid2.shared.secret.KeyHasher;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.web.Route;
-import io.vertx.ext.web.handler.AuthenticationHandler;
-import io.vertx.ext.web.handler.impl.OAuth2AuthHandlerImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
