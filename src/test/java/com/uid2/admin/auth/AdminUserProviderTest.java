@@ -26,11 +26,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AdminUserProviderTest {
-    Vertx vertx = mock(Vertx.class);
-    Route route = mock(Route.class);
     ICloudStorage cloudStorage = mock(ICloudStorage.class);
     private static final KeyHasher KEY_HASHER = new KeyHasher();
-    private AuthorizableStore<AdminUser> adminUserStore;
+    private List<AdminUser> adminUsers;
 
     private AdminUser createAdminUser(KeyHashResult khr, String name, String contact) {
         return new AdminUser("", khr.getHash(), khr.getSalt(), name, contact, Instant.now().getEpochSecond(), Set.of(), false);
@@ -38,13 +36,10 @@ public class AdminUserProviderTest {
 
     @BeforeEach
     public void setup() throws CloudStorageException {
-        List<AdminUser> adminUsers = List.of(
+        this.adminUsers = List.of(
                 createAdminUser(KEY_HASHER.hashKey("adminUser1"), "adminUser1", "adminUserContact1"),
                 createAdminUser(KEY_HASHER.hashKey("adminUser2"), "adminUser2", "adminUserContact2")
         );
-
-        this.adminUserStore = new AuthorizableStore<>(AdminUser.class);
-        this.adminUserStore.refresh(adminUsers);
     }
 
     private JsonObject makeMetadata(String location) {
@@ -55,24 +50,20 @@ public class AdminUserProviderTest {
         return adminsMetadata;
     }
 
-    private void addAdminUsers(JsonArray content, List<AdminUser> adminUsers) {
+    private JsonArray createAdminUsers(List<AdminUser> adminUsers) {
+        JsonArray content = new JsonArray();
         for (AdminUser adminUser : adminUsers) {
             content.add(adminUser);
         }
+        return content;
     }
 
     @Test
     public void getAdminUserByContact_returnsAdminUser_withValidAdminUser() throws Exception {
         AdminUserProvider adminUserProvider = new AdminUserProvider(cloudStorage, "metadataPath");
 
-        List<AdminUser> adminUserList = List.of(
-                createAdminUser(KEY_HASHER.hashKey("adminUser1"), "adminUser1", "adminUserContact1"),
-                createAdminUser(KEY_HASHER.hashKey("adminUser2"), "adminUser2", "adminUserContact2")
-        );
-        JsonArray content = new JsonArray();
-        addAdminUsers(content, adminUserList);
-        InputStream inputStream = makeInputStream(content);
-        when(cloudStorage.download(anyString())).thenReturn(inputStream);
+        InputStream inputStream = makeInputStream(createAdminUsers(this.adminUsers));
+        when(cloudStorage.download("location")).thenReturn(inputStream);
 
         adminUserProvider.loadContent(makeMetadata("location"));
         AdminUser result = adminUserProvider.getAdminUserByContact("adminUserContact1");
@@ -83,14 +74,8 @@ public class AdminUserProviderTest {
     public void getAdminUserByContact_returnsNull_withInvalidContact() throws Exception {
         AdminUserProvider adminUserProvider = new AdminUserProvider(cloudStorage, "metadataPath");
 
-        List<AdminUser> adminUserList = List.of(
-                createAdminUser(KEY_HASHER.hashKey("adminUser1"), "adminUser1", "adminUserContact1"),
-                createAdminUser(KEY_HASHER.hashKey("adminUser2"), "adminUser2", "adminUserContact2")
-        );
-        JsonArray content = new JsonArray();
-        addAdminUsers(content, adminUserList);
-        InputStream inputStream = makeInputStream(content);
-        when(cloudStorage.download(any())).thenReturn(inputStream);
+        InputStream inputStream = makeInputStream(createAdminUsers(this.adminUsers));
+        when(cloudStorage.download("location")).thenReturn(inputStream);
 
         adminUserProvider.loadContent(makeMetadata("location"));
         AdminUser result = adminUserProvider.getAdminUserByContact("adminUserContact3");
