@@ -114,6 +114,7 @@ public class SiteService implements IService {
                 jo.put("enabled", site.isEnabled());
                 jo.put("clientTypes", site.getClientTypes());
                 jo.put("domain_names", domainNamesJa);
+                jo.put("created", site.getCreated());
 
                 List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
                 JsonArray jr = new JsonArray();
