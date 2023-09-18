@@ -44,7 +44,8 @@ class MultiScopeStoreWriterTest {
                 objectWriter,
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager
+        );
     }
 
     @Test
