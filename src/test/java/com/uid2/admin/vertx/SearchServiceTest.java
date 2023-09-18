@@ -24,6 +24,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Instant;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.instancio.Assign.valueOf;
@@ -31,6 +33,7 @@ import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SearchServiceTest extends ServiceTestBase {
+    private static final Instant NOW = Instant.now();
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.build();
     private static final SecureKeyGenerator SECURE_KEY_GENERATOR = new SecureKeyGenerator();
     private static final String SEARCH_URL = "api/search";
@@ -96,26 +99,32 @@ public class SearchServiceTest extends ServiceTestBase {
                 "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=",
                 "OPIi+MWKNz41wzu+atsBLAtXDTLFhLWPq5mCxA3L8anX+fjKaVDAf55D98BSLAh/EFQE/xTQyo/YK5snPS8ivA==",
                 "FpgbvHGqpVhi3I/b8/9HnguiycUzb2y+KsdicPpNLJI=",
-                "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=")
-                .withNameAndContact("Special (Old)")
-                .withRoles(Role.OPERATOR)
-                .withSiteId(999);
+                "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=",
+                "Special (Old)",
+                NOW,
+                Set.of(Role.MAPPER, Role.GENERATOR, Role.ID_READER, Role.SHARER, Role.OPTOUT),
+                999
+        );
         clientKeys[1] = new ClientKey(
                 "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
                 "vVb/MjymmYAE3L6as5t1DCjbts4bT2wZh4V4iAagOAe97jthFmT4YAb6gGVfEs4Pq+CqNPgz+X338RNRa8NOlA==",
                 "G36g+KxlS+z5NwSXUOnBtc9yJKHECvXgjbS13X5A7rw=",
-                "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")
-                .withNameAndContact("DSP")
-                .withRoles(Role.MAPPER)
-                .withSiteId(123);
+                "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=",
+                "DSP",
+                NOW,
+                Set.of(Role.ID_READER),
+                123
+        );
         clientKeys[2] = new ClientKey(
                 "UID2-C-L-124-H8VwqX.l2G4TCuUWYAqdqkeG/UqtFoPEoXirKn4kHWxc=",
                 "uA1aRDR9owk53W47zZpI6cS/bRVgKm4ggRvr9m0pz+I/5IzQcIQqfurm1Ors96r8Q2xC8GZVG3spwR/H89rQmA==",
                 "rSwnZ5aKauMLPLMHvvH25C1LU5MdJv5+fjQ5/Yy5hP0=",
-                "NcMgi6Y8C80SlxvV7pYlfcvEIo+2b0508tYQ3pKK8HM=")
-                .withNameAndContact("Publisher")
-                .withRoles(Role.OPERATOR)
-                .withSiteId(124);
+                "NcMgi6Y8C80SlxvV7pYlfcvEIo+2b0508tYQ3pKK8HM=",
+                "Publisher",
+                NOW,
+                Set.of(Role.GENERATOR, Role.SHARER),
+                124
+        );
         setClientKeys(clientKeys);
 
         post(vertx, SEARCH_URL, "bGlvbn", response -> {
@@ -511,10 +520,12 @@ public class SearchServiceTest extends ServiceTestBase {
                 "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=",
                 "vVb/MjymmYAE3L6as5t1DCjbts4bT2wZh4V4iAagOAe97jthFmT4YAb6gGVfEs4Pq+CqNPgz+X338RNRa8NOlA==",
                 "G36g+KxlS+z5NwSXUOnBtc9yJKHECvXgjbS13X5A7rw=",
-                "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")
-                .withNameAndContact("DSP")
-                .withRoles(Role.MAPPER)
-                .withSiteId(123);
+                "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=",
+                "DSP",
+                NOW,
+                Set.of(Role.ID_READER),
+                123
+        );
         setClientKeys(clientKey);
 
         post(vertx, SEARCH_URL, searchString, response -> {
