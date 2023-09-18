@@ -223,11 +223,19 @@ public class ClientKeyService implements IService {
 
             // add new client to array
             Instant created = Instant.now();
-            ClientKey newClient = new ClientKey(key, khr.getHash(), khr.getSalt(), secret, created)
-                    .withNameAndContact(name)
-                    .withSiteId(site.getId())
-                    .withRoles(roles)
-                    .withServiceId(serviceId);
+            ClientKey newClient = new ClientKey(
+                    key,
+                    khr.getHash(),
+                    khr.getSalt(),
+                    secret,
+                    name,
+                    name,
+                    created.getEpochSecond(),
+                    roles,
+                    site.getId(),
+                    false,
+                    serviceId
+            );
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
                 return;

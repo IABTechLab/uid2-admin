@@ -44,7 +44,7 @@ public class SiteSyncJobTest {
                     "name",
                     "contact",
                     "protocol",
-                    NOW.minus(7, ChronoUnit.DAYS).toEpochMilli(),
+                    NOW.minus(7, ChronoUnit.DAYS).getEpochSecond(),
                     false,
                     SCOPED_SITE_ID,
                     new HashSet<>(Collections.singletonList(Role.OPERATOR)),

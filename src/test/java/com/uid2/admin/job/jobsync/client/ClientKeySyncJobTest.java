@@ -38,7 +38,7 @@ public class ClientKeySyncJobTest {
                     "name",
                     "contact",
                     "protocol",
-                    NOW.minus(7, ChronoUnit.DAYS).toEpochMilli(),
+                    NOW.minus(7, ChronoUnit.DAYS).getEpochSecond(),
                     false,
                     SCOPED_SITE_ID,
                     Set.of(Role.OPERATOR),
