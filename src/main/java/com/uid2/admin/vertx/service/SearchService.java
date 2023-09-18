@@ -16,9 +16,9 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class SearchService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
     private static final Integer QUERY_PARAMETER_MIN_LENGTH = 6;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
     private final AuthMiddleware auth;
     private final RotatingClientKeyProvider clientKeyProvider;
     private final RotatingOperatorKeyProvider operatorKeyProvider;

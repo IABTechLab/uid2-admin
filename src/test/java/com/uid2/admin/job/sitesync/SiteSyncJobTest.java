@@ -23,14 +23,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-
 
 public class SiteSyncJobTest {
     private static final Instant NOW = Instant.now();
@@ -45,7 +44,7 @@ public class SiteSyncJobTest {
                     "name",
                     "contact",
                     "protocol",
-                    NOW.toEpochMilli(),
+                    NOW.minus(7, ChronoUnit.DAYS).toEpochMilli(),
                     false,
                     SCOPED_SITE_ID,
                     new HashSet<>(Collections.singletonList(Role.OPERATOR)),
@@ -165,7 +164,7 @@ public class SiteSyncJobTest {
         assertAll(
                 "doesNotSyncSitesThatAreNotChanged",
                 () -> assertThat(reader.getAll()).containsExactly(SITE),
-                () -> assertThat(reader.getMetadata().getLong("version")).isGreaterThan(oldVersion)
+                () -> assertThat(reader.getMetadata().getLong("version")).isEqualTo(oldVersion)
         );
     }
 }

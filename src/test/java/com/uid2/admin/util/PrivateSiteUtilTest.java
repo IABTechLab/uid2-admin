@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableSet;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
@@ -25,74 +24,78 @@ import static com.uid2.admin.util.PrivateSiteUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PrivateSiteUtilTest {
-    private final ClientKey site1ClientWithReaderRole = new ClientBuilder()
-            .withSiteId(siteId1)
-            .thatIsEnabled()
-            .withReaderRole()
-            .build();
-    private final ClientKey site2ClientWithReaderRole = new ClientBuilder()
-            .withSiteId(siteId2)
-            .thatIsEnabled()
-            .withReaderRole()
-            .build();
-    private final OperatorKey site1PrivateOperator = new OperatorBuilder()
-            .withSiteId(siteId1)
-            .withType(OperatorType.PRIVATE)
-            .thatIsEnabled()
-            .build();
-    private final OperatorKey site2PrivateOperator = new OperatorBuilder()
-            .withSiteId(siteId2)
-            .withType(OperatorType.PRIVATE)
-            .thatIsEnabled()
-            .build();
+    private static final int SITE_ID_1 = 10;
+    private static final int SITE_ID_2 = 11;
+    private static final int SITE_ID_3 = 12;
+    private static final Set<OperatorKey> NO_OPERATORS = ImmutableSet.of();
+    private static final Set<ClientKey> NO_CLIENTS = ImmutableSet.of();
+    private static final Set<EncryptionKey> NO_KEYS = ImmutableSet.of();
+    private static final Set<KeysetKey> NO_KEYSET_KEYS = ImmutableSet.of();
+    private static final Map<Integer, EncryptionKeyAcl> NO_ACLS = ImmutableMap.of();
 
-    public PrivateSiteUtilTest() {
-    }
+    private static final ClientKey site1ClientWithReaderRole = new ClientBuilder()
+            .withSiteId(SITE_ID_1)
+            .thatIsEnabled()
+            .withReaderRole()
+            .build();
+    private static final ClientKey SITE_2_CLIENT_WITH_READER_ROLE = new ClientBuilder()
+            .withSiteId(SITE_ID_2)
+            .thatIsEnabled()
+            .withReaderRole()
+            .build();
+    private static final OperatorKey SITE_1_PRIVATE_OPERATOR = new OperatorBuilder()
+            .withSiteId(SITE_ID_1)
+            .withType(OperatorType.PRIVATE)
+            .thatIsEnabled()
+            .build();
+    private static final OperatorKey SITE_2_PRIVATE_OPERATOR = new OperatorBuilder()
+            .withSiteId(SITE_ID_2)
+            .withType(OperatorType.PRIVATE)
+            .thatIsEnabled()
+            .build();
 
     @Nested
     class Client {
         @Test
         public void returnsNoSitesForNoSitesOrOperators() {
+            PrivateSiteDataMap<ClientKey> result = getClientKeys(NO_OPERATORS, NO_CLIENTS);
+
             PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<>();
-
-            PrivateSiteDataMap<ClientKey> actual = getClientKeys(noOperators, noClients);
-
-            assertEquals(expected, actual);
+            assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithNoClientsForNoSitesAndOperatorForASite() {
+            PrivateSiteDataMap<ClientKey> result = getClientKeys(ImmutableList.of(SITE_1_PRIVATE_OPERATOR), NO_CLIENTS);
+
             PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
-                    .with(siteId1, noClients);
-
-            PrivateSiteDataMap<ClientKey> actual = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
-
-            assertEquals(expected, actual);
+                    .with(SITE_ID_1, NO_CLIENTS);
+            assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithClientForOperatorAndClientForASite() {
             PrivateSiteDataMap<ClientKey> result = getClientKeys(ImmutableList.of(
-                    site1PrivateOperator
+                    SITE_1_PRIVATE_OPERATOR
             ), ImmutableList.of(site1ClientWithReaderRole));
 
             PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
-                    .with(siteId1, ImmutableSet.of(site1ClientWithReaderRole));
+                    .with(SITE_ID_1, ImmutableSet.of(site1ClientWithReaderRole));
             assertEquals(expected, result);
         }
 
         @Test
         public void ignoresDisabledClients() {
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR);
             ImmutableList<ClientKey> clients = ImmutableList.of(
                     new ClientBuilder()
-                            .withSiteId(siteId1)
+                            .withSiteId(SITE_ID_1)
                             .thatIsDisabled()
                             .build()
             );
             PrivateSiteDataMap<ClientKey> result = getClientKeys(operators, clients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>().with(siteId1, noClients);
+            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>().with(SITE_ID_1, NO_CLIENTS);
             assertEquals(expected, result);
         }
 
@@ -100,7 +103,7 @@ public class PrivateSiteUtilTest {
         public void ignoresSitesWithOnlyPublicOperators() {
             List<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(siteId1)
+                            .withSiteId(SITE_ID_1)
                             .withType(OperatorType.PUBLIC)
                             .build()
             );
@@ -115,13 +118,13 @@ public class PrivateSiteUtilTest {
 
     @Nested
     class EncryptionKeys {
-        EncryptionKey site1Key = new EncryptionKey(5, new byte[]{}, Instant.EPOCH, Instant.now(), Instant.MAX, siteId1);
+        private final EncryptionKey site1Key = new EncryptionKey(5, new byte[]{}, Instant.EPOCH, Instant.now(), Instant.MAX, SITE_ID_1);
 
         @Test
         public void returnsNoKeysForNoData() {
             PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<>();
 
-            PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(noOperators, noKeys, noAcls, noClients);
+            PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(NO_OPERATORS, NO_KEYS, NO_ACLS, NO_CLIENTS);
 
             assertEquals(expected, actual);
         }
@@ -132,7 +135,7 @@ public class PrivateSiteUtilTest {
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(siteId1)
+                            .withSiteId(SITE_ID_1)
                             .withType(OperatorType.PUBLIC)
                             .build()
             );
@@ -140,7 +143,7 @@ public class PrivateSiteUtilTest {
             PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                     operators,
                     ImmutableSet.of(site1Key),
-                    noAcls,
+                    NO_ACLS,
                     ImmutableSet.of(site1ClientWithReaderRole)
             );
 
@@ -156,21 +159,21 @@ public class PrivateSiteUtilTest {
             );
 
             PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<EncryptionKey>()
-                    .with(siteId1, specialSiteKeys)
-                    .with(siteId2, specialSiteKeys);
+                    .with(SITE_ID_1, specialSiteKeys)
+                    .with(SITE_ID_2, specialSiteKeys);
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
-                    site1PrivateOperator,
-                    site2PrivateOperator);
+                    SITE_1_PRIVATE_OPERATOR,
+                    SITE_2_PRIVATE_OPERATOR);
 
             ImmutableSet<ClientKey> clients = ImmutableSet.of(
                     site1ClientWithReaderRole,
-                    site2ClientWithReaderRole);
+                    SITE_2_CLIENT_WITH_READER_ROLE);
 
             PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                     operators,
                     specialSiteKeys,
-                    noAcls,
+                    NO_ACLS,
                     clients
             );
 
@@ -182,20 +185,20 @@ public class PrivateSiteUtilTest {
             @Test
             public void sharesKeysWithSitesOnWhitelist() {
                 PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<EncryptionKey>()
-                        .with(siteId1, ImmutableSet.of(site1Key))
-                        .with(siteId2, ImmutableSet.of(site1Key));
+                        .with(SITE_ID_1, ImmutableSet.of(site1Key))
+                        .with(SITE_ID_2, ImmutableSet.of(site1Key));
 
                 final Map<Integer, EncryptionKeyAcl> whitelist = ImmutableMap.of(
-                        siteId1, new EncryptionKeyAcl(true, ImmutableSet.of(siteId2))
+                        SITE_ID_1, new EncryptionKeyAcl(true, ImmutableSet.of(SITE_ID_2))
                 );
 
                 ImmutableList<OperatorKey> operators = ImmutableList.of(
-                        site1PrivateOperator,
-                        site2PrivateOperator);
+                        SITE_1_PRIVATE_OPERATOR,
+                        SITE_2_PRIVATE_OPERATOR);
 
                 ImmutableSet<ClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
-                        site2ClientWithReaderRole);
+                        SITE_2_CLIENT_WITH_READER_ROLE);
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                         operators,
                         ImmutableSet.of(site1Key),
@@ -210,20 +213,20 @@ public class PrivateSiteUtilTest {
             @Test
             public void doesNotShareKeysWithSitesOutsideOfWhitelist() {
                 PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<EncryptionKey>()
-                        .with(siteId1, ImmutableSet.of(site1Key))
-                        .with(siteId2, ImmutableSet.of());
+                        .with(SITE_ID_1, ImmutableSet.of(site1Key))
+                        .with(SITE_ID_2, ImmutableSet.of());
 
                 final Map<Integer, EncryptionKeyAcl> whitelist = ImmutableMap.of(
-                        siteId1, new EncryptionKeyAcl(true, ImmutableSet.of(siteId3))
+                        SITE_ID_1, new EncryptionKeyAcl(true, ImmutableSet.of(SITE_ID_3))
                 );
 
                 ImmutableList<OperatorKey> operators = ImmutableList.of(
-                        site1PrivateOperator,
-                        site2PrivateOperator);
+                        SITE_1_PRIVATE_OPERATOR,
+                        SITE_2_PRIVATE_OPERATOR);
 
                 ImmutableSet<ClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
-                        site2ClientWithReaderRole);
+                        SITE_2_CLIENT_WITH_READER_ROLE);
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                         operators,
                         ImmutableSet.of(site1Key),
@@ -237,20 +240,20 @@ public class PrivateSiteUtilTest {
             @Test
             public void doesNotShareKeysWithSitesOnTheBlacklist() {
                 PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<EncryptionKey>()
-                        .with(siteId1, ImmutableSet.of(site1Key))
-                        .with(siteId2, ImmutableSet.of());
+                        .with(SITE_ID_1, ImmutableSet.of(site1Key))
+                        .with(SITE_ID_2, ImmutableSet.of());
 
                 final Map<Integer, EncryptionKeyAcl> blacklist = ImmutableMap.of(
-                        siteId1, new EncryptionKeyAcl(false, ImmutableSet.of(siteId2))
+                        SITE_ID_1, new EncryptionKeyAcl(false, ImmutableSet.of(SITE_ID_2))
                 );
 
                 ImmutableList<OperatorKey> operators = ImmutableList.of(
-                        site1PrivateOperator,
-                        site2PrivateOperator);
+                        SITE_1_PRIVATE_OPERATOR,
+                        SITE_2_PRIVATE_OPERATOR);
 
                 ImmutableSet<ClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
-                        site2ClientWithReaderRole);
+                        SITE_2_CLIENT_WITH_READER_ROLE);
 
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                         operators,
@@ -265,20 +268,20 @@ public class PrivateSiteUtilTest {
             @Test
             public void shareKeysWithSitesNotOnTheBlacklist() {
                 PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<EncryptionKey>()
-                        .with(siteId1, ImmutableSet.of(site1Key))
-                        .with(siteId2, ImmutableSet.of(site1Key));
+                        .with(SITE_ID_1, ImmutableSet.of(site1Key))
+                        .with(SITE_ID_2, ImmutableSet.of(site1Key));
 
                 final Map<Integer, EncryptionKeyAcl> blacklist = ImmutableMap.of(
-                        siteId1, new EncryptionKeyAcl(false, ImmutableSet.of(siteId3))
+                        SITE_ID_1, new EncryptionKeyAcl(false, ImmutableSet.of(SITE_ID_3))
                 );
 
                 ImmutableList<OperatorKey> operators = ImmutableList.of(
-                        site1PrivateOperator,
-                        site2PrivateOperator);
+                        SITE_1_PRIVATE_OPERATOR,
+                        SITE_2_PRIVATE_OPERATOR);
 
                 ImmutableSet<ClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
-                        site2ClientWithReaderRole);
+                        SITE_2_CLIENT_WITH_READER_ROLE);
 
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                         operators,
@@ -293,21 +296,21 @@ public class PrivateSiteUtilTest {
             @Test
             public void sharesAllKeysWhenNoAcl() {
                 PrivateSiteDataMap<EncryptionKey> expected = new PrivateSiteDataMap<EncryptionKey>()
-                        .with(siteId1, ImmutableSet.of(site1Key))
-                        .with(siteId2, ImmutableSet.of(site1Key));
+                        .with(SITE_ID_1, ImmutableSet.of(site1Key))
+                        .with(SITE_ID_2, ImmutableSet.of(site1Key));
 
                 ImmutableList<OperatorKey> operators = ImmutableList.of(
-                        site1PrivateOperator,
-                        site2PrivateOperator);
+                        SITE_1_PRIVATE_OPERATOR,
+                        SITE_2_PRIVATE_OPERATOR);
 
                 ImmutableSet<ClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
-                        site2ClientWithReaderRole);
+                        SITE_2_CLIENT_WITH_READER_ROLE);
 
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
                         operators,
                         ImmutableSet.of(site1Key),
-                        noAcls,
+                        NO_ACLS,
                         clients
                 );
 
@@ -322,11 +325,11 @@ public class PrivateSiteUtilTest {
             readerRole.add(Role.ID_READER);
 
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key7", "keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
             };
             final EncryptionKey[] encryptionKeys = {
                     new EncryptionKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), Const.Data.RefreshKeySiteId),
@@ -389,7 +392,7 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void returnsNoAclsForNoData() {
-            Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(noOperators, noAcls);
+            Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(NO_OPERATORS, NO_ACLS);
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> expected = ImmutableMap.of();
             assertEquals(expected, actual);
@@ -399,13 +402,13 @@ public class PrivateSiteUtilTest {
         public void ignoresSitesWithOnlyPublicOperators() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(siteId1)
+                            .withSiteId(SITE_ID_1)
                             .withType(OperatorType.PUBLIC)
                             .build()
             );
 
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
-                    siteId1, site1Acl
+                    SITE_ID_1, site1Acl
             );
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(operators, acls);
@@ -417,16 +420,16 @@ public class PrivateSiteUtilTest {
         @Test
         public void recordsAclUnderItsOwnSiteId() {
 
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
-                    siteId1, site1Acl
+                    SITE_ID_1, site1Acl
             );
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(operators, acls);
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> expected = ImmutableMap.of(
-                    siteId1, ImmutableMap.of(
-                            siteId1, site1Acl
+                    SITE_ID_1, ImmutableMap.of(
+                            SITE_ID_1, site1Acl
                     )
             );
             assertEquals(expected, actual);
@@ -434,21 +437,21 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void sharesAclWithSitesOnWhitelist() {
-            EncryptionKeyAcl acl = new EncryptionKeyAcl(true, ImmutableSet.of(siteId2));
+            EncryptionKeyAcl acl = new EncryptionKeyAcl(true, ImmutableSet.of(SITE_ID_2));
 
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator, site2PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR, SITE_2_PRIVATE_OPERATOR);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
-                    siteId1, acl
+                    SITE_ID_1, acl
             );
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(operators, acls);
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> expected = ImmutableMap.of(
-                    siteId1, ImmutableMap.of(
-                            siteId1, acl
+                    SITE_ID_1, ImmutableMap.of(
+                            SITE_ID_1, acl
                     ),
-                    siteId2, ImmutableMap.of(
-                            siteId1, acl
+                    SITE_ID_2, ImmutableMap.of(
+                            SITE_ID_1, acl
                     )
             );
 
@@ -457,18 +460,18 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void doesNotsharesAclWithSitesNotOnWhitelist() {
-            EncryptionKeyAcl acl = new EncryptionKeyAcl(true, ImmutableSet.of(siteId3));
+            EncryptionKeyAcl acl = new EncryptionKeyAcl(true, ImmutableSet.of(SITE_ID_3));
 
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
-                    siteId1, acl
+                    SITE_ID_1, acl
             );
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(operators, acls);
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> expected = ImmutableMap.of(
-                    siteId1, ImmutableMap.of(
-                            siteId1, acl
+                    SITE_ID_1, ImmutableMap.of(
+                            SITE_ID_1, acl
                     )
             );
 
@@ -477,22 +480,21 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void sharesAclWithSitesOutsideOfBlacklist() {
-            EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(siteId3));
+            EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(SITE_ID_3));
 
-
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator, site2PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR, SITE_2_PRIVATE_OPERATOR);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
-                    siteId1, acl
+                    SITE_ID_1, acl
             );
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(operators, acls);
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> expected = ImmutableMap.of(
-                    siteId1, ImmutableMap.of(
-                            siteId1, acl
+                    SITE_ID_1, ImmutableMap.of(
+                            SITE_ID_1, acl
                     ),
-                    siteId2, ImmutableMap.of(
-                            siteId1, acl
+                    SITE_ID_2, ImmutableMap.of(
+                            SITE_ID_1, acl
                     )
             );
 
@@ -501,19 +503,18 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void doesNotSharesAclWithSitesOnTheBlacklist() {
-            EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(siteId2));
+            EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(SITE_ID_2));
 
-
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
-                    siteId1, acl
+                    SITE_ID_1, acl
             );
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> actual = getEncryptionKeyAclsForEachSite(operators, acls);
 
             Map<Integer, Map<Integer, EncryptionKeyAcl>> expected = ImmutableMap.of(
-                    siteId1, ImmutableMap.of(
-                            siteId1, acl
+                    SITE_ID_1, ImmutableMap.of(
+                            SITE_ID_1, acl
                     )
             );
 
@@ -523,10 +524,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclData() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -558,10 +559,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclDataForEachSite() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -613,7 +614,7 @@ public class PrivateSiteUtilTest {
         public void returnsNoKeysetKeysForNoKeysetKeysOrOperators() {
             PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
 
-            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(noOperators, noKeysetKeys, keysets);
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(NO_OPERATORS, NO_KEYSET_KEYS, keysets);
 
             assertEquals(expected, actual);
         }
@@ -626,7 +627,7 @@ public class PrivateSiteUtilTest {
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(siteId1)
+                            .withSiteId(SITE_ID_1)
                             .withType(OperatorType.PUBLIC)
                             .build()
             );
@@ -761,11 +762,11 @@ public class PrivateSiteUtilTest {
 
     @Nested
     class Sites {
-        Site site1 = new Site(siteId1, "site1", true);
+        Site site1 = new Site(SITE_ID_1, "site1", true);
 
         @Test
         public void returnsNoSitesForNoData() {
-            PrivateSiteDataMap<Site> actual = getSites(ImmutableSet.of(), noOperators);
+            PrivateSiteDataMap<Site> actual = getSites(ImmutableSet.of(), NO_OPERATORS);
 
             PrivateSiteDataMap<Site> expected = new PrivateSiteDataMap<>();
             assertEquals(expected, actual);
@@ -775,7 +776,7 @@ public class PrivateSiteUtilTest {
         public void ignoresSitesWithOnlyPublicOperators() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(
                     new OperatorBuilder()
-                            .withSiteId(siteId1)
+                            .withSiteId(SITE_ID_1)
                             .withType(OperatorType.PUBLIC)
                             .build()
             );
@@ -790,34 +791,34 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void providesSitesTheirOwnData() {
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR);
 
             Set<Site> sites = ImmutableSet.of(site1);
 
             PrivateSiteDataMap<Site> actual = getSites(sites, operators);
 
-            PrivateSiteDataMap<Site> expected = new PrivateSiteDataMap<Site>().with(siteId1, ImmutableSet.of(site1));
+            PrivateSiteDataMap<Site> expected = new PrivateSiteDataMap<Site>().with(SITE_ID_1, ImmutableSet.of(site1));
             assertEquals(expected, actual);
         }
 
         @Test
         public void doesNotShareSitesDataWithEachOther() {
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator, site2PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR, SITE_2_PRIVATE_OPERATOR);
 
-            Site site2 = new Site(siteId2, "Site 2", true);
+            Site site2 = new Site(SITE_ID_2, "Site 2", true);
             Set<Site> sites = ImmutableSet.of(site1, site2);
 
             PrivateSiteDataMap<Site> actual = getSites(sites, operators);
 
             PrivateSiteDataMap<Site> expected = new PrivateSiteDataMap<Site>()
-                    .with(siteId1, ImmutableSet.of(site1))
-                    .with(siteId2, ImmutableSet.of(site2));
+                    .with(SITE_ID_1, ImmutableSet.of(site1))
+                    .with(SITE_ID_2, ImmutableSet.of(site2));
             assertEquals(expected, actual);
         }
 
         @Test
         public void siteWithId2IsSharedWithEveryone() {
-            ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
+            ImmutableList<OperatorKey> operators = ImmutableList.of(SITE_1_PRIVATE_OPERATOR);
 
             Site siteWithId2 = new Site(2, "Site with ID 2", true);
             Set<Site> sites = ImmutableSet.of(site1, siteWithId2);
@@ -825,7 +826,7 @@ public class PrivateSiteUtilTest {
             PrivateSiteDataMap<Site> actual = getSites(sites, operators);
 
             PrivateSiteDataMap<Site> expected = new PrivateSiteDataMap<Site>()
-                    .with(siteId1, ImmutableSet.of(site1, siteWithId2));
+                    .with(SITE_ID_1, ImmutableSet.of(site1, siteWithId2));
             assertEquals(expected, actual);
         }
 
@@ -838,12 +839,12 @@ public class PrivateSiteUtilTest {
                     new Site(5, "4", true)
             };
             final OperatorKey[] publicOperatorKeys = {
-                    new OperatorKey("key2", "keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
             };
             final OperatorKey[] privateOperatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
             };
             final List<OperatorKey> allOperatorKeys = new ArrayList<>(Arrays.asList(publicOperatorKeys));
             allOperatorKeys.addAll(Arrays.asList(privateOperatorKeys));
@@ -865,17 +866,8 @@ public class PrivateSiteUtilTest {
         }
     }
 
-    static int siteId1 = 10;
-    static int siteId2 = 11;
-    static int siteId3 = 12;
-    final Set<OperatorKey> noOperators = ImmutableSet.of();
-    final Set<ClientKey> noClients = ImmutableSet.of();
-    final Set<EncryptionKey> noKeys = ImmutableSet.of();
-    final Set<KeysetKey> noKeysetKeys = ImmutableSet.of();
-    final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
-
-    static class OperatorBuilder {
-        private final OperatorKey operator = new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
+    private static class OperatorBuilder {
+        private final OperatorKey operator = new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, SITE_ID_1, ImmutableSet.of(), OperatorType.PRIVATE);
 
         OperatorBuilder() {
         }
@@ -906,8 +898,8 @@ public class PrivateSiteUtilTest {
 
     }
 
-    static class ClientBuilder {
-        private int siteId = siteId1;
+    private static class ClientBuilder {
+        private int siteId = SITE_ID_1;
         private boolean isDisabled = false;
         private final HashSet<Role> roles = new HashSet<>();
 
