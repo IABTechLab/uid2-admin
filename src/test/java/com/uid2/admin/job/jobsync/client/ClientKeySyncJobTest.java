@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +38,7 @@ public class ClientKeySyncJobTest {
                     "name",
                     "contact",
                     "protocol",
-                    NOW.toEpochMilli(),
+                    NOW.minus(7, ChronoUnit.DAYS).toEpochMilli(),
                     false,
                     SCOPED_SITE_ID,
                     Set.of(Role.OPERATOR),
