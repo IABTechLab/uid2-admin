@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.uid2.shared.auth.IRoleAuthorizable;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.Roles;
-import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
 import java.util.Collections;
