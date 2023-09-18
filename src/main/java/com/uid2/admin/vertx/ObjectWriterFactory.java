@@ -9,6 +9,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.uid2.shared.utils.ObjectMapperFactory;
 
 public class ObjectWriterFactory {
+    private ObjectWriterFactory() {
+    }
+
     public static ObjectWriter build() {
         ObjectMapper mapper = ObjectMapperFactory.build()
                 .registerModule(new JavaTimeModule())
