@@ -7,6 +7,8 @@ import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.secret.KeyHashResult;
+import com.uid2.shared.secret.KeyHasher;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -559,16 +561,31 @@ public class SearchServiceTest extends ServiceTestBase {
         );
     }
 
+    private static KeyHashResult hashKeys(String key) {
+        KeyHasher keyHasher = new KeyHasher();
+        return keyHasher.hashKey(key);
+    }
+
     private static ClientKey[] getClientKeys() {
         return getClientKeys("", "");
     }
 
     private static ClientKey[] getClientKeys(String keySuffix, String secretSuffix) {
-        return Instancio.ofList(ClientKey.class)
-                .size(3)
-                .generate(field(ClientKey::getKey), gen -> gen.string().suffix(keySuffix).minLength(44).mixedCase())
-                .generate(field(ClientKey::getSecret), gen -> gen.string().suffix(secretSuffix).minLength(44).mixedCase())
+//        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
+//                .size(3)
+//                .generate(field(ClientKey::getKey), gen -> gen.string().suffix(keySuffix).minLength(44).mixedCase())
+//                .generate(field(ClientKey::getSecret), gen -> gen.string().suffix(secretSuffix).minLength(44).mixedCase())
+//                .create().toArray(new ClientKey[0]);
+        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
+                .size(1)
+                .set(field(ClientKey::getSecret), "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=")
                 .create().toArray(new ClientKey[0]);
+        return clientKeys;
+    }
+
+    private static ClientKey getClientKey(String key, String secret) {
+        KeyHashResult keyHashResult = hashKeys(key);
+        return new ClientKey(key, keyHashResult.getHash(), keyHashResult.getSalt(), secret);
     }
 
     private static OperatorKey[] getOperatorKeys() {
@@ -590,6 +607,7 @@ public class SearchServiceTest extends ServiceTestBase {
         return Instancio.ofList(AdminUser.class)
                 .size(3)
                 .generate(field(AdminUser::getKey), gen -> gen.string().suffix(suffix).minLength(44).mixedCase())
+                .generate(field(AdminUser::getKeySalt), gen -> gen.string().suffix("adminUserKeySalt"))
                 .create().toArray(new AdminUser[0]);
     }
 
@@ -599,6 +617,8 @@ public class SearchServiceTest extends ServiceTestBase {
         assertEquals(expected.getName(), actual.getString("name"));
         assertEquals(expected.getContact(), actual.getString("contact"));
         assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
+        assertEquals(expected.getKeyHash(), actual.getString("key_hash"));
+        assertEquals(expected.getKeySalt(), actual.getString("key_salt"));
 
         assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
     }
@@ -610,6 +630,8 @@ public class SearchServiceTest extends ServiceTestBase {
         assertEquals(expected.getProtocol(), actual.getString("protocol"));
         assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
         assertEquals(expected.getOperatorType().toString(), actual.getString("operator_type"));
+        assertEquals(expected.getKeyHash(), actual.getString("key_hash"));
+        assertEquals(expected.getKeySalt(), actual.getString("key_salt"));
 
         assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
     }
@@ -619,6 +641,8 @@ public class SearchServiceTest extends ServiceTestBase {
         assertEquals(expected.getName(), actual.getString("name"));
         assertEquals(expected.getContact(), actual.getString("contact"));
         assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
+        assertEquals(expected.getKeyHash(), actual.getString("key_hash"));
+        assertEquals(expected.getKeySalt(), actual.getString("key_salt"));
 
         assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
     }

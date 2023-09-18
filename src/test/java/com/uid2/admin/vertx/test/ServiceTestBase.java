@@ -39,6 +39,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -97,6 +98,10 @@ public abstract class ServiceTestBase {
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
     @Mock protected KeyHasher keyHasher;
+    @Mock protected AuthorizableStore<ClientKey> clientKeyStore;
+    @Mock protected AuthorizableStore<OperatorKey> operatorKeyStore;
+    @Mock protected AuthorizableStore<AdminUser> adminUserStore;
+
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -113,6 +118,10 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
         when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
         when(keyHasher.hashKey(anyString())).thenReturn(new KeyHashResult("abcdefabcdefabcdefabcdef", "ghijklghijklghijklghijkl"));
+
+        when(clientKeyStore.getAuthorizableByKey(anyString())).thenReturn(new ClientKey("clientKey", "clientKeyHash", "clientKeySalt", "", "name3", "contact3", Instant.now(), new HashSet<>(), 3, false));
+        when(operatorKeyStore.getAuthorizableByKey(anyString())).thenReturn(new OperatorKey("operatorKey", "operatorKeyHash", "operatorKeySalt", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE));
+        when(adminUserStore.getAuthorizableByKey(anyString())).thenReturn(new AdminUser("adminUser", "adminUserHash", "adminUserSalt", "name3", "contact3", 4, new HashSet<>(), false));
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};

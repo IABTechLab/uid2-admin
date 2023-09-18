@@ -57,29 +57,36 @@ public class SearchService implements IService {
             results.put("ClientKeys", clientKeyResults);
             results.put("OperatorKeys", operatorKeyResults);
             results.put("AdministratorKeys", adminUserResults);
-
-            AuthorizableStore<ClientKey> clientKeyStore = new AuthorizableStore<>();
-            AuthorizableStore<OperatorKey> operatorKeyStore = new AuthorizableStore<>();
-            AuthorizableStore<AdminUser> adminKeyStore = new AuthorizableStore<>();
             
-            ClientKey clientKey = clientKeyStore.getFromKey(queryParam);
-            OperatorKey operatorKey = operatorKeyStore.getFromKey(queryParam);
-            AdminUser adminKey = adminKeyStore.getFromKey(queryParam);
+            ClientKey clientKey = this.clientKeyProvider.getClientKey(queryParam);
+            OperatorKey operatorKey = this.operatorKeyProvider.getOperatorKey(queryParam);
+            AdminUser adminKey = this.adminUserProvider.getClientKeyFromKey(queryParam);
 
             this.clientKeyProvider.getAll()
                     .stream()
-                    .filter(c -> c.getKeyHash().contains(clientKey.getKeyHash()) || c.getSecret().contains(queryParam))
+                    .filter(c -> c.getSecret().contains(queryParam))
                     .forEach(clientKeyResults::add);
 
-            this.operatorKeyProvider.getAll()
-                    .stream()
-                    .filter(o -> o.getKeyHash().contains(operatorKey.getKeyHash()))
-                    .forEach(operatorKeyResults::add);
+            if (clientKey != null) {
+                this.clientKeyProvider.getAll()
+                        .stream()
+                        .filter(c -> c.getKeyHash().contains(clientKey.getKeyHash()))
+                        .forEach(clientKeyResults::add);
+            }
 
-            this.adminUserProvider.getAll()
-                    .stream()
-                    .filter(a -> a.getKeyHash().contains(adminKey.getKeyHash()))
-                    .forEach(adminUserResults::add);
+            if (operatorKey != null) {
+                this.operatorKeyProvider.getAll()
+                        .stream()
+                        .filter(o -> o.getKeyHash().contains(operatorKey.getKeyHash()))
+                        .forEach(operatorKeyResults::add);
+            }
+
+            if (adminKey != null) {
+                this.adminUserProvider.getAll()
+                        .stream()
+                        .filter(a -> a.getKeyHash().contains(adminKey.getKeyHash()))
+                        .forEach(adminUserResults::add);
+            }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
