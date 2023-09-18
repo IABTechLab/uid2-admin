@@ -15,6 +15,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SiteServiceTest extends ServiceTestBase {
+    private static final Instant NOW = Instant.now();
+
     @Override
     protected IService createService() {
         return new SiteService(auth, writeLock, storeWriter, siteProvider, clientKeyProvider);
@@ -123,10 +126,10 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(sites);
 
         ClientKey[] clientKeys = {
-                new ClientKey("ck1", "ckh1", "cks1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
-                new ClientKey("ck2", "ckh2", "cks2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
-                new ClientKey("ck3", "ckh3", "cks3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
-                new ClientKey("ck4", "ckh4", "cks4", "cs4").withSiteId(13).withRoles(Role.SHARER),
+                new ClientKey("ck1", "ckh1", "cks1", "cs1", "cn1", NOW, Set.of(Role.GENERATOR, Role.ID_READER), 11),
+                new ClientKey("ck2", "ckh2", "cks2", "cs2", "cn2", NOW, Set.of(Role.MAPPER), 12),
+                new ClientKey("ck3", "ckh3", "cks3", "cs3", "cn3", NOW, Set.of(Role.GENERATOR, Role.MAPPER), 11),
+                new ClientKey("ck4", "ckh4", "cks4", "cs4", "cn4", NOW, Set.of(Role.SHARER), 13),
         };
         setClientKeys(clientKeys);
 
@@ -676,6 +679,4 @@ public class SiteServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
-
-
 }
