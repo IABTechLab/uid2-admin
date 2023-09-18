@@ -49,20 +49,6 @@ public class AdminUser implements IRoleAuthorizable<Role> {
                 Instant.now().getEpochSecond(), Collections.emptySet(), false);
     }
 
-    @Deprecated
-    public static AdminUser valueOf(JsonObject json) {
-        return new AdminUser(
-                json.getString("key"),
-                json.getString("key_hash"),
-                json.getString("key_salt"),
-                json.getString("name"),
-                json.getString("contact"),
-                json.getLong("created"),
-                Roles.getRoles(Role.class, json),
-                json.getBoolean("disabled", false)
-        );
-    }
-
     public String getKey() {
         return key;
     }
