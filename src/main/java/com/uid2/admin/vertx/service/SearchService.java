@@ -60,7 +60,7 @@ public class SearchService implements IService {
             
             ClientKey clientKey = this.clientKeyProvider.getClientKey(queryParam);
             OperatorKey operatorKey = this.operatorKeyProvider.getOperatorKey(queryParam);
-            AdminUser adminKey = this.adminUserProvider.getAdminUserFromKey(queryParam);
+            AdminUser adminKey = this.adminUserProvider.getAdminUser(queryParam);
 
             this.clientKeyProvider.getAll()
                     .stream()
@@ -68,24 +68,15 @@ public class SearchService implements IService {
                     .forEach(clientKeyResults::add);
 
             if (clientKey != null) {
-                this.clientKeyProvider.getAll()
-                        .stream()
-                        .filter(c -> c.getKeyHash().contains(clientKey.getKeyHash()))
-                        .forEach(clientKeyResults::add);
+                clientKeyResults.add(this.clientKeyProvider.getClientKey(clientKey.getKey()));
             }
 
             if (operatorKey != null) {
-                this.operatorKeyProvider.getAll()
-                        .stream()
-                        .filter(o -> o.getKeyHash().contains(operatorKey.getKeyHash()))
-                        .forEach(operatorKeyResults::add);
+                operatorKeyResults.add(this.operatorKeyProvider.getOperatorKey(operatorKey.getKey()));
             }
 
             if (adminKey != null) {
-                this.adminUserProvider.getAll()
-                        .stream()
-                        .filter(a -> a.getKeyHash().contains(adminKey.getKeyHash()))
-                        .forEach(adminUserResults::add);
+                adminUserResults.add(this.adminUserProvider.getAdminUser(adminKey.getKey()));
             }
 
             rc.response()

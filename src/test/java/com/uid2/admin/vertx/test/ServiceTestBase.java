@@ -167,7 +167,9 @@ public abstract class ServiceTestBase {
 
     protected void setClientKeys(ClientKey... clientKeys) {
         when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
-        when(clientKeyProvider.getClientKey("UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=")).thenReturn(clientKeys[0]);
+        for (ClientKey clientKey : clientKeys) {
+            when(clientKeyProvider.getClientKey(clientKey.getKey())).thenReturn(clientKey);
+        }
     }
 
 
@@ -215,12 +217,16 @@ public abstract class ServiceTestBase {
 
     protected void setOperatorKeys(OperatorKey... operatorKeys) {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
-        when(operatorKeyProvider.getOperatorKey("UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=")).thenReturn(operatorKeys[0]);
+        for (OperatorKey operatorKey : operatorKeys) {
+            when(operatorKeyProvider.getOperatorKey(operatorKey.getKey())).thenReturn(operatorKey);
+        }
     }
 
     protected void setAdminUsers(AdminUser... adminUsers) {
         when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
-        when(adminUserProvider.getAdminUserFromKey("UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=")).thenReturn(adminUsers[0]);
+        for (AdminUser adminUser : adminUsers) {
+            when(adminUserProvider.getAdminUser(adminUser.getKey())).thenReturn(adminUser);
+        }
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
