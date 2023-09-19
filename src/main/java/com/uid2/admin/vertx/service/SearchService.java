@@ -60,7 +60,7 @@ public class SearchService implements IService {
             
             ClientKey clientKey = this.clientKeyProvider.getClientKey(queryParam);
             OperatorKey operatorKey = this.operatorKeyProvider.getOperatorKey(queryParam);
-            AdminUser adminKey = this.adminUserProvider.getClientKeyFromKey(queryParam);
+            AdminUser adminKey = this.adminUserProvider.getAdminUserFromKey(queryParam);
 
             this.clientKeyProvider.getAll()
                     .stream()

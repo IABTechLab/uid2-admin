@@ -221,7 +221,7 @@ public abstract class ServiceTestBase {
 
     protected void setAdminUsers(AdminUser... adminUsers) {
         when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
-        when(adminUserProvider.getClientKeyFromKey("UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=")).thenReturn(adminUsers[0]);
+        when(adminUserProvider.getAdminUserFromKey("UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=")).thenReturn(adminUsers[0]);
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
