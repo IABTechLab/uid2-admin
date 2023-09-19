@@ -67,16 +67,19 @@ public class SearchService implements IService {
                     .filter(c -> c.getSecret().contains(queryParam))
                     .forEach(clientKeyResults::add);
 
-            if (clientKey != null) {
-                clientKeyResults.add(this.clientKeyProvider.getClientKey(clientKey.getKey()));
+            ClientKey clientKeyByKey = this.clientKeyProvider.getClientKey(clientKey.getKey());
+            if (clientKeyByKey != null) {
+                clientKeyResults.add(clientKeyByKey);
             }
 
-            if (operatorKey != null) {
-                operatorKeyResults.add(this.operatorKeyProvider.getOperatorKey(operatorKey.getKey()));
+            OperatorKey operatorKeyByKey = this.operatorKeyProvider.getOperatorKey(operatorKey.getKey());
+            if (operatorKeyByKey != null) {
+                operatorKeyResults.add(operatorKeyByKey);
             }
 
-            if (adminKey != null) {
-                adminUserResults.add(this.adminUserProvider.getAdminUser(adminKey.getKey()));
+            AdminUser adminUserByKey = this.adminUserProvider.getAdminUser(adminKey.getKey());
+            if (adminUserByKey != null) {
+                adminUserResults.add(adminUserByKey);
             }
 
             ClientKey clientKeyByHash = this.clientKeyProvider.getClientKeyFromHash(queryParam);
