@@ -7,7 +7,7 @@ import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
@@ -217,7 +217,7 @@ class ScopedStoreWriterTest {
     }
 
     private Clock clock;
-    ObjectWriter jsonWriter = ObjectWriterFactory.build();
+    ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private VersionGenerator versionGenerator;
     private RotatingSiteStore globalStore;
     private InMemoryStorageMock cloudStorage;

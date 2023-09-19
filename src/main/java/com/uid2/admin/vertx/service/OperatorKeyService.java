@@ -5,7 +5,7 @@ import com.uid2.admin.model.RevealedKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class OperatorKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
-    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
     private static final Set<Set<Role>> VALID_ROLE_COMBINATIONS = (Set.of(
             new TreeSet<>(Set.of()), // Empty role input is accepted as OPERATOR will be automatically added
             new TreeSet<>(Set.of(Role.OPERATOR)),

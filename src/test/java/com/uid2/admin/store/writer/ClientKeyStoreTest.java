@@ -6,7 +6,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.cloud.InMemoryStorageMock;
@@ -40,7 +40,7 @@ public class ClientKeyStoreTest {
     private static final String METADATA_FILE_NAME = "test-metadata.json";
     private static final CloudPath GLOBAL_METADATA_PATH = new CloudPath(ROOT_DIR).resolve(METADATA_FILE_NAME);
     private static final GlobalScope GLOBAL_SCOPE = new GlobalScope(GLOBAL_METADATA_PATH);
-    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
     private static final KeyHasher KEY_HASHER = new KeyHasher();
 
     @Mock private Clock clock;

@@ -2,13 +2,13 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.job.JobDispatcher;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.ext.web.Router;
 
 public class JobDispatcherService implements IService {
-    private final ObjectWriter jsonWriter = ObjectWriterFactory.build();
+    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final AuthMiddleware auth;
     private final JobDispatcher jobDispatcher;
 

@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.uid2.shared.utils.ObjectMapperFactory;
 
-public class ObjectWriterFactory {
-    private ObjectWriterFactory() {
+public class JsonUtil {
+    private JsonUtil() {
     }
 
-    public static ObjectWriter build() {
+    public static ObjectWriter createJsonWriter() {
         ObjectMapper mapper = ObjectMapperFactory.build()
                 .registerModule(new JavaTimeModule())
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);

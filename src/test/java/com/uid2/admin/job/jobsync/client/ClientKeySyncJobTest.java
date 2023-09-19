@@ -11,7 +11,7 @@ import com.uid2.admin.store.factory.ClientKeyStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 public class ClientKeySyncJobTest {
     private static final Instant NOW = Instant.now();
     private static final CloudPath GLOBAL_SITE_METADATA_PATH = new CloudPath("/some/test/path/clients/metadata.json");
-    private static final ObjectWriter OBJECT_WRITER = ObjectWriterFactory.build();
+    private static final ObjectWriter OBJECT_WRITER = JsonUtil.createJsonWriter();
     private static final Integer SCOPED_SITE_ID = 10;
     private static final ImmutableList<OperatorKey> OPERATORS = ImmutableList.of(
             new OperatorKey(

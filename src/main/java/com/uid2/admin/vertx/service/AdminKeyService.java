@@ -8,7 +8,7 @@ import com.uid2.admin.store.writer.AdminUserStoreWriter;
 import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.store.writer.KeyAclStoreWriter;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class AdminKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminKeyService.class);
-    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;

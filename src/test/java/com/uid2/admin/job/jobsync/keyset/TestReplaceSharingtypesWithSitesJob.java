@@ -13,7 +13,7 @@ import com.uid2.admin.store.writer.SiteStoreWriter;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.InMemoryStorageMock;
@@ -80,7 +80,7 @@ public class TestReplaceSharingtypesWithSitesJob {
     FileManager fileManager = new FileManager(cloudStorage,  fileStorage);
     Clock clock = new InstantClock();
     VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
-    ObjectWriter objectWriter = ObjectWriterFactory.build();
+    ObjectWriter objectWriter = JsonUtil.createJsonWriter();
     RotatingAdminKeysetStore adminKeysetStore = new RotatingAdminKeysetStore(cloudStorage, adminKeysetScope);
     AdminKeysetWriter adminKeysetStoreWriter = new AdminKeysetWriter(adminKeysetStore, fileManager, objectWriter, versionGenerator,  clock, adminKeysetScope);
     RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetScope);

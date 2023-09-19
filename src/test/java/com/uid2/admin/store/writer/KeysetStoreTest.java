@@ -5,7 +5,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.store.CloudPath;
@@ -29,7 +29,7 @@ public class KeysetStoreTest {
     private final String metadataFileName = "test-metadata.json";
     private final CloudPath globalMetadataPath = new CloudPath(rootDir).resolve(metadataFileName);
     private final GlobalScope globalScope = new GlobalScope(globalMetadataPath);
-    private final ObjectWriter jsonWriter = ObjectWriterFactory.build();
+    private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     @Mock private Clock clock;
     @Mock private VersionGenerator versionGenerator;

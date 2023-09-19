@@ -7,7 +7,7 @@ import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.store.CloudPath;
@@ -32,7 +32,7 @@ public class AdminKeysetWriterTest {
     private static final String METADATA_FILE_NAME = "test-metadata.json";
     private static final CloudPath GLOBAL_METADATA_PATH = new CloudPath(ROOT_DIR).resolve(METADATA_FILE_NAME);
     private static final GlobalScope GLOBAL_SCOPE = new GlobalScope(GLOBAL_METADATA_PATH);
-    private static final ObjectWriter JSON_WRITER = ObjectWriterFactory.build();
+    private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
 
     @Mock private Clock clock;
     @Mock private VersionGenerator versionGenerator;

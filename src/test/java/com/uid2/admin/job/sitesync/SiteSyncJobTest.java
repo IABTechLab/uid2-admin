@@ -11,7 +11,7 @@ import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
-import com.uid2.admin.vertx.ObjectWriterFactory;
+import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 public class SiteSyncJobTest {
     private static final Instant NOW = Instant.now();
     private static final CloudPath GLOBAL_SITE_METADATA_PATH = new CloudPath("/some/test/path/sites/metadata.json");
-    private static final ObjectWriter OBJECT_WRITER = ObjectWriterFactory.build();
+    private static final ObjectWriter OBJECT_WRITER = JsonUtil.createJsonWriter();
     private static final Integer SCOPED_SITE_ID = 10;
     private static final Site SITE = new Site(SCOPED_SITE_ID, "site 1", true);
     private static final ImmutableList<OperatorKey> OPERATORS = ImmutableList.of(
