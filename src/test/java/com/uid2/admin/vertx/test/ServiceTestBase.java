@@ -97,7 +97,6 @@ public abstract class ServiceTestBase {
     @Mock protected IKeyGenerator keyGenerator;
     @Mock protected KeyHasher keyHasher;
 
-
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         mocks = MockitoAnnotations.openMocks(this);
