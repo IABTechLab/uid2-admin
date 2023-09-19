@@ -1,9 +1,9 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.vertx.ResponseUtil;
-import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.RotatingOperatorKeyProvider;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.ext.web.Router;
@@ -60,18 +60,38 @@ public class SearchService implements IService {
 
             this.clientKeyProvider.getAll()
                     .stream()
-                    .filter(c -> c.getKey().contains(queryParam) || c.getSecret().contains(queryParam))
+                    .filter(c -> c.getSecret().contains(queryParam))
                     .forEach(clientKeyResults::add);
 
-            this.operatorKeyProvider.getAll()
-                    .stream()
-                    .filter(o -> o.getKey().contains(queryParam))
-                    .forEach(operatorKeyResults::add);
+            ClientKey clientKeyByKey = this.clientKeyProvider.getClientKey(queryParam);
+            if (clientKeyByKey != null) {
+                clientKeyResults.add(clientKeyByKey);
+            }
 
-            this.adminUserProvider.getAll()
-                    .stream()
-                    .filter(a -> a.getKey().contains(queryParam))
-                    .forEach(adminUserResults::add);
+            OperatorKey operatorKeyByKey = this.operatorKeyProvider.getOperatorKey(queryParam);
+            if (operatorKeyByKey != null) {
+                operatorKeyResults.add(operatorKeyByKey);
+            }
+
+            AdminUser adminUserByKey = this.adminUserProvider.getAdminUser(queryParam);
+            if (adminUserByKey != null) {
+                adminUserResults.add(adminUserByKey);
+            }
+
+            ClientKey clientKeyByHash = this.clientKeyProvider.getClientKeyFromHash(queryParam);
+            if (clientKeyByHash != null) {
+                clientKeyResults.add(clientKeyByHash);
+            }
+
+            OperatorKey operatorKeyByHash = this.operatorKeyProvider.getOperatorKeyFromHash(queryParam);
+            if (operatorKeyByHash != null) {
+                operatorKeyResults.add(operatorKeyByHash);
+            }
+
+            AdminUser adminUserByHash = this.adminUserProvider.getAdminUserFromHash(queryParam);
+            if (adminUserByHash != null) {
+                adminUserResults.add(adminUserByHash);
+            }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
