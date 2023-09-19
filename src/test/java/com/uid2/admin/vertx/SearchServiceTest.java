@@ -147,7 +147,7 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("searchByClientKey")
+    @MethodSource("searchByClientKeySuccess")
     public void searchByClientKeySuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -162,7 +162,7 @@ public class SearchServiceTest extends ServiceTestBase {
                 ClientKey[] foundClientKeys = OBJECT_MAPPER.readValue(result.getJsonArray("ClientKeys").toString(), ClientKey[].class);
 
                 assertAll(
-                        "searchByClientKey",
+                        "searchByClientKeySuccess",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundClientKeys.length),
                         () -> assertEquals(clientKeys[1], foundClientKeys[0])
@@ -174,7 +174,7 @@ public class SearchServiceTest extends ServiceTestBase {
         });
     }
 
-    private static Stream<Arguments> searchByClientKey() {
+    private static Stream<Arguments> searchByClientKeySuccess() {
         ClientKey[] clientKeys = getClientKeys();
         OperatorKey[] operatorKeys = getOperatorKeys();
         AdminUser[] adminUsers = getAdminUsers();
