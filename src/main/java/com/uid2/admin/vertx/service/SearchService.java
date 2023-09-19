@@ -79,6 +79,21 @@ public class SearchService implements IService {
                 adminUserResults.add(this.adminUserProvider.getAdminUser(adminKey.getKey()));
             }
 
+            ClientKey clientKeyByHash = this.clientKeyProvider.getClientKeyFromHash(queryParam);
+            if (clientKeyByHash != null) {
+                clientKeyResults.add(clientKeyByHash);
+            }
+
+            OperatorKey operatorKeyByHash = this.operatorKeyProvider.getOperatorKeyFromHash(queryParam);
+            if (operatorKeyByHash != null) {
+                operatorKeyResults.add(operatorKeyByHash);
+            }
+
+            AdminUser adminUserByHash = this.adminUserProvider.getAdminUserFromHash(queryParam);
+            if (adminUserByHash != null) {
+                adminUserResults.add(adminUserByHash);
+            }
+
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(results.encode());

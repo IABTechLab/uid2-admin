@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
 
 import java.time.Instant;
 import java.util.List;
@@ -144,6 +145,32 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void searchClientKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+        ClientKey[] clientKeys = getClientKeys();
+
+        setClientKeys(clientKeys);
+        post(vertx, searchUrl, clientKeys[0].getKeyHash(), response -> {
+            try {
+                HttpResponse<Buffer> httpResponse = response.result();
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("ClientKeys");
+                JsonObject client = foundKeys.getJsonObject(0);
+
+                assertAll(
+                        "searchClientKeyByHashFindsKey",
+                        () -> assertTrue(response.succeeded()),
+                        () -> assertEquals(1, foundKeys.size()),
+                        () -> assertClientKey(clientKeys[0], client)
+                );
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
+        });
+    }
+
+    @Test
     void searchOperatorKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         OperatorKey[] operatorKeys = getOperatorKeys();
@@ -170,6 +197,32 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void searchOperatorKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+        OperatorKey[] operatorKeys = getOperatorKeys();
+
+        setOperatorKeys(operatorKeys);
+        post(vertx, searchUrl, operatorKeys[0].getKeyHash(), response -> {
+            try {
+                HttpResponse<Buffer> httpResponse = response.result();
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("OperatorKeys");
+                JsonObject operatorKey = foundKeys.getJsonObject(0);
+
+                assertAll(
+                        "searchOperatorKeyByHashFindsKey",
+                        () -> assertTrue(response.succeeded()),
+                        () -> assertEquals(1, foundKeys.size()),
+                        () -> assertOperatorKey(operatorKeys[0], operatorKey)
+                );
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
+        });
+    }
+
+    @Test
     void searchAdminUserFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         AdminUser[] adminUsers = getAdminUsers();
@@ -184,6 +237,32 @@ public class SearchServiceTest extends ServiceTestBase {
 
                 assertAll(
                         "searchAdminUserFindsKey",
+                        () -> assertTrue(response.succeeded()),
+                        () -> assertEquals(1, foundKeys.size()),
+                        () -> assertAdminUser(adminUsers[0], adminUser)
+                );
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
+        });
+    }
+
+    @Test
+    void searchAdminUserByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+        AdminUser[] adminUsers = getAdminUsers();
+
+        setAdminUsers(adminUsers);
+        post(vertx, searchUrl, adminUsers[0].getKeyHash(), response -> {
+            try {
+                HttpResponse<Buffer> httpResponse = response.result();
+                JsonObject result = httpResponse.bodyAsJsonObject();
+                JsonArray foundKeys = result.getJsonArray("AdministratorKeys");
+                JsonObject adminUser = foundKeys.getJsonObject(0);
+
+                assertAll(
+                        "searchAdminUserByHashFindsKey",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundKeys.size()),
                         () -> assertAdminUser(adminUsers[0], adminUser)

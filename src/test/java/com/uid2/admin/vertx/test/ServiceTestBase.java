@@ -169,6 +169,7 @@ public abstract class ServiceTestBase {
         when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
         for (ClientKey clientKey : clientKeys) {
             when(clientKeyProvider.getClientKey(clientKey.getKey())).thenReturn(clientKey);
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
         }
     }
 
@@ -219,6 +220,7 @@ public abstract class ServiceTestBase {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
         for (OperatorKey operatorKey : operatorKeys) {
             when(operatorKeyProvider.getOperatorKey(operatorKey.getKey())).thenReturn(operatorKey);
+            when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
         }
     }
 
@@ -226,6 +228,7 @@ public abstract class ServiceTestBase {
         when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
         for (AdminUser adminUser : adminUsers) {
             when(adminUserProvider.getAdminUser(adminUser.getKey())).thenReturn(adminUser);
+            when(adminUserProvider.getAdminUserFromHash(adminUser.getKeyHash())).thenReturn(adminUser);
         }
     }
 
