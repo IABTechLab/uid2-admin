@@ -98,9 +98,6 @@ public abstract class ServiceTestBase {
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
     @Mock protected KeyHasher keyHasher;
-    @Mock protected AuthorizableStore<ClientKey> clientKeyStore;
-    @Mock protected AuthorizableStore<OperatorKey> operatorKeyStore;
-    @Mock protected AuthorizableStore<AdminUser> adminUserStore;
 
 
     @BeforeEach
@@ -118,10 +115,6 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
         when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
         when(keyHasher.hashKey(anyString())).thenReturn(new KeyHashResult("abcdefabcdefabcdefabcdef", "ghijklghijklghijklghijkl"));
-
-        when(clientKeyStore.getAuthorizableByKey(anyString())).thenReturn(new ClientKey("clientKey", "clientKeyHash", "clientKeySalt", "", "name3", "contact3", Instant.now(), new HashSet<>(), 3, false));
-        when(operatorKeyStore.getAuthorizableByKey(anyString())).thenReturn(new OperatorKey("operatorKey", "operatorKeyHash", "operatorKeySalt", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE));
-        when(adminUserStore.getAuthorizableByKey(anyString())).thenReturn(new AdminUser("adminUser", "adminUserHash", "adminUserSalt", "name3", "contact3", 4, new HashSet<>(), false));
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
@@ -177,6 +170,7 @@ public abstract class ServiceTestBase {
 
     protected void setClientKeys(ClientKey... clientKeys) {
         when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
+        when(clientKeyProvider.getClientKey("UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=")).thenReturn(clientKeys[0]);
     }
 
 
@@ -224,10 +218,12 @@ public abstract class ServiceTestBase {
 
     protected void setOperatorKeys(OperatorKey... operatorKeys) {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
+        when(operatorKeyProvider.getOperatorKey("UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=")).thenReturn(operatorKeys[0]);
     }
 
     protected void setAdminUsers(AdminUser... adminUsers) {
         when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
+        when(adminUserProvider.getClientKeyFromKey("UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=")).thenReturn(adminUsers[0]);
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
