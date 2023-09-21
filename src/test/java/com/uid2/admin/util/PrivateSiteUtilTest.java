@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableSet;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
@@ -322,11 +321,11 @@ public class PrivateSiteUtilTest {
             readerRole.add(Role.ID_READER);
 
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key7", "keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
             };
             final EncryptionKey[] encryptionKeys = {
                     new EncryptionKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), Const.Data.RefreshKeySiteId),
@@ -523,10 +522,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclData() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -558,10 +557,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclDataForEachSite() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -611,10 +610,10 @@ public class PrivateSiteUtilTest {
         public void nullKeysetGetsOwnPlusDefault() {
 
             Map<Integer, Keyset> expected = Map.of(
-                -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
-                -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
-                2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
-                4, new Keyset(4, 10, "Site 10", null, 999999, true, true)
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    4, new Keyset(4, 10, "Site 10", null, 999999, true, true)
             );
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
@@ -972,12 +971,12 @@ public class PrivateSiteUtilTest {
                     new Site(5, "4", true)
             };
             final OperatorKey[] publicOperatorKeys = {
-                    new OperatorKey("key2", "keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
             };
             final OperatorKey[] privateOperatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
             };
             final List<OperatorKey> allOperatorKeys = new ArrayList<>(Arrays.asList(publicOperatorKeys));
             allOperatorKeys.addAll(Arrays.asList(privateOperatorKeys));
@@ -1010,7 +1009,7 @@ public class PrivateSiteUtilTest {
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
     static class OperatorBuilder {
-        private final OperatorKey operator = new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
+        private final OperatorKey operator = new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
 
         OperatorBuilder() {
         }
