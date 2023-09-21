@@ -23,21 +23,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 public class SiteSyncJobTest {
-    private InMemoryStorageMock cloudStorage;
-    CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
-    ObjectWriter objectWriter = JsonUtil.createJsonWriter();
-    Integer scopedSiteId = 10;
-    ImmutableList<OperatorKey> operators = ImmutableList.of(
+    private final CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
+    private final ObjectWriter objectWriter = JsonUtil.createJsonWriter();
+    private final int scopedSiteId = 10;
+    private final ImmutableList<OperatorKey> operators = ImmutableList.of(
             new OperatorKey(
-                    "key",
                     "keyHash",
                     "keySalt",
                     "name",
@@ -46,22 +42,23 @@ public class SiteSyncJobTest {
                     1618873215,
                     false,
                     scopedSiteId,
-                    new HashSet<>(Collections.singletonList(Role.OPERATOR)),
-                    OperatorType.PRIVATE));
+                    Set.of(Role.OPERATOR),
+                    OperatorType.PRIVATE)
+    );
+    private final Site site = new Site(scopedSiteId, "site 1", true);
 
-    Site site = new Site(scopedSiteId, "site 1", true);
+    private InMemoryStorageMock cloudStorage;
     private SiteStoreFactory siteStoreFactory;
     private FileManager fileManager;
 
-    public SiteSyncJobTest() {
-    }
-
     @BeforeEach
-    void setUp() {
+    public void setup() {
         cloudStorage = new InMemoryStorageMock();
+
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
+
         fileManager = new FileManager(cloudStorage, fileStorage);
         siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
@@ -69,7 +66,8 @@ public class SiteSyncJobTest {
                 objectWriter,
                 versionGenerator,
                 clock,
-                fileManager);
+                fileManager
+        );
     }
 
     @Test
@@ -78,16 +76,16 @@ public class SiteSyncJobTest {
                 fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(), operators
+                ImmutableList.of(),
+                operators
         );
-
         job.execute();
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
         Collection<Site> scopedSites = reader.getAll();
-        assertThat(scopedSites).isEmpty();
 
+        assertThat(scopedSites).isEmpty();
     }
 
     @Test
@@ -96,26 +94,27 @@ public class SiteSyncJobTest {
                 fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(site), operators
+                ImmutableList.of(site),
+                operators
         );
         job.execute();
 
-        List<String> allFilesInCloud = cloudStorage.list("");
-        assertThat(allFilesInCloud).contains(
-                "/some/test/path/sites/site/10/metadata.json",
-                "/some/test/path/sites/site/10/sites.json"
-        );
-
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
-        Collection<Site> scopedSites = reader.getAll();
-        assertThat(scopedSites).containsExactly(site);
+
+        assertAll(
+                "syncsNewSites",
+                () -> assertThat(cloudStorage.list("")).contains(
+                        "/some/test/path/sites/site/10/metadata.json",
+                        "/some/test/path/sites/site/10/sites.json"
+                ),
+                () -> assertThat(reader.getAll()).containsExactly(site)
+        );
     }
 
     @Test
     public void overridesPreviouslySyncedSitesWhenThereAreChanges() throws Exception {
         siteStoreFactory.getWriter(scopedSiteId).upload(ImmutableList.of(site), null);
-
 
         StoreReader<Collection<Site>> reader = siteStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
@@ -126,16 +125,18 @@ public class SiteSyncJobTest {
                 fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(updatedSite), operators
+                ImmutableList.of(updatedSite),
+                operators
         );
-
         job.execute();
 
         reader.loadContent();
-        assertThat(reader.getAll()).containsExactly(updatedSite);
 
-        Long newVersion = reader.getMetadata().getLong("version");
-        assertThat(newVersion).isGreaterThan(oldVersion);
+        assertAll(
+                "overridesPreviouslySyncedSitesWhenThereAreChanges",
+                () -> assertThat(reader.getAll()).containsExactly(updatedSite),
+                () -> assertThat(reader.getMetadata().getLong("version")).isGreaterThan(oldVersion)
+        );
     }
 
     @Test
@@ -151,14 +152,17 @@ public class SiteSyncJobTest {
                 fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual),
-                ImmutableList.of(site), operators
+                ImmutableList.of(site),
+                operators
         );
-
         job.execute();
 
         reader.loadContent();
-        assertThat(reader.getAll()).containsExactly(site);
-        Long newVersion = reader.getMetadata().getLong("version");
-        assertThat(newVersion).isEqualTo(oldVersion);
+
+        assertAll(
+                "doesNotSyncSitesThatAreNotChanged",
+                () -> assertThat(reader.getAll()).containsExactly(site),
+                () -> assertThat(reader.getMetadata().getLong("version")).isEqualTo(oldVersion)
+        );
     }
 }
