@@ -245,7 +245,7 @@ public abstract class ServiceTestBase {
         return new EncryptionKeyAcl(isWhitelist, Arrays.stream(siteIds).collect(Collectors.toSet()));
     }
 
-    protected static class CollectionOfSize implements ArgumentMatcher<Collection> {
+    protected static class CollectionOfSize<T> implements ArgumentMatcher<Collection<T>> {
         private final int expectedSize;
 
         public CollectionOfSize(int expectedSize) {
@@ -257,11 +257,11 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static Collection collectionOfSize(int expectedSize) {
-        return argThat(new CollectionOfSize(expectedSize));
+    protected static <T> Collection<T> collectionOfSize(int expectedSize) {
+        return argThat(new CollectionOfSize<>(expectedSize));
     }
 
-    protected static class MapOfSize implements ArgumentMatcher<Map> {
+    protected static class MapOfSize<K, V> implements ArgumentMatcher<Map<K, V>> {
         private final int expectedSize;
 
         public MapOfSize(int expectedSize) {
@@ -273,7 +273,7 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static Map mapOfSize(int expectedSize) {
-        return argThat(new MapOfSize(expectedSize));
+    protected static <K, V> Map<K, V> mapOfSize(int expectedSize) {
+        return argThat(new MapOfSize<>(expectedSize));
     }
 }
