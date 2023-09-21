@@ -219,7 +219,17 @@ public abstract class ServiceTestBase {
     protected void setOperatorKeys(OperatorKey... operatorKeys) {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
         for (OperatorKey operatorKey : operatorKeys) {
-            when(operatorKeyProvider.getOperatorKey(operatorKey.getKey())).thenReturn(operatorKey);
+            when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
+        }
+    }
+
+    protected void setOperatorKeys(Map<String, OperatorKey> operatorKeys) {
+        when(operatorKeyProvider.getAll()).thenReturn(operatorKeys.values());
+        for (Map.Entry<String, OperatorKey> entry : operatorKeys.entrySet()) {
+            String plaintextKey = entry.getKey();
+            OperatorKey operatorKey = entry.getValue();
+
+            when(operatorKeyProvider.getOperatorKey(plaintextKey)).thenReturn(operatorKey);
             when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
         }
     }

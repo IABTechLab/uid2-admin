@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SearchService;
@@ -9,6 +10,7 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
+import com.uid2.shared.util.Mapper;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -22,10 +24,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mock;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,7 +36,9 @@ import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SearchServiceTest extends ServiceTestBase {
-    private final static String searchUrl = "api/search";
+    private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
+
+    private final String searchUrl = "api/search";
 
     @Override
     protected IService createService() {
@@ -87,7 +91,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @MethodSource("searchByClientKeyNotFound")
-    void searchByClientKeyNotFound(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+    void searchByClientKeyNotFound(ClientKey[] clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
@@ -96,7 +100,6 @@ public class SearchServiceTest extends ServiceTestBase {
 
         post(vertx, searchUrl, searchString, response -> {
             try {
-
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
@@ -116,6 +119,17 @@ public class SearchServiceTest extends ServiceTestBase {
                 testContext.failNow(ex);
             }
         });
+    }
+
+    private static Stream<Arguments> searchByClientKeyNotFound() {
+        ClientKey[] clientKeys = getClientKeys();
+        Map<String, OperatorKey> operatorKeys = getOperatorKeys();
+        AdminUser[] adminUsers = getAdminUsers();
+        String key = clientKeys[1].getKey();
+        return Stream.of(
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.toLowerCase()),
+                Arguments.of(clientKeys, operatorKeys, adminUsers, key.toUpperCase())
+        );
     }
 
     @Test
@@ -173,21 +187,23 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchOperatorKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        OperatorKey[] operatorKeys = getOperatorKeys();
+        Map<String, OperatorKey> operatorKeys = getOperatorKeys();
 
         setOperatorKeys(operatorKeys);
-        post(vertx, searchUrl, "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=", response -> {
+        String expectedPlaintextOperatorKey = "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=";
+        OperatorKey expectedOperatorKey = operatorKeys.get(expectedPlaintextOperatorKey);
+        post(vertx, searchUrl, expectedPlaintextOperatorKey, response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("OperatorKeys");
-                JsonObject operatorKey = foundKeys.getJsonObject(0);
+                OperatorKey operatorKey = OBJECT_MAPPER.readValue(foundKeys.getJsonObject(0).toString(), OperatorKey.class);
 
                 assertAll(
                         "searchOperatorKeyFindsKey",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundKeys.size()),
-                        () -> assertOperatorKey(operatorKeys[0], operatorKey)
+                        () -> assertEquals(expectedOperatorKey, operatorKey)
                 );
                 testContext.completeNow();
             } catch (Throwable t) {
@@ -199,21 +215,23 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchOperatorKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        OperatorKey[] operatorKeys = getOperatorKeys();
+        Map<String, OperatorKey> operatorKeys = getOperatorKeys();
 
         setOperatorKeys(operatorKeys);
-        post(vertx, searchUrl, operatorKeys[0].getKeyHash(), response -> {
+        String expectedPlaintextOperatorKey = "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=";
+        OperatorKey expectedOperatorKey = operatorKeys.get(expectedPlaintextOperatorKey);
+        post(vertx, searchUrl, expectedOperatorKey.getKeyHash(), response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("OperatorKeys");
-                JsonObject operatorKey = foundKeys.getJsonObject(0);
+                OperatorKey operatorKey = OBJECT_MAPPER.readValue(foundKeys.getJsonObject(0).toString(), OperatorKey.class);
 
                 assertAll(
                         "searchOperatorKeyByHashFindsKey",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundKeys.size()),
-                        () -> assertOperatorKey(operatorKeys[0], operatorKey)
+                        () -> assertEquals(expectedOperatorKey, operatorKey)
                 );
                 testContext.completeNow();
             } catch (Throwable t) {
@@ -274,20 +292,9 @@ public class SearchServiceTest extends ServiceTestBase {
         });
     }
 
-    private static Stream<Arguments> searchByClientKeyNotFound() {
-        ClientKey[] clientKeys = getClientKeys();
-        OperatorKey[] operatorKeys = getOperatorKeys();
-        AdminUser[] adminUsers = getAdminUsers();
-        String key = clientKeys[1].getKey();
-        return Stream.of(
-                Arguments.of(clientKeys, operatorKeys, adminUsers, key.toLowerCase()),
-                Arguments.of(clientKeys, operatorKeys, adminUsers, key.toUpperCase())
-        );
-    }
-
     @ParameterizedTest
     @MethodSource("searchByClientSecretSuccess")
-    void searchByClientSecretSuccess(ClientKey[] clientKeys, OperatorKey[] operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+    void searchByClientSecretSuccess(ClientKey[] clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
@@ -316,7 +323,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     private static Stream<Arguments> searchByClientSecretSuccess() {
         ClientKey[] clientKeys = getClientKeys();
-        OperatorKey[] operatorKeys = getOperatorKeys();
+        Map<String, OperatorKey> operatorKeys = getOperatorKeys();
         AdminUser[] adminUsers = getAdminUsers();
 
         String secret = clientKeys[1].getSecret();
@@ -378,18 +385,22 @@ public class SearchServiceTest extends ServiceTestBase {
         return new ClientKey(key, keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3);
     }
 
-    private static OperatorKey[] getOperatorKeys() {
-        OperatorKey[] operatorKeys = {
-                createOperatorKey("UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE="),
-                createOperatorKey("OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA="),
-                createOperatorKey("UID2-O-L-123-Xt/ght.6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=")
-        };
-        return operatorKeys;
+    private static Map<String, OperatorKey> getOperatorKeys() {
+        List<String> plaintextOperatorKeys = List.of(
+                "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
+                "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
+                "UID2-O-L-123-Xt/ght.6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk="
+        );
+        return plaintextOperatorKeys.stream()
+                .collect(Collectors.toMap(
+                        k -> k,
+                        SearchServiceTest::createOperatorKey
+                ));
     }
 
     private static OperatorKey createOperatorKey(String key) {
         KeyHashResult keyHashResult = hashKeys(key);
-        return new OperatorKey(key, keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", "protocol", Instant.now().toEpochMilli(), false);
+        return new OperatorKey(keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", "protocol", Instant.now().getEpochSecond(), false);
     }
 
     private static AdminUser[] getAdminUsers() {
@@ -411,19 +422,6 @@ public class SearchServiceTest extends ServiceTestBase {
         assertEquals(expected.getName(), actual.getString("name"));
         assertEquals(expected.getContact(), actual.getString("contact"));
         assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
-        assertEquals(expected.getKeyHash(), actual.getString("key_hash"));
-        assertEquals(expected.getKeySalt(), actual.getString("key_salt"));
-
-        assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
-    }
-
-    private static void assertOperatorKey(OperatorKey expected, JsonObject actual) {
-        assertEquals(expected.getKey(), actual.getString("key"));
-        assertEquals(expected.getName(), actual.getString("name"));
-        assertEquals(expected.getContact(), actual.getString("contact"));
-        assertEquals(expected.getProtocol(), actual.getString("protocol"));
-        assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
-        assertEquals(expected.getOperatorType().toString(), actual.getString("operator_type"));
         assertEquals(expected.getKeyHash(), actual.getString("key_hash"));
         assertEquals(expected.getKeySalt(), actual.getString("key_salt"));
 
