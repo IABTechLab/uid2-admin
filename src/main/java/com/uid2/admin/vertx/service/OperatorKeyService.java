@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.RevealedKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -239,7 +240,7 @@ public class OperatorKeyService implements IService {
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(key, khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType);
 
             // add client to the array
             operators.add(newOperator);
@@ -248,7 +249,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // respond with new key
-            rc.response().end(JSON_WRITER.writeValueAsString(newOperator));
+            rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
         } catch (Exception e) {
             rc.fail(500, e);
         }
