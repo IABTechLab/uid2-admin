@@ -8,7 +8,7 @@ import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.utils.ObjectMapperFactory;
+import com.uid2.shared.utils.Mapper;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpResponse;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 
 public class ClientKeyServiceTest extends ServiceTestBase {
     private static final Instant NOW = Instant.now();
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.build();
+    private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
     private static final String KEY_PREFIX = "UID2-C-L-";
     private static final String EXPECTED_CLIENT_KEY = KEY_PREFIX + "5-abcdef.abcdefabcdefabcdef";
     private static final String EXPECTED_CLIENT_KEY_HASH = "abcdefabcdefabcdefabcdef";

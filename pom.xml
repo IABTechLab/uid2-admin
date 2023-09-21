@@ -19,19 +19,19 @@
         <uid2-shared.version>5.10.0-SNAPSHOT</uid2-shared.version>
         <image.version>${project.version}</image.version>
     </properties>
-      <repositories>
+    <repositories>
         <repository>
-          <id>maven-snapshots</id>
-          <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-          <layout>default</layout>
+            <id>maven-snapshots</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <layout>default</layout>
             <releases>
-              <enabled>false</enabled>
+                <enabled>false</enabled>
             </releases>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
-      </repositories>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>

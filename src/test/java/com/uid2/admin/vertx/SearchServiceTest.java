@@ -10,7 +10,7 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.secret.SecureKeyGenerator;
-import com.uid2.shared.utils.ObjectMapperFactory;
+import com.uid2.shared.utils.Mapper;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SearchServiceTest extends ServiceTestBase {
     private static final Instant NOW = Instant.now();
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.build();
+    private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
     private static final SecureKeyGenerator SECURE_KEY_GENERATOR = new SecureKeyGenerator();
     private static final String SEARCH_URL = "api/search";
 

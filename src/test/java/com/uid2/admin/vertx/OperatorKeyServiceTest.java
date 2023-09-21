@@ -10,7 +10,7 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.utils.ObjectMapperFactory;
+import com.uid2.shared.utils.Mapper;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpResponse;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 
 public class OperatorKeyServiceTest extends ServiceTestBase {
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.build();
+    private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
     private static final String KEY_PREFIX = "UID2-O-L-";
     private static final String EXPECTED_OPERATOR_KEY_HASH = "abcdefabcdefabcdefabcdef";
     private static final String EXPECTED_OPERATOR_KEY_SALT = "ghijklghijklghijklghijkl";

@@ -8,7 +8,7 @@ import com.uid2.shared.auth.AuthorizableStore;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.utils.ObjectMapperFactory;
+import com.uid2.shared.utils.Mapper;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AdminUserProvider implements IAdminUserProvider, IMetadataVersionedStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminUserProvider.class);
     public static final String ADMINS_METADATA_PATH = "admins_metadata_path";
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.build();
+    private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
 
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage contentStreamProvider;
