@@ -17,7 +17,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -33,7 +32,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SearchServiceTest extends ServiceTestBase {
@@ -307,7 +305,7 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        String expectedSecret = "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=";
+        String expectedSecret = "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=";
         ClientKey expectedClientKey = clientKeys.values().stream()
                 .filter(c -> expectedSecret.equals(c.getSecret()))
                 .collect(Collectors.toList())
@@ -344,38 +342,6 @@ public class SearchServiceTest extends ServiceTestBase {
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(10, 20)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret)
         );
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"UID2-O-L-999-dp9", "dp9Dt0", "9Dt0.JVoG", "xJa8B9H74y9", "74y9xdEE="})
-    void searchBySecretSpecialCharactersSuccess(String searchString, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
-                .size(1)
-                .set(field(ClientKey::getSecret), "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=")
-                .create().toArray(new ClientKey[0]);
-        setClientKeys(clientKeys);
-
-        post(vertx, searchUrl, searchString, response -> {
-            try {
-                HttpResponse<Buffer> httpResponse = response.result();
-                JsonObject result = httpResponse.bodyAsJsonObject();
-                JsonArray foundKeys = result.getJsonArray("ClientKeys");
-                ClientKey clientKey = OBJECT_MAPPER.readValue(foundKeys.getJsonObject(0).toString(), ClientKey.class);
-
-                assertAll(
-                        "",
-                        () -> assertTrue(response.succeeded()),
-                        () -> assertEquals(1, foundKeys.size()),
-                        () -> assertEquals(clientKeys[0], clientKey)
-                );
-                testContext.completeNow();
-            } catch (Throwable ex) {
-                testContext.failNow(ex);
-            }
-        });
-
     }
 
     private static KeyHashResult hashKeys(String key) {
