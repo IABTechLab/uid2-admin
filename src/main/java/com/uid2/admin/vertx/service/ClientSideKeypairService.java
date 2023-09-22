@@ -157,6 +157,10 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 .end(json.encode());
     }
 
+    public Iterable<ClientSideKeypair> getKeypairsBySite(int siteId) {
+        return this.keypairStore.getSnapshot().getSiteKeypairs(siteId);
+    }
+
     private void handleListAllKeypairs(RoutingContext rc) {
         final JsonArray ja = new JsonArray();
         this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJsonWithoutPrivateKey(k)));
