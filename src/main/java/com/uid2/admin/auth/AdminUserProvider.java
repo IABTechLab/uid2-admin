@@ -75,6 +75,10 @@ public class AdminUserProvider implements IAdminUserProvider, IMetadataVersioned
         return adminUsers.size();
     }
 
+    public AdminUser getAdminUserFromHash(String hash) {
+        return this.adminUserStore.getAuthorizableByHash(hash);
+    }
+
     @Override
     public AdminUser getAdminUser(String token) {
         return adminUserStore.getAuthorizableByKey(token);

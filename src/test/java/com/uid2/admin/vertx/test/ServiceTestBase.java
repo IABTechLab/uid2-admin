@@ -19,7 +19,6 @@ import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
-import com.uid2.shared.store.IKeysetKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
 import io.vertx.core.AsyncResult;
@@ -168,6 +167,10 @@ public abstract class ServiceTestBase {
 
     protected void setClientKeys(ClientKey... clientKeys) {
         when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
+        for (ClientKey clientKey : clientKeys) {
+            when(clientKeyProvider.getClientKey(clientKey.getKey())).thenReturn(clientKey);
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+        }
     }
 
 
@@ -215,10 +218,18 @@ public abstract class ServiceTestBase {
 
     protected void setOperatorKeys(OperatorKey... operatorKeys) {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
+        for (OperatorKey operatorKey : operatorKeys) {
+            when(operatorKeyProvider.getOperatorKey(operatorKey.getKey())).thenReturn(operatorKey);
+            when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
+        }
     }
 
     protected void setAdminUsers(AdminUser... adminUsers) {
         when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
+        for (AdminUser adminUser : adminUsers) {
+            when(adminUserProvider.getAdminUser(adminUser.getKey())).thenReturn(adminUser);
+            when(adminUserProvider.getAdminUserFromHash(adminUser.getKeyHash())).thenReturn(adminUser);
+        }
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
