@@ -29,9 +29,6 @@ public class SiteIdRouter implements IRouteProvider {
     interface ISiteIdRouteHandler {
         void handle(RoutingContext rc, int siteId);
     }
-    private Handler<RoutingContext> checkAuth(Handler<RoutingContext> handler, Role... roles) {
-        return auth.handle(handler, roles);
-    }
     private Handler<RoutingContext> provideSiteId(ISiteIdRouteHandler handler) {
         return (RoutingContext rc) -> {
             val siteId = Integer.parseInt(rc.pathParam("siteId"));
@@ -41,7 +38,7 @@ public class SiteIdRouter implements IRouteProvider {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/sites/:siteId/client-side-keys").handler(checkAuth(provideSiteId(this::handleGetClientSideKeys), Role.ADMINISTRATOR));
+        router.get("/sites/:siteId/client-side-keys").handler(auth.handle(provideSiteId(this::handleGetClientSideKeys), Role.ADMINISTRATOR));
     }
 
 
