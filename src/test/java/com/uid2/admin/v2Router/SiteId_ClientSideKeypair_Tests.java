@@ -7,6 +7,7 @@ import com.uid2.admin.vertx.api.ClientSideKeypairResponse;
 import com.uid2.admin.vertx.api.SiteIdRouter;
 import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
+import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientSideKeypair;
 import io.vertx.ext.web.RoutingContext;
 import lombok.val;
@@ -31,6 +32,8 @@ public class SiteId_ClientSideKeypair_Tests {
     private ClientSideKeypairService clientSideKeypairMock;
     @Mock
     private RoutingContext contextMock;
+    @Mock
+    private AuthMiddleware authMock;
     ClientSideKeypair createKeypairMock(int siteId, String publicKey) {
         val kpMock = mock(ClientSideKeypair.class);
         when(kpMock.getSiteId()).thenReturn(siteId);
@@ -56,7 +59,7 @@ public class SiteId_ClientSideKeypair_Tests {
         val injector = Guice.createInjector(
                 new RequireInjectAnnotationsModule(),
                 new V2RouterModule(),
-                new GuiceMockInjectingModule(clientSideKeypairMock)
+                new GuiceMockInjectingModule(clientSideKeypairMock, authMock)
         );
         val service = injector.getInstance(SiteIdRouter.class);
 

@@ -7,6 +7,7 @@ import com.uid2.admin.RequireInjectAnnotationsModule;
 import com.uid2.admin.vertx.api.SiteIdRouter;
 import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
+import com.uid2.shared.middleware.AuthMiddleware;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 
@@ -27,11 +28,12 @@ public class RouterConfigurationTests {
     @Test
     public void IfNeededDependenciesAreAvailable_ARouterModuleCanBeCreated() throws InvalidClassException {
         val keypairServiceMock = mock(ClientSideKeypairService.class);
+        val authMock = mock(AuthMiddleware.class);
 
         val injector = Guice.createInjector(
                 new RequireInjectAnnotationsModule(),
                 new V2RouterModule(),
-                new GuiceMockInjectingModule(keypairServiceMock)
+                new GuiceMockInjectingModule(keypairServiceMock, authMock)
         );
         val siteIdRouter = injector.getInstance(SiteIdRouter.class);
         assertNotNull(siteIdRouter);
