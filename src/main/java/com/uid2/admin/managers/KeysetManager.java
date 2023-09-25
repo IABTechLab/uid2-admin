@@ -87,12 +87,15 @@ public class KeysetManager {
                 adminKeyset.getCreated(), adminKeyset.isEnabled(), adminKeyset.isDefault());
     }
 
-    public AdminKeyset createKeysetForClientSideKeypair(ClientSideKeypair keypair) throws Exception {
+    /**
+     * Creates a keyset for the specified site, if none exists.
+     */
+    public AdminKeyset createKeysetForSite(int siteId) throws Exception {
         if (!enableKeysets) return null;
-        Optional<AdminKeyset> keyset = getAdminKeysetBySiteId(keypair.getSiteId());
+        Optional<AdminKeyset> keyset = getAdminKeysetBySiteId(siteId);
         if (keyset.isPresent()) return keyset.get();
 
-        return createAndAddDefaultKeyset(keypair.getSiteId());
+        return createAndAddDefaultKeyset(siteId);
     }
 
     public AdminKeyset createKeysetForClient(ClientKey client) throws Exception{

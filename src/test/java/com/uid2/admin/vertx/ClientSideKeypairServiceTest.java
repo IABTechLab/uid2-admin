@@ -242,13 +242,13 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         jo.put("contact", "email@email.com");
 
         post(vertx, "api/client_side_keypairs/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
-            final ArgumentCaptor<ClientSideKeypair> keypair = ArgumentCaptor.forClass(ClientSideKeypair.class);
+            final ArgumentCaptor<Integer> siteId = ArgumentCaptor.forClass(Integer.class);
             try {
-                verify(this.keysetManager).createKeysetForClientSideKeypair(keypair.capture());
+                verify(this.keysetManager).createKeysetForSite(siteId.capture());
             } catch (Exception e) {
                 fail(e);
             }
-            assertEquals(123, keypair.getValue().getSiteId());
+            assertEquals(123, siteId.getValue());
             assertEquals(200, response.statusCode());
             JsonObject resp = response.bodyAsJsonObject();
             assertEquals(123, resp.getInteger("site_id"));

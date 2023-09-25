@@ -104,7 +104,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         }
 
         try {
-            this.keysetManager.createKeysetForClientSideKeypair(newKeypair);
+            this.keysetManager.createKeysetForSite(siteId);
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "failed to create keyset", e);
             return;
