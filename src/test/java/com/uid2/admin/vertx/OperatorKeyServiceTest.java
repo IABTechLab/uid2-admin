@@ -58,7 +58,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorAdd",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
                         () -> assertNotNull(revealedOperator.getPlaintextKey()),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
@@ -85,7 +85,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorAddUsesConfigPrefix",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
                         () -> assertNotNull(revealedOperator.getPlaintextKey()),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
@@ -115,7 +115,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorKeyAddEmptyRole",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
                         () -> assertNotNull(revealedOperator.getPlaintextKey()),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
@@ -139,7 +139,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorKeyAddWithoutRole",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
                         () -> assertNotNull(revealedOperator.getPlaintextKey()),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
@@ -190,7 +190,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorUpdate",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, operatorKey),
+                        () -> assertEquals(expectedOperator, operatorKey),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
                 fail(ex);
@@ -224,7 +224,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorFlipPublicOperatorStatusViaUpdate",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, operatorKey),
+                        () -> assertEquals(expectedOperator, operatorKey),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
                 fail(ex);
@@ -250,7 +250,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorKeySetRole",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertOperatorKeyEquals(expectedOperator, operatorKey),
+                        () -> assertEquals(expectedOperator, operatorKey),
                         () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             } catch (Exception ex) {
                 fail(ex);
@@ -301,7 +301,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         post(vertx, "api/operator/roles?name=test_operator", "", expectHttpError(testContext, 400));
     }
 
-    private static void assertOperatorKeyEquals(OperatorKey expected, OperatorKey actual) {
+    private static void assertAddedOperatorKeyEquals(OperatorKey expected, OperatorKey actual) {
         assertThat(actual)
                 .usingRecursiveComparison()
                 .ignoringFields("created")

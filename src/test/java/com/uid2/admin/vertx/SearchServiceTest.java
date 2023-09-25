@@ -17,7 +17,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -26,13 +25,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SearchServiceTest extends ServiceTestBase {
@@ -91,7 +90,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @MethodSource("searchByClientKeyNotFound")
-    void searchByClientKeyNotFound(ClientKey[] clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+    void searchByClientKeyNotFound(Map<String, ClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
@@ -122,10 +121,11 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static Stream<Arguments> searchByClientKeyNotFound() {
-        ClientKey[] clientKeys = getClientKeys();
+        Map<String, ClientKey> clientKeys = getClientKeys();
         Map<String, OperatorKey> operatorKeys = getOperatorKeys();
         AdminUser[] adminUsers = getAdminUsers();
-        String key = clientKeys[1].getKey();
+
+        String key = new ArrayList<>(clientKeys.keySet()).get(1);
         return Stream.of(
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.toLowerCase()),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, key.toUpperCase())
@@ -135,21 +135,23 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        ClientKey[] clientKeys = getClientKeys();
+        Map<String, ClientKey> clientKeys = getClientKeys();
 
         setClientKeys(clientKeys);
-        post(vertx, searchUrl, "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", response -> {
+        String expectedPlaintextClientKey = "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=";
+        ClientKey expectedClientKey = clientKeys.get(expectedPlaintextClientKey);
+        post(vertx, searchUrl, expectedPlaintextClientKey, response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
-                JsonObject client = foundKeys.getJsonObject(0);
+                ClientKey clientKey = OBJECT_MAPPER.readValue(foundKeys.getJsonObject(0).toString(), ClientKey.class);
 
                 assertAll(
                         "searchClientKeyFindsKey",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundKeys.size()),
-                        () -> assertClientKey(clientKeys[0], client)
+                        () -> assertEquals(expectedClientKey, clientKey)
                 );
                 testContext.completeNow();
             } catch (Throwable t) {
@@ -161,21 +163,23 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchClientKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        ClientKey[] clientKeys = getClientKeys();
+        Map<String, ClientKey> clientKeys = getClientKeys();
 
         setClientKeys(clientKeys);
-        post(vertx, searchUrl, clientKeys[0].getKeyHash(), response -> {
+        String expectedPlaintextClientKey = "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=";
+        ClientKey expectedClientKey = clientKeys.get(expectedPlaintextClientKey);
+        post(vertx, searchUrl, expectedClientKey.getKeyHash(), response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
-                JsonObject client = foundKeys.getJsonObject(0);
+                ClientKey clientKey = OBJECT_MAPPER.readValue(foundKeys.getJsonObject(0).toString(), ClientKey.class);
 
                 assertAll(
                         "searchClientKeyByHashFindsKey",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundKeys.size()),
-                        () -> assertClientKey(clientKeys[0], client)
+                        () -> assertEquals(expectedClientKey, clientKey)
                 );
                 testContext.completeNow();
             } catch (Throwable t) {
@@ -294,25 +298,30 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @MethodSource("searchByClientSecretSuccess")
-    void searchByClientSecretSuccess(ClientKey[] clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+    void searchByClientSecretSuccess(Map<String, ClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
+        String expectedSecret = "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=";
+        ClientKey expectedClientKey = clientKeys.values().stream()
+                .filter(c -> expectedSecret.equals(c.getSecret()))
+                .collect(Collectors.toList())
+                .get(0);
         post(vertx, searchUrl, searchString, response -> {
             try {
                 HttpResponse<Buffer> httpResponse = response.result();
                 JsonObject result = httpResponse.bodyAsJsonObject();
                 JsonArray foundKeys = result.getJsonArray("ClientKeys");
-                JsonObject client = foundKeys.getJsonObject(0);
+                ClientKey clientKey = OBJECT_MAPPER.readValue(foundKeys.getJsonObject(0).toString(), ClientKey.class);
 
                 assertAll(
                         "searchByClientSecretSuccess",
                         () -> assertTrue(response.succeeded()),
                         () -> assertEquals(1, foundKeys.size()),
-                        () -> assertClientKey(clientKeys[1], client)
+                        () -> assertEquals(expectedClientKey, clientKey)
                 );
                 testContext.completeNow();
             } catch (Throwable ex) {
@@ -322,11 +331,11 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static Stream<Arguments> searchByClientSecretSuccess() {
-        ClientKey[] clientKeys = getClientKeys();
+        Map<String, ClientKey> clientKeys = getClientKeys();
         Map<String, OperatorKey> operatorKeys = getOperatorKeys();
         AdminUser[] adminUsers = getAdminUsers();
 
-        String secret = clientKeys[1].getSecret();
+        String secret = new ArrayList<>(clientKeys.values()).get(1).getSecret();
         return Stream.of(
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(0, 8)),
                 Arguments.of(clientKeys, operatorKeys, adminUsers, secret.substring(secret.length() - 8)),
@@ -335,54 +344,27 @@ public class SearchServiceTest extends ServiceTestBase {
         );
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"UID2-O-L-999-dp9", "dp9Dt0", "9Dt0.JVoG", "xJa8B9H74y9", "74y9xdEE="})
-    void searchBySecrectSpecialCharactersSuccess(String searchString, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        ClientKey[] clientKeys = Instancio.ofList(ClientKey.class)
-                .size(1)
-                .set(field(ClientKey::getSecret), "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=")
-                .create().toArray(new ClientKey[0]);
-        setClientKeys(clientKeys);
-
-        post(vertx, searchUrl, searchString, response -> {
-            try {
-                HttpResponse<Buffer> httpResponse = response.result();
-                JsonObject result = httpResponse.bodyAsJsonObject();
-                JsonArray foundKeys = result.getJsonArray("ClientKeys");
-                JsonObject clientKey = foundKeys.getJsonObject(0);
-
-                assertAll(
-                        "",
-                        () -> assertTrue(response.succeeded()),
-                        () -> assertEquals(1, foundKeys.size()),
-                        () -> assertClientKey(clientKeys[0], clientKey)
-                );
-                testContext.completeNow();
-            } catch (Throwable ex) {
-                testContext.failNow(ex);
-            }
-        });
-
-    }
-
     private static KeyHashResult hashKeys(String key) {
         KeyHasher keyHasher = new KeyHasher();
         return keyHasher.hashKey(key);
     }
 
-    private static ClientKey[] getClientKeys() {
-        ClientKey[] clientKeys = {
-                createClientKey("UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk="),
-                createClientKey("LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM="),
-                createClientKey("UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=", "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=")};
-        return clientKeys;
+    private static Map<String, ClientKey> getClientKeys() {
+        Map<String, String> plaintextClientKeyAndSecretMap = Map.of(
+                "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=",
+                "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=",
+                "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=", "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ="
+        );
+        return plaintextClientKeyAndSecretMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> createClientKey(entry.getKey(), entry.getValue())
+                ));
     }
 
     private static ClientKey createClientKey(String key, String secret) {
         KeyHashResult keyHashResult = hashKeys(key);
-        return new ClientKey(key, keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3);
+        return new ClientKey(keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3);
     }
 
     private static Map<String, OperatorKey> getOperatorKeys() {
@@ -414,18 +396,6 @@ public class SearchServiceTest extends ServiceTestBase {
     private static AdminUser createAdminUser(String key) {
         KeyHashResult keyHashResult = hashKeys(key);
         return new AdminUser(key, keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", Instant.now().toEpochMilli(), Set.of(), false);
-    }
-
-    private static void assertClientKey(ClientKey expected, JsonObject actual) {
-        assertEquals(expected.getKey(), actual.getString("key"));
-        assertEquals(expected.getSecret(), actual.getString("secret"));
-        assertEquals(expected.getName(), actual.getString("name"));
-        assertEquals(expected.getContact(), actual.getString("contact"));
-        assertEquals(expected.getSiteId(), actual.getInteger("site_id"));
-        assertEquals(expected.getKeyHash(), actual.getString("key_hash"));
-        assertEquals(expected.getKeySalt(), actual.getString("key_salt"));
-
-        assertRoles(expected.getRoles(), actual.getJsonArray("roles"));
     }
 
     private static void assertAdminUser(AdminUser expected, JsonObject actual) {

@@ -168,11 +168,20 @@ public abstract class ServiceTestBase {
     protected void setClientKeys(ClientKey... clientKeys) {
         when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
         for (ClientKey clientKey : clientKeys) {
-            when(clientKeyProvider.getClientKey(clientKey.getKey())).thenReturn(clientKey);
             when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
         }
     }
 
+    protected void setClientKeys(Map<String, ClientKey> clientKeys) {
+        when(clientKeyProvider.getAll()).thenReturn(clientKeys.values());
+        for (Map.Entry<String, ClientKey> entry : clientKeys.entrySet()) {
+            String plaintextKey = entry.getKey();
+            ClientKey clientKey = entry.getValue();
+
+            when(clientKeyProvider.getClientKey(plaintextKey)).thenReturn(clientKey);
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+        }
+    }
 
     protected void setEncryptionKeys(int maxKeyId, EncryptionKey... keys) throws Exception {
         JsonObject metadata = new JsonObject();

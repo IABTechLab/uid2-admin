@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -223,11 +224,18 @@ public class ClientKeyService implements IService {
 
             // add new client to array
             Instant created = Instant.now();
-            ClientKey newClient = new ClientKey(key, khr.getHash(), khr.getSalt(), secret, created)
-                    .withNameAndContact(name)
-                    .withSiteId(site.getId())
-                    .withRoles(roles)
-                    .withServiceId(serviceId);
+            ClientKey newClient = new ClientKey(
+                    khr.getHash(),
+                    khr.getSalt(),
+                    secret,
+                    name,
+                    name,
+                    created.getEpochSecond(),
+                    roles,
+                    site.getId(),
+                    false,
+                    serviceId
+            );
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
                 return;
@@ -242,7 +250,7 @@ public class ClientKeyService implements IService {
             this.keysetManager.createKeysetForClient(newClient);
 
             // respond with new client created
-            rc.response().end(JSON_WRITER.writeValueAsString(newClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newClient, key)));
         } catch (Exception e) {
             rc.fail(500, e);
         }

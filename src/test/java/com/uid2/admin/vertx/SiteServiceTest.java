@@ -15,6 +15,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -123,10 +124,10 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(sites);
 
         ClientKey[] clientKeys = {
-                new ClientKey("ck1", "ckh1", "cks1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
-                new ClientKey("ck2", "ckh2", "cks2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
-                new ClientKey("ck3", "ckh3", "cks3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
-                new ClientKey("ck4", "ckh4", "cks4", "cs4").withSiteId(13).withRoles(Role.SHARER),
+                new ClientKey("ckh1", "cks1", "cs1", "c1", Instant.MIN, Set.of(Role.GENERATOR, Role.ID_READER), 11),
+                new ClientKey("ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12),
+                new ClientKey("ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11),
+                new ClientKey("ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13),
         };
         setClientKeys(clientKeys);
 
