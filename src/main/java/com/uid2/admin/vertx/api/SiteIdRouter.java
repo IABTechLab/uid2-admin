@@ -38,7 +38,7 @@ public class SiteIdRouter implements IRouteProvider {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/sites/:siteId/client-side-keys").handler(auth.handle(provideSiteId(this::handleGetClientSideKeys), Role.ADMINISTRATOR));
+        router.get("/sites/:siteId/client-side-keypairs").handler(auth.handle(provideSiteId(this::handleGetClientSideKeys), Role.ADMINISTRATOR));
     }
 
 
