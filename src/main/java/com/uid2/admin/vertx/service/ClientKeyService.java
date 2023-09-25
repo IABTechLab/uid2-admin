@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -249,7 +250,7 @@ public class ClientKeyService implements IService {
             this.keysetManager.createKeysetForClient(newClient);
 
             // respond with new client created
-            rc.response().end(JSON_WRITER.writeValueAsString(newClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newClient, key)));
         } catch (Exception e) {
             rc.fail(500, e);
         }

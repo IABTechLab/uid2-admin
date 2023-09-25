@@ -1,6 +1,8 @@
 package com.uid2.admin.vertx;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.service.ClientKeyService;
 import com.uid2.admin.vertx.service.IService;
@@ -91,15 +93,18 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
+        ClientKey expectedClient = new ClientBuilder().withServiceId(145).build();
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=5&service_id=145", "", ar -> {
-            HttpResponse<Buffer> response = ar.result();
-            ClientKey expected = new ClientBuilder().withServiceId(145).build();
             try {
+                HttpResponse<Buffer> response = ar.result();
+                RevealedKey<ClientKey> revealedClient = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
+
                 assertAll(
                         "clientAdd",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertAddedClientKeyEquals(expected, OBJECT_MAPPER.readValue(response.bodyAsString(), ClientKey.class)),
+                        () -> assertAddedClientKeyEquals(expectedClient, revealedClient.getAuthorizable()),
+                        () -> assertNotNull(revealedClient.getPlaintextKey()),
                         () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
                 );
             } catch (Exception ex) {
