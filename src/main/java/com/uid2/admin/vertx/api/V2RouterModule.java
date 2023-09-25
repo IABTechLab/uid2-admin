@@ -13,17 +13,10 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class V2RouterModule extends AbstractModule {
-    @Provides
-    @V2Mapper
-    @Singleton
-    static ObjectMapper provideMapper() {
-        return new ObjectMapper();
-    }
-
     /*
-     * Finds all classes in com.uid2.admin.vertx.api which implement IRouterProvider and register them.
-     * They are registered both as IRouterProvider and as their individual class.
-     */
+     Finds all classes in com.uid2.admin.vertx.api which implement IRouterProvider and register them.
+     They are registered both as IRouterProvider and as their individual class.
+    */
     @Override
     protected void configure() {
         try {

@@ -7,11 +7,11 @@ import lombok.val;
 import java.util.Arrays;
 
 /*
- * This is a temporary module which accepts an array of pre-created singleton services and makes them available as a module.
- * Over time, we would ideally move to letting the DI framework create the services as well - this temporary solution
- * is being used to support a strangler-pattern introduction of DI.
- */
-public class ServicesModule  extends AbstractModule {
+ This is a temporary module which accepts an array of pre-created singleton services and makes them available as a module.
+ Over time, we would ideally move to letting the DI framework create the services as well - this temporary solution
+ is being used to support a strangler-pattern introduction of DI.
+*/
+public class ServicesModule extends AbstractModule {
     private final IService[] services;
 
     public ServicesModule(IService[] services) {

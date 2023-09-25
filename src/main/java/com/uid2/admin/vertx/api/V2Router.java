@@ -18,7 +18,7 @@ public class V2Router {
         this.routerProviders = routerProviders;
     }
 
-    public Router createRouter(Vertx verticle) {
+    public void setupSubRouter(Vertx verticle, Router parentRouter) {
         val v2router = Router.router(verticle);
 
         for (IRouteProvider provider : routerProviders) {
@@ -26,6 +26,6 @@ public class V2Router {
             provider.setupRoutes(v2router);
         }
 
-        return v2router;
+        parentRouter.route("/v2api/*").subRouter(v2router);
     }
 }

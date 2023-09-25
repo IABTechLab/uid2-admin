@@ -83,9 +83,11 @@ public class AdminVerticle extends AbstractVerticle {
             service.setupRoutes(router);
         }
 
-        val v2routes = v2Router.createRouter(vertx);
-        // TODO: Make all API requests go via the auth handler
-        router.route("/v2api/*").subRouter(v2routes);
+        if (v2Router != null) {
+            v2Router.setupSubRouter(vertx, router);
+            // TODO: Make all API requests go via the auth handler
+
+        }
 
         return router;
     }
