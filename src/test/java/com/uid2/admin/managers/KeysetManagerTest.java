@@ -4,17 +4,15 @@ import com.google.common.collect.ImmutableMap;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.auth.AdminKeysetSnapshot;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.shared.auth.Role;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
-import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
@@ -24,10 +22,9 @@ import java.time.Instant;
 import java.util.*;
 
 import static com.uid2.admin.managers.KeysetManager.*;
-import static com.uid2.admin.managers.KeysetManager.createDefaultKeyset;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class KeysetManagerTest {
@@ -86,6 +83,50 @@ public class KeysetManagerTest {
         assertFalse(keyset1.equals(keysets.get(5)));
         assertTrue(keyset2.equals(keysets.get(5)));
         verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
+    }
+
+    @Nested
+    class createKeysetForSite {
+        @Test
+        public void createsKeysetWhenNoneExists() throws Exception {
+            setKeysets(new HashMap<>());
+
+            final KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+            final AdminKeyset keysetForSite = keysetManager.createKeysetForSite(1);
+
+            verify(keysetStoreWriter).upload(mapOfSize(1), isNull());
+
+            assertNotNull(keysetForSite);
+        }
+
+        @Test
+        public void doesNotCreateKeysetWhenOneExists() throws Exception {
+            final AdminKeyset keyset = KeysetManager.createDefaultKeyset(1, 1);
+            final HashMap<Integer, AdminKeyset> keysets = new HashMap<>();
+            keysets.put(1, keyset);
+
+            setKeysets(keysets);
+
+            final KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+            final AdminKeyset actual = keysetManager.createKeysetForSite(1);
+
+            verifyNoInteractions(keysetStoreWriter);
+
+            assertEquals(keyset, actual);
+        }
+
+        @Test
+        public void returnsNullWhenKeysetsAreNotEnabled() throws Exception {
+            final KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, false);
+
+            final AdminKeyset actual = keysetManager.createKeysetForSite(1);
+
+            verifyNoInteractions(keysetStoreWriter);
+
+            assertNull(actual);
+        }
     }
 
     @Test
