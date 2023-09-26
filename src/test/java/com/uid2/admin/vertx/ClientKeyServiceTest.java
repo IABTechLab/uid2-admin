@@ -3,6 +3,7 @@ package com.uid2.admin.vertx;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.RevealedKey;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.service.ClientKeyService;
 import com.uid2.admin.vertx.service.IService;
@@ -50,11 +51,12 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     public void clientRename(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientBuilder().build());
+        setClientKeys(new LegacyClientBuilder().build());
 
         post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
-            ClientKey expected = new ClientBuilder().withName("test_client1").build();
+            ClientKey expected = new LegacyClientBuilder().withName("test_client1").build().toClientKey();
+
             try {
                 assertAll(
                         "clientRename",
@@ -74,8 +76,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientRenameWithExistingName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(
-                new ClientBuilder().build(),
-                new ClientBuilder().withName("test_client1").build()
+                new LegacyClientBuilder().build(),
+                new LegacyClientBuilder().withName("test_client1").build()
         );
 
         post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
@@ -93,7 +95,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        ClientKey expectedClient = new ClientBuilder().withServiceId(145).build();
+        LegacyClientKey expectedClient = new LegacyClientBuilder().withServiceId(145).build();
         post(vertx, "api/client/add?name=test_client&roles=generator&site_id=5&service_id=145", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
@@ -103,7 +105,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                         "clientAdd",
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
-                        () -> assertAddedClientKeyEquals(expectedClient, revealedClient.getAuthorizable()),
+                        () -> assertAddedClientKeyEquals(expectedClient.toClientKey(), revealedClient.getAuthorizable()),
                         () -> assertNotNull(revealedClient.getPlaintextKey()),
                         () -> verify(legacyClientKeyStoreWriter).upload(collectionOfSize(1), isNull())
                 );
@@ -166,11 +168,11 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     public void clientUpdate(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientBuilder().withServiceId(165).build());
+        setClientKeys(new LegacyClientBuilder().withServiceId(165).build());
 
         post(vertx, "api/client/update?name=test_client&site_id=5&service_id=200", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
-            ClientKey expected = new ClientBuilder().withServiceId(200).build();
+            ClientKey expected = new LegacyClientBuilder().withServiceId(200).build().toClientKey();
             try {
                 assertAll(
                         "clientUpdate",
@@ -191,7 +193,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientUpdateCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(
-                new ClientBuilder()
+                new LegacyClientBuilder()
                         .withRoles(roles)
                         .withSiteId(4)
                         .withServiceId(145)
@@ -222,21 +224,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     public void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientBuilder().build());
+        setClientKeys(new LegacyClientBuilder().build());
         post(vertx, "api/client/update?name=test_client&site_id=4", "", expectHttpError(testContext, 404));
     }
 
     @Test
     public void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientBuilder().build());
+        setClientKeys(new LegacyClientBuilder().build());
         post(vertx, "api/client/update?name=test_client&site_id=1", "", expectHttpError(testContext, 400));
     }
 
     @Test
     public void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientBuilder().build());
+        setClientKeys(new LegacyClientBuilder().build());
         post(vertx, "api/client/update?name=test_client&site_id=2", "", expectHttpError(testContext, 400));
     }
 
@@ -244,7 +246,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     public void clientRolesCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        setClientKeys(new ClientBuilder().build());
+        setClientKeys(new LegacyClientBuilder().build());
 
         String endpoint = String.format("api/client/roles?name=test_client&roles=%s", RequestUtil.getRolesSpec(roles));
         post(vertx, endpoint, "", testContext.succeeding(response -> testContext.verify(() -> {
@@ -269,34 +271,35 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                 .isEqualTo(expected);
     }
 
-    private static class ClientBuilder {
+    private static class LegacyClientBuilder {
         private String name = "test_client";
         private int siteId = 5;
         private Set<Role> roles = Set.of(Role.GENERATOR);
         private int serviceId = 0;
 
-        public ClientBuilder withName(String name) {
+        public LegacyClientBuilder withName(String name) {
             this.name = name;
             return this;
         }
 
-        public ClientBuilder withSiteId(int siteId) {
+        public LegacyClientBuilder withSiteId(int siteId) {
             this.siteId = siteId;
             return this;
         }
 
-        public ClientBuilder withRoles(Set<Role> roles) {
+        public LegacyClientBuilder withRoles(Set<Role> roles) {
             this.roles = roles;
             return this;
         }
 
-        public ClientBuilder withServiceId(int serviceId) {
+        public LegacyClientBuilder withServiceId(int serviceId) {
             this.serviceId = serviceId;
             return this;
         }
 
-        public ClientKey build() {
-            return new ClientKey(
+        public LegacyClientKey build() {
+            return new LegacyClientKey(
+                    "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
                     EXPECTED_CLIENT_KEY_HASH,
                     EXPECTED_CLIENT_KEY_SALT,
                     "",

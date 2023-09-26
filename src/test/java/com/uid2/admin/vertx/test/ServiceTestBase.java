@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.*;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.secret.IEncryptionKeyManager;
@@ -169,10 +170,12 @@ public abstract class ServiceTestBase {
         when(siteProvider.getAllSites()).thenReturn(Arrays.asList(sites));
     }
 
-    protected void setClientKeys(ClientKey... clientKeys) {
-        when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
-        for (ClientKey clientKey : clientKeys) {
-            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+    protected void setClientKeys(LegacyClientKey... clientKeys) {
+        when(legacyClientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
+        when(clientKeyProvider.getAll()).thenReturn(Arrays.stream(clientKeys).map(LegacyClientKey::toClientKey).collect(Collectors.toList()));
+        for (LegacyClientKey clientKey : clientKeys) {
+            when(legacyClientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey.toClientKey());
         }
     }
 
