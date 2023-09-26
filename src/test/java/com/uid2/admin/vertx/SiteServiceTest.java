@@ -46,7 +46,8 @@ public class SiteServiceTest extends ServiceTestBase {
                 "checkSiteJson",
                 () -> assertEquals(expectedSite.getId(), actualSite.getInteger("id")),
                 () -> assertEquals(expectedSite.getName(), actualSite.getString("name")),
-                () -> assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled")));
+                () -> assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled")),
+                () -> assertEquals(expectedSite.getCreated(), actualSite.getLong("created")));
     }
 
     private void checkSiteResponse(Site expectedSite, JsonObject actualSite){
@@ -54,6 +55,7 @@ public class SiteServiceTest extends ServiceTestBase {
         assertEquals(expectedSite.getName(), actualSite.getString("name"));
         assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
         assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
+        assertEquals(expectedSite.getCreated(), actualSite.getLong("created"));
     }
 
     private void checkSiteResponseWithKeys(Object[] actualSites, int siteId, int nkeys, Role... roles) {
