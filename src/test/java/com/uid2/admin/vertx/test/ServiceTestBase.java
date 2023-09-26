@@ -1,6 +1,8 @@
 package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.*;
+import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -61,6 +63,7 @@ public abstract class ServiceTestBase {
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
     @Mock protected StoreWriter storeWriter;
     @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
+    @Mock protected LegacyClientKeyStoreWriter legacyClientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
     @Mock protected ClientSideKeypairStoreWriter keypairStoreWriter;
@@ -79,6 +82,7 @@ public abstract class ServiceTestBase {
     @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;
     @Mock protected RotatingClientKeyProvider clientKeyProvider;
+    @Mock protected RotatingLegacyClientKeyProvider legacyClientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
     @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;

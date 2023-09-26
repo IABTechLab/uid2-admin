@@ -39,7 +39,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     protected IService createService() {
         this.config.put("client_key_prefix", KEY_PREFIX);
         KeysetManager keysetManager = new KeysetManager(adminKeysetProvider, adminKeysetWriter, keysetKeyManager, true);
-        return new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher);
+        return new ClientKeyService(config, auth, writeLock, legacyClientKeyStoreWriter, legacyClientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher);
     }
 
     @BeforeEach
@@ -61,7 +61,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(expected, OBJECT_MAPPER.readValue(response.bodyAsString(), ClientKey.class)),
-                        () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
+                        () -> verify(legacyClientKeyStoreWriter).upload(collectionOfSize(1), isNull())
                 );
             } catch (Exception ex) {
                 fail(ex);
@@ -105,7 +105,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertAddedClientKeyEquals(expectedClient, revealedClient.getAuthorizable()),
                         () -> assertNotNull(revealedClient.getPlaintextKey()),
-                        () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
+                        () -> verify(legacyClientKeyStoreWriter).upload(collectionOfSize(1), isNull())
                 );
             } catch (Exception ex) {
                 fail(ex);
@@ -177,7 +177,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                         () -> assertTrue(ar.succeeded()),
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(expected, OBJECT_MAPPER.readValue(response.bodyAsString(), ClientKey.class)),
-                        () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
+                        () -> verify(legacyClientKeyStoreWriter).upload(collectionOfSize(1), isNull())
                 );
             } catch (Exception ex) {
                 fail(ex);
