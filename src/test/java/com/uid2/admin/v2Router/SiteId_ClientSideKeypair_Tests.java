@@ -3,8 +3,8 @@ package com.uid2.admin.v2Router;
 import com.google.inject.Guice;
 import com.uid2.admin.GuiceMockInjectingModule;
 import com.uid2.admin.RequireInjectAnnotationsModule;
-import com.uid2.admin.vertx.api.ClientSideKeypairResponse;
-import com.uid2.admin.vertx.api.SiteIdRouter;
+import com.uid2.admin.vertx.api.cstg.ClientSideKeypairResponse;
+import com.uid2.admin.vertx.api.cstg.GetClientSideKeypairsBySite;
 import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -61,7 +61,7 @@ public class SiteId_ClientSideKeypair_Tests {
                 new V2RouterModule(),
                 new GuiceMockInjectingModule(clientSideKeypairMock, authMock)
         );
-        val service = injector.getInstance(SiteIdRouter.class);
+        val service = injector.getInstance(GetClientSideKeypairsBySite.class);
 
         service.handleGetClientSideKeys(contextMock, siteIdToTest);
 

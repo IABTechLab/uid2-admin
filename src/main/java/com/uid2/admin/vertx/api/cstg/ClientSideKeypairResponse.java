@@ -1,4 +1,4 @@
-package com.uid2.admin.vertx.api;
+package com.uid2.admin.vertx.api.cstg;
 
 import com.uid2.shared.model.ClientSideKeypair;
 import lombok.AllArgsConstructor;

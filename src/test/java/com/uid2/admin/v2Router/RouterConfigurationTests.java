@@ -4,7 +4,7 @@ import com.google.inject.CreationException;
 import com.google.inject.Guice;
 import com.uid2.admin.GuiceMockInjectingModule;
 import com.uid2.admin.RequireInjectAnnotationsModule;
-import com.uid2.admin.vertx.api.SiteIdRouter;
+import com.uid2.admin.vertx.api.cstg.GetClientSideKeypairsBySite;
 import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
 import com.uid2.shared.middleware.AuthMiddleware;
@@ -21,7 +21,7 @@ public class RouterConfigurationTests {
     public void IfNeededDependencyIsNotProvided_CreateThrowsAnException() {
         assertThrows(CreationException.class, () -> {
             val injector = Guice.createInjector(new RequireInjectAnnotationsModule(), new V2RouterModule());
-            injector.getInstance(SiteIdRouter.class);
+            injector.getInstance(GetClientSideKeypairsBySite.class);
         });
     }
 
@@ -35,7 +35,7 @@ public class RouterConfigurationTests {
                 new V2RouterModule(),
                 new GuiceMockInjectingModule(keypairServiceMock, authMock)
         );
-        val siteIdRouter = injector.getInstance(SiteIdRouter.class);
+        val siteIdRouter = injector.getInstance(GetClientSideKeypairsBySite.class);
         assertNotNull(siteIdRouter);
     }
 }
