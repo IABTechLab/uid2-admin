@@ -7,6 +7,7 @@ import lombok.val;
 
 import java.io.InvalidClassException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.*;
 
@@ -28,6 +29,8 @@ public class GuiceMockInjectingModule extends AbstractModule {
         Arrays.stream(mocks).forEach(mock -> {
             System.out.println("Configuring mock for class " + mock.getClass().getName());
             bind((Class)mock.getClass()).toInstance(mock);
+            val interfaces = Arrays.stream(mock.getClass().getInterfaces()).filter(iface -> iface != IService.class);
+            interfaces.forEach(iface -> bind((Class)iface).toInstance(mock));
         });
     }
 }
