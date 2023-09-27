@@ -2,8 +2,8 @@ package com.uid2.admin.vertx.api.cstg;
 
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
+import com.uid2.admin.secret.IKeypairManager;
 import com.uid2.admin.vertx.ResponseUtil;
-import com.uid2.admin.vertx.api.IBlockingRouteProvider;
 import com.uid2.admin.vertx.api.IRouteProvider;
 import com.uid2.admin.vertx.api.UrlParameterProviders;
 import com.uid2.admin.vertx.api.annotations.ApiMethod;
@@ -21,12 +21,12 @@ import org.slf4j.LoggerFactory;
 public class GetClientSideKeypairsBySite implements IRouteProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(GetClientSideKeypairsBySite.class);
 
-    private final ClientSideKeypairService clientSideKeypairService;
+    private final IKeypairManager keypairManager;
 
 
     @Inject
-    public GetClientSideKeypairsBySite(ClientSideKeypairService clientSideKeypairService) {
-        this.clientSideKeypairService = clientSideKeypairService;
+    public GetClientSideKeypairsBySite(IKeypairManager keypairManager) {
+        this.keypairManager = keypairManager;
     }
 
     @Path("/sites/:siteId/client-side-keypairs")
@@ -37,7 +37,7 @@ public class GetClientSideKeypairsBySite implements IRouteProvider {
     }
 
     public void handleGetClientSideKeys(RoutingContext rc, int siteId) {
-        val keypairs = clientSideKeypairService.getKeypairsBySite(siteId);
+        val keypairs = keypairManager.getKeypairsBySite(siteId);
         if (keypairs != null) {
             val result = Streams.stream(keypairs)
                     .map(kp -> ClientSideKeypairResponse.fromClientSiteKeypair(kp))

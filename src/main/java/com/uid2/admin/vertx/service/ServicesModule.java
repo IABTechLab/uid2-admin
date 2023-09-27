@@ -20,10 +20,12 @@ public class ServicesModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        Multibinder<IService> interfaceBinder = Multibinder.newSetBinder(binder(), IService.class);
+        Multibinder<IService> serviceInterfaceBinder = Multibinder.newSetBinder(binder(), IService.class);
         Arrays.stream(services).forEach(s -> {
             bind((Class<IService>)s.getClass()).toInstance(s);
-            interfaceBinder.addBinding().toInstance(s);
+            serviceInterfaceBinder.addBinding().toInstance(s);
+            val interfaces = Arrays.stream(s.getClass().getInterfaces()).filter(i -> i != IService.class);
+            interfaces.forEach(i -> bind((Class)i).toInstance(s));
         });
     }
 }
