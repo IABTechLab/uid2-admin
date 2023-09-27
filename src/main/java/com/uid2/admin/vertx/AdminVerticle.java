@@ -85,8 +85,6 @@ public class AdminVerticle extends AbstractVerticle {
 
         if (v2Router != null) {
             v2Router.setupSubRouter(vertx, router);
-            // TODO: Make all API requests go via the auth handler
-
         }
 
         return router;
