@@ -29,6 +29,8 @@ IRouteProvider requires a `getHandler` method, which should return a valid handl
 
 All classes which implement IRouteProvider will automatically be picked up by DI and registered as route handlers. The route handler will automatically be wrapped by the Auth middleware based on the roles specified in the Roles annotation.
 
+Currently, we require the explicit `@Inject` annotation on all constructors which are valid for the DI framework to use. Your IRouteProvider implementation *must* have a constructor with the @Inject annotation. 
+
 ## Dependency injection - current state and plans
 
 We are in the process of introducing dependency injection to the code base. Currently, a number of singletons which are constructed explicitly are provided via `ServicesModule` (for `IService` classes) and the `SingletonsModule` (for other singletons - e.g. the Auth middleware).
