@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.uid2.shared.auth.IRoleAuthorizable;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.Roles;
-import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -47,19 +45,6 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     public static AdminUser unknown(String unknown) {
         return new AdminUser(unknown, unknown, unknown, unknown, unknown,
                 Instant.now().getEpochSecond(), Collections.emptySet(), false);
-    }
-
-    public static AdminUser valueOf(JsonObject json) {
-        return new AdminUser(
-                json.getString("key"),
-                json.getString("key_hash"),
-                json.getString("key_salt"),
-                json.getString("name"),
-                json.getString("contact"),
-                json.getLong("created"),
-                Roles.getRoles(Role.class, json),
-                json.getBoolean("disabled", false)
-        );
     }
 
     public String getKey() {

@@ -1,21 +1,22 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.RevealedKey;
+import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ISiteStore;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -25,10 +26,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
@@ -37,8 +35,8 @@ public class ClientKeyService implements IService {
 
     private final AuthMiddleware auth;
     private final WriteLock writeLock;
-    private final ClientKeyStoreWriter storeWriter;
-    private final RotatingClientKeyProvider clientKeyProvider;
+    private final LegacyClientKeyStoreWriter storeWriter;
+    private final RotatingLegacyClientKeyProvider clientKeyProvider;
     private final ISiteStore siteProvider;
     private final KeysetManager keysetManager;
     private final IKeyGenerator keyGenerator;
@@ -48,8 +46,8 @@ public class ClientKeyService implements IService {
     public ClientKeyService(JsonObject config,
                             AuthMiddleware auth,
                             WriteLock writeLock,
-                            ClientKeyStoreWriter storeWriter,
-                            RotatingClientKeyProvider clientKeyProvider,
+                            LegacyClientKeyStoreWriter storeWriter,
+                            RotatingLegacyClientKeyProvider clientKeyProvider,
                             ISiteStore siteProvider,
                             KeysetManager keysetManager,
                             IKeyGenerator keyGenerator,
@@ -62,7 +60,6 @@ public class ClientKeyService implements IService {
         this.keysetManager = keysetManager;
         this.keyGenerator = keyGenerator;
         this.keyHasher = keyHasher;
-
         this.clientKeyPrefix = config.getString("client_key_prefix");
     }
 
@@ -146,8 +143,8 @@ public class ClientKeyService implements IService {
     private void handleClientList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
-            Collection<ClientKey> collection = this.clientKeyProvider.getAll();
-            for (ClientKey c : collection) {
+            Collection<LegacyClientKey> collection = this.clientKeyProvider.getAll();
+            for (LegacyClientKey c : collection) {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
 
@@ -171,7 +168,7 @@ public class ClientKeyService implements IService {
     private void handleClientReveal(RoutingContext rc) {
         try {
             final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingClient.isEmpty()) {
@@ -181,7 +178,7 @@ public class ClientKeyService implements IService {
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(JSON_WRITER.writeValueAsString(existingClient.get()));
+                    .end(JSON_WRITER.writeValueAsString(existingClient.get().toClientKey()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -193,7 +190,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingClient.isPresent()) {
@@ -212,9 +209,7 @@ public class ClientKeyService implements IService {
 
             final int serviceId = this.getServiceId(rc);
 
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
+            List<LegacyClientKey> clients = getAllClientKeys();
 
             // create random key and secret
             String key = (this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "") + keyGenerator.generateFormattedKeyString(32);
@@ -223,11 +218,19 @@ public class ClientKeyService implements IService {
 
             // add new client to array
             Instant created = Instant.now();
-            ClientKey newClient = new ClientKey(key, khr.getHash(), khr.getSalt(), secret, created)
-                    .withNameAndContact(name)
-                    .withSiteId(site.getId())
-                    .withRoles(roles)
-                    .withServiceId(serviceId);
+            LegacyClientKey newClient = new LegacyClientKey(
+                    key,
+                    khr.getHash(),
+                    khr.getSalt(),
+                    secret,
+                    name,
+                    name,
+                    created.getEpochSecond(),
+                    roles,
+                    site.getId(),
+                    false,
+                    serviceId
+            );
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
                 return;
@@ -239,10 +242,10 @@ public class ClientKeyService implements IService {
             // upload to storage
             storeWriter.upload(clients, null);
 
-            this.keysetManager.createKeysetForClient(newClient);
+            this.keysetManager.createKeysetForClient(newClient.toClientKey());
 
             // respond with new client created
-            rc.response().end(JSON_WRITER.writeValueAsString(newClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newClient.toClientKey(), key)));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -254,7 +257,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingClient.isEmpty()) {
@@ -262,19 +265,19 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
+            List<LegacyClientKey> clients = this.clientKeyProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
 
             // delete client from the array
-            ClientKey c = existingClient.get();
+            LegacyClientKey c = existingClient.get();
             clients.remove(c);
 
             // upload to storage
             storeWriter.upload(clients, null);
 
             // respond with client deleted
-            rc.response().end(JSON_WRITER.writeValueAsString(c));
+            rc.response().end(JSON_WRITER.writeValueAsString(c.toClientKey()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -286,7 +289,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            final ClientKey existingClient = this.clientKeyProvider.getAll()
+            final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst().orElse(null);
             if (existingClient == null) {
@@ -303,17 +306,15 @@ public class ClientKeyService implements IService {
                     .withSiteId(site.getId())
                     .withServiceId(serviceId);
 
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
+            List<LegacyClientKey> clients = getAllClientKeys();
 
             // upload to storage
             storeWriter.upload(clients, null);
 
-            this.keysetManager.createKeysetForClient(existingClient);
+            this.keysetManager.createKeysetForClient(existingClient.toClientKey());
 
             // return the updated client
-            rc.response().end(JSON_WRITER.writeValueAsString(existingClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(existingClient.toClientKey()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -333,7 +334,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingClient.isEmpty()) {
@@ -341,11 +342,9 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
+            List<LegacyClientKey> clients = getAllClientKeys();
 
-            ClientKey c = existingClient.get();
+            LegacyClientKey c = existingClient.get();
             if (c.isDisabled() == disableFlag) {
                 ResponseUtil.error(rc, 400, "no change needed");
                 return;
@@ -375,7 +374,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(name))
                     .findFirst();
             if (existingClient.isEmpty()) {
@@ -389,20 +388,18 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
+            List<LegacyClientKey> clients = getAllClientKeys();
 
-            ClientKey c = existingClient.get();
+            LegacyClientKey c = existingClient.get();
             c.withRoles(roles);
 
             // upload to storage
             storeWriter.upload(clients, null);
 
-            this.keysetManager.createKeysetForClient(c);
+            this.keysetManager.createKeysetForClient(c.toClientKey());
 
             // return client with new key
-            rc.response().end(JSON_WRITER.writeValueAsString(c));
+            rc.response().end(JSON_WRITER.writeValueAsString(c.toClientKey()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -415,14 +412,14 @@ public class ClientKeyService implements IService {
 
             final String oldName = rc.queryParam("oldName").get(0);
             final String newName = rc.queryParam("newName").get(0);
-            final ClientKey existingClient = this.clientKeyProvider.getAll()
+            final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(oldName))
                     .findFirst().orElse(null);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;
             }
-            final ClientKey existingClientWithNewName = this.clientKeyProvider.getAll()
+            final LegacyClientKey existingClientWithNewName = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getName().equals(newName))
                     .findFirst().orElse(null);
             if (existingClientWithNewName != null) {
@@ -432,18 +429,22 @@ public class ClientKeyService implements IService {
 
             existingClient.withNameAndContact(newName);
 
-            List<ClientKey> clients = this.clientKeyProvider.getAll()
-                    .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
-                    .collect(Collectors.toList());
+            List<LegacyClientKey> clients = getAllClientKeys();
 
             // upload to storage
             storeWriter.upload(clients, null);
 
             // return the updated client
-            rc.response().end(JSON_WRITER.writeValueAsString(existingClient));
+            rc.response().end(JSON_WRITER.writeValueAsString(existingClient.toClientKey()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private List<LegacyClientKey> getAllClientKeys() {
+        return this.clientKeyProvider.getAll()
+                .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
+                .collect(Collectors.toList());
     }
 
     private int getServiceId(RoutingContext rc) {

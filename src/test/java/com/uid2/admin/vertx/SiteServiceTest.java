@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SiteService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -15,6 +16,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -124,11 +126,11 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(sites);
 
-        ClientKey[] clientKeys = {
-                new ClientKey("ck1", "ckh1", "cks1", "cs1").withSiteId(11).withRoles(Role.GENERATOR, Role.ID_READER),
-                new ClientKey("ck2", "ckh2", "cks2", "cs2").withSiteId(12).withRoles(Role.MAPPER),
-                new ClientKey("ck3", "ckh3", "cks3", "cs3").withSiteId(11).withRoles(Role.GENERATOR, Role.MAPPER),
-                new ClientKey("ck4", "ckh4", "cks4", "cs4").withSiteId(13).withRoles(Role.SHARER),
+        LegacyClientKey[] clientKeys = {
+                new LegacyClientKey("ck1", "ckh1", "cks1", "cs1", "c1", Instant.MIN, Set.of(Role.GENERATOR, Role.ID_READER), 11),
+                new LegacyClientKey("ck2", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12),
+                new LegacyClientKey("ck3", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11),
+                new LegacyClientKey("ck4", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13),
         };
         setClientKeys(clientKeys);
 
@@ -380,7 +382,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void setTypes(Vertx vertx, VertxTestContext testContext) {
-                fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
