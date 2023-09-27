@@ -7,11 +7,11 @@ import java.time.Instant;
 
 @AllArgsConstructor
 public class ClientSideKeypairResponse {
-    public int siteId;
-    public String subscriptionId;
-    public String publicKey;
-    public Instant created;
-    public boolean disabled;
+    public final int siteId;
+    public final String subscriptionId;
+    public final String publicKey;
+    public final Instant created;
+    public final boolean disabled;
 
     static ClientSideKeypairResponse fromClientSiteKeypair(ClientSideKeypair keypair) {
         return new ClientSideKeypairResponse(keypair.getSiteId(), keypair.getSubscriptionId(), keypair.encodePublicKeyToString(), keypair.getCreated(), keypair.isDisabled());
