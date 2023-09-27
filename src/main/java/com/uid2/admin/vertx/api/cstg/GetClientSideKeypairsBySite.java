@@ -3,6 +3,7 @@ package com.uid2.admin.vertx.api.cstg;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import com.uid2.admin.vertx.ResponseUtil;
+import com.uid2.admin.vertx.api.IBlockingRouteProvider;
 import com.uid2.admin.vertx.api.IRouteProvider;
 import com.uid2.admin.vertx.api.UrlParameterProviders;
 import com.uid2.admin.vertx.api.annotations.ApiMethod;

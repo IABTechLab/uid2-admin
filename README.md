@@ -25,6 +25,8 @@ The v2 API is based on individual route provider classes. Each class should prov
 
 ### IRouteProvider
 
+**Caution:** When implementing an API endpoint, you need to decide whether you should have a blocking or a non-blocking handler. Non-blocking handlers are suitable for most read-only operations, while most write operations should be done on a blocking handler. If you are calling into a service with a `synchronized` block, you **must** use a blocking handler. You can make your handler blocking by implementing the `IBlockingRouteProvider` interface *instead of* the `IRouteProvider` interface.
+
 IRouteProvider requires a `getHandler` method, which should return a valid handler function - see `GetClientSideKeypairsBySite.java`. This method *must* be annotated with the Path, Method, and Roles annotations.
 
 All classes which implement IRouteProvider will automatically be picked up by DI and registered as route handlers. The route handler will automatically be wrapped by the Auth middleware based on the roles specified in the Roles annotation.

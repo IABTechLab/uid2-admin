@@ -7,12 +7,16 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class V2RouterModule extends AbstractModule {
+    private static final Logger LOGGER = LoggerFactory.getLogger(V2RouterModule.class);
+
     /*
      Finds all classes in com.uid2.admin.vertx.api which implement IRouterProvider and register them.
      They are registered both as IRouterProvider and as their individual class.
@@ -28,10 +32,11 @@ public class V2RouterModule extends AbstractModule {
                     .stream()
                     .filter(ci -> ci.getName().startsWith("com.uid2.admin.vertx.api"))
                     .map(ci -> ci.load())
-                    .filter(cl -> Arrays.stream(cl.getInterfaces()).anyMatch(interf -> interf == IRouteProvider.class))
+                    .filter(cl -> !cl.isInterface() && Arrays.stream(cl.getInterfaces()).anyMatch(interf -> interf == IRouteProvider.class || interf == IBlockingRouteProvider.class))
                     .map(cl -> (Class<IRouteProvider>)cl)
                     .collect(Collectors.toSet());
             for (val routerProviderClass : routerProviders) {
+                LOGGER.info("Registering v2 route provider " + routerProviderClass.getName());
                 bind(routerProviderClass);
                 interfaceBinder.addBinding().to(routerProviderClass);
             }

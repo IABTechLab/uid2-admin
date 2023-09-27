@@ -13,6 +13,7 @@ import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Set;
 
 @Singleton
@@ -38,7 +39,15 @@ public class V2Router {
                 val path = handler.getAnnotation(Path.class).value();
                 val method = handler.getAnnotation(Method.class).value().vertxMethod;
                 val roles = handler.getAnnotation(Roles.class).value();
-                v2router.route(method, path).handler(auth.handle(provider.getHandler(), roles));
+                val authWrappedHandler = auth.handle(provider.getHandler(), roles);
+                if (Arrays.stream(provider.getClass().getInterfaces()).anyMatch(iface -> iface == IBlockingRouteProvider.class)) {
+                    LOGGER.info("Using blocking handler for " + provider.getClass().getName());
+                    v2router.route(method, path).blockingHandler(authWrappedHandler);
+                }
+                else {
+                    LOGGER.info("Using non-blocking handler for " + provider.getClass().getName());
+                    v2router.route(method, path).handler(authWrappedHandler);
+                }
             } catch (NoSuchMethodException e) {
                 LOGGER.error("Could not find handle method for API handler: " + provider.getClass().getName());
             }
