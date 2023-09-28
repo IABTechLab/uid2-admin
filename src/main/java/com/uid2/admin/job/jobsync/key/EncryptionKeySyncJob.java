@@ -1,6 +1,7 @@
 package com.uid2.admin.job.jobsync.key;
 
 import com.uid2.admin.job.model.Job;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
@@ -17,7 +18,7 @@ import java.util.Map;
 public class EncryptionKeySyncJob extends Job {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<EncryptionKey> globalEncryptionKeys;
-    private final Collection<ClientKey> globalClientKeys;
+    private final Collection<LegacyClientKey> globalClientKeys;
     private final Map<Integer, EncryptionKeyAcl> globalAcls;
     private final Integer globalMaxKeyId;
 
@@ -25,7 +26,7 @@ public class EncryptionKeySyncJob extends Job {
 
     public EncryptionKeySyncJob(
             Collection<EncryptionKey> globalEncryptionKeys,
-            Collection<ClientKey> globalClientKeys,
+            Collection<LegacyClientKey> globalClientKeys,
             Collection<OperatorKey> globalOperators,
             Map<Integer, EncryptionKeyAcl> globalAcls,
             Integer globalMaxKeyId,

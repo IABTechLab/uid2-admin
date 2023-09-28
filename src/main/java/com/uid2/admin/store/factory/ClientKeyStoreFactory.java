@@ -1,6 +1,9 @@
 package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
@@ -15,15 +18,15 @@ import com.uid2.shared.store.scope.SiteScope;
 
 import java.util.Collection;
 
-public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>> {
+public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClientKey>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
     private final VersionGenerator versionGenerator;
     private final Clock clock;
     private final FileManager fileManager;
-    private final RotatingClientKeyProvider globalReader;
-    private final ClientKeyStoreWriter globalWriter;
+    private final RotatingLegacyClientKeyProvider globalReader;
+    private final LegacyClientKeyStoreWriter globalWriter;
 
     public ClientKeyStoreFactory(
             ICloudStorage fileStreamProvider,
@@ -39,8 +42,8 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>
         this.clock = clock;
         this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
-        globalReader = new RotatingClientKeyProvider(fileStreamProvider, globalScope);
-        globalWriter = new ClientKeyStoreWriter(
+        globalReader = new RotatingLegacyClientKeyProvider(fileStreamProvider, globalScope);
+        globalWriter = new LegacyClientKeyStoreWriter(
                 globalReader,
                 this.fileManager,
                 objectWriter,
@@ -50,12 +53,12 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>
         );
     }
 
-    public RotatingClientKeyProvider getReader(Integer siteId) {
-        return new RotatingClientKeyProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
+    public RotatingLegacyClientKeyProvider getReader(Integer siteId) {
+        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public ClientKeyStoreWriter getWriter(Integer siteId) {
-        return new ClientKeyStoreWriter(
+    public LegacyClientKeyStoreWriter getWriter(Integer siteId) {
+        return new LegacyClientKeyStoreWriter(
                 getReader(siteId),
                 fileManager,
                 objectWriter,
@@ -65,11 +68,11 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<ClientKey>
         );
     }
 
-    public RotatingClientKeyProvider getGlobalReader() {
+    public RotatingLegacyClientKeyProvider getGlobalReader() {
         return globalReader;
     }
 
-    public StoreWriter<Collection<ClientKey>> getGlobalWriter() {
+    public StoreWriter<Collection<LegacyClientKey>> getGlobalWriter() {
         return globalWriter;
     }
 }

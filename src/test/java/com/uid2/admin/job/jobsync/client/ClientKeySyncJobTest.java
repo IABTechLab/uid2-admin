@@ -2,6 +2,7 @@ package com.uid2.admin.job.jobsync.client;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.InstantClock;
@@ -42,7 +43,8 @@ class ClientKeySyncJobTest {
                     OperatorType.PRIVATE
             )
     );
-    private final ClientKey client = new ClientKey(
+    private final LegacyClientKey client = new LegacyClientKey(
+            "key",
             "keyHash",
             "keySalt",
             "secret",
@@ -80,7 +82,7 @@ class ClientKeySyncJobTest {
         clientKeyStoreFactory.getWriter(scopedSiteId).upload(List.of(client), null);
         clientKeyStoreFactory.getGlobalWriter().upload(List.of(client), null);
 
-        StoreReader<Collection<ClientKey>> reader = clientKeyStoreFactory.getReader(scopedSiteId);
+        StoreReader<Collection<LegacyClientKey>> reader = clientKeyStoreFactory.getReader(scopedSiteId);
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 

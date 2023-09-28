@@ -3,6 +3,7 @@ package com.uid2.admin.util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
@@ -24,12 +25,12 @@ import static com.uid2.admin.util.PrivateSiteUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PrivateSiteUtilTest {
-    private final ClientKey site1ClientWithReaderRole = new ClientBuilder()
+    private final LegacyClientKey site1ClientWithReaderRole = new LegacyClientBuilder()
             .withSiteId(siteId1)
             .thatIsEnabled()
             .withReaderRole()
             .build();
-    private final ClientKey site2ClientWithReaderRole = new ClientBuilder()
+    private final LegacyClientKey site2ClientWithReaderRole = new LegacyClientBuilder()
             .withSiteId(siteId2)
             .thatIsEnabled()
             .withReaderRole()
@@ -49,28 +50,28 @@ public class PrivateSiteUtilTest {
     class Client {
         @Test
         public void returnsNoSitesForNoSitesOrOperators() {
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(noOperators, noClients);
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(noOperators, noClients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<>();
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<>();
             assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithNoClientsForNoSitesAndOperatorForASite() {
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<LegacyClientKey>()
                     .with(siteId1, noClients);
             assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithClientForOperatorAndClientForASite() {
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(ImmutableList.of(
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(ImmutableList.of(
                     site1PrivateOperator
             ), ImmutableList.of(site1ClientWithReaderRole));
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<LegacyClientKey>()
                     .with(siteId1, ImmutableSet.of(site1ClientWithReaderRole));
             assertEquals(expected, result);
         }
@@ -78,15 +79,15 @@ public class PrivateSiteUtilTest {
         @Test
         public void ignoresDisabledClients() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
-            ImmutableList<ClientKey> clients = ImmutableList.of(
-                    new ClientBuilder()
+            ImmutableList<LegacyClientKey> clients = ImmutableList.of(
+                    new LegacyClientBuilder()
                             .withSiteId(siteId1)
                             .thatIsDisabled()
                             .build()
             );
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(operators, clients);
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(operators, clients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>().with(siteId1, noClients);
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<LegacyClientKey>().with(siteId1, noClients);
             assertEquals(expected, result);
         }
 
@@ -99,10 +100,10 @@ public class PrivateSiteUtilTest {
                             .build()
             );
 
-            ImmutableList<ClientKey> clients = ImmutableList.of(site1ClientWithReaderRole);
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(operators, clients);
+            ImmutableList<LegacyClientKey> clients = ImmutableList.of(site1ClientWithReaderRole);
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(operators, clients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<>();
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<>();
             assertEquals(expected, result);
         }
     }
@@ -157,7 +158,7 @@ public class PrivateSiteUtilTest {
                     site1PrivateOperator,
                     site2PrivateOperator);
 
-            ImmutableSet<ClientKey> clients = ImmutableSet.of(
+            ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                     site1ClientWithReaderRole,
                     site2ClientWithReaderRole);
 
@@ -187,7 +188,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
@@ -215,7 +216,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
@@ -242,7 +243,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
 
@@ -270,7 +271,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
 
@@ -294,7 +295,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
 
@@ -331,10 +332,10 @@ public class PrivateSiteUtilTest {
                     //testing for Reader site role that doesn't have any ACL white/blacklist defined
                     new EncryptionKey(6, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 7)
             };
-            final ClientKey[] clientKeys = {
-                    new ClientKey("keyHash3", "keySalt3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
-                    new ClientKey("keyHash4", "keySalt4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
-                    new ClientKey("keyHash7", "keySalt7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
+            final LegacyClientKey[] clientKeys = {
+                    new LegacyClientKey("key3", "keyHash3", "keySalt3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
+                    new LegacyClientKey("key4", "keyHash4", "keySalt4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
+                    new LegacyClientKey("key7", "keyHash7", "keySalt7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -996,7 +997,7 @@ public class PrivateSiteUtilTest {
     static int siteId3 = 12;
     static int siteId4 = 13;
     final Set<OperatorKey> noOperators = ImmutableSet.of();
-    final Set<ClientKey> noClients = ImmutableSet.of();
+    final Set<LegacyClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
     final Set<KeysetKey> noKeysetKeys = ImmutableSet.of();
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
@@ -1029,33 +1030,33 @@ public class PrivateSiteUtilTest {
         }
     }
 
-    static class ClientBuilder {
+    static class LegacyClientBuilder {
         private int siteId = siteId1;
         private boolean isDisabled = false;
         private final HashSet<Role> roles = new HashSet<>();
 
-        public ClientBuilder withSiteId(int siteId) {
+        public LegacyClientBuilder withSiteId(int siteId) {
             this.siteId = siteId;
             return this;
         }
 
-        public ClientBuilder thatIsEnabled() {
+        public LegacyClientBuilder thatIsEnabled() {
             this.isDisabled = false;
             return this;
         }
 
-        public ClientBuilder thatIsDisabled() {
+        public LegacyClientBuilder thatIsDisabled() {
             this.isDisabled = true;
             return this;
         }
 
-        public ClientBuilder withReaderRole() {
+        public LegacyClientBuilder withReaderRole() {
             roles.add(Role.ID_READER);
             return this;
         }
 
-        public ClientKey build() {
-            return new ClientKey("keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
+        public LegacyClientKey build() {
+            return new LegacyClientKey("key_1", "keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
         }
     }
 }
