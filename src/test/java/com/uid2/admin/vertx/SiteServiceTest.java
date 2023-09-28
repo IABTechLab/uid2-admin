@@ -4,7 +4,6 @@ import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SiteService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.model.ClientType;

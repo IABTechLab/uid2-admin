@@ -1,23 +1,22 @@
 package com.uid2.admin.job.jobsync.client;
 
 import com.uid2.admin.job.model.Job;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.model.PrivateSiteDataMap;
-import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 
 import java.util.Collection;
 
 public class ClientKeySyncJob extends Job {
     private final Collection<OperatorKey> globalOperators;
-    private final Collection<ClientKey> globalClientKeys;
-    private final MultiScopeStoreWriter<Collection<ClientKey>> multiScopeStoreWriter;
+    private final Collection<LegacyClientKey> globalClientKeys;
+    private final MultiScopeStoreWriter<Collection<LegacyClientKey>> multiScopeStoreWriter;
 
     public ClientKeySyncJob(
-            MultiScopeStoreWriter<Collection<ClientKey>> multiScopeStoreWriter,
-            Collection<ClientKey> globalClientKeys,
+            MultiScopeStoreWriter<Collection<LegacyClientKey>> multiScopeStoreWriter,
+            Collection<LegacyClientKey> globalClientKeys,
             Collection<OperatorKey> globalOperators) {
         this.globalClientKeys = globalClientKeys;
         this.globalOperators = globalOperators;
@@ -31,7 +30,7 @@ public class ClientKeySyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        PrivateSiteDataMap<ClientKey> desiredState = PrivateSiteUtil.getClientKeys(globalOperators, globalClientKeys);
+        PrivateSiteDataMap<LegacyClientKey> desiredState = PrivateSiteUtil.getClientKeys(globalOperators, globalClientKeys);
         multiScopeStoreWriter.uploadIfChanged(desiredState, null);
     }
 }
