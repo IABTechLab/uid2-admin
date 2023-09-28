@@ -19,6 +19,8 @@
 <input type="text" id="roles" name="roles">
 <label for="siteId">Site Id:</label>
 <input type="text" id="siteId" name="siteId" value="1">
+<label for="serviceId">Service Id:</label>
+<input type="text" id="serviceId" name="serviceId" value="0">
 <br>
 <br>
 
@@ -40,7 +42,7 @@
 <h3>Low Level Operations - Do Not Use Unless Necessary</h3>
 
 <ul>
-    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>
+<!--    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>-->
     <li class="ro-adm" style="display: none"><a href="#" id="doRename">Rename Client Key (Click to enter new client name)</a></li>
 </ul>
 
@@ -74,7 +76,8 @@
             var clientName = encodeURIComponent($('#clientName').val());
             var roles = encodeURIComponent($('#roles').val());
             var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/client/add?name=' + clientName + '&roles=' + roles + '&site_id=' + siteId;
+            var serviceId = encodeURIComponent($('#serviceId').val());
+            var url = '/api/client/add?name=' + clientName + '&roles=' + roles + '&site_id=' + siteId + '&service_id=' + serviceId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
@@ -101,7 +104,8 @@
         $('#doSetSite').on('click', function () {
             var clientName = encodeURIComponent($('#clientName').val());
             var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/client/update?name=' + clientName + '&site_id=' + siteId;
+            var serviceId = encodeURIComponent($('#serviceId').val());
+            var url = '/api/client/update?name=' + clientName + '&site_id=' + siteId + '&service_id=' + serviceId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });

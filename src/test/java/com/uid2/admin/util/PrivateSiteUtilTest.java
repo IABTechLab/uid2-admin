@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableSet;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
@@ -46,28 +45,23 @@ public class PrivateSiteUtilTest {
             .thatIsEnabled()
             .build();
 
-    public PrivateSiteUtilTest() {
-    }
-
     @Nested
     class Client {
         @Test
         public void returnsNoSitesForNoSitesOrOperators() {
+            PrivateSiteDataMap<ClientKey> result = getClientKeys(noOperators, noClients);
+
             PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<>();
-
-            PrivateSiteDataMap<ClientKey> actual = getClientKeys(noOperators, noClients);
-
-            assertEquals(expected, actual);
+            assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithNoClientsForNoSitesAndOperatorForASite() {
+            PrivateSiteDataMap<ClientKey> result = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
+
             PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
                     .with(siteId1, noClients);
-
-            PrivateSiteDataMap<ClientKey> actual = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
-
-            assertEquals(expected, actual);
+            assertEquals(expected, result);
         }
 
         @Test
@@ -322,11 +316,11 @@ public class PrivateSiteUtilTest {
             readerRole.add(Role.ID_READER);
 
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key7", "keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
             };
             final EncryptionKey[] encryptionKeys = {
                     new EncryptionKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), Const.Data.RefreshKeySiteId),
@@ -338,9 +332,9 @@ public class PrivateSiteUtilTest {
                     new EncryptionKey(6, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 7)
             };
             final ClientKey[] clientKeys = {
-                    new ClientKey("key3", "keyHash3", "keySalt3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
-                    new ClientKey("key4", "keyHash4", "keySalt4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
-                    new ClientKey("key7", "keyHash7", "keySalt7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
+                    new ClientKey("keyHash3", "keySalt3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
+                    new ClientKey("keyHash4", "keySalt4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
+                    new ClientKey("keyHash7", "keySalt7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -479,7 +473,6 @@ public class PrivateSiteUtilTest {
         public void sharesAclWithSitesOutsideOfBlacklist() {
             EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(siteId3));
 
-
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator, site2PrivateOperator);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
                     siteId1, acl
@@ -503,7 +496,6 @@ public class PrivateSiteUtilTest {
         public void doesNotSharesAclWithSitesOnTheBlacklist() {
             EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(siteId2));
 
-
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
                     siteId1, acl
@@ -523,10 +515,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclData() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -558,10 +550,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclDataForEachSite() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -585,7 +577,6 @@ public class PrivateSiteUtilTest {
             final Map<Integer, EncryptionKeyAcl> site6EncryptionKeyAcls = new HashMap<>();
             site6EncryptionKeyAcls.put(4, acls.get(4));
 
-
             final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> expected = new HashMap<>();
             expected.put(3, site3EncryptionKeyAcls);
             expected.put(4, site4EncryptionKeyAcls);
@@ -597,8 +588,88 @@ public class PrivateSiteUtilTest {
     }
 
     @Nested
-    class KeysetKeys {
+    class Keysets {
+        Map<Integer, Keyset> keysets = Map.of(
+                -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                4, new Keyset(4, 10, "Site 10", null, 999999, true, true),
+                5, new Keyset(5, 11, "Site 11", Set.of(12), 999999, true, true),
+                6, new Keyset(6, 12, "Site 12", null, 999999, true, true)
+        );
 
+        @Test
+        public void nullKeysetGetsOwnPlusDefault() {
+            Map<Integer, Keyset> expected = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    4, new Keyset(4, 10, "Site 10", null, 999999, true, true)
+            );
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId1)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            Map<Integer, Keyset> actual = getKeysetForEachSite(operators, keysets).get(siteId1);
+            assertEquals(expected.size(), actual.size());
+            for (Integer siteId : expected.keySet()) {
+                assertEquals(expected.get(siteId), actual.get(siteId));
+            }
+        }
+
+        @Test
+        public void OperatorGetsOwnSharedAndDefault() {
+            Map<Integer, Keyset> expected = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    5, new Keyset(5, 11, "Site 11", Set.of(12), 999999, true, true),
+                    6, new Keyset(6, 12, "Site 12", null, 999999, true, true)
+            );
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId3)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            Map<Integer, Keyset> actual = getKeysetForEachSite(operators, keysets).get(siteId3);
+            assertEquals(expected.size(), actual.size());
+            for (Integer siteId : expected.keySet()) {
+                assertEquals(expected.get(siteId), actual.get(siteId));
+            }
+        }
+
+        @Test
+        public void OperatorNoKeyGetsDefault() {
+            Map<Integer, Keyset> expected = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true)
+            );
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId4)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+            Map<Integer, Keyset> actual = getKeysetForEachSite(operators, keysets).get(siteId4);
+            assertEquals(expected.size(), actual.size());
+            for (Integer siteId : expected.keySet()) {
+                assertEquals(expected.get(siteId), actual.get(siteId));
+            }
+        }
+    }
+
+    @Nested
+    class KeysetKeys {
         KeysetKey keysetKey1 = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 1);
         KeysetKey keysetKey2 = new KeysetKey(2000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
         KeysetKey keysetKey3 = new KeysetKey(3000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 3);
@@ -642,7 +713,6 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void siteHasOwnKeysetKeys() {
-
             keysets.put(1, keyset1);
             keysets.put(2, keyset2);
             keysets.put(3, keyset3);
@@ -671,6 +741,56 @@ public class PrivateSiteUtilTest {
                     operators,
                     ImmutableSet.of(keysetKey1, keysetKey2, keysetKey3),
                     keysets
+            );
+
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        public void siteGetsDefaultKeys() {
+            Map<Integer, Keyset> localKeysets = Map.of(
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    4, new Keyset(4, 10, "Site 10", null, 999999, true, true),
+                    5, new Keyset(5, 11, "Site 11", Set.of(12), 999999, true, true),
+                    6, new Keyset(6, 12, "Site 12", null, 999999, true, true)
+            );
+
+            KeysetKey refreshKey = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), -2);
+            KeysetKey masterKey = new KeysetKey(1001, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), -1);
+            KeysetKey publisherKey = new KeysetKey(1002, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
+            KeysetKey site1Key = new KeysetKey(1003, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 4);
+            KeysetKey site2Key = new KeysetKey(1004, new byte[]{}, Instant.now(), Instant.now(), Instant.now(),  5);
+            KeysetKey site3Key = new KeysetKey(1005, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 6);
+            Set<KeysetKey> keysetKeys = Set.of( refreshKey, masterKey, publisherKey, site1Key, site2Key, site3Key);
+
+            PrivateSiteDataMap<KeysetKey> expected = new PrivateSiteDataMap<>();
+            expected.put(siteId1, ImmutableSet.of(refreshKey, masterKey, publisherKey, site1Key));
+            expected.put(siteId3, ImmutableSet.of(refreshKey, masterKey, publisherKey, site2Key, site3Key));
+            expected.put(siteId4, ImmutableSet.of(refreshKey, masterKey, publisherKey));
+
+            ImmutableList<OperatorKey> operators = ImmutableList.of(
+                    new OperatorBuilder()
+                            .withSiteId(siteId1)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(siteId3)
+                            .withType(OperatorType.PRIVATE)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(siteId4)
+                            .withType(OperatorType.PRIVATE)
+                            .build()
+            );
+
+
+
+            PrivateSiteDataMap<KeysetKey> actual = getKeysetKeys(
+                    operators,
+                    keysetKeys,
+                    localKeysets
             );
 
             assertEquals(expected, actual);
@@ -750,12 +870,17 @@ public class PrivateSiteUtilTest {
             );
 
             List<ILoggingEvent> logsList = listAppender.list;
-            assertEquals("Unable to find keyset with keyset id 3", logsList.get(0)
-                    .getMessage());
-            assertEquals(Level.ERROR, logsList.get(0)
-                    .getLevel());
-
-            assertEquals(expected, actual);
+            assertAll(
+                    "skipKeyWithKeysetIdNotFoundAndLogError",
+                    () -> assertAll(
+                            "skipKeyWithKeysetIdNotFoundAndLogError - Logging",
+                            () -> assertEquals("Unable to find keyset with keyset id 3", logsList.get(0)
+                                    .getMessage()),
+                            () -> assertEquals(Level.ERROR, logsList.get(0)
+                                    .getLevel())
+                    ),
+                    () -> assertEquals(expected, actual)
+            );
         }
     }
 
@@ -838,18 +963,19 @@ public class PrivateSiteUtilTest {
                     new Site(5, "4", true)
             };
             final OperatorKey[] publicOperatorKeys = {
-                    new OperatorKey("key2", "keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
             };
             final OperatorKey[] privateOperatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
             };
             final List<OperatorKey> allOperatorKeys = new ArrayList<>(Arrays.asList(publicOperatorKeys));
             allOperatorKeys.addAll(Arrays.asList(privateOperatorKeys));
 
             final PrivateSiteDataMap<Site> result = getSites(
-                    Arrays.asList(sites), allOperatorKeys);
+                    Arrays.asList(sites), allOperatorKeys
+            );
 
             final Set<Site> expectedSite3Sites = new HashSet<>();
             expectedSite3Sites.add(sites[0]);
@@ -868,6 +994,7 @@ public class PrivateSiteUtilTest {
     static int siteId1 = 10;
     static int siteId2 = 11;
     static int siteId3 = 12;
+    static int siteId4 = 13;
     final Set<OperatorKey> noOperators = ImmutableSet.of();
     final Set<ClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
@@ -875,10 +1002,7 @@ public class PrivateSiteUtilTest {
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
     static class OperatorBuilder {
-        private final OperatorKey operator = new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
-
-        OperatorBuilder() {
-        }
+        private final OperatorKey operator = new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
 
         public OperatorBuilder withSiteId(int siteId) {
             this.operator.setSiteId(siteId);
@@ -903,7 +1027,6 @@ public class PrivateSiteUtilTest {
         public OperatorKey build() {
             return operator;
         }
-
     }
 
     static class ClientBuilder {
@@ -932,7 +1055,7 @@ public class PrivateSiteUtilTest {
         }
 
         public ClientKey build() {
-            return new ClientKey("key3_1", "keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
+            return new ClientKey("keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
         }
     }
 }

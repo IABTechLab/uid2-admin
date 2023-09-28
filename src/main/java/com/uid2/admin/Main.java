@@ -7,6 +7,8 @@ import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
+import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
 import com.uid2.admin.secret.*;
@@ -101,6 +103,10 @@ public class Main {
             RotatingClientKeyProvider clientKeyProvider = new RotatingClientKeyProvider(cloudStorage, clientGlobalScope);
             clientKeyProvider.loadContent();
             ClientKeyStoreWriter clientKeyStoreWriter = new ClientKeyStoreWriter(clientKeyProvider, fileManager, jsonWriter, versionGenerator, clock, clientGlobalScope);
+
+            RotatingLegacyClientKeyProvider legacyClientKeyProvider = new RotatingLegacyClientKeyProvider(cloudStorage, clientGlobalScope);
+            legacyClientKeyProvider.loadContent();
+            LegacyClientKeyStoreWriter legacyClientKeyStoreWriter = new LegacyClientKeyStoreWriter(legacyClientKeyProvider, fileManager, jsonWriter, versionGenerator, clock, clientGlobalScope);
 
             CloudPath keyMetadataPath = new CloudPath(config.getString(Const.Config.KeysMetadataPathProp));
             GlobalScope keyGlobalScope = new GlobalScope(keyMetadataPath);
@@ -230,7 +236,7 @@ public class Main {
 
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, keyHasher, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
-                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
+                    new ClientKeyService(config, auth, writeLock, legacyClientKeyStoreWriter, legacyClientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
@@ -258,7 +264,16 @@ public class Main {
             GlobalScope keysetGlobalScope = new GlobalScope(keysetMetadataPath);
             RotatingKeysetProvider keysetProvider = new RotatingKeysetProvider(cloudStorage, keysetGlobalScope);
             KeysetStoreWriter keysetStoreWriter = new KeysetStoreWriter(keysetProvider, fileManager, jsonWriter, versionGenerator, clock, keysetGlobalScope, enableKeysets);
-
+            try {
+                keysetProvider.loadContent();
+            } catch (CloudStorageException e) {
+                if(e.getMessage().contains("The specified key does not exist")){
+                    keysetStoreWriter.upload(new HashMap<>(), null);
+                    keysetProvider.loadContent();
+                } else {
+                    throw e;
+                }
+            }
 
             /*
             This if statement will:

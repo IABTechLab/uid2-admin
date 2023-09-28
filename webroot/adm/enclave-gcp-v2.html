@@ -75,6 +75,7 @@
 
 <script language="JavaScript">
   const gcloudCli = '$ gcloud compute instances create <INSTANCE_NAME> \\\n\
+    --zone <ZONE> \\\n\
     --machine-type <MACHINE_TYPE> \\\n\
     --confidential-compute \\\n\
     --shielded-secure-boot \\\n\
@@ -83,9 +84,7 @@
     --image-project confidential-space-images \\\n\
     --image-family <IMAGE_FAMILY> \\\n\
     --service-account <SERVICE_ACCOUNT> \\\n\
-    --metadata ^~^tee-image-reference=ghcr.io/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN=<API_TOKEN>'
-
-  const logRedirectCli= '~tee-container-log-redirect=true'
+    --metadata ^~^tee-image-reference=us-docker.pkg.dev/uid2-prod-project/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-container-log-redirect=true~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN_SECRET_NAME=<API_TOKEN_SECRET_NAME>'
 
   $('#gcloudCli').val(gcloudCli);
 
@@ -139,9 +138,6 @@
             .replaceAll('<IMAGE_SHA>', imageSha)
             .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
 
-    if(isDebug){
-      cli += logRedirectCli;
-    }
     $('#gcloudCli').val(cli);
   }
 

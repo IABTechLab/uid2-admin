@@ -1,10 +1,9 @@
 package com.uid2.admin.auth;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.uid2.shared.auth.IRoleAuthorizable;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.auth.Roles;
-import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -23,7 +22,16 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     private Set<Role> roles;
     private boolean disabled;
 
-    public AdminUser(String key, String keyHash, String keySalt, String name, String contact, long created, Set<Role> roles, boolean disabled) {
+    @JsonCreator
+    public AdminUser(
+            @JsonProperty("key") String key,
+            @JsonProperty("key_hash") String keyHash,
+            @JsonProperty("key_salt") String keySalt,
+            @JsonProperty("name") String name,
+            @JsonProperty("contact") String contact,
+            @JsonProperty("created") long created,
+            @JsonProperty("roles") Set<Role> roles,
+            @JsonProperty("disabled") boolean disabled) {
         this.key = key;
         this.keyHash = keyHash;
         this.keySalt = keySalt;
@@ -37,19 +45,6 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     public static AdminUser unknown(String unknown) {
         return new AdminUser(unknown, unknown, unknown, unknown, unknown,
                 Instant.now().getEpochSecond(), Collections.emptySet(), false);
-    }
-
-    public static AdminUser valueOf(JsonObject json) {
-        return new AdminUser(
-                json.getString("key"),
-                json.getString("key_hash"),
-                json.getString("key_salt"),
-                json.getString("name"),
-                json.getString("contact"),
-                json.getLong("created"),
-                Roles.getRoles(Role.class, json),
-                json.getBoolean("disabled", false)
-        );
     }
 
     public String getKey() {
