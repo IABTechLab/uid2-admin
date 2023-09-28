@@ -8,13 +8,11 @@ import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.ClientType;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.Math.max;
 
@@ -89,15 +87,21 @@ public class KeysetManager {
                 adminKeyset.getCreated(), adminKeyset.isEnabled(), adminKeyset.isDefault());
     }
 
+    /**
+     * Creates a keyset for the specified site, if none exists.
+     */
+    public AdminKeyset createKeysetForSite(int siteId) throws Exception {
+        if (!enableKeysets) return null;
+        Optional<AdminKeyset> keyset = getAdminKeysetBySiteId(siteId);
+        if (keyset.isPresent()) return keyset.get();
+
+        return createAndAddDefaultKeyset(siteId);
+    }
+
     public AdminKeyset createKeysetForClient(ClientKey client) throws Exception{
         if(!enableKeysets) return null;
-        final Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
-        for(AdminKeyset keyset : collection.values()) {
-            if(keyset.getSiteId() == client.getSiteId()) {
-                // A keyset already exists for the site ID
-                return keyset;
-            }
-        }
+        Optional<AdminKeyset> keyset = getAdminKeysetBySiteId(client.getSiteId());
+        if (keyset.isPresent()) return keyset.get();
 
         if(client.hasRole(Role.GENERATOR)) {
             return createAndAddDefaultKeyset(client.getSiteId());
@@ -106,6 +110,15 @@ public class KeysetManager {
             return createAndAddKeyset(client.getSiteId(), new HashSet<>(), new HashSet<>());
         }
         return null;
+    }
+
+    private Optional<AdminKeyset> getAdminKeysetBySiteId(int siteId) {
+        return this.keysetProvider.getSnapshot()
+                .getAllKeysets()
+                .values()
+                .stream()
+                .filter(keyset -> keyset.getSiteId() == siteId)
+                .findFirst();
     }
 
     public AdminKeyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites, Set<ClientType> allowedTypes) throws Exception{
