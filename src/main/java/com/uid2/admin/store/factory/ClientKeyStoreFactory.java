@@ -7,12 +7,9 @@ import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 

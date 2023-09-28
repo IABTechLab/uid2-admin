@@ -1,7 +1,6 @@
 package com.uid2.admin.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.store.parser.Parser;
 import com.uid2.shared.store.parser.ParsingResult;
 import com.uid2.shared.util.Mapper;
