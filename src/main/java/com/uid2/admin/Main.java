@@ -21,6 +21,7 @@ import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
@@ -52,6 +53,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
+import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.micrometer.Label;
@@ -233,6 +235,7 @@ public class Main {
             JobDispatcher jobDispatcher = new JobDispatcher("job-dispatcher", 1000 * 60, 3, clock);
             jobDispatcher.start();
 
+            val clientSideKeypairService = new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock);
 
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, keyHasher, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
@@ -241,7 +244,7 @@ public class Main {
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
-                    new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock),
+                    clientSideKeypairService,
                     new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider),
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
@@ -257,7 +260,9 @@ public class Main {
                     "admins", 10000, adminUserProvider);
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services);
+            val v2RouterModule = new V2RouterModule(clientSideKeypairService, auth);
+
+            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services, v2RouterModule.getRouter());
             vertx.deployVerticle(adminVerticle);
 
             CloudPath keysetMetadataPath = new CloudPath(config.getString("keysets_metadata_path"));
