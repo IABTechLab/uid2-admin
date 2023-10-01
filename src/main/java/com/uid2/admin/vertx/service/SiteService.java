@@ -72,15 +72,41 @@ public class SiteService implements IService {
             }
         }, Role.CLIENTKEY_ISSUER));
         router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
-                    synchronized (writeLock) {
-                        this.handleSiteTypesSet(ctx);
-                    }
-                    }, Role.CLIENTKEY_ISSUER));
+            synchronized (writeLock) {
+                this.handleSiteTypesSet(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/temporary/backfill_created").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteBackfillCreated(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+    }
+
+    private void handleSiteBackfillCreated(RoutingContext rc) {
+        try {
+            final Collection<Site> sites = new ArrayList<>(this.siteProvider.getAllSites());
+            final Collection<Site> updatedSites = new ArrayList<>();
+            for (Site s : sites) {
+                ClientKey key = this.clientKeyProvider.getOldestClientKey(s.getId());
+                if (s.getCreated() == 0 && key != null) {
+                    long created = key.getCreated();
+                    Site us = new Site(s.getId(), s.getName(), s.isEnabled(), s.getClientTypes(), s.getDomainNames(), created);
+                    updatedSites.add(us);
+                } else {
+                    updatedSites.add(s);
+                }
+            }
+            storeWriter.upload(updatedSites, null);
+            rc.response().end("OK");
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -160,7 +186,7 @@ public class SiteService implements IService {
                 JsonArray domainNamesJa = body.getJsonArray("domain_names");
                 if (domainNamesJa != null) {
                     normalizedDomainNames = getNormalizedDomainNames(rc, domainNamesJa);
-                    if(normalizedDomainNames == null) return;
+                    if (normalizedDomainNames == null) return;
                 }
             }
 
@@ -176,8 +202,7 @@ public class SiteService implements IService {
             }
 
             Set<ClientType> types = new HashSet<>();
-            if(!rc.queryParam("types").isEmpty())
-            {
+            if (!rc.queryParam("types").isEmpty()) {
                 types = getTypes(rc.queryParam("types").get(0));
             }
 
@@ -208,7 +233,7 @@ public class SiteService implements IService {
             }
 
             Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
-            if(types == null) {
+            if (types == null) {
                 ResponseUtil.error(rc, 400, "Invalid Types");
                 return;
             }
@@ -275,7 +300,7 @@ public class SiteService implements IService {
 
             JsonObject body = rc.body().asJsonObject();
             JsonArray domainNamesJa = body.getJsonArray("domain_names");
-            if(domainNamesJa == null) {
+            if (domainNamesJa == null) {
                 ResponseUtil.error(rc, 400, "required parameters: domain_names");
                 return;
             }
@@ -300,7 +325,7 @@ public class SiteService implements IService {
         List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
 
         List<String> normalizedDomainNames = new ArrayList<>();
-        for(String domain : domainNames) {
+        for (String domain : domainNames) {
             try {
                 String tld = getTopLevelDomainName(domain);
                 normalizedDomainNames.add(tld);
@@ -329,11 +354,10 @@ public class SiteService implements IService {
         //InternetDomainName will normalise the domain name to lower case already
         InternetDomainName name = InternetDomainName.from(host);
         //if the domain name has a proper TLD suffix
-        if(name.isUnderPublicSuffix()) {
+        if (name.isUnderPublicSuffix()) {
             try {
                 return name.topPrivateDomain().toString();
-            }
-            catch(Exception e) {
+            } catch (Exception e) {
                 throw e;
             }
         }

@@ -39,6 +39,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doBackfillCreated">Backfill Created</a></li>
 </ul>
 
 <br>
@@ -101,6 +102,10 @@
             const payload = { domain_names: domainNames }
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
+        });
+
+        $('#doBackfillCreated').on('click', function () {
+            doApiCall('POST', '/api/site/temporary/backfill_created', '#standardOutput', '#errorOutput');
         });
     });
 </script>

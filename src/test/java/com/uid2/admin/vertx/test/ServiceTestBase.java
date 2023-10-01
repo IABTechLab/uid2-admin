@@ -178,6 +178,11 @@ public abstract class ServiceTestBase {
         for (LegacyClientKey clientKey : clientKeys) {
             when(legacyClientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
             when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey.toClientKey());
+            when(clientKeyProvider.getOldestClientKey(clientKey.getSiteId())).thenReturn(Arrays.stream(clientKeys)
+                    .filter(k -> k.getSiteId() == clientKey.getSiteId()) // filter by site id
+                    .sorted(Comparator.comparing(LegacyClientKey::getCreated)) // sort by key creation timestamp ascending
+                    .findFirst() // return the oldest key
+                    .orElse(null).toClientKey());
         }
     }
 

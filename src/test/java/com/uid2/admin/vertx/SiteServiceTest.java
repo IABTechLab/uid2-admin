@@ -16,10 +16,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -680,5 +677,48 @@ public class SiteServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    void backfillCreated(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] initialSites = {
+                new Site(7, "name1", false, Set.of(), Set.of(), 0),
+                new Site(10, "name2", true, Set.of(ClientType.DSP, ClientType.ADVERTISER), Set.of("name1.com", "name2.net"), 0),
+                new Site(110, "name3", false, Set.of(ClientType.PUBLISHER), Set.of(), 12345),
+                new Site(201, "name4", true, Set.of(), Set.of("name1.com", "name2.net"), 0),
+        };
+        LegacyClientKey[] clientKeys = {
+                new LegacyClientKey("ck1", "ckh1", "cks1", "cs1", "c1", Instant.ofEpochSecond(1234567), Set.of(Role.GENERATOR, Role.ID_READER), 7),
+                new LegacyClientKey("ck1", "ckh1", "cks1", "cs1", "c1", Instant.ofEpochSecond(123), Set.of(Role.GENERATOR, Role.ID_READER), 7),
+                new LegacyClientKey("ck2", "ckh2", "cks2", "cs2", "c2", Instant.ofEpochSecond(98765), Set.of(Role.MAPPER), 10),
+                new LegacyClientKey("ck2", "ckh2", "cks2", "cs2", "c2", Instant.ofEpochSecond(555), Set.of(Role.MAPPER), 10),
+                new LegacyClientKey("ck3", "ckh3", "cks3", "cs3", "c3", Instant.ofEpochSecond(444), Set.of(Role.GENERATOR, Role.MAPPER), 110),
+        };
+        Site[] updatedSites = {
+                new Site(7, "name1", false, Set.of(), Set.of(), 123),
+                new Site(10, "name2", true, Set.of(ClientType.DSP, ClientType.ADVERTISER), Set.of("name1.com", "name2.net"), 555),
+                new Site(110, "name3", false, Set.of(ClientType.PUBLISHER), Set.of(), 12345),
+                new Site(201, "name4", true, Set.of(), Set.of("name1.com", "name2.net"), 0),
+        };
+
+        setClientKeys(clientKeys);
+        setSites(initialSites);
+
+        post(vertx, "api/site/temporary/backfill_created", "", ar -> {
+            HttpResponse<Buffer> response = ar.result();
+            assertAll(
+                    "addSiteExistingSites",
+                    () -> assertTrue(ar.succeeded()),
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(ar.result().body().toString(), "OK"));
+            try {
+                verify(storeWriter).upload(List.of(updatedSites), null);
+            } catch (Exception ex) {
+                fail(ex);
+            }
+
+            testContext.completeNow();
+        });
+    }
 
 }
