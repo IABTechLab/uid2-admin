@@ -8,13 +8,11 @@ import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.util.MaxKeyUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
@@ -23,7 +21,6 @@ import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
-import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -200,23 +197,6 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     public KeysetKey addKeysetKey(int keysetId) throws Exception {
         loadKeysetKeys();
         return addKeysetKeys(Arrays.asList(keysetId), siteKeyActivatesIn, siteKeyExpiresAfter, false).get(0);
-    }
-
-    @Override
-    public EncryptionKey createSiteKeyIfNoneExists(int siteId) throws Exception {
-        // force refresh manually
-        this.keyProvider.loadContent();
-
-        final boolean siteKeyExists = this.keyProvider.getSnapshot()
-                .getActiveKeySet()
-                .stream()
-                .anyMatch(key -> key.getSiteId() == siteId);
-
-        if (siteKeyExists) {
-            return null;
-        }
-
-        return addSiteKeys(Arrays.asList(siteId), Duration.ZERO, siteKeyExpiresAfter, false).get(0);
     }
 
     public void createKeysetKeys() throws Exception {

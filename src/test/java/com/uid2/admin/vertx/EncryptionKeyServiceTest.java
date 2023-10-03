@@ -6,7 +6,6 @@ import com.uid2.admin.vertx.service.EncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
@@ -199,28 +198,6 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setAdminKeysets(keysets);
         final KeysetKey key = keyService.addKeysetKey(1);
         verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
-    }
-
-    @Test
-    void createSiteKeyIfNoneExistsCreatesKeyWhenNoKeyWithSiteIdExists() throws Exception {
-        setEncryptionKeys(123);
-
-        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
-
-        verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
-        verifyNoMoreInteractions(encryptionKeyStoreWriter);
-        assertKeyActivation(clock.now(), 0, SITE_KEY_EXPIRES_AFTER_SECONDS,
-                key.getCreated(), key.getActivates(), key.getExpires());
-    }
-
-    @Test
-    void createSiteKeyIfNoneExistsDoesNotCreateKeyWhenKeyWithSiteIdExists() throws Exception {
-        setEncryptionKeys(123, new EncryptionKey(11, null, null, null, null, 5));
-
-        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
-
-        assertNull(key);
-        verifyNoInteractions(encryptionKeyStoreWriter);
     }
 
     @Test

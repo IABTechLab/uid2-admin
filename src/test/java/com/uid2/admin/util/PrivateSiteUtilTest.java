@@ -3,10 +3,10 @@ package com.uid2.admin.util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
@@ -25,12 +25,12 @@ import static com.uid2.admin.util.PrivateSiteUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PrivateSiteUtilTest {
-    private final ClientKey site1ClientWithReaderRole = new ClientBuilder()
+    private final LegacyClientKey site1ClientWithReaderRole = new LegacyClientBuilder()
             .withSiteId(siteId1)
             .thatIsEnabled()
             .withReaderRole()
             .build();
-    private final ClientKey site2ClientWithReaderRole = new ClientBuilder()
+    private final LegacyClientKey site2ClientWithReaderRole = new LegacyClientBuilder()
             .withSiteId(siteId2)
             .thatIsEnabled()
             .withReaderRole()
@@ -46,37 +46,32 @@ public class PrivateSiteUtilTest {
             .thatIsEnabled()
             .build();
 
-    public PrivateSiteUtilTest() {
-    }
-
     @Nested
     class Client {
         @Test
         public void returnsNoSitesForNoSitesOrOperators() {
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<>();
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(noOperators, noClients);
 
-            PrivateSiteDataMap<ClientKey> actual = getClientKeys(noOperators, noClients);
-
-            assertEquals(expected, actual);
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<>();
+            assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithNoClientsForNoSitesAndOperatorForASite() {
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
+
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<LegacyClientKey>()
                     .with(siteId1, noClients);
-
-            PrivateSiteDataMap<ClientKey> actual = getClientKeys(ImmutableList.of(site1PrivateOperator), noClients);
-
-            assertEquals(expected, actual);
+            assertEquals(expected, result);
         }
 
         @Test
         public void returnsSiteWithClientForOperatorAndClientForASite() {
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(ImmutableList.of(
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(ImmutableList.of(
                     site1PrivateOperator
             ), ImmutableList.of(site1ClientWithReaderRole));
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>()
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<LegacyClientKey>()
                     .with(siteId1, ImmutableSet.of(site1ClientWithReaderRole));
             assertEquals(expected, result);
         }
@@ -84,15 +79,15 @@ public class PrivateSiteUtilTest {
         @Test
         public void ignoresDisabledClients() {
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
-            ImmutableList<ClientKey> clients = ImmutableList.of(
-                    new ClientBuilder()
+            ImmutableList<LegacyClientKey> clients = ImmutableList.of(
+                    new LegacyClientBuilder()
                             .withSiteId(siteId1)
                             .thatIsDisabled()
                             .build()
             );
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(operators, clients);
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(operators, clients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<ClientKey>().with(siteId1, noClients);
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<LegacyClientKey>().with(siteId1, noClients);
             assertEquals(expected, result);
         }
 
@@ -105,10 +100,10 @@ public class PrivateSiteUtilTest {
                             .build()
             );
 
-            ImmutableList<ClientKey> clients = ImmutableList.of(site1ClientWithReaderRole);
-            PrivateSiteDataMap<ClientKey> result = getClientKeys(operators, clients);
+            ImmutableList<LegacyClientKey> clients = ImmutableList.of(site1ClientWithReaderRole);
+            PrivateSiteDataMap<LegacyClientKey> result = getClientKeys(operators, clients);
 
-            PrivateSiteDataMap<ClientKey> expected = new PrivateSiteDataMap<>();
+            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<>();
             assertEquals(expected, result);
         }
     }
@@ -163,7 +158,7 @@ public class PrivateSiteUtilTest {
                     site1PrivateOperator,
                     site2PrivateOperator);
 
-            ImmutableSet<ClientKey> clients = ImmutableSet.of(
+            ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                     site1ClientWithReaderRole,
                     site2ClientWithReaderRole);
 
@@ -193,7 +188,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
@@ -221,7 +216,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
                 PrivateSiteDataMap<EncryptionKey> actual = getEncryptionKeys(
@@ -248,7 +243,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
 
@@ -276,7 +271,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
 
@@ -300,7 +295,7 @@ public class PrivateSiteUtilTest {
                         site1PrivateOperator,
                         site2PrivateOperator);
 
-                ImmutableSet<ClientKey> clients = ImmutableSet.of(
+                ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(
                         site1ClientWithReaderRole,
                         site2ClientWithReaderRole);
 
@@ -322,11 +317,11 @@ public class PrivateSiteUtilTest {
             readerRole.add(Role.ID_READER);
 
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key7", "keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash7", "keySalt7", "name6", "contact6", "aws-nitro", 2, false, 7, new HashSet<>(), OperatorType.PUBLIC)
             };
             final EncryptionKey[] encryptionKeys = {
                     new EncryptionKey(1, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), Const.Data.RefreshKeySiteId),
@@ -337,10 +332,10 @@ public class PrivateSiteUtilTest {
                     //testing for Reader site role that doesn't have any ACL white/blacklist defined
                     new EncryptionKey(6, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 7)
             };
-            final ClientKey[] clientKeys = {
-                    new ClientKey("key3", "keyHash3", "keySalt3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
-                    new ClientKey("key4", "keyHash4", "keySalt4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
-                    new ClientKey("key7", "keyHash7", "keySalt7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
+            final LegacyClientKey[] clientKeys = {
+                    new LegacyClientKey("key3", "keyHash3", "keySalt3", "", "name3", "contact3", Instant.now(), readerRole, 3, false),
+                    new LegacyClientKey("key4", "keyHash4", "keySalt4", "", "name4", "contact4", Instant.now(), readerRole, 4, false),
+                    new LegacyClientKey("key7", "keyHash7", "keySalt7", "", "name7", "contact7", Instant.now(), readerRole, 7, false)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -479,7 +474,6 @@ public class PrivateSiteUtilTest {
         public void sharesAclWithSitesOutsideOfBlacklist() {
             EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(siteId3));
 
-
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator, site2PrivateOperator);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
                     siteId1, acl
@@ -503,7 +497,6 @@ public class PrivateSiteUtilTest {
         public void doesNotSharesAclWithSitesOnTheBlacklist() {
             EncryptionKeyAcl acl = new EncryptionKeyAcl(false, ImmutableSet.of(siteId2));
 
-
             ImmutableList<OperatorKey> operators = ImmutableList.of(site1PrivateOperator);
             Map<Integer, EncryptionKeyAcl> acls = ImmutableMap.of(
                     siteId1, acl
@@ -523,10 +516,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclData() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -558,10 +551,10 @@ public class PrivateSiteUtilTest {
         @Test
         public void testGenerateEncryptionKeyAclDataForEachSite() {
             final OperatorKey[] operatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key6", "keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 2, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 2, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash6", "keySalt6", "name6", "contact6", "aws-nitro", 2, false, 6, new HashSet<>(), OperatorType.PRIVATE)
             };
 
             final Set<Integer> site3Whitelist = new HashSet<>();
@@ -584,7 +577,6 @@ public class PrivateSiteUtilTest {
 
             final Map<Integer, EncryptionKeyAcl> site6EncryptionKeyAcls = new HashMap<>();
             site6EncryptionKeyAcls.put(4, acls.get(4));
-
 
             final HashMap<Integer, Map<Integer, EncryptionKeyAcl>> expected = new HashMap<>();
             expected.put(3, site3EncryptionKeyAcls);
@@ -609,12 +601,11 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void nullKeysetGetsOwnPlusDefault() {
-
             Map<Integer, Keyset> expected = Map.of(
-                -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
-                -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
-                2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
-                4, new Keyset(4, 10, "Site 10", null, 999999, true, true)
+                    -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
+                    -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
+                    2, new Keyset(2, 2, "Publisher Fallback Key", null, 999999, true, true),
+                    4, new Keyset(4, 10, "Site 10", null, 999999, true, true)
             );
 
             ImmutableList<OperatorKey> operators = ImmutableList.of(
@@ -633,7 +624,6 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void OperatorGetsOwnSharedAndDefault() {
-
             Map<Integer, Keyset> expected = Map.of(
                     -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
                     -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
@@ -658,7 +648,6 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void OperatorNoKeyGetsDefault() {
-
             Map<Integer, Keyset> expected = Map.of(
                     -2, new Keyset(-2, -2, "Refresh Key", null, 999999, true, true),
                     -1, new Keyset(-1, -1, "Master Key", null, 999999, true, true),
@@ -682,7 +671,6 @@ public class PrivateSiteUtilTest {
 
     @Nested
     class KeysetKeys {
-
         KeysetKey keysetKey1 = new KeysetKey(1000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 1);
         KeysetKey keysetKey2 = new KeysetKey(2000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 2);
         KeysetKey keysetKey3 = new KeysetKey(3000, new byte[]{}, Instant.now(), Instant.now(), Instant.now(), 3);
@@ -726,7 +714,6 @@ public class PrivateSiteUtilTest {
 
         @Test
         public void siteHasOwnKeysetKeys() {
-
             keysets.put(1, keyset1);
             keysets.put(2, keyset2);
             keysets.put(3, keyset3);
@@ -884,12 +871,17 @@ public class PrivateSiteUtilTest {
             );
 
             List<ILoggingEvent> logsList = listAppender.list;
-            assertEquals("Unable to find keyset with keyset id 3", logsList.get(0)
-                    .getMessage());
-            assertEquals(Level.ERROR, logsList.get(0)
-                    .getLevel());
-
-            assertEquals(expected, actual);
+            assertAll(
+                    "skipKeyWithKeysetIdNotFoundAndLogError",
+                    () -> assertAll(
+                            "skipKeyWithKeysetIdNotFoundAndLogError - Logging",
+                            () -> assertEquals("Unable to find keyset with keyset id 3", logsList.get(0)
+                                    .getMessage()),
+                            () -> assertEquals(Level.ERROR, logsList.get(0)
+                                    .getLevel())
+                    ),
+                    () -> assertEquals(expected, actual)
+            );
         }
     }
 
@@ -972,18 +964,19 @@ public class PrivateSiteUtilTest {
                     new Site(5, "4", true)
             };
             final OperatorKey[] publicOperatorKeys = {
-                    new OperatorKey("key2", "keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
-                    new OperatorKey("key5", "keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC),
+                    new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC),
             };
             final OperatorKey[] privateOperatorKeys = {
-                    new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
-                    new OperatorKey("key4", "keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE),
+                    new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE),
             };
             final List<OperatorKey> allOperatorKeys = new ArrayList<>(Arrays.asList(publicOperatorKeys));
             allOperatorKeys.addAll(Arrays.asList(privateOperatorKeys));
 
             final PrivateSiteDataMap<Site> result = getSites(
-                    Arrays.asList(sites), allOperatorKeys);
+                    Arrays.asList(sites), allOperatorKeys
+            );
 
             final Set<Site> expectedSite3Sites = new HashSet<>();
             expectedSite3Sites.add(sites[0]);
@@ -1004,16 +997,13 @@ public class PrivateSiteUtilTest {
     static int siteId3 = 12;
     static int siteId4 = 13;
     final Set<OperatorKey> noOperators = ImmutableSet.of();
-    final Set<ClientKey> noClients = ImmutableSet.of();
+    final Set<LegacyClientKey> noClients = ImmutableSet.of();
     final Set<EncryptionKey> noKeys = ImmutableSet.of();
     final Set<KeysetKey> noKeysetKeys = ImmutableSet.of();
     final Map<Integer, EncryptionKeyAcl> noAcls = ImmutableMap.of();
 
     static class OperatorBuilder {
-        private final OperatorKey operator = new OperatorKey("key3", "keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
-
-        OperatorBuilder() {
-        }
+        private final OperatorKey operator = new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 2, false, siteId1, ImmutableSet.of(), OperatorType.PRIVATE);
 
         public OperatorBuilder withSiteId(int siteId) {
             this.operator.setSiteId(siteId);
@@ -1038,36 +1028,35 @@ public class PrivateSiteUtilTest {
         public OperatorKey build() {
             return operator;
         }
-
     }
 
-    static class ClientBuilder {
+    static class LegacyClientBuilder {
         private int siteId = siteId1;
         private boolean isDisabled = false;
         private final HashSet<Role> roles = new HashSet<>();
 
-        public ClientBuilder withSiteId(int siteId) {
+        public LegacyClientBuilder withSiteId(int siteId) {
             this.siteId = siteId;
             return this;
         }
 
-        public ClientBuilder thatIsEnabled() {
+        public LegacyClientBuilder thatIsEnabled() {
             this.isDisabled = false;
             return this;
         }
 
-        public ClientBuilder thatIsDisabled() {
+        public LegacyClientBuilder thatIsDisabled() {
             this.isDisabled = true;
             return this;
         }
 
-        public ClientBuilder withReaderRole() {
+        public LegacyClientBuilder withReaderRole() {
             roles.add(Role.ID_READER);
             return this;
         }
 
-        public ClientKey build() {
-            return new ClientKey("key3_1", "keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
+        public LegacyClientKey build() {
+            return new LegacyClientKey("key_1", "keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled);
         }
     }
 }

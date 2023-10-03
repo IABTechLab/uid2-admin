@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.uid2.admin.vertx.JsonUtil.createJsonWriter;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,7 +128,7 @@ class ClientKeyStoreTest {
 
             clientWriter.upload(oneClient, null);
 
-            ClientKey actual = clientStore.getClientKey(oneClient.get(0).getKey());
+            ClientKey actual = clientStore.getClientKeyFromHash(oneClient.get(0).getKeyHash());
             assertThat(actual).isEqualTo(oneClient.get(0));
         }
 
@@ -192,9 +193,18 @@ class ClientKeyStoreTest {
 
     private List<ClientKey> generateOneClient(String suffix) {
         KeyHashResult result = new KeyHasher().hashKey("key" + suffix);
-        ClientKey key = new ClientKey("key" + suffix, result.getHash(), result.getSalt(), "secret" + suffix, "contact" + suffix)
-                .withRoles(Role.GENERATOR)
-                .withSiteId(5);
+        ClientKey key = new ClientKey(
+                result.getHash(),
+                result.getSalt(),
+                "secret" + suffix,
+                "name" + suffix,
+                "contact" + suffix,
+                0,
+                Set.of(Role.GENERATOR),
+                5,
+                false,
+                0
+        );
         return ImmutableList.of(key);
     }
     private final String rootDir = "this-test-data-type";

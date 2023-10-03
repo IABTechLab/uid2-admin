@@ -1,5 +1,6 @@
 package com.uid2.admin.util;
 
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
@@ -23,10 +24,10 @@ public final class PrivateSiteUtil {
     private PrivateSiteUtil() {
     }
 
-    public static PrivateSiteDataMap<ClientKey> getClientKeys(
+    public static PrivateSiteDataMap<LegacyClientKey> getClientKeys(
             Collection<OperatorKey> operators,
-            Collection<ClientKey> clients) {
-        final PrivateSiteDataMap<ClientKey> result = getPrivateSites(operators);
+            Collection<LegacyClientKey> clients) {
+        final PrivateSiteDataMap<LegacyClientKey> result = getPrivateSites(operators);
 
         // For each client key that is enabled, add it to every Synced Site
         clients.forEach(c -> {
@@ -45,7 +46,7 @@ public final class PrivateSiteUtil {
             Collection<OperatorKey> operators,
             Collection<EncryptionKey> keys,
             Map<Integer, EncryptionKeyAcl> acls,
-            Collection<ClientKey> clients) {
+            Collection<LegacyClientKey> clients) {
         final PrivateSiteDataMap<EncryptionKey> result = getPrivateSites(operators);
 
         // If it is for a Special Site, add this key to every Private Site
@@ -64,7 +65,7 @@ public final class PrivateSiteUtil {
         // Filter OUT special keys and filter IN Reader Site keys ONLY
         final Set<Integer> readerSites = clients.stream()
                 .filter(c -> c.hasRole(Role.ID_READER))
-                .map(ClientKey::getSiteId)
+                .map(LegacyClientKey::getSiteId)
                 .collect(Collectors.toSet());
         keys.stream()
                 .filter(k -> !isSpecialSite(k.getSiteId()) && readerSites.contains(k.getSiteId()))

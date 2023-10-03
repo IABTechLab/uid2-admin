@@ -1,6 +1,10 @@
 package com.uid2.admin.vertx.test;
 
 import com.uid2.admin.auth.*;
+import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -61,6 +65,7 @@ public abstract class ServiceTestBase {
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
     @Mock protected StoreWriter storeWriter;
     @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
+    @Mock protected LegacyClientKeyStoreWriter legacyClientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
     @Mock protected ClientSideKeypairStoreWriter keypairStoreWriter;
@@ -75,10 +80,12 @@ public abstract class ServiceTestBase {
     @Mock protected PartnerStoreWriter partnerStoreWriter;
 
     @Mock protected IEncryptionKeyManager keyManager;
+    @Mock protected KeysetManager keysetManager;
     @Mock protected IKeysetKeyManager keysetKeyManager;
     @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;
     @Mock protected RotatingClientKeyProvider clientKeyProvider;
+    @Mock protected RotatingLegacyClientKeyProvider legacyClientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
     @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
@@ -165,14 +172,25 @@ public abstract class ServiceTestBase {
         when(siteProvider.getAllSites()).thenReturn(Arrays.asList(sites));
     }
 
-    protected void setClientKeys(ClientKey... clientKeys) {
-        when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
-        for (ClientKey clientKey : clientKeys) {
-            when(clientKeyProvider.getClientKey(clientKey.getKey())).thenReturn(clientKey);
-            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+    protected void setClientKeys(LegacyClientKey... clientKeys) {
+        when(legacyClientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
+        when(clientKeyProvider.getAll()).thenReturn(Arrays.stream(clientKeys).map(LegacyClientKey::toClientKey).collect(Collectors.toList()));
+        for (LegacyClientKey clientKey : clientKeys) {
+            when(legacyClientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey.toClientKey());
         }
     }
 
+    protected void setClientKeys(Map<String, ClientKey> clientKeys) {
+        when(clientKeyProvider.getAll()).thenReturn(clientKeys.values());
+        for (Map.Entry<String, ClientKey> entry : clientKeys.entrySet()) {
+            String plaintextKey = entry.getKey();
+            ClientKey clientKey = entry.getValue();
+
+            when(clientKeyProvider.getClientKey(plaintextKey)).thenReturn(clientKey);
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
+        }
+    }
 
     protected void setEncryptionKeys(int maxKeyId, EncryptionKey... keys) throws Exception {
         JsonObject metadata = new JsonObject();
@@ -219,7 +237,17 @@ public abstract class ServiceTestBase {
     protected void setOperatorKeys(OperatorKey... operatorKeys) {
         when(operatorKeyProvider.getAll()).thenReturn(Arrays.asList(operatorKeys));
         for (OperatorKey operatorKey : operatorKeys) {
-            when(operatorKeyProvider.getOperatorKey(operatorKey.getKey())).thenReturn(operatorKey);
+            when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
+        }
+    }
+
+    protected void setOperatorKeys(Map<String, OperatorKey> operatorKeys) {
+        when(operatorKeyProvider.getAll()).thenReturn(operatorKeys.values());
+        for (Map.Entry<String, OperatorKey> entry : operatorKeys.entrySet()) {
+            String plaintextKey = entry.getKey();
+            OperatorKey operatorKey = entry.getValue();
+
+            when(operatorKeyProvider.getOperatorKey(plaintextKey)).thenReturn(operatorKey);
             when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
         }
     }
@@ -245,7 +273,7 @@ public abstract class ServiceTestBase {
         return new EncryptionKeyAcl(isWhitelist, Arrays.stream(siteIds).collect(Collectors.toSet()));
     }
 
-    protected static class CollectionOfSize implements ArgumentMatcher<Collection> {
+    protected static class CollectionOfSize<T> implements ArgumentMatcher<Collection<T>> {
         private final int expectedSize;
 
         public CollectionOfSize(int expectedSize) {
@@ -257,11 +285,11 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static Collection collectionOfSize(int expectedSize) {
-        return argThat(new CollectionOfSize(expectedSize));
+    protected static <T> Collection<T> collectionOfSize(int expectedSize) {
+        return argThat(new CollectionOfSize<>(expectedSize));
     }
 
-    protected static class MapOfSize implements ArgumentMatcher<Map> {
+    protected static class MapOfSize<K, V> implements ArgumentMatcher<Map<K, V>> {
         private final int expectedSize;
 
         public MapOfSize(int expectedSize) {
@@ -273,7 +301,7 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static Map mapOfSize(int expectedSize) {
-        return argThat(new MapOfSize(expectedSize));
+    protected static <K, V> Map<K, V> mapOfSize(int expectedSize) {
+        return argThat(new MapOfSize<>(expectedSize));
     }
 }

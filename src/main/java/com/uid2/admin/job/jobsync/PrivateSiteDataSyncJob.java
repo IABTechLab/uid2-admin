@@ -8,6 +8,7 @@ import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
 import com.uid2.admin.job.jobsync.keyset.SiteKeysetSyncJob;
 import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.job.model.Job;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.*;
 import com.uid2.admin.store.version.EpochVersionGenerator;
@@ -124,7 +125,7 @@ public class PrivateSiteDataSyncJob extends Job {
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
         Collection<Site> globalSites = siteStoreFactory.getGlobalReader().getAllSites();
-        Collection<ClientKey> globalClients = clientKeyStoreFactory.getGlobalReader().getAll();
+        Collection<LegacyClientKey> globalClients = clientKeyStoreFactory.getGlobalReader().getAll();
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
         Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
@@ -133,7 +134,7 @@ public class PrivateSiteDataSyncJob extends Job {
                 fileManager,
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
-        MultiScopeStoreWriter<Collection<ClientKey>> clientWriter = new MultiScopeStoreWriter<>(
+        MultiScopeStoreWriter<Collection<LegacyClientKey>> clientWriter = new MultiScopeStoreWriter<>(
                 fileManager,
                 clientKeyStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
