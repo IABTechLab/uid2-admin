@@ -32,6 +32,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doListAll">List Service Links</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doListBySite">List Service Links By Site Id</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service Link</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update Service Link</a></li>
 </ul>
 
 <br>
@@ -72,6 +73,18 @@
                 return
             }
             doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
+        });
+
+        $('#doUpdate').on('click', function () {
+            const linkId = $('#linkId').val()
+            const serviceId = parseInt($('#serviceId').val())
+            const siteId = parseInt($('#siteId').val())
+            const linkName = $('#linkName').val()
+            if(!siteId || !serviceId) {
+                $('#errorOutput').text("required parameters: service_id, site_id")
+                return
+            }
+            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
         });
     });
 </script>

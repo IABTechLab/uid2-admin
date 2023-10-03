@@ -324,7 +324,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     void updateRolesMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        postWithoutBody(vertx, "api/service/roles", testContext.succeeding(response -> testContext.verify(() -> {
+        postWithoutBody(vertx, "api/service/update", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -333,7 +333,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"service_id", "roles"})
+    @ValueSource(strings = {"service_id"})
     void updateRolesMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -343,9 +343,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         jo.remove(parameter);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
-            assertEquals("required parameters: service_id, roles", response.bodyAsJsonObject().getString("message"));
+            assertEquals("required parameters: service_id", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         })));
@@ -364,7 +364,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 2);
         jo.put("roles", ja);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(404, response.statusCode());
             assertEquals("failed to find a service for service_id: 2", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -385,7 +385,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("roles", ja);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -408,7 +408,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("roles", ja);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             existingService.setRoles(Set.of(Role.GENERATOR, Role.ADMINISTRATOR));
             checkServiceJson(existingService, response.bodyAsJsonObject());
@@ -416,4 +416,66 @@ public class ServiceServiceTest extends ServiceTestBase {
             testContext.completeNow();
         })));
     }
+
+    @Test
+    void updateName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("name", "newName");
+
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+            existingService.setName("newName");
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void updateSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("site_id", 456);
+
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+            existingService.setSiteId(456);
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void updateWithEmptyValues(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("site_id", null);
+        jo.put("name", "");
+
+        post(vertx, "api/service/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        })));
+    }
+
+
 }

@@ -3,7 +3,6 @@ package com.uid2.admin.vertx.service;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
@@ -53,9 +52,9 @@ public class ServiceService implements IService {
                 this.handleServiceAdd(ctx);
             }
         }, Role.ADMINISTRATOR));
-        router.post("/api/service/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/service/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleServiceRoles(ctx);
+                this.handleUpdate(ctx);
             }
         }, Role.ADMINISTRATOR));
     }
@@ -149,7 +148,7 @@ public class ServiceService implements IService {
         }
     }
 
-    private void handleServiceRoles(RoutingContext rc) {
+    private void handleUpdate(RoutingContext rc) {
         try {
             JsonObject body = rc.body().asJsonObject();
             if (body == null) {
@@ -157,9 +156,12 @@ public class ServiceService implements IService {
                 return;
             }
             Integer serviceId = body.getInteger("service_id");
+            Integer siteId = body.getInteger("site_id");
+            String name = body.getString("name");
+
             JsonArray rolesSpec = body.getJsonArray("roles");
-            if (serviceId == null || rolesSpec == null) {
-                ResponseUtil.error(rc, 400, "required parameters: service_id, roles");
+            if (serviceId == null) {
+                ResponseUtil.error(rc, 400, "required parameters: service_id");
                 return;
             }
 
@@ -169,15 +171,24 @@ public class ServiceService implements IService {
                 return;
             }
 
-            final Set<Role> roles;
-            try {
-                roles = rolesSpec.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
-            } catch (IllegalArgumentException e) {
-                ResponseUtil.error(rc, 400, "invalid parameter: roles");
-                return;
+            if (rolesSpec != null) {
+                final Set<Role> roles;
+                try {
+                    roles = rolesSpec.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
+                    return;
+                }
+                service.setRoles(roles);
             }
 
-            service.setRoles(roles);
+            if (siteId != null && siteId != 0) {
+                service.setSiteId(siteId);
+            }
+
+            if (name != null && !name.isEmpty()) {
+                service.setName(name);
+            }
 
             final List<Service> services = this.serviceProvider.getAllServices()
                     .stream().sorted(Comparator.comparingInt(Service::getServiceId))
