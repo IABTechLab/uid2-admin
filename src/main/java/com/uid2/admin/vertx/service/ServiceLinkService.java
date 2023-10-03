@@ -158,6 +158,7 @@ public class ServiceLinkService implements IService {
                     .orElse(null);
             if (serviceLink == null) {
                 ResponseUtil.error(rc, 404, "failed to find a service_link for serviceId: " + serviceId + " and site_id: " + siteId);
+                return;
             }
 
             if (linkId != null && !linkId.isEmpty()) {
