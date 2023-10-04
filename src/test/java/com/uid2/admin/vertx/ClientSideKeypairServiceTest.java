@@ -407,7 +407,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         post(vertx, "api/client_side_keypairs/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
-            assertEquals("Updatable parameters: contact, disabled", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Updatable parameters: contact, disabled, name", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         })));
     }
