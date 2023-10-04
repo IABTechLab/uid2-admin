@@ -6,7 +6,7 @@ services:
     ports:
       - "127.0.0.1:5001:5001"
     volumes:
-      - "./src/main/resources/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
-      - "./src/main/resources/localstack/s3:/s3"
+      - "./uid2-mock-data/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
+      - "./uid2-mock-data/localstack/s3:/s3"
     environment:
       - EDGE_PORT=5001

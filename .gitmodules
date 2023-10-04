@@ -1,0 +1,4 @@
+[submodule "uid2-mock-data"]
+	path = uid2-mock-data
+	url = git@github.com:IABTechLab/uid2-mock-data.git
+	branch = master
