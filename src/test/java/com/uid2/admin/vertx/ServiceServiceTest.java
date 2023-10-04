@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -473,6 +474,84 @@ public class ServiceServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void deleteService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+
+        post(vertx, "api/service/delete", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(new ArrayList<Service>(), null);
+            testContext.completeNow();
+        })));
+    }
+    @Test
+    void deleteServiceInvalidServiceId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("missing_service_id", 1);
+
+        post(vertx, "api/service/delete", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(400, response.statusCode());
+
+            assertEquals("required parameters: service_id", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+
+            verify(serviceStoreWriter, never()).upload(new ArrayList<Service>(), null);
+            verify(serviceStoreWriter, never()).upload(List.of(existingService), null);
+            testContext.completeNow();
+        })));
+    }
+    @Test
+    void deleteServiceNoBody(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        post(vertx, "api/service/delete", "", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(400, response.statusCode());
+
+            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+
+            verify(serviceStoreWriter, never()).upload(new ArrayList<Service>(), null);
+            verify(serviceStoreWriter, never()).upload(List.of(existingService), null);
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    void deleteOneService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService2 = new Service(2, 123, "name2", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService3 = new Service(32, 123, "name3", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService, existingService2, existingService3);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 2);
+
+        post(vertx, "api/service/delete", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+
+            checkServiceJson(existingService2, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService, existingService3), null);
             testContext.completeNow();
         })));
     }

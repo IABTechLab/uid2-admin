@@ -59,6 +59,11 @@ public class ServiceLinkService implements IService {
                 this.handleServiceLinkUpdate(ctx);
             }
         }, Role.ADMINISTRATOR));
+        router.post("/api/service_link/delete").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleServiceLinkDelete(ctx);
+            }
+        }, Role.ADMINISTRATOR));
     }
 
     private void handleServiceLinkList(RoutingContext rc) {
@@ -137,7 +142,7 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            if (siteId == null || serviceId == null ) {
+            if (siteId == null || serviceId == null) {
                 ResponseUtil.error(rc, 400, "required parameters: site_id, service_id");
                 return;
             }
@@ -175,6 +180,44 @@ public class ServiceLinkService implements IService {
 
             storeWriter.upload(serviceLinks, null);
 
+            rc.response().end(toJson(serviceLink).encodePrettily());
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "Internal Server Error", e);
+        }
+    }
+
+    private void handleServiceLinkDelete(RoutingContext rc) {
+        try {
+            serviceProvider.loadContent();
+            JsonObject body = rc.body().asJsonObject();
+            if (body == null) {
+                ResponseUtil.error(rc, 400, "json payload required but not provided");
+                return;
+            }
+
+            String linkId = body.getString("link_id");
+            Integer serviceId = body.getInteger("service_id");
+
+            if (linkId == null || serviceId == null) {
+                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id");
+                return;
+            }
+
+            ServiceLink serviceLink = this.serviceLinkProvider.getAllServiceLinks()
+                    .stream().filter(s -> s.getServiceId() == serviceId && s.getLinkId().equals(linkId))
+                    .findFirst()
+                    .orElse(null);
+            if (serviceLink == null) {
+                ResponseUtil.error(rc, 404, "failed to find a service_link for serviceId: " + serviceId + " and link_id: " + linkId);
+                return;
+            }
+
+            final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
+                    .stream().filter(s -> s.getServiceId() == serviceId && s.getLinkId() == linkId)
+                    .collect(Collectors.toList());
+
+            serviceLinks.remove(serviceLink);
+            storeWriter.upload(serviceLinks, null);
             rc.response().end(toJson(serviceLink).encodePrettily());
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "Internal Server Error", e);

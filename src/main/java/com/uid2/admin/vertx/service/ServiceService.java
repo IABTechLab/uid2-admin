@@ -57,6 +57,11 @@ public class ServiceService implements IService {
                 this.handleUpdate(ctx);
             }
         }, Role.ADMINISTRATOR));
+        router.post("/api/service/delete").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleDelete(ctx);
+            }
+        }, Role.ADMINISTRATOR));
     }
 
     private void handleServiceListAll(RoutingContext rc) {
@@ -200,6 +205,43 @@ public class ServiceService implements IService {
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "Internal Server Error", e);
         }
+    }
+
+    private void handleDelete(RoutingContext rc) {
+        final int serviceId;
+        JsonObject body = rc.body() != null ? rc.body().asJsonObject() : null;
+        if (body == null) {
+            ResponseUtil.error(rc, 400, "json payload required but not provided");
+            return;
+        }
+        serviceId = body.getInteger("service_id", -1);
+        if (serviceId == -1) {
+            ResponseUtil.error(rc, 400, "required parameters: service_id");
+            return;
+        }
+
+        try {
+            serviceProvider.loadContent();
+
+            Service service = serviceProvider.getService(serviceId);
+            if (service == null) {
+                ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
+                return;
+            }
+
+            final List<Service> services = this.serviceProvider.getAllServices()
+                    .stream().sorted(Comparator.comparingInt(Service::getServiceId))
+                    .collect(Collectors.toList());
+
+            services.remove(service);
+
+            storeWriter.upload(services, null);
+
+            rc.response().end(toJson(service).encodePrettily());
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "Internal Server Error", e);
+        }
+
     }
 
     private JsonObject toJson(Service s) {

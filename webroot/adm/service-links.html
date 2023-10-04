@@ -37,6 +37,12 @@
 
 <br>
 
+<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doDelete">Delete Service Link</a></li>
+</ul>
+
 <h3>Output</h3>
 
 <div id="output">
@@ -85,6 +91,20 @@
                 return
             }
             doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
+        });
+
+        $('#doDelete').on('click', function () {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
+            const linkId = $('#linkId').val()
+            const serviceId = parseInt($('#serviceId').val())
+            if(!linkId || !serviceId) {
+                $('#errorOutput').text("required parameters: service_id, link_id")
+                return
+            }
+            doApiCall('POST', '/api/service_link/delete', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId}));
         });
     });
 </script>
