@@ -179,6 +179,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         post(vertx, "api/client_side_keypairs/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("Required parameters: site_id", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -201,6 +202,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         post(vertx, "api/client_side_keypairs/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("Required parameters: site_id", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -224,6 +226,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         post(vertx, "api/client_side_keypairs/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(404, response.statusCode());
             assertEquals("site_id: 123 not valid", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -266,7 +269,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals("UID2-Y-L-", resp.getString("private_key").substring(0, 9));
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
-            assertEquals(false, resp.getBoolean("disabled"));
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -302,6 +305,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
             assertEquals(false, resp.getBoolean("disabled"));
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -336,6 +340,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertTrue(resp.getString("private_key").length() > 0);
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(true, resp.getBoolean("disabled"));
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -360,6 +365,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         post(vertx, "api/client_side_keypairs/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("Required parameters: subscription_id", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -385,6 +391,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         post(vertx, "api/client_side_keypairs/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(404, response.statusCode());
             assertEquals("Failed to find a keypair for subscription id: bad-id", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -408,6 +415,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         post(vertx, "api/client_side_keypairs/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("Updatable parameters: contact, disabled, name", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -434,6 +442,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "updated@email.com", time, true, name1);
             validateKeypair(expected, response.bodyAsJsonObject());
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -460,6 +469,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, true, "updated name");
             validateKeypair(expected, response.bodyAsJsonObject());
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -486,6 +496,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, false, name1);
             validateKeypair(expected, response.bodyAsJsonObject());
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -513,6 +524,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "updated@email.com", time, false, name1);
             validateKeypair(expected, response.bodyAsJsonObject());
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
@@ -540,6 +552,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             ClientSideKeypair expected = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", time, false, "updated name");
             validateKeypair(expected, response.bodyAsJsonObject());
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         })));
     }
