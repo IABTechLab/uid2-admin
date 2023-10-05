@@ -213,7 +213,7 @@ public class ServiceLinkService implements IService {
             }
 
             final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
-                    .stream().filter(s -> s.getServiceId() == serviceId && s.getLinkId() == linkId)
+                    .stream().sorted(Comparator.comparingInt(ServiceLink::getServiceId))
                     .collect(Collectors.toList());
 
             serviceLinks.remove(serviceLink);

@@ -343,7 +343,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
         ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2");
         ServiceLink existingLink3 = new ServiceLink("link3", 1, 123, "name3");
-        setServiceLinks(existingLink);
+        setServiceLinks(existingLink, existingLink2, existingLink3);
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link2");
