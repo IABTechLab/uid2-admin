@@ -58,6 +58,7 @@ public class ClientSideKeypairStoreWriter implements StoreWriter<Collection<Clie
         jo.put("contact", keypair.getContact());
         jo.put("created", keypair.getCreated().getEpochSecond());
         jo.put("disabled", keypair.isDisabled());
+        jo.put("name", keypair.getName());
         return jo;
     }
 
