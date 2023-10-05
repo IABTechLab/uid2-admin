@@ -233,7 +233,8 @@ public class SharingService implements IService {
         }
 
         JsonObject jo = new JsonObject();
-        jo.put("allowed_sites", keyset.getAllowedSites());
+        Set<Integer> allowedSites = keyset.getAllowedSites();
+        jo.put("allowed_sites", allowedSites != null ? allowedSites.stream().sorted() : null);
         jo.put("allowed_types", keyset.getAllowedTypes());
         jo.put("hash", keyset.hashCode());
 
@@ -250,7 +251,8 @@ public class SharingService implements IService {
                 JsonObject jo = new JsonObject();
                 jo.put("keyset_id", keyset.getValue().getKeysetId());
                 jo.put("site_id", keyset.getValue().getSiteId());
-                jo.put("allowed_sites", keyset.getValue().getAllowedSites());
+                Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
+                jo.put("allowed_sites", allowedSites != null ? allowedSites.stream().sorted() : null);
                 jo.put("allowed_types", keyset.getValue().getAllowedTypes());
                 jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);
