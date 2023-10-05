@@ -2,6 +2,7 @@ package com.uid2.admin.vertx;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.*;
+import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
@@ -9,6 +10,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.auth.authentication.TokenCredentials;
@@ -29,16 +31,19 @@ public class AdminVerticle extends AbstractVerticle {
     private final AuthFactory authFactory;
     private final IAdminUserProvider adminUserProvider;
     private final IService[] services;
+    private final V2Router v2Router;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     public AdminVerticle(JsonObject config,
                          AuthFactory authFactory,
                          IAdminUserProvider adminUserProvider,
-                         IService[] services) {
+                         IService[] services,
+                         V2Router v2Router) {
         this.config = config;
         this.authFactory = authFactory;
         this.adminUserProvider = adminUserProvider;
         this.services = services;
+        this.v2Router = v2Router;
     }
 
     public void start(Promise<Void> startPromise) {
@@ -76,6 +81,10 @@ public class AdminVerticle extends AbstractVerticle {
 
         for (IService service : this.services) {
             service.setupRoutes(router);
+        }
+
+        if (v2Router != null) {
+            v2Router.setupSubRouter(vertx, router);
         }
 
         return router;
