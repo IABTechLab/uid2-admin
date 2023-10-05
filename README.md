@@ -16,3 +16,15 @@ When running locally, GitHub OAuth 2.0 is disabled and users are logged in as *t
 `src/main/resources/localstack/s3/admins/admins.json` and `docker-compose restart`.
 
 If you want to test with GitHub OAuth 2.0, you will need to create an OAuth application on GitHub with `http://localhost:8089/oauth2-callback` as the callback URL, then generate a client ID/secret. Once generated, set the `is_auth_disabled` flag to `false`, and copy the client ID/secret into `github_client_id` and `github_client_secret`.
+
+## V2 API
+
+The v2 API is based on individual route provider classes. Each class should provide exactly one endpoint and must implement IRouteProvider or IBlockingRouteProvider. 
+
+### IRouteProvider
+
+**Caution:** When implementing an API endpoint, you need to decide whether you should have a blocking or a non-blocking handler. Non-blocking handlers are suitable for most read-only operations, while most write operations should be done on a blocking handler. If you are calling into a service with a `synchronized` block, you **must** use a blocking handler. You can make your handler blocking by implementing the `IBlockingRouteProvider` interface *instead of* the `IRouteProvider` interface.
+
+IRouteProvider requires a `getHandler` method, which should return a valid handler function - see `GetClientSideKeypairsBySite.java`. This method *must* be annotated with the Path, Method, and Roles annotations.
+
+The route handler will automatically be wrapped by the Auth middleware based on the roles specified in the Roles annotation.
