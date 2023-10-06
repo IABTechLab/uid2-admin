@@ -17,8 +17,8 @@
 <input type="text" id="subscriptionId" name="subscriptionId">
 <label for="siteId">Site id:</label>
 <input type="text" id="siteId" name="siteId">
-<label for="contact">Contact Email:</label>
-<input type="text" id="contact" name="contact">
+<label for="name">Keypair Name:</label>
+<input type="text" id="name" name="name">
 <label for="disable">Disable Keypair:</label>
 <input type="checkbox" id="disable" name="disable" value="true">
 
@@ -76,21 +76,21 @@
 
         $('#doCreate').on('click', function () {
             const siteId = $('#siteId').val();
-            const contact = $('#contact').val();
+            const name = $('#name').val();
             const disabled = ($('#disable').is(':checked'));
             if(!siteId) {
                 $('#errorOutput').text("required parameters: site_id")
                 return
             }
 
-            const payload = {"site_id": parseInt(siteId), "contact": contact, "disabled": disabled}
+            const payload = {"site_id": parseInt(siteId), "name": name, "disabled": disabled}
 
             doApiCall('POST', '/api/client_side_keypairs/add', '#standardOutput', '#errorOutput', JSON.stringify(payload));
         });
 
         $('#doUpdate').on('click', function () {
             const subscriptionId = $('#subscriptionId').val()
-            const contact = $('#contact').val();
+            const name = $('#name').val();
             const disabled = ($('#disable').is(':checked'));
 
             if(!subscriptionId) {
@@ -99,8 +99,8 @@
             }
 
             const payload = {"subscription_id": subscriptionId, "disabled" : disabled}
-            if(contact){
-                payload["contact"] = contact
+            if(name){
+                payload["name"] = name
             }
 
             doApiCall('POST', '/api/client_side_keypairs/update', '#standardOutput', '#errorOutput', JSON.stringify(payload));
