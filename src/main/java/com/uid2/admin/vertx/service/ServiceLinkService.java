@@ -142,8 +142,8 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            if (siteId == null || serviceId == null) {
-                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id");
+            if (siteId == null || serviceId == null || name == null) {
+                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, name");
                 return;
             }
 
@@ -157,26 +157,27 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
-            ServiceLink serviceLink = this.serviceLinkProvider.getAllServiceLinks()
-                    .stream().filter(s -> s.getServiceId() == serviceId && s.getSiteId() == siteId)
+            final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
+                    .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
+                    .collect(Collectors.toList());
+
+            ServiceLink serviceLink = serviceLinks
+                    .stream().filter(s -> s.getServiceId() == serviceId && s.getSiteId() == siteId && s.getName().equals(name))
                     .findFirst()
                     .orElse(null);
             if (serviceLink == null) {
-                ResponseUtil.error(rc, 404, "failed to find a service_link for serviceId: " + serviceId + " and site_id: " + siteId);
+                ResponseUtil.error(rc, 404, "failed to find a service_link for serviceId: " + serviceId + ", site_id: " + siteId + " and name: " + name);
+                return;
+            }
+
+            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceId && sl.getLinkId().equals(linkId))) {
+                ResponseUtil.error(rc, 400, "service link id already exists for service_id: " + serviceId);
                 return;
             }
 
             if (linkId != null && !linkId.isEmpty()) {
                 serviceLink.setLinkId(linkId);
             }
-
-            if (name != null && !name.isEmpty()) {
-                serviceLink.setName(name);
-            }
-
-            final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
-                    .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
-                    .collect(Collectors.toList());
 
             storeWriter.upload(serviceLinks, null);
 

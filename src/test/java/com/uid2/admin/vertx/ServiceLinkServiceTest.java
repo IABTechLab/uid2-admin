@@ -253,16 +253,16 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName");
 
         post(vertx, "api/service_link/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
-            assertEquals(200, response.statusCode());
-            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service_link for serviceId: 1, site_id: 123 and name: newName", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
             testContext.completeNow();
         })));
     }
 
     @Test
-    void updateName(Vertx vertx, VertxTestContext testContext) {
+    void updateNameFails(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -271,43 +271,41 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
         jo.put("service_id", 1);
         jo.put("site_id", 123);
-        jo.put("name", "newName");
-
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "newName");
+        jo.put("name", "newname");
 
         post(vertx, "api/service_link/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
-            assertEquals(200, response.statusCode());
-            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service_link for serviceId: 1, site_id: 123 and name: newname", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         })));
     }
 
     @Test
-    void updateLinkId(Vertx vertx, VertxTestContext testContext) {
+    void updateLinkIdCreateDuplicateFails(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
         ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
-        setServiceLinks(existingLink);
+        ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2");
+        setServiceLinks(existingLink, existingLink2);
 
         JsonObject jo = new JsonObject();
-        jo.put("link_id", "newLink");
+        jo.put("link_id", "link2");
         jo.put("service_id", 1);
         jo.put("site_id", 123);
-        jo.put("name", "newName");
-
-        ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName");
+        jo.put("name", "name1");
 
         post(vertx, "api/service_link/update", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
-            assertEquals(200, response.statusCode());
-            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            assertEquals(400, response.statusCode());
+            assertEquals("service link id already exists for service_id: 1", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         })));
     }
