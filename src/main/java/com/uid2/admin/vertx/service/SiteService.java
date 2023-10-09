@@ -81,6 +81,11 @@ public class SiteService implements IService {
                 this.handleSiteDomains(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/created").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteCreated(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -293,6 +298,40 @@ public class SiteService implements IService {
             rc.response().end(jsonWriter.writeValueAsString(existingSite));
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "set site domain_names failed", e);
+        }
+    }
+
+    private void handleSiteCreated(RoutingContext rc) {
+        try {
+            // refresh manually
+            siteProvider.loadContent();
+
+            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+
+            JsonObject body = rc.body().asJsonObject();
+            Long created = body.getLong("created");
+            if(created == null) {
+                ResponseUtil.error(rc, 400, "required parameters: created");
+                return;
+            }
+
+            Site updatedSite = new Site(existingSite.getId(), existingSite.getName(), existingSite.isEnabled(), existingSite.getClientTypes(), existingSite.getDomainNames(), created);
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            sites.remove(existingSite);
+            sites.add(updatedSite);
+
+            storeWriter.upload(sites, null);
+
+            rc.response().end(jsonWriter.writeValueAsString(updatedSite));
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "set site created failed", e);
         }
     }
 

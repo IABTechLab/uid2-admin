@@ -16,10 +16,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -607,6 +604,29 @@ public class SiteServiceTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             s.setDomainNames(Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
             checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void createdOverWrite(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        Site s = new Site(123, "name", true, Set.of("qwerty.com"));
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        reqBody.put("created", 123456);
+
+        post(vertx, "api/site/created?id=123", reqBody.encode(), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(200, response.statusCode());
+            Site updatedSite = new Site(123, "name", true, Set.of(), Set.of("qwerty.com"), 123456);
+            checkSiteResponse(updatedSite, response.bodyAsJsonObject());
+            try {
+                verify(storeWriter, times(1)).upload(List.of(updatedSite), null);
+            } catch (Exception e) {
+                testContext.failed();
+            }
             testContext.completeNow();
         });
     }
