@@ -20,6 +20,8 @@
     <input type="text" id="siteId" name="siteId">
     <label for="types">Client Types:</label>
     <input type="text" id="types" name="types">
+    <label for="created">Created:</label>
+    <input type="text" id="created" name="created" value="0">
 </div>
 <br>
 <div>
@@ -39,6 +41,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doCreated">Update Created</a></li>
 </ul>
 
 <br>
@@ -101,6 +104,13 @@
             const payload = { domain_names: domainNames }
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
+        });
+
+        $('#doCreated').on('click', function () {
+            var created = parseInt($('#created').val());
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/site/created?id=' + siteId;
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({created:created}));
         });
     });
 </script>
