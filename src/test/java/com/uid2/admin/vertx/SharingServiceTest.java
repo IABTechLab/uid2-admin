@@ -107,7 +107,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/list/42", ar -> {
+        get(vertx, testContext, "api/sharing/list/42", ar -> {
             HttpResponse response = ar.result();
             assertEquals(404, response.statusCode());
 
@@ -176,7 +176,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": " + keysets.get(3).hashCode() + "\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5", body, ar -> {
+        post(vertx, testContext, "api/sharing/list/5", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -213,7 +213,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/8", body, ar -> {
+        post(vertx, testContext, "api/sharing/list/8", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -259,7 +259,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/8", body, ar -> {
+        post(vertx, testContext, "api/sharing/list/8", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -302,7 +302,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/-1", body, ar -> {
+        post(vertx, testContext, "api/sharing/list/-1", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -372,7 +372,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/lists", ar -> {
+        get(vertx, testContext, "api/sharing/lists", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -404,7 +404,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/keyset/1", ar -> {
+        get(vertx, testContext, "api/sharing/keyset/1", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -426,7 +426,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/keyset/1", ar -> {
+        get(vertx, testContext, "api/sharing/keyset/1", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(404, response.statusCode());
@@ -447,7 +447,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/keysets", ar -> {
+        get(vertx, testContext, "api/sharing/keysets", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -486,7 +486,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -519,7 +519,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -553,7 +553,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -592,7 +592,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 3" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -642,7 +642,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 1" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -679,7 +679,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -716,7 +716,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -749,7 +749,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -785,7 +785,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -818,7 +818,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"TEST\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -850,7 +850,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -881,7 +881,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -912,7 +912,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 1" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -944,7 +944,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -973,7 +973,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -1002,7 +1002,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -1030,7 +1030,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -1058,7 +1058,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -1087,7 +1087,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -1118,7 +1118,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -1148,7 +1148,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"site_id\": 5" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
@@ -1174,7 +1174,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"site_id\": 3" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -1203,7 +1203,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"allowed_sites\": null" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -1231,7 +1231,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 1" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -1260,7 +1260,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"allowed_sites\": null" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -1298,7 +1298,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"site_id\": 8" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
+        post(vertx, testContext, "api/sharing/keyset", body, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
