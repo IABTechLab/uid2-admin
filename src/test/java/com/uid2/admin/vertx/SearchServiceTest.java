@@ -54,7 +54,7 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchAsAdminPasses(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        post(vertx, searchUrl, "123456", response -> {
+        post(vertx, testContext, searchUrl, "123456", response -> {
             assertAll(
                     "searchAsAdminPasses",
                     () -> assertTrue(response.succeeded()),

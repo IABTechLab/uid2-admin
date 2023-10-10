@@ -53,7 +53,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().build());
 
-        post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
+        post(vertx, testContext,"api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             ClientKey expected = new LegacyClientBuilder().withName("test_client1").build().toClientKey();
 
@@ -80,7 +80,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                 new LegacyClientBuilder().withName("test_client1").build()
         );
 
-        post(vertx, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
+        post(vertx, testContext, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "clientRenameWithExistingName",
@@ -96,7 +96,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         LegacyClientKey expectedClient = new LegacyClientBuilder().withServiceId(145).build();
-        post(vertx, "api/client/add?name=test_client&roles=generator&site_id=5&service_id=145", "", ar -> {
+        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=5&service_id=145", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 RevealedKey<ClientKey> revealedClient = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
@@ -170,7 +170,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().withServiceId(165).build());
 
-        post(vertx, "api/client/update?name=test_client&site_id=5&service_id=200", "", ar -> {
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=5&service_id=200", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             ClientKey expected = new LegacyClientBuilder().withServiceId(200).build().toClientKey();
             try {

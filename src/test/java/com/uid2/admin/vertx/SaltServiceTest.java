@@ -57,7 +57,7 @@ public class SaltServiceTest extends ServiceTestBase {
     void listSaltSnapshotsNoSnapshots(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
-        get(vertx, "api/salt/snapshots", ar -> {
+        get(vertx, testContext, "api/salt/snapshots", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -77,7 +77,7 @@ public class SaltServiceTest extends ServiceTestBase {
         };
         setSnapshots(snapshots);
 
-        get(vertx, "api/salt/snapshots", ar -> {
+        get(vertx, testContext, "api/salt/snapshots", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -102,7 +102,7 @@ public class SaltServiceTest extends ServiceTestBase {
         };
         when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
 
-        post(vertx, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
+        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -130,7 +130,7 @@ public class SaltServiceTest extends ServiceTestBase {
 
         when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
 
-        post(vertx, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
+        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());

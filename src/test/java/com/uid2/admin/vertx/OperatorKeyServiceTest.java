@@ -49,7 +49,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
                 .withType(OperatorType.PUBLIC)
                 .build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
@@ -76,7 +76,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
                 .withType(OperatorType.PUBLIC)
                 .build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
@@ -106,7 +106,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=&operator_type=private", "", ar -> {
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=&operator_type=private", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
@@ -130,7 +130,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&operator_type=private", "", ar -> {
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&operator_type=private", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
@@ -181,7 +181,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         OperatorKey expectedOperator = new OperatorBuilder()
                 .withType(OperatorType.PUBLIC)
                 .build();
-        post(vertx, "api/operator/update?name=test_operator&site_id=5&operator_type=public", "", ar -> {
+        post(vertx, testContext, "api/operator/update?name=test_operator&site_id=5&operator_type=public", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
@@ -215,7 +215,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         );
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
-        post(vertx, "api/operator/update?name=test_operator&operator_type=private", "", ar -> {
+        post(vertx, testContext, "api/operator/update?name=test_operator&operator_type=private", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
@@ -241,7 +241,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         OperatorKey expectedOperator = new OperatorBuilder()
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
                 .build();
-        post(vertx, "api/operator/roles?name=test_operator&roles=optout", "", ar -> {
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=optout", "", ar -> {
             try {
                 HttpResponse<Buffer> response = ar.result();
                 OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);

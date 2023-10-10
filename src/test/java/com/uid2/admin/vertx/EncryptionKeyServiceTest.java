@@ -204,7 +204,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
-        get(vertx, "api/key/list", ar -> {
+        get(vertx, testContext, "api/key/list", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -225,7 +225,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        get(vertx, "api/key/list", ar -> {
+        get(vertx, testContext, "api/key/list", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -246,7 +246,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         setKeysetKeys(MAX_KEY_ID);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -273,7 +273,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -302,7 +302,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -330,7 +330,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -358,7 +358,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -382,7 +382,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -408,7 +408,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -434,7 +434,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -465,7 +465,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         }};
         setAdminKeysets(keysets);
 
-        post(vertx, "api/key/rotate_keyset_key?keyset_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_keyset_key?keyset_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -494,7 +494,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -518,7 +518,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100&force=true", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100&force=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -580,7 +580,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -607,7 +607,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -637,7 +637,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -676,7 +676,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setKeysetKeys(MAX_KEY_ID, keysetKeys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -707,7 +707,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100&force=true", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100&force=true", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -733,7 +733,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -753,7 +753,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());

@@ -78,7 +78,7 @@ public class SiteServiceTest extends ServiceTestBase {
     void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, "api/site/list", ar -> {
+        get(vertx, testContext, "api/site/list", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "listSitesNoSites",
@@ -101,7 +101,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(sites);
 
-        get(vertx, "api/site/list", ar -> {
+        get(vertx, testContext,  "api/site/list", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "listSitesHaveSites",
@@ -133,7 +133,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setClientKeys(clientKeys);
 
-        get(vertx, "api/site/list", ar -> {
+        get(vertx, testContext, "api/site/list", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "listSitesWithKeys",
@@ -161,7 +161,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         setSites(initialSites);
 
-        post(vertx, "api/site/add?name=test_site", "", ar -> {
+        post(vertx, testContext, "api/site/add?name=test_site", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "addSiteNoExistingSites",
@@ -192,7 +192,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         setSites(initialSites);
 
-        post(vertx, "api/site/add?name=test_site", "", ar -> {
+        post(vertx, testContext, "api/site/add?name=test_site", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "addSiteExistingSites",
@@ -223,7 +223,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         setSites(initialSites);
 
-        post(vertx, "api/site/add?name=test_site&types=DSP,ADVERTISER", "", ar -> {
+        post(vertx, testContext, "api/site/add?name=test_site&types=DSP,ADVERTISER", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -250,7 +250,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(initialSites);
 
-        post(vertx, "api/site/add?name=test_site&enabled=true", "", ar -> {
+        post(vertx, testContext,  "api/site/add?name=test_site&enabled=true", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "addSiteEnabled",
@@ -301,7 +301,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(initialSites);
 
-        post(vertx, "api/site/enable?id=3&enabled=true", "", ar -> {
+        post(vertx, testContext, "api/site/enable?id=3&enabled=true", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "enableSite",
@@ -331,7 +331,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(initialSites);
 
-        post(vertx, "api/site/enable?id=3&enabled=false", "", ar -> {
+        post(vertx, testContext, "api/site/enable?id=3&enabled=false", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "disableSite",
@@ -361,7 +361,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(initialSites);
 
-        post(vertx, "api/site/enable?id=3&enabled=true", "", ar -> {
+        post(vertx, testContext, "api/site/enable?id=3&enabled=true", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "enableSiteAlreadyEnabled",
@@ -392,7 +392,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         setSites(initialSites);
 
-        post(vertx, "api/site/set-types?id=3&types=DSP,ADVERTISER", "", ar -> {
+        post(vertx, testContext, "api/site/set-types?id=3&types=DSP,ADVERTISER", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -433,7 +433,7 @@ public class SiteServiceTest extends ServiceTestBase {
     void domainNameNoSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/site/domain_names", "", ar -> {
+        post(vertx, testContext, "api/site/domain_names", "", ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("must specify site id", response.bodyAsJsonObject().getString("message"));
@@ -445,7 +445,7 @@ public class SiteServiceTest extends ServiceTestBase {
     void domainNameMissingSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/site/domain_names?id=123", "", ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", "", ar -> {
             HttpResponse response = ar.result();
             assertEquals(404, response.statusCode());
             assertEquals("site not found", response.bodyAsJsonObject().getString("message"));
@@ -457,7 +457,7 @@ public class SiteServiceTest extends ServiceTestBase {
     void domainNameInvalidSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/site/domain_names?id=2", "", ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=2", "", ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("must specify a valid site id", response.bodyAsJsonObject().getString("message"));
@@ -469,7 +469,7 @@ public class SiteServiceTest extends ServiceTestBase {
     void domainNameBadSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/site/domain_names?id=asdf", "", ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=asdf", "", ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("unable to parse site id For input string: \"asdf\"", response.bodyAsJsonObject().getString("message"));
@@ -482,7 +482,7 @@ public class SiteServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(123, "name", true));
         JsonObject reqBody = new JsonObject();
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("required parameters: domain_names", response.bodyAsJsonObject().getString("message"));
@@ -497,7 +497,7 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(s);
         JsonObject reqBody = new JsonObject();
         reqBody.put("domain_names", new JsonArray());
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
             checkSiteResponse(s, response.bodyAsJsonObject());
@@ -516,7 +516,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("bad");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
@@ -535,7 +535,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("bad.doesntexist");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("invalid domain name: bad.doesntexist", response.bodyAsJsonObject().getString("message"));
@@ -555,7 +555,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("http://bad.com");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("duplicate domain_names not permitted", response.bodyAsJsonObject().getString("message"));
@@ -578,7 +578,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("blah.test3.com");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
             s.setDomainNames(Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
@@ -602,7 +602,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("blah.test3.com");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
             s.setDomainNames(Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
@@ -626,7 +626,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("blah.test3.com");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
             Site expected = new Site(124, "test_name", true, Set.of("test.com", "test.net", "test.org", "test2.org", "test3.com"));
@@ -650,7 +650,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("blah.test3.com");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
@@ -672,7 +672,7 @@ public class SiteServiceTest extends ServiceTestBase {
         names.add("blah.test3.com");
         reqBody.put("domain_names", names);
 
-        post(vertx, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), ar -> {
             HttpResponse response = ar.result();
             assertEquals(400, response.statusCode());
             assertEquals("duplicate domain_names not permitted", response.bodyAsJsonObject().getString("message"));

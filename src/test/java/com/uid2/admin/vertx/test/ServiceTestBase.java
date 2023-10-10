@@ -41,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import lombok.val;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -147,9 +148,19 @@ public abstract class ServiceTestBase {
         client.getAbs(getUrlForEndpoint(endpoint)).send(handler);
     }
 
+    protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
+        get(vertx, endpoint, wrappedHandler);
+    }
+
     protected void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         WebClient client = WebClient.create(vertx);
         client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(Buffer.buffer(body), handler);
+    }
+
+    protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
+        post(vertx, endpoint, body, wrappedHandler);
     }
 
     protected void postWithoutBody(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
@@ -157,6 +168,20 @@ public abstract class ServiceTestBase {
         client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(null, handler);
     }
 
+    protected void postWithoutBody(Vertx vertx, VertxTestContext testContext, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
+        postWithoutBody(vertx, endpoint, wrappedHandler);
+    }
+
+    protected static Handler<AsyncResult<HttpResponse<Buffer>>> wrapHandlerToCatchAssertionErrors(VertxTestContext testContext, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        return result -> {
+            try {
+                handler.handle(result);
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
+        };
+    }
     protected void setServices(Service... services) {
         when(serviceProvider.getAllServices()).thenReturn(Arrays.asList(services));
         for (Service s : services) {
@@ -262,10 +287,14 @@ public abstract class ServiceTestBase {
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
         return ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(errorCode, response.statusCode());
-            testContext.completeNow();
+            try {
+                assertTrue(ar.succeeded());
+                HttpResponse response = ar.result();
+                assertEquals(errorCode, response.statusCode());
+                testContext.completeNow();
+            } catch (Throwable t) {
+                testContext.failNow(t);
+            }
         };
     }
 

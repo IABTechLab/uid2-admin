@@ -44,7 +44,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     void listKeyAclsNoAcls(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, "api/keys_acl/list", ar -> {
+        get(vertx, testContext, "api/keys_acl/list", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -65,7 +65,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
         setEncryptionKeyAcls(acls);
 
-        get(vertx, "api/keys_acl/list", ar -> {
+        get(vertx, testContext, "api/keys_acl/list", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -85,7 +85,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/reset?site_id=5&type=whitelist", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=whitelist", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -113,7 +113,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -143,7 +143,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -173,7 +173,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -231,7 +231,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -263,7 +263,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&add=11", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -295,7 +295,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&add=11", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -325,7 +325,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&remove=7", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=7", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -355,7 +355,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&remove=7", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=7", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -388,7 +388,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&add=11,12&remove=7,8", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11,12&remove=7,8", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -462,7 +462,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&add=7", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=7", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -492,7 +492,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&add=5", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=5", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -522,7 +522,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&add=5", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=5", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -552,7 +552,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, "api/keys_acl/update?site_id=5&remove=1,5,9,11", "", ar -> {
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=1,5,9,11", "", ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
