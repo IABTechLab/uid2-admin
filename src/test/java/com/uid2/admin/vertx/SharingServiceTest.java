@@ -58,38 +58,27 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
 
-    @Test
-    void listSiteGet(Vertx vertx, VertxTestContext testContext) {
+    @ParameterizedTest
+    @ValueSource(ints = {5, 4})
+    void listSiteGet(int siteId, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
-            put(2, new AdminKeyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
-            put(3, new AdminKeyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, Set.of(ClientType.DSP)));
+            put(5, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(7, new AdminKeyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(4, new AdminKeyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, Set.of(ClientType.DSP)));
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/list/5", ar -> {
+        get(vertx, "api/sharing/list/" + siteId, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
-            compareKeysetListToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetListToResult(keysets.get(siteId), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(keysets.get(siteId), response.bodyAsJsonObject().getJsonArray("allowed_types"));
 
-            Integer expectedHash = keysets.get(1).hashCode();
-            assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
-
-            testContext.completeNow();
-        });
-        get(vertx, "api/sharing/list/4", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-
-            compareKeysetListToResult(keysets.get(3), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
-            compareKeysetTypeListToResult(keysets.get(3), response.bodyAsJsonObject().getJsonArray("allowed_types"));
-
-            Integer expectedHash = keysets.get(3).hashCode();
+            Integer expectedHash = keysets.get(siteId).hashCode();
             assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
 
             testContext.completeNow();
@@ -340,27 +329,25 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": " + keysets.get(3).hashCode() + "\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5", body1, ar -> {
+        post(vertx, testContext, "api/sharing/list/5", body1, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(3, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
-            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("whitelist"));
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(3).getAllowedSites());
-            testContext.completeNow();
-        });
 
-        post(vertx, "api/sharing/list/5", body2, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(409, response.statusCode());
+            post(vertx, testContext, "api/sharing/list/5", body2, ar2 -> {
+                assertTrue(ar2.succeeded());
+                HttpResponse response2 = ar2.result();
+                assertEquals(409, response2.statusCode());
 
-            testContext.completeNow();
+                testContext.completeNow();
+            });
         });
     }
-
     @Test
     void listAll(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
