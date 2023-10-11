@@ -89,14 +89,15 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     @Test
     void addLinkMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-
-        postWithoutBody(vertx, "api/service_link/add", testContext.succeeding(response -> testContext.verify(() -> {
-            assertEquals(400, response.statusCode());
-            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
-            verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(null, null);
-            testContext.completeNow();
-        })));
+        postWithoutBody(vertx, "api/service_link/add")
+                .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+                            assertEquals(400, response.statusCode());
+                            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
+                            verify(serviceStoreWriter, never()).upload(null, null);
+                            verify(serviceLinkStoreWriter, never()).upload(null, null);
+                            testContext.completeNow();
+                        }
+                )));
     }
 
     @ParameterizedTest

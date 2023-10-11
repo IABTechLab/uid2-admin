@@ -26,6 +26,7 @@ import com.uid2.shared.store.IKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -162,14 +163,9 @@ public abstract class ServiceTestBase {
         post(vertx, endpoint, body, wrappedHandler);
     }
 
-    protected void postWithoutBody(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+    protected Future<HttpResponse<Buffer>> postWithoutBody(Vertx vertx, String endpoint) {
         WebClient client = WebClient.create(vertx);
-        client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(null, handler);
-    }
-
-    protected void postWithoutBody(Vertx vertx, VertxTestContext testContext, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
-        postWithoutBody(vertx, endpoint, wrappedHandler);
+        return client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(null);
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> wrapHandlerToCatchAssertionErrors(VertxTestContext testContext, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
