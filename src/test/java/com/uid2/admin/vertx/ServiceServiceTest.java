@@ -64,7 +64,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     void listServicesNoServices(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        get(vertx, "api/service/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             JsonArray respArray = response.bodyAsJsonArray();
             assertEquals(0, respArray.size());
@@ -86,7 +86,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         setServices(expectedServices);
 
-        get(vertx, "api/service/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             checkServiceResponse(expectedServices, response.bodyAsJsonArray());
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -101,7 +101,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         Service existingService = new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
         setServices(existingService);
 
-        get(vertx, "api/service/list/asdf", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service/list/asdf").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("failed to parse a service_id from request", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -116,7 +116,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         Service existingService = new Service(1, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
         setServices(existingService);
 
-        get(vertx, "api/service/list/3", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service/list/3").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(404, response.statusCode());
             assertEquals("failed to find a service for service_id: 3", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -131,7 +131,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         Service existingService = new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
         setServices(existingService);
 
-        get(vertx, "api/service/list/3", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service/list/3").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);

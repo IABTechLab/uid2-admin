@@ -54,7 +54,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     void listLinksNoLinks(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        get(vertx, "api/service_link/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service_link/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             JsonArray respArray = response.bodyAsJsonArray();
             assertEquals(0, respArray.size());
@@ -77,7 +77,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setServiceLinks(expectedServiceLinks);
 
-        get(vertx, "api/service_link/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/service_link/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkResponse(expectedServiceLinks, response.bodyAsJsonArray());
             verify(serviceStoreWriter, never()).upload(null, null);

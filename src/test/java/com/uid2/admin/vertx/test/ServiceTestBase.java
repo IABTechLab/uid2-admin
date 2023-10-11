@@ -143,14 +143,14 @@ public abstract class ServiceTestBase {
         when(adminUserProvider.get(any())).thenReturn(adminUser);
     }
 
-    protected void get(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+    protected Future<HttpResponse<Buffer>> get(Vertx vertx, String endpoint) {
         WebClient client = WebClient.create(vertx);
-        client.getAbs(getUrlForEndpoint(endpoint)).send(handler);
+        return client.getAbs(getUrlForEndpoint(endpoint)).send();
     }
 
     protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
-        get(vertx, endpoint, wrappedHandler);
+        get(vertx, endpoint).onComplete(wrappedHandler);
     }
 
     protected void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {

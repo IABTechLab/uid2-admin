@@ -95,7 +95,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         setKeypairs(new ArrayList<>());
 
-        get(vertx, "api/client_side_keypairs/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/client_side_keypairs/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
@@ -116,7 +116,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
 
-        get(vertx, "api/client_side_keypairs/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/client_side_keypairs/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
@@ -132,7 +132,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         setKeypairs(new ArrayList<>());
 
-        get(vertx, "api/client_side_keypairs/aZ23456789", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/client_side_keypairs/aZ23456789").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(404, response.statusCode());
             assertEquals("Failed to find a keypair for subscription id: aZ23456789", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
@@ -153,7 +153,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
 
-        get(vertx, "api/client_side_keypairs/aZ23456789", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "api/client_side_keypairs/aZ23456789").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
 
             validateKeypairWithPrivateKey(queryKeypair, response.bodyAsJsonObject());

@@ -70,7 +70,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/list/" + siteId, ar -> {
+        get(vertx, testContext, "api/sharing/list/" + siteId, ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
