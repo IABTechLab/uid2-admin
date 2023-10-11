@@ -285,19 +285,10 @@ public abstract class ServiceTestBase {
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
-        return ar -> {
-            try {
-                HttpResponse response = ar.result();
-                assertAll(
-                        "expectHttpError",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(errorCode, response.statusCode())
-                );
-                testContext.completeNow();
-            } catch (Throwable t) {
-                testContext.failNow(t);
-            }
-        };
+        return testContext.succeeding(response -> {
+            assertEquals(errorCode, response.statusCode());
+            testContext.completeNow();
+        });
     }
 
     protected EncryptionKeyAcl makeKeyAcl(boolean isWhitelist, Integer... siteIds) {
