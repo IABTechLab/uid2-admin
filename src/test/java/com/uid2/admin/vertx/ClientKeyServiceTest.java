@@ -53,7 +53,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().build());
 
-        post(vertx, testContext,"api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
+        post(vertx, testContext, "api/client/rename?oldName=test_client&newName=test_client1", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             ClientKey expected = new LegacyClientBuilder().withName("test_client1").build().toClientKey();
 

@@ -101,7 +101,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(sites);
 
-        get(vertx, testContext,  "api/site/list", ar -> {
+        get(vertx, testContext, "api/site/list", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "listSitesHaveSites",
@@ -250,7 +250,7 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(initialSites);
 
-        post(vertx, testContext,  "api/site/add?name=test_site&enabled=true", "", ar -> {
+        post(vertx, testContext, "api/site/add?name=test_site&enabled=true", "", ar -> {
             HttpResponse<Buffer> response = ar.result();
             assertAll(
                     "addSiteEnabled",

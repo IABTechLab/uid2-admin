@@ -46,8 +46,7 @@ import lombok.val;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
@@ -288,9 +287,12 @@ public abstract class ServiceTestBase {
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
         return ar -> {
             try {
-                assertTrue(ar.succeeded());
                 HttpResponse response = ar.result();
-                assertEquals(errorCode, response.statusCode());
+                assertAll(
+                        "expectHttpError",
+                        () -> assertTrue(ar.succeeded()),
+                        () -> assertEquals(errorCode, response.statusCode())
+                );
                 testContext.completeNow();
             } catch (Throwable t) {
                 testContext.failNow(t);
