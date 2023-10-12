@@ -143,14 +143,11 @@ public abstract class ServiceTestBase {
         when(adminUserProvider.get(any())).thenReturn(adminUser);
     }
 
-    protected Future<HttpResponse<Buffer>> get(Vertx vertx, String endpoint) {
+    protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, ExceptionHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
-        return client.getAbs(getUrlForEndpoint(endpoint)).send();
-    }
-
-    protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
-        get(vertx, endpoint).onComplete(wrappedHandler);
+        client.getAbs(getUrlForEndpoint(endpoint))
+                .send()
+                .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
     }
 
     protected void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
@@ -169,13 +166,9 @@ public abstract class ServiceTestBase {
     }
 
     protected static Handler<AsyncResult<HttpResponse<Buffer>>> wrapHandlerToCatchAssertionErrors(VertxTestContext testContext, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        return result -> {
-            try {
-                handler.handle(result);
-            } catch (Throwable t) {
-                testContext.failNow(t);
-            }
-        };
+        return result -> testContext.verify(() -> {
+            handler.handle(result);
+        });
     }
     protected void setServices(Service... services) {
         when(serviceProvider.getAllServices()).thenReturn(Arrays.asList(services));

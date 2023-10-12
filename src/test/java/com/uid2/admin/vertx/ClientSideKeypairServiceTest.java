@@ -95,14 +95,14 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         setKeypairs(new ArrayList<>());
 
-        get(vertx, "api/client_side_keypairs/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/client_side_keypairs/list", response -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
             assertEquals(0, respArray.size());
 
             testContext.completeNow();
-        })));
+        });
     }
     @Test
     void listAll(Vertx vertx, VertxTestContext testContext) throws Exception {
@@ -116,14 +116,14 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
 
-        get(vertx, "api/client_side_keypairs/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/client_side_keypairs/list", response -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
             validateResponseKeypairs(expectedKeypairs, respArray);
 
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -132,11 +132,11 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
         setKeypairs(new ArrayList<>());
 
-        get(vertx, "api/client_side_keypairs/aZ23456789").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/client_side_keypairs/aZ23456789", response -> {
             assertEquals(404, response.statusCode());
             assertEquals("Failed to find a keypair for subscription id: aZ23456789", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -153,13 +153,13 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         }};
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
 
-        get(vertx, "api/client_side_keypairs/aZ23456789").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/client_side_keypairs/aZ23456789", response -> {
             assertEquals(200, response.statusCode());
 
             validateKeypairWithPrivateKey(queryKeypair, response.bodyAsJsonObject());
 
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test

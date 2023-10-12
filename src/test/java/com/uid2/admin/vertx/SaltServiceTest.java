@@ -57,9 +57,7 @@ public class SaltServiceTest extends ServiceTestBase {
     void listSaltSnapshotsNoSnapshots(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
-        get(vertx, testContext, "api/salt/snapshots", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/salt/snapshots", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             testContext.completeNow();
@@ -77,9 +75,7 @@ public class SaltServiceTest extends ServiceTestBase {
         };
         setSnapshots(snapshots);
 
-        get(vertx, testContext, "api/salt/snapshots", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/salt/snapshots", response -> {
             assertEquals(200, response.statusCode());
             checkSnapshotsResponse(snapshots, response.bodyAsJsonArray().stream().toArray());
             testContext.completeNow();

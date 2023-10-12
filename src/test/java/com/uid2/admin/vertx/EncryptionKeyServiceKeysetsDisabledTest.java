@@ -149,15 +149,15 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
-        get(vertx, testContext, "api/key/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
+
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -172,15 +172,15 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        get(vertx, testContext, "api/key/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyResponse(keys, response.bodyAsJsonArray().stream().toArray());
+
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+
     }
 
     @Test

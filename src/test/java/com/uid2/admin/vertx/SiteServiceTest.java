@@ -78,11 +78,9 @@ public class SiteServiceTest extends ServiceTestBase {
     void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, testContext, "api/site/list", ar -> {
-            HttpResponse<Buffer> response = ar.result();
+        get(vertx, testContext, "api/site/list", response -> {
             assertAll(
                     "listSitesNoSites",
-                    () -> assertTrue(ar.succeeded()),
                     () -> assertEquals(200, response.statusCode()),
                     () -> assertEquals(0, response.bodyAsJsonArray().stream().count()));
 
@@ -101,11 +99,9 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setSites(sites);
 
-        get(vertx, testContext, "api/site/list", ar -> {
-            HttpResponse<Buffer> response = ar.result();
+        get(vertx, testContext, "api/site/list", response -> {
             assertAll(
                     "listSitesHaveSites",
-                    () -> assertTrue(ar.succeeded()),
                     () -> assertEquals(200, response.statusCode()),
                     () -> checkSiteResponse(sites, response.bodyAsJsonArray().stream().toArray()));
 
@@ -133,11 +129,9 @@ public class SiteServiceTest extends ServiceTestBase {
         };
         setClientKeys(clientKeys);
 
-        get(vertx, testContext, "api/site/list", ar -> {
-            HttpResponse<Buffer> response = ar.result();
+        get(vertx, testContext, "api/site/list", response -> {
             assertAll(
                     "listSitesWithKeys",
-                    () -> assertTrue(ar.succeeded()),
                     () -> assertEquals(200, response.statusCode()),
                     () -> checkSiteResponse(sites, response.bodyAsJsonArray().stream().toArray()),
                     () -> checkSiteResponseWithKeys(response.bodyAsJsonArray().stream().toArray(), 11, 2, Role.GENERATOR, Role.ID_READER, Role.MAPPER),

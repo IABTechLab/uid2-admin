@@ -44,9 +44,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
     void listKeyAclsNoAcls(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, testContext, "api/keys_acl/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/keys_acl/list", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             testContext.completeNow();
@@ -65,9 +63,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
 
         setEncryptionKeyAcls(acls);
 
-        get(vertx, testContext, "api/keys_acl/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/keys_acl/list", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(acls, response.bodyAsJsonArray().stream().toArray());
             testContext.completeNow();

@@ -70,9 +70,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, testContext, "api/sharing/list/" + siteId, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/list/" + siteId, response -> {
             assertEquals(200, response.statusCode());
 
             compareKeysetListToResult(keysets.get(siteId), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
@@ -96,8 +94,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, testContext, "api/sharing/list/42", ar -> {
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/list/42", response -> {
             assertEquals(404, response.statusCode());
 
             testContext.completeNow();
@@ -359,9 +356,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, testContext, "api/sharing/lists", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/lists", response -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
@@ -391,9 +386,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, testContext, "api/sharing/keyset/1", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/keyset/1", response -> {
             assertEquals(200, response.statusCode());
 
             compareKeysetListToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
@@ -413,9 +406,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, testContext, "api/sharing/keyset/1", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/keyset/1", response -> {
             assertEquals(404, response.statusCode());
             assertEquals("Failed to find keyset for keyset_id: 1", response.bodyAsJsonObject().getString("message"));
 
@@ -434,9 +425,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, testContext, "api/sharing/keysets", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/keysets", response -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();

@@ -54,14 +54,14 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     void listLinksNoLinks(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        get(vertx, "api/service_link/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext,  "api/service_link/list", response -> {
             assertEquals(200, response.statusCode());
             JsonArray respArray = response.bodyAsJsonArray();
             assertEquals(0, respArray.size());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -77,13 +77,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setServiceLinks(expectedServiceLinks);
 
-        get(vertx, "api/service_link/list").onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/service_link/list", response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkResponse(expectedServiceLinks, response.bodyAsJsonArray());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -116,7 +116,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(400, response.statusCode());
             assertEquals("required parameters: link_id, service_id, site_id, name", response.bodyAsJsonObject().getString("message"));
-            verify(serviceStoreWriter, never()).upload(null, null);
+            verifyNoInteractions(serviceStoreWriter);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         })));

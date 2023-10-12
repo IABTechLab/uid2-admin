@@ -204,9 +204,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
-        get(vertx, testContext, "api/key/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             testContext.completeNow();
@@ -225,9 +223,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        get(vertx, testContext, "api/key/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyResponse(keys, response.bodyAsJsonArray().stream().toArray());
             testContext.completeNow();
