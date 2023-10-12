@@ -143,13 +143,12 @@ public class ServiceServiceTest extends ServiceTestBase {
     void addServiceMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        postWithoutBody(vertx, "api/service/add")
-                .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        postWithoutBody(vertx, testContext, "api/service/add", response -> {
                     assertEquals(400, response.statusCode());
                     assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
                     verify(serviceStoreWriter, never()).upload(null, null);
                     testContext.completeNow();
-                })));
+                });
     }
 
     @ParameterizedTest
@@ -325,13 +324,12 @@ public class ServiceServiceTest extends ServiceTestBase {
     void updateRolesMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        postWithoutBody(vertx, "api/service/roles")
-            .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
+        postWithoutBody(vertx, testContext, "api/service/roles", response -> {
                 assertEquals(400, response.statusCode());
                 assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
                 verify(serviceStoreWriter, never()).upload(null, null);
                 testContext.completeNow();
-            })));
+            });
     }
 
     @ParameterizedTest

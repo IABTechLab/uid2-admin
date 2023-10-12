@@ -98,17 +98,11 @@ public class SaltServiceTest extends ServiceTestBase {
         };
         when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
 
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
             checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
-            try {
-                verify(saltStoreWriter).upload(any());
-                verify(saltStoreWriter, times(1)).archiveSaltLocations();
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(saltStoreWriter).upload(any());
+            verify(saltStoreWriter, times(1)).archiveSaltLocations();
             testContext.completeNow();
         });
     }
@@ -126,18 +120,12 @@ public class SaltServiceTest extends ServiceTestBase {
 
         when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
 
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
             JsonObject jo = response.bodyAsJsonObject();
             assertFalse(jo.containsKey("effective"));
             assertFalse(jo.containsKey("expires"));
-            try {
-                verify(saltStoreWriter, times(0)).upload(any());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(saltStoreWriter, times(0)).upload(any());
             testContext.completeNow();
         });
     }

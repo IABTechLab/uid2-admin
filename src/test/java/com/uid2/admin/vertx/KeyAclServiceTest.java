@@ -81,19 +81,11 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=whitelist", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=whitelist", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
-
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
-
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
             testContext.completeNow();
         });
     }
@@ -109,18 +101,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -139,18 +125,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -169,18 +149,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -227,18 +201,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
 
             testContext.completeNow();
         });
@@ -259,18 +227,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -291,18 +253,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -321,18 +277,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=7", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=7", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -351,18 +301,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=7", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=7", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -384,18 +328,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11,12&remove=7,8", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11,12&remove=7,8", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager).addSiteKey(eq(5));
-                verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager).addSiteKey(eq(5));
+            verify(keyAclStoreWriter).upload(mapOfSize(1), isNull());
 
             testContext.completeNow();
         });
@@ -458,18 +396,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=7", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=7", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
 
             testContext.completeNow();
         });
@@ -488,18 +420,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=5", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=5", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
 
             testContext.completeNow();
         });
@@ -518,18 +444,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=5", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=5", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
 
             testContext.completeNow();
         });
@@ -548,18 +468,12 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setEncryptionKeyAcls(initialAcls);
         setEncryptionKeys(123);
 
-        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=1,5,9,11", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&remove=1,5,9,11", "", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyAclsResponse(expectedAcl, new Object[]{response.bodyAsJsonObject()});
 
-            try {
-                verify(keyManager, times(0)).addSiteKey(anyInt());
-                verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keyManager, times(0)).addSiteKey(anyInt());
+            verify(keyAclStoreWriter, times(0)).upload(any(), isNull());
 
             testContext.completeNow();
         });

@@ -143,7 +143,7 @@ public abstract class ServiceTestBase {
         when(adminUserProvider.get(any())).thenReturn(adminUser);
     }
 
-    protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, ExceptionHandler<HttpResponse<Buffer>> handler) {
+    protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
         client.getAbs(getUrlForEndpoint(endpoint))
                 .send()
@@ -155,21 +155,17 @@ public abstract class ServiceTestBase {
         client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(Buffer.buffer(body), handler);
     }
 
-    protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        val wrappedHandler = wrapHandlerToCatchAssertionErrors(testContext, handler);
-        post(vertx, endpoint, body, wrappedHandler);
-    }
-
-    protected Future<HttpResponse<Buffer>> postWithoutBody(Vertx vertx, String endpoint) {
+    protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
-        return client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(null);
+        client.postAbs(getUrlForEndpoint(endpoint))
+                .sendBuffer(body != null ?  Buffer.buffer(body) : null)
+                .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
     }
 
-    protected static Handler<AsyncResult<HttpResponse<Buffer>>> wrapHandlerToCatchAssertionErrors(VertxTestContext testContext, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        return result -> testContext.verify(() -> {
-            handler.handle(result);
-        });
+    protected void postWithoutBody(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
+        post(vertx, testContext, endpoint, null, handler);
     }
+
     protected void setServices(Service... services) {
         when(serviceProvider.getAllServices()).thenReturn(Arrays.asList(services));
         for (Service s : services) {
