@@ -164,28 +164,28 @@ public class KeyAclServiceTest extends ServiceTestBase {
     void keyAclResetUnknownSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/keys_acl/reset?site_id=5&type=blacklist", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/keys_acl/reset?site_id=5&type=blacklist", "", expectHttpError(testContext, 404));
     }
 
     @Test
     void keyAclResetSpecialSite1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/keys_acl/reset?site_id=1&type=blacklist", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/keys_acl/reset?site_id=1&type=blacklist", "", expectHttpError(testContext, 400));
     }
 
     @Test
     void keyAclResetSpecialSite2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, "api/keys_acl/reset?site_id=2&type=blacklist", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/keys_acl/reset?site_id=2&type=blacklist", "", expectHttpError(testContext, 400));
     }
 
     @Test
     void keyAclResetUnknownListType(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(5, "test_site", true));
-        post(vertx, "api/keys_acl/reset?site_id=2&type=unknown_list", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/keys_acl/reset?site_id=2&type=unknown_list", "", expectHttpError(testContext, 400));
     }
 
     @Test
@@ -345,7 +345,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         setSites(
                 new Site(5, "test_site", true),
                 new Site(11, "test_site11", true));
-        post(vertx, "api/keys_acl/update?site_id=5&add=11", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", expectHttpError(testContext, 404));
     }
 
     @Test
@@ -356,7 +356,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
             put(5, makeKeyAcl(false, 6, 7, 8));
         }};
         setEncryptionKeyAcls(initialAcls);
-        post(vertx, "api/keys_acl/update?site_id=5&add=1", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=1", "", expectHttpError(testContext, 400));
     }
 
     @Test
@@ -367,7 +367,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
             put(5, makeKeyAcl(false, 6, 7, 8));
         }};
         setEncryptionKeyAcls(initialAcls);
-        post(vertx, "api/keys_acl/update?site_id=5&add=2", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=2", "", expectHttpError(testContext, 400));
     }
 
     @Test
@@ -378,7 +378,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
             put(5, makeKeyAcl(false, 6, 7, 8));
         }};
         setEncryptionKeyAcls(initialAcls);
-        post(vertx, "api/keys_acl/update?site_id=5&add=11", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/keys_acl/update?site_id=5&add=11", "", expectHttpError(testContext, 404));
     }
 
     @Test

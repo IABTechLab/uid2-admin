@@ -48,7 +48,7 @@ public class SearchServiceTest extends ServiceTestBase {
     @EnumSource(value = Role.class, names = {"ADMINISTRATOR"}, mode = EnumSource.Mode.EXCLUDE)
     void searchAsNonAdminFails(Role role, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(role);
-        post(vertx, searchUrl, "1234567", expectHttpError(testContext, 401));
+        post(vertx, testContext, searchUrl, "1234567", expectHttpError(testContext, 401));
     }
 
     @Test
@@ -62,19 +62,18 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchWithoutRoleFails(Vertx vertx, VertxTestContext testContext) {
-        post(vertx, searchUrl, "1234567", expectHttpError(testContext, 401));
+        post(vertx, testContext, searchUrl, "1234567", expectHttpError(testContext, 401));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"a", "aa", "aaa", "aaaa", "aaaaa"})
     void searchWithShortQueryStringReturns400Error(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        post(vertx, "api/search", parameter, response -> {
+        post(vertx, testContext, "api/search", parameter, response -> {
             assertAll(
                     "searchWithShortQueryStringReturns400Error",
-                    () -> assertTrue(response.succeeded()),
-                    () -> assertEquals(400, response.result().statusCode()),
-                    () -> assertEquals("{\"message\":\"Parameter too short. Must be 6 or more characters.\",\"status\":\"error\"}", response.result().bodyAsString())
+                    () -> assertEquals(400, response.statusCode()),
+                    () -> assertEquals("{\"message\":\"Parameter too short. Must be 6 or more characters.\",\"status\":\"error\"}", response.bodyAsString())
             );
             testContext.completeNow();
         });
@@ -89,16 +88,14 @@ public class SearchServiceTest extends ServiceTestBase {
         setOperatorKeys(operatorKeys);
         setAdminUsers(adminUsers);
 
-        post(vertx, searchUrl, searchString, response -> {
-            HttpResponse<Buffer> httpResponse = response.result();
-            JsonObject result = httpResponse.bodyAsJsonObject();
+        post(vertx, testContext, searchUrl, searchString, response -> {
+            JsonObject result = response.bodyAsJsonObject();
             JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
             JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
             JsonArray foundAdminKeys = result.getJsonArray("AdministratorKeys");
 
             assertAll(
                     "searchByClientKeyNotFound",
-                    () -> assertTrue(response.succeeded()),
                     () -> assertEquals(0, foundClientKeys.size()),
                     () -> assertEquals(0, foundOperatorKeys.size()),
                     () -> assertEquals(0, foundAdminKeys.size())

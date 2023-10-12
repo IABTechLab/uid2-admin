@@ -412,10 +412,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", expectHttpError(testContext, 404));
-        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", response -> {
+            assertEquals(404, response.statusCode());
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+            testContext.completeNow();
+        });
     }
 
     @Test
@@ -428,10 +431,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
-        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+        post(vertx, testContext, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", response -> {
+            assertEquals(400, response.statusCode());
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+            testContext.completeNow();
+        });
     }
 
     @Test
@@ -443,10 +449,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
-        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+        post(vertx, testContext, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", response -> {
+            assertEquals(400, response.statusCode());
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+            testContext.completeNow();
+        });
     }
 
     @Test

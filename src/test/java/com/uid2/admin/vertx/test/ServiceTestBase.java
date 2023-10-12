@@ -150,11 +150,6 @@ public abstract class ServiceTestBase {
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
     }
 
-    protected void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        WebClient client = WebClient.create(vertx);
-        client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(Buffer.buffer(body), handler);
-    }
-
     protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
         client.postAbs(getUrlForEndpoint(endpoint))
@@ -269,11 +264,11 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
-        return testContext.succeeding(response -> {
+    protected static TestHandler<HttpResponse<Buffer>> expectHttpError(VertxTestContext testContext, int errorCode) {
+        return response -> {
             assertEquals(errorCode, response.statusCode());
             testContext.completeNow();
-        });
+        };
     }
 
     protected EncryptionKeyAcl makeKeyAcl(boolean isWhitelist, Integer... siteIds) {

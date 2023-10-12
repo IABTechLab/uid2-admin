@@ -112,13 +112,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         jo.remove(parameter);
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("required parameters: link_id, service_id, site_id, name", response.bodyAsJsonObject().getString("message"));
             verifyNoInteractions(serviceStoreWriter);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -131,13 +131,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 124);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("service_id 1 not valid", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -152,13 +152,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 124);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("site_id 124 not valid", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -175,13 +175,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("service link already exists", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -199,13 +199,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -225,12 +225,12 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(existingLink, expected), null);
             testContext.completeNow();
-        })));
+        });
     }
 }

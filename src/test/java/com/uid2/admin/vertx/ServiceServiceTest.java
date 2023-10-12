@@ -163,12 +163,12 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         jo.remove(parameter);
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("required parameters: site_id, name, roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -180,12 +180,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "name1");
         jo.put("roles", new JsonArray());
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("site_id 123 not valid", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -199,12 +199,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "");
         jo.put("roles", new JsonArray());
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("name cannot be empty", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -219,12 +219,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "testName1");
         jo.put("roles", new JsonArray());
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("site_id 123 already has service of name testName1", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -241,12 +241,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "name1");
         jo.put("roles", ja);
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -260,13 +260,13 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "name1");
         jo.put("roles", new JsonArray());
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             Service expectedService = new Service(1, 123, "name1", Set.of());
             checkServiceJson(expectedService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(expectedService), null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -284,13 +284,13 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "name1");
         jo.put("roles", ja);
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             Service expectedService = new Service(1, 123, "name1", Set.of(Role.GENERATOR, Role.ID_READER));
             checkServiceJson(expectedService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(expectedService), null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -311,13 +311,13 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("name", "name2");
         jo.put("roles", ja);
 
-        post(vertx, "api/service/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             Service expectedService = new Service(2, 123, "name2", Set.of(Role.GENERATOR, Role.ID_READER));
             checkServiceJson(expectedService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService, expectedService), null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -343,12 +343,12 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         jo.remove(parameter);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("required parameters: service_id, roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -364,12 +364,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 2);
         jo.put("roles", ja);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("failed to find a service for service_id: 2", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -385,12 +385,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("roles", ja);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -408,12 +408,12 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("roles", ja);
 
-        post(vertx, "api/service/roles", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             existingService.setRoles(Set.of(Role.GENERATOR, Role.ADMINISTRATOR));
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
             testContext.completeNow();
-        })));
+        });
     }
 }
