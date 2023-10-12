@@ -18,7 +18,8 @@ public class RequestUtil {
             "aws-nitro",
             "azure-sgx",
             "gcp-vmid",
-            "gcp-oidc"
+            "gcp-oidc",
+            "azure-cc"
     );
 
     public static String getRolesSpec(Set<Role> roles) {
