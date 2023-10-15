@@ -153,6 +153,7 @@ public class ServiceService implements IService {
         }
     }
 
+    // Can update the site_id, name and roles
     private void handleUpdate(RoutingContext rc) {
         try {
             JsonObject body = rc.body().asJsonObject();
@@ -164,7 +165,16 @@ public class ServiceService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
 
-            JsonArray rolesSpec = body.getJsonArray("roles");
+            JsonArray rolesSpec = null;
+            if (body.getString("roles") != null && !body.getString("roles").isEmpty()) {
+                try {
+                    rolesSpec = body.getJsonArray("roles");
+                } catch (ClassCastException c) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
+                    return;
+                }
+            }
+
             if (serviceId == null) {
                 ResponseUtil.error(rc, 400, "required parameters: service_id");
                 return;
@@ -174,6 +184,15 @@ public class ServiceService implements IService {
             if (service == null) {
                 ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
                 return;
+            }
+
+            // check that this does not create a duplicate service
+            if (siteId != null && siteId != 0 && name != null && !name.isEmpty()) {
+                boolean exists = serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId && s.getSiteId() == siteId && s.getName().equals(name));
+                if (exists) {
+                    ResponseUtil.error(rc, 400, "site_id " + siteId + " already has service of name " + name);
+                    return;
+                }
             }
 
             if (rolesSpec != null) {

@@ -128,7 +128,9 @@ public class ServiceLinkService implements IService {
         }
     }
 
+    // The only property that can be edited is the name.
     private void handleServiceLinkUpdate(RoutingContext rc) {
+
         try {
             siteProvider.loadContent();
             serviceProvider.loadContent();
@@ -142,8 +144,8 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            if (siteId == null || serviceId == null || name == null) {
-                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, name");
+            if (siteId == null || serviceId == null || name == null || linkId == null || linkId.isEmpty()) {
+                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id, name");
                 return;
             }
 
@@ -162,22 +164,15 @@ public class ServiceLinkService implements IService {
                     .collect(Collectors.toList());
 
             ServiceLink serviceLink = serviceLinks
-                    .stream().filter(s -> s.getServiceId() == serviceId && s.getSiteId() == siteId && s.getName().equals(name))
+                    .stream().filter(s -> s.getServiceId() == serviceId && s.getSiteId() == siteId && s.getLinkId().equals(linkId))
                     .findFirst()
                     .orElse(null);
             if (serviceLink == null) {
-                ResponseUtil.error(rc, 404, "failed to find a service_link for serviceId: " + serviceId + ", site_id: " + siteId + " and name: " + name);
+                ResponseUtil.error(rc, 404, "failed to find a service_link for serviceId: " + serviceId + ", site_id: " + siteId + " and link_id: " + linkId);
                 return;
             }
 
-            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceId && sl.getLinkId().equals(linkId))) {
-                ResponseUtil.error(rc, 400, "service link id already exists for service_id: " + serviceId);
-                return;
-            }
-
-            if (linkId != null && !linkId.isEmpty()) {
-                serviceLink.setLinkId(linkId);
-            }
+            serviceLink.setName(name);
 
             storeWriter.upload(serviceLinks, null);
 

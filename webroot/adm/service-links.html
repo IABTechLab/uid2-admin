@@ -86,7 +86,7 @@
             const serviceId = parseInt($('#serviceId').val())
             const siteId = parseInt($('#siteId').val())
             const linkName = $('#linkName').val()
-            if(!siteId || !serviceId || !name) {
+            if(!siteId || !serviceId || linkName === null || linkName.length === 0) {
                 $('#errorOutput').text("required parameters: service_id, site_id, name")
                 return
             }
