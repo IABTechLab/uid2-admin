@@ -12,19 +12,21 @@ import com.uid2.admin.auth.AdminKeyset;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
+import org.assertj.core.util.Sets;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
@@ -57,26 +59,32 @@ public class SharingServiceTest extends ServiceTestBase {
         }
     }
 
+    private static Stream<Arguments> listSiteGet() {
+        return Stream.of(
+                Arguments.of(1, 5),
+                Arguments.of(3, 4)
+        );
+    }
 
     @ParameterizedTest
-    @ValueSource(ints = {5, 4})
-    void listSiteGet(int siteId, Vertx vertx, VertxTestContext testContext) {
+    @MethodSource("listSiteGet")
+    void listSiteGet(int keySetId, int siteId, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(5, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
-            put(7, new AdminKeyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
-            put(4, new AdminKeyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, Set.of(ClientType.DSP)));
+            put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(2, new AdminKeyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(3, new AdminKeyset(3, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, Set.of(ClientType.DSP)));
         }};
 
         setAdminKeysets(keysets);
         get(vertx, testContext, "api/sharing/list/" + siteId, response -> {
             assertEquals(200, response.statusCode());
 
-            compareKeysetListToResult(keysets.get(siteId), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
-            compareKeysetTypeListToResult(keysets.get(siteId), response.bodyAsJsonObject().getJsonArray("allowed_types"));
+            compareKeysetListToResult(keysets.get(keySetId), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(keysets.get(keySetId), response.bodyAsJsonObject().getJsonArray("allowed_types"));
 
-            Integer expectedHash = keysets.get(siteId).hashCode();
+            Integer expectedHash = keysets.get(keySetId).hashCode();
             assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
 
             testContext.completeNow();
