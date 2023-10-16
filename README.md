@@ -17,6 +17,9 @@ When running locally, GitHub OAuth 2.0 is disabled and users are logged in as *t
 
 If you want to test with GitHub OAuth 2.0, you will need to create an OAuth application on GitHub with `http://localhost:8089/oauth2-callback` as the callback URL, then generate a client ID/secret. Once generated, set the `is_auth_disabled` flag to `false`, and copy the client ID/secret into `github_client_id` and `github_client_secret`.
 
+### Working on the UI
+Per the above setup steps, the UI runs on `http://localhost:8089/`. To see your local UI changes reflected in the browser, you will need to hard reload (`Crtl+Shift+R`) while on the specific web page you have changed. 
+
 ## V2 API
 
 The v2 API is based on individual route provider classes. Each class should provide exactly one endpoint and must implement IRouteProvider or IBlockingRouteProvider. 

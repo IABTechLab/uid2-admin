@@ -25,7 +25,7 @@
 
 <ul>
     <li class="ro-adm" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
-    <li class="ro-adm" style="display: none"><a href="#" id="doList">List Admin User</a></li>
+    <li class="ro-adm" style="display: none"><a href="#" id="doList">List Admin Users</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doReveal">Reveal Admin User</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doAdd">Add Admin User</a></li>
     <li class="ro-adm" style="display: none"><a href="#" id="doDisable">Disable Admin User</a></li>
@@ -110,18 +110,40 @@
         });
 
         $('#doDisable').on('click', function () {
-            var email = encodeURIComponent($('#email').val());
-            var url = '/api/admin/disable?name=' + email;
+            var email = $('#email').val();
+            var encodedEmail = encodeURIComponent(email);
+            var url = '/api/admin/disable?name=' + encodedEmail;
+
+            if (!validateEmail(encodedEmail)) return;
+
+            const confirmationMessage = `Disabling this admin key will prevent the associated account from being to interact with the admin service.\n\nAre you sure you want to disable ${email}?`;
+
+            if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doEnable').on('click', function () {
-            var email = encodeURIComponent($('#email').val());
-            var url = '/api/admin/enable?name=' + email;
+            var email = $('#email').val();
+            var encodedEmail = encodeURIComponent(email);
+            var url = '/api/admin/enable?name=' + encodedEmail;
+
+            if (!validateEmail(encodedEmail)) return;
+
+            const confirmationMessage = `Enabling this admin key will allow the user to interact with the admin service. This should only be enabled for current UID2 developers and service accounts.\n\nAre you sure you want to enable ${email}?`;
+
+            if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
+
+        function validateEmail(email) {
+            if (!email) {
+                $('#errorOutput').text("required parameter: email")
+                return false;
+            }
+            return true;
+        }
     });
 </script>
 

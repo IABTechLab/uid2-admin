@@ -111,15 +111,27 @@
         });
 
         $('#doDisable').on('click', function () {
-            var clientName = encodeURIComponent($('#clientName').val());
-            var url = '/api/client/disable?name=' + clientName;
+            const clientName = $('#clientName').val();
+            var encodedClientName = encodeURIComponent(clientName);
+            var url = '/api/client/disable?name=' + encodedClientName;
+    
+            if (!validateClientName(encodedClientName)) return;
+
+            const confirmationMessage = `Disabling this client key will prevent this key from generating UID2s in a server-side integration.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${clientName}?`;
+            if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doEnable').on('click', function () {
-            var clientName = encodeURIComponent($('#clientName').val());
-            var url = '/api/client/enable?name=' + clientName;
+            const clientName = $('#clientName').val();
+            var encodedClientName = encodeURIComponent(clientName);
+            var url = '/api/client/enable?name=' + encodedClientName;
+
+            if (!validateClientName(clientName)) return;
+
+            const confirmationMessage = `Enabling this client key will allow this key to generate UID2s in a server-side integration.\n\nAre you sure you want to enable ${clientName}?`;
+            if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
@@ -134,6 +146,14 @@
             var url = '/api/client/rename?oldName=' + oldClientName + '&newName=' + newClientName;
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
+
+        function validateClientName(clientName) {
+            if (!clientName) {
+                $('#errorOutput').text("required parameter: name")
+                return false;
+            }
+            return true;
+        }
     });
 </script>
 

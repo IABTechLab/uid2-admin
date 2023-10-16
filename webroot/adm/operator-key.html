@@ -98,15 +98,27 @@
         });
 
         $('#doDisable').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var url = '/api/operator/disable?name=' + operatorName;
+            const operatorName = $('#operatorName').val();
+            var encodedOperatorName = encodeURIComponent(operatorName);
+            var url = '/api/operator/disable?name=' + encodedOperatorName;
+            
+            if (!validateOperatorName(encodedOperatorName)) return;
+
+            const confirmationMessage = `Disabling an operator key will keep the private operators running, but will eventually cause the operator to stop serving client requests.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${operatorName}?`;
+            if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doEnable').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var url = '/api/operator/enable?name=' + operatorName;
+            const operatorName = $('#operatorName').val();
+            var encodedOperatorName = encodeURIComponent(operatorName);
+            var url = '/api/operator/enable?name=' + encodedOperatorName;
+            
+            if (!validateOperatorName(encodedOperatorName)) return;
+
+            const confirmationMessage = `Are you sure you want to enable ${operatorName}?`;
+            if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
@@ -134,6 +146,14 @@
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
+
+        function validateOperatorName(operatorName) {
+            if (!operatorName) {
+                $('#errorOutput').text("required parameter: name")
+                return false;
+            }
+            return true;
+        }
     });
 </script>
 
