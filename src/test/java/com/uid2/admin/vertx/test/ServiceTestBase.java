@@ -25,9 +25,6 @@ import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -42,7 +39,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import lombok.val;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -264,7 +260,7 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static TestHandler<HttpResponse<Buffer>> expectHttpError(VertxTestContext testContext, int errorCode) {
+    protected static TestHandler<HttpResponse<Buffer>> expectHttpStatus(VertxTestContext testContext, int errorCode) {
         return response -> {
             assertEquals(errorCode, response.statusCode());
             testContext.completeNow();

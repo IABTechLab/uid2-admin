@@ -199,10 +199,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -221,10 +221,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -245,10 +245,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -269,10 +269,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -291,10 +291,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -313,10 +313,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -335,10 +335,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -357,10 +357,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
 
@@ -378,10 +378,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -400,10 +400,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -473,10 +473,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -496,10 +496,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -522,10 +522,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -548,10 +548,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
             verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+4), eq(MAX_KEY_ID+4));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -568,10 +568,10 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -584,9 +584,9 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
             verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 }

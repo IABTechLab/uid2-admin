@@ -8,10 +8,8 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.model.ClientType;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
@@ -234,21 +232,21 @@ public class SiteServiceTest extends ServiceTestBase {
     void addSiteExistingName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
-        post(vertx, testContext, "api/site/add?name=test_site", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/site/add?name=test_site", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void addSiteEmptyName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
-        post(vertx, testContext, "api/site/add?name=", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/site/add?name=", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void addSiteWhitespaceName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
-        post(vertx, testContext, "api/site/add?name=%20", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/site/add?name=%20", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
@@ -342,21 +340,21 @@ public class SiteServiceTest extends ServiceTestBase {
     void enableSiteUnknownSite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites(new Site(3, "test_site", false));
-        post(vertx, testContext, "api/site/enable?id=5&enabled=true", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/site/enable?id=5&enabled=true", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     void enableSiteSpecialSite1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, testContext, "api/site/enable?id=1&enabled=true", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/site/enable?id=1&enabled=true", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void enableSiteSpecialSite2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setSites();
-        post(vertx, testContext, "api/site/enable?id=2&enabled=true", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/site/enable?id=2&enabled=true", "", expectHttpStatus(testContext, 400));
     }
 
     @Test

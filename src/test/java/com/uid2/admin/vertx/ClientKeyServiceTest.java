@@ -13,8 +13,6 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.assertj.core.util.Sets;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,10 +71,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                 new LegacyClientBuilder().withName("test_client1").build()
         );
 
-        post(vertx, testContext, "api/client/rename?oldName=test_client&newName=test_client1", "", response -> {
-            assertEquals(400, response.statusCode());
-            testContext.completeNow();
-        });
+        post(vertx, testContext, "api/client/rename?oldName=test_client&newName=test_client1", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
@@ -132,19 +127,19 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     public void clientAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=4", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=4", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientAddSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=1", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=1", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientAddSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=2", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=2", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
@@ -194,28 +189,28 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     public void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=5", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=5", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().build());
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=4", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=4", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().build());
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=1", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=1", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().build());
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=2", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=2", "", expectHttpStatus(testContext, 400));
     }
 
     @ParameterizedTest

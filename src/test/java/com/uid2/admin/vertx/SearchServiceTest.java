@@ -12,10 +12,8 @@ import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,7 +46,7 @@ public class SearchServiceTest extends ServiceTestBase {
     @EnumSource(value = Role.class, names = {"ADMINISTRATOR"}, mode = EnumSource.Mode.EXCLUDE)
     void searchAsNonAdminFails(Role role, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(role);
-        post(vertx, testContext, searchUrl, "1234567", expectHttpError(testContext, 401));
+        post(vertx, testContext, searchUrl, "1234567", expectHttpStatus(testContext, 401));
     }
 
     @Test
@@ -62,7 +60,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchWithoutRoleFails(Vertx vertx, VertxTestContext testContext) {
-        post(vertx, testContext, searchUrl, "1234567", expectHttpError(testContext, 401));
+        post(vertx, testContext, searchUrl, "1234567", expectHttpStatus(testContext, 401));
     }
 
     @ParameterizedTest
