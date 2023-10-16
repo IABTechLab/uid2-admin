@@ -72,6 +72,13 @@ public class SiteServiceTest extends ServiceTestBase {
                 () -> assertTrue(actualRoles.containsAll(List.of(roles))));
     }
 
+    private void checkSiteResponseWithoutCreatedAt(Site expectedSite, JsonObject actualSite) {
+        assertEquals(expectedSite.getId(), actualSite.getInteger("id"));
+        assertEquals(expectedSite.getName(), actualSite.getString("name"));
+        assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
+        assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
+    }
+
     @Test
     void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
@@ -147,9 +154,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         Site[] initialSites = {
         };
-        Site[] addedSites = {
-                new Site(3, "test_site", false),
-        };
+        Site addedSites = new Site(3, "test_site", false);
 
         setSites(initialSites);
 
@@ -157,7 +162,7 @@ public class SiteServiceTest extends ServiceTestBase {
             assertAll(
                     "addSiteNoExistingSites",
                     () -> assertEquals(200, response.statusCode()),
-                    () -> checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()}));
+                    () -> checkSiteResponseWithoutCreatedAt(addedSites, response.bodyAsJsonObject()));
             verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
             testContext.completeNow();
         });
@@ -170,9 +175,7 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] initialSites = {
                 new Site(7, "initial_site", false),
         };
-        Site[] addedSites = {
-                new Site(8, "test_site", false),
-        };
+        Site addedSites = new Site(8, "test_site", false);
 
         setSites(initialSites);
 
@@ -180,7 +183,7 @@ public class SiteServiceTest extends ServiceTestBase {
             assertAll(
                     "addSiteExistingSites",
                     () -> assertEquals(200, response.statusCode()),
-                    () -> checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()}));
+                    () -> checkSiteResponseWithoutCreatedAt(addedSites, response.bodyAsJsonObject()));
             verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
             testContext.completeNow();
         });
@@ -193,15 +196,12 @@ public class SiteServiceTest extends ServiceTestBase {
         Site[] initialSites = {
                 new Site(7, "initial_site", false),
         };
-        Site[] addedSites = {
-                new Site(8, "test_site", false, Set.of(ClientType.DSP, ClientType.ADVERTISER), new HashSet<>()),
-        };
-
+        Site addedSites = new Site(8, "test_site", false, Set.of(ClientType.DSP, ClientType.ADVERTISER), new HashSet<>());
         setSites(initialSites);
 
         post(vertx, testContext, "api/site/add?name=test_site&types=DSP,ADVERTISER", "", response -> {
             assertEquals(200, response.statusCode());
-            checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()});
+            checkSiteResponseWithoutCreatedAt(addedSites, response.bodyAsJsonObject());
             verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
             testContext.completeNow();
         });
@@ -213,16 +213,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
         Site[] initialSites = {
         };
-        Site[] addedSites = {
-                new Site(3, "test_site", true),
-        };
+        Site addedSites = new Site(3, "test_site", true);
         setSites(initialSites);
 
         post(vertx, testContext, "api/site/add?name=test_site&enabled=true", "", response -> {
             assertAll(
                     "addSiteEnabled",
                     () -> assertEquals(200, response.statusCode()),
-                    () -> checkSiteResponse(addedSites, new Object[]{response.bodyAsJsonObject()}));
+                    () -> checkSiteResponseWithoutCreatedAt(addedSites, response.bodyAsJsonObject()));
             verify(storeWriter).upload(collectionOfSize(initialSites.length + 1), isNull());
             testContext.completeNow();
         });
