@@ -25,8 +25,6 @@ import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
 import com.uid2.shared.store.IKeyStore;
 import com.uid2.shared.store.KeysetKeyStoreSnapshot;
 import com.uid2.shared.store.reader.*;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -45,8 +43,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
@@ -142,19 +139,22 @@ public abstract class ServiceTestBase {
         when(adminUserProvider.get(any())).thenReturn(adminUser);
     }
 
-    protected void get(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+    protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
-        client.getAbs(getUrlForEndpoint(endpoint)).send(handler);
+        client.getAbs(getUrlForEndpoint(endpoint))
+                .send()
+                .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
     }
 
-    protected void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+    protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
-        client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(Buffer.buffer(body), handler);
+        client.postAbs(getUrlForEndpoint(endpoint))
+                .sendBuffer(body != null ?  Buffer.buffer(body) : null)
+                .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
     }
 
-    protected void postWithoutBody(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        WebClient client = WebClient.create(vertx);
-        client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(null, handler);
+    protected void postWithoutBody(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
+        post(vertx, testContext, endpoint, null, handler);
     }
 
     protected void setServices(Service... services) {
@@ -260,10 +260,8 @@ public abstract class ServiceTestBase {
         }
     }
 
-    protected static Handler<AsyncResult<HttpResponse<Buffer>>> expectHttpError(VertxTestContext testContext, int errorCode) {
-        return ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+    protected static TestHandler<HttpResponse<Buffer>> expectHttpStatus(VertxTestContext testContext, int errorCode) {
+        return response -> {
             assertEquals(errorCode, response.statusCode());
             testContext.completeNow();
         };

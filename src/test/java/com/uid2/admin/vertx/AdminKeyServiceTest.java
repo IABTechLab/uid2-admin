@@ -55,21 +55,15 @@ public class AdminKeyServiceTest extends ServiceTestBase {
 
         AdminUser expectedAdminUser = this.expectedAdminUser();
 
-        post(vertx, String.format("api/admin/add?name=%s&roles=administrator", expectedAdminUser.getName()), "", response -> {
-            try {
-                HttpResponse<Buffer> httpResponse = response.result();
-                JsonObject result = httpResponse.bodyAsJsonObject();
+        post(vertx, testContext, String.format("api/admin/add?name=%s&roles=administrator", expectedAdminUser.getName()), "", response -> {
+            JsonObject result = response.bodyAsJsonObject();
 
-                assertAll(
-                        "addAdminUsesKeyPrefixAndFormattedKeyString",
-                        () -> assertTrue(response.succeeded()),
-                        () -> assertNotNull(result),
-                        () -> checkAdminUserJson(expectedAdminUser, result));
+            assertAll(
+                    "addAdminUsesKeyPrefixAndFormattedKeyString",
+                    () -> assertNotNull(result),
+                    () -> checkAdminUserJson(expectedAdminUser, result));
 
-                testContext.completeNow();
-            } catch (Throwable t) {
-                testContext.failNow(t);
-            }
+            testContext.completeNow();
         });
     }
 

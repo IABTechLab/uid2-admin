@@ -12,19 +12,21 @@ import com.uid2.admin.auth.AdminKeyset;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
+import org.assertj.core.util.Sets;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
@@ -57,9 +59,16 @@ public class SharingServiceTest extends ServiceTestBase {
         }
     }
 
+    private static Stream<Arguments> listSiteGet() {
+        return Stream.of(
+                Arguments.of(1, 5),
+                Arguments.of(3, 4)
+        );
+    }
 
-    @Test
-    void listSiteGet(Vertx vertx, VertxTestContext testContext) {
+    @ParameterizedTest
+    @MethodSource("listSiteGet")
+    void listSiteGet(int keySetId, int siteId, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
@@ -69,27 +78,13 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/list/5", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/list/" + siteId, response -> {
             assertEquals(200, response.statusCode());
 
-            compareKeysetListToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetListToResult(keysets.get(keySetId), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(keysets.get(keySetId), response.bodyAsJsonObject().getJsonArray("allowed_types"));
 
-            Integer expectedHash = keysets.get(1).hashCode();
-            assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
-
-            testContext.completeNow();
-        });
-        get(vertx, "api/sharing/list/4", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(200, response.statusCode());
-
-            compareKeysetListToResult(keysets.get(3), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
-            compareKeysetTypeListToResult(keysets.get(3), response.bodyAsJsonObject().getJsonArray("allowed_types"));
-
-            Integer expectedHash = keysets.get(3).hashCode();
+            Integer expectedHash = keysets.get(keySetId).hashCode();
             assertEquals(expectedHash, response.bodyAsJsonObject().getInteger("hash"));
 
             testContext.completeNow();
@@ -107,8 +102,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/list/42", ar -> {
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/list/42", response -> {
             assertEquals(404, response.statusCode());
 
             testContext.completeNow();
@@ -138,9 +132,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": " + keysets.get(3).hashCode() + "\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/list/5", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(3, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -176,9 +168,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": " + keysets.get(3).hashCode() + "\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/list/5", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(3, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP, ClientType.ADVERTISER));
@@ -213,9 +203,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/8", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/list/8", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(6, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -224,11 +212,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(expected.getAllowedSites(), keysets.get(6).getAllowedSites());
 
             //Ensure new key was created
-            try {
-                verify(keysetKeyManager).addKeysetKey(6);
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keysetKeyManager).addKeysetKey(6);
             testContext.completeNow();
         });
     }
@@ -259,9 +243,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/8", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/list/8", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(6, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP, ClientType.ADVERTISER));
@@ -272,11 +254,7 @@ public class SharingServiceTest extends ServiceTestBase {
             assertEquals(expected.getAllowedTypes(), keysets.get(6).getAllowedTypes());
 
             //Ensure new key was created
-            try {
-                verify(keysetKeyManager).addKeysetKey(6);
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(keysetKeyManager).addKeysetKey(6);
             testContext.completeNow();
         });
     }
@@ -302,9 +280,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": 0\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/-1", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/list/-1", body, response -> {
             assertEquals(400, response.statusCode());
             testContext.completeNow();
         });
@@ -340,27 +316,21 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"hash\": " + keysets.get(3).hashCode() + "\n" +
                 "  }";
 
-        post(vertx, "api/sharing/list/5", body1, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/list/5", body1, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(3, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
-            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("whitelist"));
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(3).getAllowedSites());
-            testContext.completeNow();
-        });
 
-        post(vertx, "api/sharing/list/5", body2, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(409, response.statusCode());
+            post(vertx, testContext, "api/sharing/list/5", body2, response2 -> {
+                assertEquals(409, response2.statusCode());
 
-            testContext.completeNow();
+                testContext.completeNow();
+            });
         });
     }
-
     @Test
     void listAll(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
@@ -372,9 +342,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/lists", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/lists", response -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
@@ -404,9 +372,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/keyset/1", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/keyset/1", response -> {
             assertEquals(200, response.statusCode());
 
             compareKeysetListToResult(keysets.get(1), response.bodyAsJsonObject().getJsonArray("allowed_sites"));
@@ -426,9 +392,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/keyset/1", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/keyset/1", response -> {
             assertEquals(404, response.statusCode());
             assertEquals("Failed to find keyset for keyset_id: 1", response.bodyAsJsonObject().getString("message"));
 
@@ -447,9 +411,7 @@ public class SharingServiceTest extends ServiceTestBase {
         }};
 
         setAdminKeysets(keysets);
-        get(vertx, "api/sharing/keysets", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/sharing/keysets", response -> {
             assertEquals(200, response.statusCode());
 
             JsonArray respArray = response.bodyAsJsonArray();
@@ -486,9 +448,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("You must specify exactly one of: keyset_id, site_id", response.bodyAsJsonObject().getString("message"));
 
@@ -519,9 +479,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("You must specify exactly one of: keyset_id, site_id", response.bodyAsJsonObject().getString("message"));
 
@@ -553,9 +511,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(1, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -592,9 +548,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 3" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(3, 5, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP, ClientType.ADVERTISER));
@@ -642,9 +596,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 1" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(1, 5, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -679,9 +631,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(4, 8, "test-name", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -716,9 +666,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Site id 5 not valid", response.bodyAsJsonObject().getString("message"));
 
@@ -749,9 +697,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Site id 25 not valid", response.bodyAsJsonObject().getString("message"));
 
@@ -785,9 +731,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "     \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             testContext.completeNow();
@@ -818,9 +762,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"TEST\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("AdminKeyset with same site_id and name already exists", response.bodyAsJsonObject().getString("message"));
 
@@ -850,9 +792,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(4, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -881,9 +821,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(4, 8, "test", Set.of(), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -912,9 +850,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 1" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(1, 5, "test", Set.of(), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -944,9 +880,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Site id " + input + " not valid", response.bodyAsJsonObject().getString("message"));
 
@@ -973,9 +907,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Keyset id: " + input + " is not valid", response.bodyAsJsonObject().getString("message"));
 
@@ -1002,9 +934,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Site id " + input + " not valid", response.bodyAsJsonObject().getString("message"));
 
@@ -1030,9 +960,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Duplicate site_ids not permitted", response.bodyAsJsonObject().getString("message"));
 
@@ -1058,9 +986,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Duplicate site_ids not permitted", response.bodyAsJsonObject().getString("message"));
 
@@ -1087,9 +1013,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(4, 8, "test", Set.of(5), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -1118,9 +1042,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"name\": \"test-name\"" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(1, 5, "test", Set.of(8), Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -1148,9 +1070,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"site_id\": 5" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(400, response.statusCode());
             assertEquals("Keyset already exists for site: 5", response.bodyAsJsonObject().getString("message"));
 
@@ -1174,9 +1094,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"site_id\": 3" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -1203,9 +1121,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"allowed_sites\": null" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -1231,9 +1147,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"keyset_id\": 1" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -1260,9 +1174,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"allowed_sites\": null" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
@@ -1298,9 +1210,7 @@ public class SharingServiceTest extends ServiceTestBase {
                 "    \"site_id\": 8" +
                 "  }";
 
-        post(vertx, "api/sharing/keyset", body, ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
             AdminKeyset expected = new AdminKeyset(6, 8, "test", Set.of(22, 25, 6), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP, ClientType.ADVERTISER));
