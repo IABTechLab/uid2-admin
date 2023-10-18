@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -144,11 +145,11 @@ public class ServiceServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         postWithoutBody(vertx, testContext, "api/service/add", response -> {
-                    assertEquals(400, response.statusCode());
-                    assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
-                    verify(serviceStoreWriter, never()).upload(null, null);
-                    testContext.completeNow();
-                });
+            assertEquals(400, response.statusCode());
+            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
     }
 
     @ParameterizedTest
@@ -324,16 +325,16 @@ public class ServiceServiceTest extends ServiceTestBase {
     void updateRolesMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        postWithoutBody(vertx, testContext, "api/service/roles", response -> {
-                assertEquals(400, response.statusCode());
-                assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
-                verify(serviceStoreWriter, never()).upload(null, null);
-                testContext.completeNow();
-            });
+        postWithoutBody(vertx, testContext, "api/service/update", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"service_id", "roles"})
+    @ValueSource(strings = {"service_id"})
     void updateRolesMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -343,9 +344,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         jo.remove(parameter);
 
-        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("required parameters: service_id, roles", response.bodyAsJsonObject().getString("message"));
+            assertEquals("required parameters: service_id", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
@@ -364,7 +365,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 2);
         jo.put("roles", ja);
 
-        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("failed to find a service for service_id: 2", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -385,7 +386,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("roles", ja);
 
-        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
@@ -408,11 +409,212 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("roles", ja);
 
-        post(vertx, testContext, "api/service/roles", jo.encode(), response -> {
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             existingService.setRoles(Set.of(Role.GENERATOR, Role.ADMINISTRATOR));
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("name", "newName");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setName("newName");
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("site_id", 456);
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setSiteId(456);
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateWithEmptyValues(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("site_id", null);
+        jo.put("name", "");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateWithEmptyRoleString(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("roles", "");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateWithEmptyRoleArray(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        Service expectedService = new Service(1, 123, "name1", Set.of());
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("roles", "[]");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateSiteCreateDuplicateSiteIdAndName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService1 = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService2 = new Service(2, 789, "name2", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService1, existingService2);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 2);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("site_id 123 already has service of name name1", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+
+        post(vertx, testContext, "api/service/delete", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(new ArrayList<Service>(), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteServiceInvalidServiceId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("missing_service_id", 1);
+
+        post(vertx, testContext, "api/service/delete", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+
+            assertEquals("required parameters: service_id", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+
+            verify(serviceStoreWriter, never()).upload(new ArrayList<Service>(), null);
+            verify(serviceStoreWriter, never()).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteServiceNoBody(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService);
+
+        post(vertx, testContext, "api/service/delete", "", response -> {
+            assertEquals(400, response.statusCode());
+
+            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+
+            verify(serviceStoreWriter, never()).upload(new ArrayList<Service>(), null);
+            verify(serviceStoreWriter, never()).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteOneService(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService2 = new Service(2, 123, "name2", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService3 = new Service(32, 123, "name3", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService, existingService2, existingService3);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 2);
+
+        post(vertx, testContext, "api/service/delete", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+
+            checkServiceJson(existingService2, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService, existingService3), null);
             testContext.completeNow();
         });
     }

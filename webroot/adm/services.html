@@ -33,10 +33,15 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doListBySite">List Services By Site Id</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doListByServiceId">Get Service By Service Id</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doRoles">Set Service Roles</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update Service</a></li>
 </ul>
 
 <br>
+<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doDelete">Delete Service</a></li>
+</ul>
 
 <h3>Output</h3>
 
@@ -86,15 +91,31 @@
             doApiCall('POST', '/api/service/add', '#standardOutput', '#errorOutput', JSON.stringify({site_id: siteId, name: serviceName, roles: roles}));
         });
 
-        $('#doRoles').on('click', function () {
+        $('#doUpdate').on('click', function () {
             const serviceId = parseInt($('#serviceId').val())
             if(!serviceId) {
                 $('#errorOutput').text("required parameters: service_id")
                 return
             }
+            const siteId = parseInt($('#siteId').val())
+            const serviceName = $('#serviceName').val()
             const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
 
-            doApiCall('POST', '/api/service/roles', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, roles: roles}));
+            doApiCall('POST', '/api/service/update', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, site_id: siteId, name: serviceName, roles: roles}));
+        });
+
+        $('#doDelete').on('click', function () {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
+            const serviceId = parseInt($('#serviceId').val())
+            if(!serviceId) {
+                $('#errorOutput').text("required parameters: service_id")
+                return
+            }
+
+            doApiCall('POST', '/api/service/delete', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId}));
         });
     });
 </script>
