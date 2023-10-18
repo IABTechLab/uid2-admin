@@ -12,8 +12,6 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,21 +47,15 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
                 .withType(OperatorType.PUBLIC)
                 .build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", response -> {
+            RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 
-                assertAll(
-                        "operatorAdd",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
-                        () -> assertNotNull(revealedOperator.getPlaintextKey()),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorAdd",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                    () -> assertNotNull(revealedOperator.getPlaintextKey()),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -76,21 +68,15 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
                 .withType(OperatorType.PUBLIC)
                 .build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", response -> {
+            RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 
-                assertAll(
-                        "operatorAddUsesConfigPrefix",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
-                        () -> assertNotNull(revealedOperator.getPlaintextKey()),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorAddUsesConfigPrefix",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                    () -> assertNotNull(revealedOperator.getPlaintextKey()),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -98,7 +84,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     public void operatorAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=4&roles=optout", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=4&roles=optout", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
@@ -106,21 +92,15 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=&operator_type=private", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=&operator_type=private", "", response -> {
+            RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 
-                assertAll(
-                        "operatorKeyAddEmptyRole",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
-                        () -> assertNotNull(revealedOperator.getPlaintextKey()),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorKeyAddEmptyRole",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                    () -> assertNotNull(revealedOperator.getPlaintextKey()),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -130,21 +110,15 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.OPERATOR_MANAGER);
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
-        post(vertx, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&operator_type=private", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&operator_type=private", "", response -> {
+            RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 
-                assertAll(
-                        "operatorKeyAddWithoutRole",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
-                        () -> assertNotNull(revealedOperator.getPlaintextKey()),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorKeyAddWithoutRole",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertAddedOperatorKeyEquals(expectedOperator, revealedOperator.getAuthorizable()),
+                    () -> assertNotNull(revealedOperator.getPlaintextKey()),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -152,25 +126,25 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     void operatorKeyAddInvalidRoleWithOperatorAndNonExistent(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,nonexistent", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,nonexistent", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddInvalidRoleCombinationWithOperatorAndOptoutService(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddInvalidRoleCombinationWithOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=optout,optout_service", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=optout,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddInvalidRoleCombinationWithOperatorAndOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout,optout_service", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
@@ -181,20 +155,14 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         OperatorKey expectedOperator = new OperatorBuilder()
                 .withType(OperatorType.PUBLIC)
                 .build();
-        post(vertx, "api/operator/update?name=test_operator&site_id=5&operator_type=public", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
+        post(vertx, testContext, "api/operator/update?name=test_operator&site_id=5&operator_type=public", "", response -> {
+            OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
 
-                assertAll(
-                        "operatorUpdate",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertEquals(expectedOperator, operatorKey),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorUpdate",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(expectedOperator, operatorKey),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -203,7 +171,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     public void operatorUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/update?name=test_client&site_id=4", "", expectHttpError(testContext, 404));
+        post(vertx, testContext, "api/operator/update?name=test_client&site_id=4", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
@@ -215,20 +183,14 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         );
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
-        post(vertx, "api/operator/update?name=test_operator&operator_type=private", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
+        post(vertx, testContext, "api/operator/update?name=test_operator&operator_type=private", "", response -> {
+            OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
 
-                assertAll(
-                        "operatorFlipPublicOperatorStatusViaUpdate",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertEquals(expectedOperator, operatorKey),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorFlipPublicOperatorStatusViaUpdate",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(expectedOperator, operatorKey),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -241,20 +203,14 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         OperatorKey expectedOperator = new OperatorBuilder()
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
                 .build();
-        post(vertx, "api/operator/roles?name=test_operator&roles=optout", "", ar -> {
-            try {
-                HttpResponse<Buffer> response = ar.result();
-                OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=optout", "", response -> {
+            OperatorKey operatorKey = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
 
-                assertAll(
-                        "operatorKeySetRole",
-                        () -> assertTrue(ar.succeeded()),
-                        () -> assertEquals(200, response.statusCode()),
-                        () -> assertEquals(expectedOperator, operatorKey),
-                        () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            assertAll(
+                    "operatorKeySetRole",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(expectedOperator, operatorKey),
+                    () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
     }
@@ -263,42 +219,42 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     public void operatorKeySetInvalidRoleCombinationWithOperatorAndNonexistent(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/roles?name=test_operator&roles=operator,nonexistent", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=operator,nonexistent", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeySetInvalidRoleCombinationWithOperatorAndOptoutService(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeySetInvalidRoleCombinationWithOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/roles?name=test_operator&roles=optout,optout_service", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=optout,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeySetInvalidRoleCombinationWithOperatorptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/roles?name=test_operator&roles=operator,optout,optout_service", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=operator,optout,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeySetEmptyRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/roles?name=test_operator&roles=", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeySetRoleWithoutRoleParam(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR_MANAGER);
         setOperatorKeys(new OperatorBuilder().build());
-        post(vertx, "api/operator/roles?name=test_operator", "", expectHttpError(testContext, 400));
+        post(vertx, testContext, "api/operator/roles?name=test_operator", "", expectHttpStatus(testContext, 400));
     }
 
     private static void assertAddedOperatorKeyEquals(OperatorKey expected, OperatorKey actual) {
