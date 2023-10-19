@@ -78,7 +78,7 @@
             const siteId = $('#siteId').val();
             const name = $('#name').val();
             const disabled = ($('#disable').is(':checked'));
-            if(!siteId) {
+            if (!siteId) {
                 $('#errorOutput').text("required parameters: site_id")
                 return
             }
@@ -93,13 +93,16 @@
             const name = $('#name').val();
             const disabled = ($('#disable').is(':checked'));
 
-            if(!subscriptionId) {
+            if (!subscriptionId) {
                 $('#errorOutput').text("required parameters: subscription_id")
                 return
             }
 
+            const confirmationMessage = getUpdateKeypairConfirmationMessage(disabled, subscriptionId);
+            if (!confirm(confirmationMessage)) return;
+
             const payload = {"subscription_id": subscriptionId, "disabled" : disabled}
-            if(name){
+            if (name) {
                 payload["name"] = name
             }
 
@@ -107,6 +110,18 @@
         });
 
     });
+
+    function getUpdateKeypairConfirmationMessage(disabled, subscriptionId) {
+        let action = disabled ? 'disable' : 'enable';
+        let confirmationMessage = `You may ignore this warning if you are not changing the disabled status of this keypair.\n\nAre you sure you want to ${action} ${subscriptionId}?`;
+
+        if (disabled) {
+            confirmationMessage = `Disabling this client-side keypair will prevent it from using CSTG.\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\n${confirmationMessage}`;
+        } else {
+            confirmationMessage = `Enabling this client-side keypair will allow it to use CSTG.\n\n${confirmationMessage}`;
+        }
+        return confirmationMessage;
+    }
 </script>
 
 </body>
