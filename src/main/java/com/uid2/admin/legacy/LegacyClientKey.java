@@ -217,11 +217,11 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
                 && this.disabled == b.disabled
                 && Arrays.equals(this.secretBytes, b.secretBytes)
                 && this.serviceId == b.serviceId
-                && this.keyId == b.keyId;
+                && this.keyId.equals(b.keyId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, keyHash, keySalt, secret, name, contact, roles, created, siteId, disabled, Arrays.hashCode(secretBytes), serviceId);
+        return Objects.hash(key, keyHash, keySalt, secret, name, contact, roles, created, siteId, disabled, Arrays.hashCode(secretBytes), serviceId, keyId);
     }
 }
