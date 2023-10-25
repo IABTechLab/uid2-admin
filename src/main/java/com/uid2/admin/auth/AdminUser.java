@@ -127,11 +127,11 @@ public class AdminUser implements IRoleAuthorizable<Role> {
                 && this.created == b.created
                 && this.roles.equals(b.roles)
                 && this.disabled == b.disabled
-                && this.keyId == b.keyId;
+                && this.keyId.equals(b.keyId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, keyHash, keySalt, name, contact, created, roles, disabled);
+        return Objects.hash(key, keyHash, keySalt, name, contact, created, roles, disabled, keyId);
     }
 }
