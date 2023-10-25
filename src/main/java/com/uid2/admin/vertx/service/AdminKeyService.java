@@ -1,7 +1,6 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.cloud.Tuple;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -166,16 +165,17 @@ public class AdminKeyService implements IService {
         }
     }
 
-    private String[] generateRandomKey() throws Exception {
-        String key = (this.adminKeyPrefix != null ? this.adminKeyPrefix : "") + keyGenerator.generateFormattedKeyString(32);
-        String keyId = key.substring(0, "UID2-A-L-".length() + 5);
+    private String[] generateKeyAndKeyId() throws Exception {
+        String keyCommonPrefix = this.adminKeyPrefix != null ? this.adminKeyPrefix : "";
+        String key = keyCommonPrefix + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, keyCommonPrefix.length() + 5);
 
         // Check if keyId is duplicated
         Optional<AdminUser> existingAdminKeyId = this.adminUserProvider.getAll()
                 .stream().filter(a -> a.getKeyId().equals(keyId))
                 .findFirst();
         if (existingAdminKeyId.isPresent()) {
-            return generateRandomKey();
+            return generateKeyAndKeyId();
         }
         return new String[]{ key, keyId };
     }
@@ -210,9 +210,9 @@ public class AdminKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String[] randomKeySet = generateRandomKey();
-            String key = randomKeySet[0];
-            String keyId = randomKeySet[1];
+            String[] generatedKeyAndKeyId = generateKeyAndKeyId();
+            String key = generatedKeyAndKeyId[0];
+            String keyId = generatedKeyAndKeyId[1];
 
             KeyHashResult khr = keyHasher.hashKey(key);
 

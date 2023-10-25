@@ -2,7 +2,6 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.RevealedKey;
-import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -167,16 +166,17 @@ public class OperatorKeyService implements IService {
         }
     }
 
-    private String[] generateRandomKey(Integer finalSiteId) throws Exception {
-        String key = (this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "") + keyGenerator.generateFormattedKeyString(32);
-        String keyId = key.substring(0, String.format("UID2-O-L-%d-", finalSiteId).length() + 5);
+    private String[] generateKeyAndKeyId(Integer finalSiteId) throws Exception {
+        String keyCommonPrefix = this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "";
+        String key = keyCommonPrefix + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, keyCommonPrefix.length() + 5);
 
         // Check if keyId is duplicated
         Optional<OperatorKey> existingOperatorKeyId = this.operatorKeyProvider.getAll()
                 .stream().filter(o -> o.getKeyId().equals(keyId))
                 .findFirst();
         if (existingOperatorKeyId.isPresent()) {
-            return generateRandomKey(finalSiteId);
+            return generateKeyAndKeyId(finalSiteId);
         }
         return new String[]{ key, keyId };
     }
@@ -250,9 +250,9 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String[] randomKeySet = generateRandomKey(finalSiteId);
-            String key = randomKeySet[0];
-            String keyId = randomKeySet[1];
+            String[] generatedKeyAndKeyId = generateKeyAndKeyId(finalSiteId);
+            String key = generatedKeyAndKeyId[0];
+            String keyId = generatedKeyAndKeyId[1];
             KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new operator
