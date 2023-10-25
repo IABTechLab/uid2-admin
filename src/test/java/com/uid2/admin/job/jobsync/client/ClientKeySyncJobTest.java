@@ -40,7 +40,8 @@ class ClientKeySyncJobTest {
                     false,
                     scopedSiteId,
                     Set.of(Role.OPERATOR),
-                    OperatorType.PRIVATE
+                    OperatorType.PRIVATE,
+                    "key-id"
             )
     );
     private final LegacyClientKey client = new LegacyClientKey(
@@ -53,7 +54,8 @@ class ClientKeySyncJobTest {
             Instant.MIN,
             Set.of(Role.OPERATOR),
             scopedSiteId,
-            false
+            false,
+            "key-id"
     );
 
     private ClientKeyStoreFactory clientKeyStoreFactory;

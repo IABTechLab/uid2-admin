@@ -43,7 +43,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @BeforeEach
     public void setup() {
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(999, "test_site", true));
     }
 
     @Test
@@ -244,7 +244,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     private static class LegacyClientBuilder {
         private String name = "test_client";
-        private int siteId = 5;
+        private int siteId = 999;
         private Set<Role> roles = Set.of(Role.GENERATOR);
         private int serviceId = 0;
 
@@ -270,7 +270,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
         public LegacyClientKey build() {
             return new LegacyClientKey(
-                    "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
+                    "UID2-C-L-999-abcdeM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
                     EXPECTED_CLIENT_KEY_HASH,
                     EXPECTED_CLIENT_KEY_SALT,
                     "",
@@ -280,7 +280,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                     roles,
                     siteId,
                     false,
-                    serviceId
+                    serviceId,
+                    "UID2-C-L-999-abcde"
             );
         }
     }

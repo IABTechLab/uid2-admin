@@ -43,7 +43,8 @@ public class SiteSyncJobTest {
                     false,
                     scopedSiteId,
                     Set.of(Role.OPERATOR),
-                    OperatorType.PRIVATE)
+                    OperatorType.PRIVATE,
+                    "key-id")
     );
     private final Site site = new Site(scopedSiteId, "site 1", true);
 

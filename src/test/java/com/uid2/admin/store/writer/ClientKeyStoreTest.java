@@ -203,7 +203,8 @@ class ClientKeyStoreTest {
                 Set.of(Role.GENERATOR),
                 5,
                 false,
-                0
+                0,
+                "key-id"
         );
         return ImmutableList.of(key);
     }

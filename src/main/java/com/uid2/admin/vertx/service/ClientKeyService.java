@@ -216,6 +216,8 @@ public class ClientKeyService implements IService {
             KeyHashResult khr = keyHasher.hashKey(key);
             String secret = keyGenerator.generateRandomKeyString(32);
 
+            String keyId = key.substring(0, String.format("UID2-C-L-%d-", site.getId()).length() + 5);
+
             // add new client to array
             Instant created = Instant.now();
             LegacyClientKey newClient = new LegacyClientKey(
@@ -229,7 +231,8 @@ public class ClientKeyService implements IService {
                     roles,
                     site.getId(),
                     false,
-                    serviceId
+                    serviceId,
+                    keyId
             );
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");

@@ -196,11 +196,12 @@ public class AdminKeyService implements IService {
 
             // create a random key
             String key = (this.adminKeyPrefix != null ? this.adminKeyPrefix : "") + keyGenerator.generateFormattedKeyString(32);
+            String keyId = key.substring(0, "UID2-A-L-".length() + 5);
             KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new admin
             long created = Instant.now().getEpochSecond();
-            AdminUser newAdmin = new AdminUser(key, khr.getHash(), khr.getSalt(), name, name, created, roles, false);
+            AdminUser newAdmin = new AdminUser(key, khr.getHash(), khr.getSalt(), name, name, created, roles, false, keyId);
 
             // add admin to the array
             admins.add(newAdmin);

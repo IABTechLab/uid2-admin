@@ -236,11 +236,12 @@ public class OperatorKeyService implements IService {
 
             // create a random key
             String key = (this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+            String keyId = key.substring(0, String.format("UID2-O-L-%d-", siteId).length() + 5);
             KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType, keyId);
 
             // add client to the array
             operators.add(newOperator);
