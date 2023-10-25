@@ -2,6 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.RevealedKey;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -166,6 +167,20 @@ public class OperatorKeyService implements IService {
         }
     }
 
+    private String[] generateRandomKey(Integer finalSiteId) throws Exception {
+        String key = (this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, String.format("UID2-O-L-%d-", finalSiteId).length() + 5);
+
+        // Check if keyId is duplicated
+        Optional<OperatorKey> existingOperatorKeyId = this.operatorKeyProvider.getAll()
+                .stream().filter(o -> o.getKeyId().equals(keyId))
+                .findFirst();
+        if (existingOperatorKeyId.isPresent()) {
+            return generateRandomKey(finalSiteId);
+        }
+        return new String[]{ key, keyId };
+    }
+
     private void handleOperatorAdd(RoutingContext rc) {
         try {
             // refresh manually
@@ -235,8 +250,9 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String key = (this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "") + keyGenerator.generateFormattedKeyString(32);
-            String keyId = key.substring(0, String.format("UID2-O-L-%d-", siteId).length() + 5);
+            String[] randomKeySet = generateRandomKey(finalSiteId);
+            String key = randomKeySet[0];
+            String keyId = randomKeySet[1];
             KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new operator

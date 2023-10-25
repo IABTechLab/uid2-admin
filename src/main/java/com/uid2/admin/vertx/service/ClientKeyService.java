@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
@@ -184,6 +185,20 @@ public class ClientKeyService implements IService {
         }
     }
 
+    private String[] generateRandomKey(Site site) throws Exception {
+        String key = (this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, String.format("UID2-C-L-%d-", site.getId()).length() + 5);
+
+        // Check if keyId is duplicated
+        Optional<LegacyClientKey> existingClientKeyId = this.clientKeyProvider.getAll()
+                .stream().filter(c -> c.getKeyId().equals(keyId))
+                .findFirst();
+        if (existingClientKeyId.isPresent()) {
+            return generateRandomKey(site);
+        }
+        return new String[]{ key, keyId };
+    }
+
     private void handleClientAdd(RoutingContext rc) {
         try {
             // refresh manually
@@ -212,11 +227,14 @@ public class ClientKeyService implements IService {
             List<LegacyClientKey> clients = getAllClientKeys();
 
             // create random key and secret
-            String key = (this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+            String[] randomKeySet = generateRandomKey(site);
+            String key = randomKeySet[0];
+            String keyId = randomKeySet[1];
+
             KeyHashResult khr = keyHasher.hashKey(key);
             String secret = keyGenerator.generateRandomKeyString(32);
 
-            String keyId = key.substring(0, String.format("UID2-C-L-%d-", site.getId()).length() + 5);
+
 
             // add new client to array
             Instant created = Instant.now();
