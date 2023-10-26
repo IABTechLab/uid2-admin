@@ -148,6 +148,7 @@ public class ClientKeyService implements IService {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                jo.put("key_id", c.getKeyId());
                 jo.put("name", c.getName());
                 jo.put("contact", c.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));

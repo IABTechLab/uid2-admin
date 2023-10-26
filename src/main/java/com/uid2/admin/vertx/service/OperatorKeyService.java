@@ -129,6 +129,7 @@ public class OperatorKeyService implements IService {
                 final JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                jo.put("key_id", o.getKeyId());
                 jo.put("name", o.getName());
                 jo.put("contact", o.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(o.getRoles()));

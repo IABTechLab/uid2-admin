@@ -131,6 +131,7 @@ public class AdminKeyService implements IService {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                jo.put("key_id", a.getKeyId());
                 jo.put("name", a.getName());
                 jo.put("contact", a.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(a.getRoles()));
