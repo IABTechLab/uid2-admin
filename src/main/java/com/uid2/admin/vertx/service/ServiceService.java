@@ -3,7 +3,6 @@ package com.uid2.admin.vertx.service;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
@@ -53,9 +52,14 @@ public class ServiceService implements IService {
                 this.handleServiceAdd(ctx);
             }
         }, Role.ADMINISTRATOR));
-        router.post("/api/service/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/service/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleServiceRoles(ctx);
+                this.handleUpdate(ctx);
+            }
+        }, Role.ADMINISTRATOR));
+        router.post("/api/service/delete").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleDelete(ctx);
             }
         }, Role.ADMINISTRATOR));
     }
@@ -149,7 +153,8 @@ public class ServiceService implements IService {
         }
     }
 
-    private void handleServiceRoles(RoutingContext rc) {
+    // Can update the site_id, name and roles
+    private void handleUpdate(RoutingContext rc) {
         try {
             JsonObject body = rc.body().asJsonObject();
             if (body == null) {
@@ -157,9 +162,21 @@ public class ServiceService implements IService {
                 return;
             }
             Integer serviceId = body.getInteger("service_id");
-            JsonArray rolesSpec = body.getJsonArray("roles");
-            if (serviceId == null || rolesSpec == null) {
-                ResponseUtil.error(rc, 400, "required parameters: service_id, roles");
+            Integer siteId = body.getInteger("site_id");
+            String name = body.getString("name");
+
+            JsonArray rolesSpec = null;
+            if (body.getString("roles") != null && !body.getString("roles").isEmpty()) {
+                try {
+                    rolesSpec = body.getJsonArray("roles");
+                } catch (ClassCastException c) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
+                    return;
+                }
+            }
+
+            if (serviceId == null) {
+                ResponseUtil.error(rc, 400, "required parameters: service_id");
                 return;
             }
 
@@ -169,15 +186,33 @@ public class ServiceService implements IService {
                 return;
             }
 
-            final Set<Role> roles;
-            try {
-                roles = rolesSpec.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
-            } catch (IllegalArgumentException e) {
-                ResponseUtil.error(rc, 400, "invalid parameter: roles");
-                return;
+            // check that this does not create a duplicate service
+            if (siteId != null && siteId != 0 && name != null && !name.isEmpty()) {
+                boolean exists = serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId && s.getSiteId() == siteId && s.getName().equals(name));
+                if (exists) {
+                    ResponseUtil.error(rc, 400, "site_id " + siteId + " already has service of name " + name);
+                    return;
+                }
             }
 
-            service.setRoles(roles);
+            if (rolesSpec != null) {
+                final Set<Role> roles;
+                try {
+                    roles = rolesSpec.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
+                    return;
+                }
+                service.setRoles(roles);
+            }
+
+            if (siteId != null && siteId != 0) {
+                service.setSiteId(siteId);
+            }
+
+            if (name != null && !name.isEmpty()) {
+                service.setName(name);
+            }
 
             final List<Service> services = this.serviceProvider.getAllServices()
                     .stream().sorted(Comparator.comparingInt(Service::getServiceId))
@@ -189,6 +224,43 @@ public class ServiceService implements IService {
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "Internal Server Error", e);
         }
+    }
+
+    private void handleDelete(RoutingContext rc) {
+        final int serviceId;
+        JsonObject body = rc.body() != null ? rc.body().asJsonObject() : null;
+        if (body == null) {
+            ResponseUtil.error(rc, 400, "json payload required but not provided");
+            return;
+        }
+        serviceId = body.getInteger("service_id", -1);
+        if (serviceId == -1) {
+            ResponseUtil.error(rc, 400, "required parameters: service_id");
+            return;
+        }
+
+        try {
+            serviceProvider.loadContent();
+
+            Service service = serviceProvider.getService(serviceId);
+            if (service == null) {
+                ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
+                return;
+            }
+
+            final List<Service> services = this.serviceProvider.getAllServices()
+                    .stream().sorted(Comparator.comparingInt(Service::getServiceId))
+                    .collect(Collectors.toList());
+
+            services.remove(service);
+
+            storeWriter.upload(services, null);
+
+            rc.response().end(toJson(service).encodePrettily());
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "Internal Server Error", e);
+        }
+
     }
 
     private JsonObject toJson(Service s) {

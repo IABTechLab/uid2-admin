@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeypairManager;
 import com.uid2.admin.store.Clock;
@@ -34,6 +35,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private final ClientSideKeypairStoreWriter storeWriter;
     private final RotatingClientSideKeypairStore keypairStore;
     private final RotatingSiteStore siteProvider;
+    private final KeysetManager keysetManager;
     private final IKeypairGenerator keypairGenerator;
     private final String publicKeyPrefix;
     private final String privateKeyPrefix;
@@ -45,6 +47,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                                     ClientSideKeypairStoreWriter storeWriter,
                                     RotatingClientSideKeypairStore keypairStore,
                                     RotatingSiteStore siteProvider,
+                                    KeysetManager keysetManager,
                                     IKeypairGenerator keypairGenerator,
                                     Clock clock) {
         this.auth = auth;
@@ -53,6 +56,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         this.keypairStore = keypairStore;
         this.keypairGenerator = keypairGenerator;
         this.siteProvider = siteProvider;
+        this.keysetManager = keysetManager;
         this.clock = clock;
         this.publicKeyPrefix = config.getString("client_side_keypair_public_prefix");
         this.privateKeyPrefix = config.getString("client_side_keypair_private_prefix");
@@ -82,6 +86,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         final Integer siteId = body.getInteger("site_id");
         final String contact = body.getString("contact", "");
         final boolean disabled = body.getBoolean("disabled", false);
+        final String name = body.getString("name");
         if (siteId == null) {
             ResponseUtil.error(rc, 400, "Required parameters: site_id");
             return;
@@ -93,11 +98,19 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
         final ClientSideKeypair newKeypair;
         try {
-            newKeypair = createAndSaveSiteKeypair(siteId, contact, disabled);
+            newKeypair = createAndSaveSiteKeypair(siteId, contact, disabled, name);
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "failed to upload keypairs", e);
             return;
         }
+
+        try {
+            this.keysetManager.createKeysetForSite(siteId);
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "failed to create keyset", e);
+            return;
+        }
+
         final JsonObject json = toJsonWithPrivateKey(newKeypair);
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
@@ -108,6 +121,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         final String subscriptionId = body.getString("subscription_id");
         String contact = body.getString("contact");
         Boolean disabled = body.getBoolean("disabled");
+        String name = body.getString("name");
 
         if (subscriptionId == null) {
             ResponseUtil.error(rc, 400, "Required parameters: subscription_id");
@@ -120,16 +134,21 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        if (contact == null && disabled == null) {
-            ResponseUtil.error(rc, 400, "Updatable parameters: contact, disabled");
+        if (contact == null && disabled == null && name == null) {
+            ResponseUtil.error(rc, 400, "Updatable parameters: contact, disabled, name");
             return;
         }
 
         if (contact == null) {
             contact = keypair.getContact();
         }
+
         if (disabled == null) {
             disabled = keypair.isDisabled();
+        }
+
+        if (name == null) {
+            name = keypair.getName();
         }
 
         final ClientSideKeypair newKeypair = new ClientSideKeypair(
@@ -139,7 +158,8 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 keypair.getSiteId(),
                 contact,
                 keypair.getCreated(),
-                disabled);
+                disabled,
+                name);
 
 
         Set<ClientSideKeypair> allKeypairs = new HashSet<>(this.keypairStore.getAll());
@@ -186,7 +206,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     }
 
     @Override
-    public ClientSideKeypair createAndSaveSiteKeypair(int siteId, String contact, boolean disabled) throws Exception {
+    public ClientSideKeypair createAndSaveSiteKeypair(int siteId, String contact, boolean disabled, String name) throws Exception {
 
         final Instant now = clock.now();
 
@@ -207,7 +227,8 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 siteId,
                 contact,
                 now,
-                disabled);
+                disabled,
+                name);
         keypairs.add(newKeypair);
         storeWriter.upload(keypairs, null);
 

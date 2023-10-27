@@ -53,6 +53,6 @@ public class V2Router {
             }
         }
 
-        parentRouter.route("/v2api/*").subRouter(v2router);
+        parentRouter.route("/api/v2/*").subRouter(v2router);
     }
 }

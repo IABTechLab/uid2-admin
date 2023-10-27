@@ -4,17 +4,15 @@ import com.google.common.collect.ImmutableMap;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.auth.AdminKeysetSnapshot;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.shared.auth.Role;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
-import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
@@ -24,10 +22,9 @@ import java.time.Instant;
 import java.util.*;
 
 import static com.uid2.admin.managers.KeysetManager.*;
-import static com.uid2.admin.managers.KeysetManager.createDefaultKeyset;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class KeysetManagerTest {
@@ -61,11 +58,11 @@ public class KeysetManagerTest {
                 keysetKeyManager, true);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-                put(1, KeysetManager.createDefaultKeyset(3, 1));
-                put(2, KeysetManager.createDefaultKeyset(4, 2));
-                put(3, KeysetManager.createDefaultKeyset(5, 3));
-                put(4, KeysetManager.createDefaultKeyset(6, 4));
-            }};
+            put(1, KeysetManager.createDefaultKeyset(3, 1));
+            put(2, KeysetManager.createDefaultKeyset(4, 2));
+            put(3, KeysetManager.createDefaultKeyset(5, 3));
+            put(4, KeysetManager.createDefaultKeyset(6, 4));
+        }};
 
         setKeysets(keysets);
         final int keysetId = 5;
@@ -88,6 +85,50 @@ public class KeysetManagerTest {
         verify(keysetStoreWriter).upload(mapOfSize(5), isNull());
     }
 
+    @Nested
+    class createKeysetForSite {
+        @Test
+        public void createsKeysetWhenNoneExists() throws Exception {
+            setKeysets(new HashMap<>());
+
+            final KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+            final AdminKeyset keysetForSite = keysetManager.createKeysetForSite(1);
+
+            verify(keysetStoreWriter).upload(mapOfSize(1), isNull());
+
+            assertNotNull(keysetForSite);
+        }
+
+        @Test
+        public void doesNotCreateKeysetWhenOneExists() throws Exception {
+            final AdminKeyset keyset = KeysetManager.createDefaultKeyset(1, 1);
+            final HashMap<Integer, AdminKeyset> keysets = new HashMap<>();
+            keysets.put(1, keyset);
+
+            setKeysets(keysets);
+
+            final KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+            final AdminKeyset actual = keysetManager.createKeysetForSite(1);
+
+            verifyNoInteractions(keysetStoreWriter);
+
+            assertEquals(keyset, actual);
+        }
+
+        @Test
+        public void returnsNullWhenKeysetsAreNotEnabled() throws Exception {
+            final KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, false);
+
+            final AdminKeyset actual = keysetManager.createKeysetForSite(1);
+
+            verifyNoInteractions(keysetStoreWriter);
+
+            assertNull(actual);
+        }
+    }
+
     @Test
     public void testCreateKeysetForClient() throws Exception {
         KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter,
@@ -102,21 +143,21 @@ public class KeysetManagerTest {
 
         setKeysets(keysets);
         // Sharer makes an empty list
-        ClientKey sharer = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.SHARER), 7, false);
+        ClientKey sharer = new ClientKey("", "",  "", "", "", Instant.now(), Set.of(Role.SHARER), 7, false);
         AdminKeyset returnedKeyset = keysetManager.createKeysetForClient(sharer);
         AdminKeyset sharerKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(sharerKeyset.equals(returnedKeyset));
         assertEquals(sharerKeyset.getAllowedSites(), Set.of());
 
         // Generator makes a null list
-        ClientKey generator = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
+        ClientKey generator = new ClientKey("", "",  "", "", "", Instant.now(), Set.of(Role.GENERATOR), 8, false);
         returnedKeyset = keysetManager.createKeysetForClient(generator);
         AdminKeyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(generatorKeyset.equals(returnedKeyset));
         assertNull(generatorKeyset.getAllowedSites());
 
         // Generator takes priority of sharer
-        ClientKey sharerGenerator = new ClientKey("", "", "",  "", "", "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
+        ClientKey sharerGenerator = new ClientKey("", "",  "", "", "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false);
         keysetManager.createKeysetForClient(sharerGenerator);
         returnedKeyset = keysetManager.createKeysetForClient(sharerGenerator);
         AdminKeyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());

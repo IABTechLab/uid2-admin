@@ -232,13 +232,9 @@ public class SharingService implements IService {
             return;
         }
 
-        JsonArray listedSites = new JsonArray();
-        Set<Integer> allowedSites = keyset.getAllowedSites();
-        if (allowedSites != null) {
-            allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
-        }
         JsonObject jo = new JsonObject();
-        jo.put("allowed_sites", listedSites);
+        Set<Integer> allowedSites = keyset.getAllowedSites();
+        jo.put("allowed_sites", allowedSites != null ? allowedSites.stream().sorted().toArray() : null);
         jo.put("allowed_types", keyset.getAllowedTypes());
         jo.put("hash", keyset.hashCode());
 
@@ -252,15 +248,11 @@ public class SharingService implements IService {
             JsonArray ja = new JsonArray();
             Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
             for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
-                JsonArray listedSites = new JsonArray();
-                Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
-                if (allowedSites != null) {
-                    allowedSites.stream().sorted().forEach((listedSiteId) -> listedSites.add(listedSiteId));
-                }
                 JsonObject jo = new JsonObject();
                 jo.put("keyset_id", keyset.getValue().getKeysetId());
                 jo.put("site_id", keyset.getValue().getSiteId());
-                jo.put("allowed_sites", listedSites);
+                Set<Integer> allowedSites = keyset.getValue().getAllowedSites();
+                jo.put("allowed_sites", allowedSites != null ? allowedSites.stream().sorted().toArray() : null);
                 jo.put("allowed_types", keyset.getValue().getAllowedTypes());
                 jo.put("hash", keyset.getValue().hashCode());
                 ja.add(jo);

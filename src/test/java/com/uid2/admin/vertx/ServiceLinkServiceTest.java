@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -54,14 +55,14 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     void listLinksNoLinks(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
-        get(vertx, "api/service_link/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/service_link/list", response -> {
             assertEquals(200, response.statusCode());
             JsonArray respArray = response.bodyAsJsonArray();
             assertEquals(0, respArray.size());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -77,26 +78,26 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setServiceLinks(expectedServiceLinks);
 
-        get(vertx, "api/service_link/list", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, testContext, "api/service_link/list", response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkResponse(expectedServiceLinks, response.bodyAsJsonArray());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
     void addLinkMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-
-        postWithoutBody(vertx, "api/service_link/add", testContext.succeeding(response -> testContext.verify(() -> {
-            assertEquals(400, response.statusCode());
-            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
-            verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(null, null);
-            testContext.completeNow();
-        })));
+        postWithoutBody(vertx, testContext, "api/service_link/add", response -> {
+                    assertEquals(400, response.statusCode());
+                    assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
+                    verify(serviceStoreWriter, never()).upload(null, null);
+                    verify(serviceLinkStoreWriter, never()).upload(null, null);
+                    testContext.completeNow();
+                }
+        );
     }
 
     @ParameterizedTest
@@ -112,13 +113,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         jo.remove(parameter);
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("required parameters: link_id, service_id, site_id, name", response.bodyAsJsonObject().getString("message"));
-            verify(serviceStoreWriter, never()).upload(null, null);
+            verifyNoInteractions(serviceStoreWriter);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -131,13 +132,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 124);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("service_id 1 not valid", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -152,13 +153,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 124);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("site_id 124 not valid", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -175,13 +176,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("service link already exists", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -199,13 +200,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
             testContext.completeNow();
-        })));
+        });
     }
 
     @Test
@@ -225,12 +226,157 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name1");
 
-        post(vertx, "api/service_link/add", jo.encode(), testContext.succeeding(response -> testContext.verify(() -> {
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(existingLink, expected), null);
             testContext.completeNow();
-        })));
+        });
+    }
+
+    @Test
+    void updateNameAndLinkIdFails(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "newLink");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newName");
+
+        ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName");
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service_link for serviceId: 1, site_id: 123 and link_id: newLink", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateNameSucceeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname");
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteLinkId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+
+        post(vertx, testContext, "api/service_link/delete", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(existingLink, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(new ArrayList<ServiceLink>(), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteOneLinkId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2");
+        ServiceLink existingLink3 = new ServiceLink("link3", 1, 123, "name3");
+        setServiceLinks(existingLink, existingLink2, existingLink3);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link2");
+        jo.put("service_id", 1);
+
+        post(vertx, testContext, "api/service_link/delete", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(existingLink2, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(existingLink, existingLink3), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteWrongLinkId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "missinglink1");
+        jo.put("service_id", 1);
+
+        post(vertx, testContext, "api/service_link/delete", jo.encode(), response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service_link for serviceId: 1 and link_id: missinglink1", response.bodyAsJsonObject().getString("message"));
+
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(List.of(existingLink), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteWrongServiceId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 12);
+
+        post(vertx, testContext, "api/service_link/delete", jo.encode(), response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service_link for serviceId: 12 and link_id: link1", response.bodyAsJsonObject().getString("message"));
+
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(List.of(existingLink), null);
+            testContext.completeNow();
+        });
     }
 }

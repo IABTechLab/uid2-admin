@@ -4,7 +4,6 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.EncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
@@ -16,9 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -149,44 +146,18 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
 
     @Test
-    void createSiteKeyIfNoneExistsCreatesKeyWhenNoKeyWithSiteIdExists() throws Exception {
-        setEncryptionKeys(123);
-
-        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
-
-        verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(124));
-        verifyNoMoreInteractions(encryptionKeyStoreWriter);
-        assertKeyActivation(clock.now(), 0, SITE_KEY_EXPIRES_AFTER_SECONDS,
-                key.getCreated(), key.getActivates(), key.getExpires());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
-    }
-
-    @Test
-    void createSiteKeyIfNoneExistsDoesNotCreateKeyWhenKeyWithSiteIdExists() throws Exception {
-        setEncryptionKeys(123, new EncryptionKey(11, null, null, null, null, 5));
-
-        final EncryptionKey key = keyService.createSiteKeyIfNoneExists(5);
-
-        assertNull(key);
-        verifyNoInteractions(encryptionKeyStoreWriter);
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
-    }
-
-    @Test
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_MANAGER);
 
-        get(vertx, "api/key/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
+
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -201,15 +172,15 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        get(vertx, "api/key/list", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
             checkEncryptionKeyResponse(keys, response.bodyAsJsonArray().stream().toArray());
+
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+
     }
 
     @Test
@@ -222,22 +193,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -250,22 +215,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -280,22 +239,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -310,22 +263,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -340,20 +287,14 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
-            try {
-                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -366,22 +307,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100&force=true", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -1, },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -394,22 +329,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_master?min_age_seconds=100&force=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_master?min_age_seconds=100&force=true", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { -2 },
                     MASTER_KEY_ACTIVATES_IN_SECONDS, MASTER_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(1)).upload(collectionOfSize(3), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -422,22 +351,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 5 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
 
@@ -451,20 +374,14 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
-            try {
-                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -477,22 +394,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100&force=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100&force=true", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 5 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -501,10 +412,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID);
 
-        post(vertx, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", expectHttpError(testContext, 404));
-        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+        post(vertx, testContext, "api/key/rotate_site?site_id=5&min_age_seconds=100", "", response -> {
+            assertEquals(404, response.statusCode());
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+            testContext.completeNow();
+        });
     }
 
     @Test
@@ -517,10 +431,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
-        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+        post(vertx, testContext, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", response -> {
+            assertEquals(400, response.statusCode());
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+            testContext.completeNow();
+        });
     }
 
     @Test
@@ -532,10 +449,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", expectHttpError(testContext, 400));
-        verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
+        post(vertx, testContext, "api/key/rotate_site?site_id=-1&min_age_seconds=100", "", response -> {
+            assertEquals(400, response.statusCode());
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
+            testContext.completeNow();
+        });
     }
 
     @Test
@@ -547,22 +467,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 2 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -576,22 +490,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_site?site_id=2&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 2 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter).upload(collectionOfSize(1), eq(MAX_KEY_ID+1));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -608,22 +516,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 6, 7 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+2), eq(MAX_KEY_ID+2));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -640,22 +542,16 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100&force=true", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100&force=true", "", response -> {
             assertEquals(200, response.statusCode());
             checkRotatedKeyResponse(MAX_KEY_ID+1, new int[] { 2, 5, 6, 7 },
                     SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS,
                     response.bodyAsJsonArray().stream().toArray());
-            try {
-                verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+4), eq(MAX_KEY_ID+4));
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter).upload(collectionOfSize(keys.length+4), eq(MAX_KEY_ID+4));
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -668,20 +564,14 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
         };
         setEncryptionKeys(MAX_KEY_ID, keys);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
-            try {
-                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 
     @Test
@@ -690,19 +580,13 @@ public class EncryptionKeyServiceKeysetsDisabledTest extends ServiceTestBase {
 
         setEncryptionKeys(MAX_KEY_ID);
 
-        post(vertx, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        post(vertx, testContext, "api/key/rotate_all_sites?site_id=5&min_age_seconds=100", "", response -> {
             assertEquals(200, response.statusCode());
             assertEquals(0, response.bodyAsJsonArray().size());
-            try {
-                verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
-            } catch (Exception ex) {
-                fail(ex);
-            }
+            verify(encryptionKeyStoreWriter, times(0)).upload(any(), anyInt());
+            verifyNoInteractions(keysetStoreWriter);
+            verifyNoInteractions(keysetKeyStoreWriter);
             testContext.completeNow();
         });
-        verifyNoInteractions(keysetStoreWriter);
-        verifyNoInteractions(keysetKeyStoreWriter);
     }
 }

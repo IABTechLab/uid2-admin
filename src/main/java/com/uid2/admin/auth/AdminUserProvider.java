@@ -8,7 +8,7 @@ import com.uid2.shared.auth.AuthorizableStore;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.utils.ObjectMapperFactory;
+import com.uid2.shared.util.Mapper;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,20 +21,21 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AdminUserProvider implements IAdminUserProvider, IMetadataVersionedStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminUserProvider.class);
     public static final String ADMINS_METADATA_PATH = "admins_metadata_path";
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.build();
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminUserProvider.class);
+    private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
 
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage contentStreamProvider;
     private final String metadataPath;
-    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact = new AtomicReference<>(null);
+    private final AtomicReference<Map<String, AdminUser>> latestSnapshotByContact;
     private final AuthorizableStore<AdminUser> adminUserStore;
 
     public AdminUserProvider(ICloudStorage cloudStorage, String metadataPath) {
         this.metadataStreamProvider = cloudStorage;
         this.contentStreamProvider = cloudStorage;
         this.metadataPath = metadataPath;
+        this.latestSnapshotByContact = new AtomicReference<>(null);
         this.adminUserStore = new AuthorizableStore<>(AdminUser.class);
     }
 
