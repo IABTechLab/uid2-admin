@@ -135,7 +135,7 @@ public abstract class ServiceTestBase {
     }
 
     protected void fakeAuth(Role... roles) {
-        AdminUser adminUser = new AdminUser(null, null, null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false);
+        AdminUser adminUser = new AdminUser(null, null, null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false, null);
         when(adminUserProvider.get(any())).thenReturn(adminUser);
     }
 

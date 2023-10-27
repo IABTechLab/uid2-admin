@@ -129,6 +129,7 @@ public class OperatorKeyService implements IService {
                 final JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                jo.put("key_id", o.getKeyId());
                 jo.put("name", o.getName());
                 jo.put("contact", o.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(o.getRoles()));
@@ -164,6 +165,21 @@ public class OperatorKeyService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private String[] generateKeyAndKeyId(Integer finalSiteId) throws Exception {
+        String keyCommonPrefix = this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "";
+        String key = keyCommonPrefix + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, keyCommonPrefix.length() + 5);
+
+        // Check if keyId is duplicated
+        Optional<OperatorKey> existingOperatorKeyId = this.operatorKeyProvider.getAll()
+                .stream().filter(o -> o.getKeyId().equals(keyId))
+                .findFirst();
+        if (existingOperatorKeyId.isPresent()) {
+            return generateKeyAndKeyId(finalSiteId);
+        }
+        return new String[]{ key, keyId };
     }
 
     private void handleOperatorAdd(RoutingContext rc) {
@@ -235,12 +251,14 @@ public class OperatorKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String key = (this.operatorKeyPrefix != null ? (this.operatorKeyPrefix + finalSiteId + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+            String[] generatedKeyAndKeyId = generateKeyAndKeyId(finalSiteId);
+            String key = generatedKeyAndKeyId[0];
+            String keyId = generatedKeyAndKeyId[1];
             KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new operator
             long created = Instant.now().getEpochSecond();
-            OperatorKey newOperator = new OperatorKey(khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType);
+            OperatorKey newOperator = new OperatorKey(khr.getHash(), khr.getSalt(), name, name, protocol, created, false, siteId, roles, operatorType, keyId);
 
             // add client to the array
             operators.add(newOperator);

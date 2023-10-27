@@ -127,10 +127,10 @@ public class SiteServiceTest extends ServiceTestBase {
         setSites(sites);
 
         LegacyClientKey[] clientKeys = {
-                new LegacyClientKey("ck1", "ckh1", "cks1", "cs1", "c1", Instant.MIN, Set.of(Role.GENERATOR, Role.ID_READER), 11),
-                new LegacyClientKey("ck2", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12),
-                new LegacyClientKey("ck3", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11),
-                new LegacyClientKey("ck4", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13),
+                new LegacyClientKey("UID2-C-L-11-ck111111", "ckh1", "cks1", "cs1", "c1", Instant.MIN, Set.of(Role.GENERATOR, Role.ID_READER), 11, "UID2-C-L-11-ck111"),
+                new LegacyClientKey("UID2-C-L-12-ck222222", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12, "UID2-C-L-12-ck222"),
+                new LegacyClientKey("UID2-C-L-11-ck333333", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11, "UID2-C-L-11-ck333"),
+                new LegacyClientKey("UID2-C-L-13-ck444444", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13, "UID2-C-L-13-ck444"),
         };
         setClientKeys(clientKeys);
 

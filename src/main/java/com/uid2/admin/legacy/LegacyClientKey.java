@@ -35,6 +35,8 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
     private boolean disabled;
     @JsonProperty("service_id")
     private int serviceId;
+    @JsonProperty("key_id")
+    private String keyId;
 
     @JsonCreator
     public LegacyClientKey(
@@ -48,7 +50,8 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
             @JsonProperty("roles") Set<Role> roles,
             @JsonProperty("site_id") int siteId,
             @JsonProperty("disabled") boolean disabled,
-            @JsonProperty("service_id") int serviceId) {
+            @JsonProperty("service_id") int serviceId,
+            @JsonProperty("key_id") String keyId) {
         this.key = key;
         this.keyHash = keyHash;
         this.keySalt = keySalt;
@@ -61,18 +64,19 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
         this.siteId = siteId;
         this.disabled = disabled;
         this.serviceId = serviceId;
+        this.keyId = keyId;
     }
 
-    public LegacyClientKey(String key, String keyHash, String keySalt, String secret, String name, String contact, Instant created, Set<Role> roles, int siteId, boolean disabled) {
-        this(key, keyHash, keySalt, secret, name, contact, created.getEpochSecond(), roles, siteId, disabled, 0);
+    public LegacyClientKey(String key, String keyHash, String keySalt, String secret, String name, String contact, Instant created, Set<Role> roles, int siteId, boolean disabled, String keyId) {
+        this(key, keyHash, keySalt, secret, name, contact, created.getEpochSecond(), roles, siteId, disabled, 0, keyId);
     }
 
-    public LegacyClientKey(String key, String keyHash, String keySalt, String secret, String name, Instant created, Set<Role> roles, int siteId, boolean disabled) {
-        this(key, keyHash, keySalt, secret, name, name, created.getEpochSecond(), roles, siteId, disabled, 0);
+    public LegacyClientKey(String key, String keyHash, String keySalt, String secret, String name, Instant created, Set<Role> roles, int siteId, boolean disabled, String keyId) {
+        this(key, keyHash, keySalt, secret, name, name, created.getEpochSecond(), roles, siteId, disabled, 0, keyId);
     }
 
-    public LegacyClientKey(String key, String keyHash, String keySalt, String secret, String name, Instant created, Set<Role> roles, int siteId) {
-        this(key, keyHash, keySalt, secret, name, name, created.getEpochSecond(), roles, siteId, false, 0);
+    public LegacyClientKey(String key, String keyHash, String keySalt, String secret, String name, Instant created, Set<Role> roles, int siteId, String keyId) {
+        this(key, keyHash, keySalt, secret, name, name, created.getEpochSecond(), roles, siteId, false, 0, keyId);
     }
 
     public String getKey() {
@@ -101,6 +105,7 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
     public String getName() {
         return name;
     }
+    public String getKeyId() { return keyId; }
 
     public LegacyClientKey withName(String name) {
         this.name = name;
@@ -187,7 +192,8 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
                 roles,
                 siteId,
                 disabled,
-                serviceId
+                serviceId,
+                keyId
         );
     }
 
@@ -210,11 +216,12 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
                 && this.siteId == b.siteId
                 && this.disabled == b.disabled
                 && Arrays.equals(this.secretBytes, b.secretBytes)
-                && this.serviceId == b.serviceId;
+                && this.serviceId == b.serviceId
+                && this.keyId.equals(b.keyId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, keyHash, keySalt, secret, name, contact, roles, created, siteId, disabled, Arrays.hashCode(secretBytes), serviceId);
+        return Objects.hash(key, keyHash, keySalt, secret, name, contact, roles, created, siteId, disabled, Arrays.hashCode(secretBytes), serviceId, keyId);
     }
 }

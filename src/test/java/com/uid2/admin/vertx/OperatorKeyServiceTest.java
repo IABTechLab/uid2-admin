@@ -275,7 +275,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 false,
                 5,
                 Set.of(Role.OPERATOR),
-                OperatorType.PRIVATE
+                OperatorType.PRIVATE,
+                "UID2-O-L-5-abcde"
         );
 
         public OperatorBuilder() {

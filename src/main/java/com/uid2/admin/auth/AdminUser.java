@@ -21,6 +21,8 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     private final long created; // epochSeconds
     private Set<Role> roles;
     private boolean disabled;
+    @JsonProperty("key_id")
+    private String keyId;
 
     @JsonCreator
     public AdminUser(
@@ -31,7 +33,8 @@ public class AdminUser implements IRoleAuthorizable<Role> {
             @JsonProperty("contact") String contact,
             @JsonProperty("created") long created,
             @JsonProperty("roles") Set<Role> roles,
-            @JsonProperty("disabled") boolean disabled) {
+            @JsonProperty("disabled") boolean disabled,
+            @JsonProperty("key_id") String keyId) {
         this.key = key;
         this.keyHash = keyHash;
         this.keySalt = keySalt;
@@ -40,11 +43,12 @@ public class AdminUser implements IRoleAuthorizable<Role> {
         this.created = created;
         this.roles = roles;
         this.disabled = disabled;
+        this.keyId = keyId;
     }
 
     public static AdminUser unknown(String unknown) {
         return new AdminUser(unknown, unknown, unknown, unknown, unknown,
-                Instant.now().getEpochSecond(), Collections.emptySet(), false);
+                Instant.now().getEpochSecond(), Collections.emptySet(), false, unknown);
     }
 
     public String getKey() {
@@ -102,6 +106,9 @@ public class AdminUser implements IRoleAuthorizable<Role> {
     }
 
     @Override
+    public String getKeyId() { return keyId; }
+
+    @Override
     public boolean equals(Object o) {
         // If the object is compared with itself then return true
         if (o == this) return true;
@@ -119,11 +126,12 @@ public class AdminUser implements IRoleAuthorizable<Role> {
                 && this.contact.equals(b.contact)
                 && this.created == b.created
                 && this.roles.equals(b.roles)
-                && this.disabled == b.disabled;
+                && this.disabled == b.disabled
+                && this.keyId.equals(b.keyId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, keyHash, keySalt, name, contact, created, roles, disabled);
+        return Objects.hash(key, keyHash, keySalt, name, contact, created, roles, disabled, keyId);
     }
 }

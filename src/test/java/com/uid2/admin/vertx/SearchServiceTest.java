@@ -23,10 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -291,52 +288,52 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static Map<String, ClientKey> getClientKeys() {
-        Map<String, String> plaintextClientKeyAndSecretMap = Map.of(
-                "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=",
-                "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=",
-                "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=", "FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ="
+        Map<String, Map.Entry<String, String>> plaintextClientKeyAndSecretMap = Map.of(
+                "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", new AbstractMap.SimpleEntry("DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=", "UID2-C-L-999-fCXrM"),
+                "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", new AbstractMap.SimpleEntry("c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=", "LOCALbGlvb"),
+                "UID2-C-L-123-t32pCM.5NCX1E94UgOd2f8zhsKmxzCoyhXohHYSSWR8U=", new AbstractMap.SimpleEntry("FsD4bvtjMkeTonx6HvQp6u0EiI1ApGH4pIZzZ5P7UcQ=", "UID2-C-L-123-t32pC")
         );
         return plaintextClientKeyAndSecretMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> createClientKey(entry.getKey(), entry.getValue())
+                        entry -> createClientKey(entry.getKey(), entry.getValue().getKey(), entry.getValue().getValue())
                 ));
     }
 
-    private static ClientKey createClientKey(String key, String secret) {
+    private static ClientKey createClientKey(String key, String secret, String keyId) {
         KeyHashResult keyHashResult = hashKeys(key);
-        return new ClientKey(keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3);
+        return new ClientKey(keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3, keyId);
     }
 
     private static Map<String, OperatorKey> getOperatorKeys() {
-        List<String> plaintextOperatorKeys = List.of(
-                "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
-                "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
-                "UID2-O-L-123-Xt/ght.6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk="
+        Map<String, String> plaintextOperatorKeys = Map.of(
+                "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=", "UID2-O-L-999-dp9Dt",
+                "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=", "OPLCLAjLRWc",
+                "UID2-O-L-123-Xt/ght.6tODU8mmodEtI3J67LW3vcX50LOsQR4oqMMFk=", "UID2-O-L-123-Xt/gh"
         );
-        return plaintextOperatorKeys.stream()
+        return plaintextOperatorKeys.entrySet().stream()
                 .collect(Collectors.toMap(
-                        k -> k,
-                        SearchServiceTest::createOperatorKey
+                        Map.Entry::getKey,
+                        entry -> createOperatorKey(entry.getKey(), entry.getValue())
                 ));
     }
 
-    private static OperatorKey createOperatorKey(String key) {
+    private static OperatorKey createOperatorKey(String key, String keyId) {
         KeyHashResult keyHashResult = hashKeys(key);
-        return new OperatorKey(keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", "protocol", Instant.now().getEpochSecond(), false);
+        return new OperatorKey(keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", "protocol", Instant.now().getEpochSecond(), false, keyId);
     }
 
     private static AdminUser[] getAdminUsers() {
         AdminUser[] adminUsers = {
-                createAdminUser("UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8="),
-                createAdminUser("ADLCLWYHV5iSe6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=")
+                createAdminUser("UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=", "UID2-A-L-WYHV5"),
+                createAdminUser("ADLCLWYHV5iSe6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=", "ADLCLWYHV5")
         };
         return adminUsers;
     }
 
-    private static AdminUser createAdminUser(String key) {
+    private static AdminUser createAdminUser(String key, String keyId) {
         KeyHashResult keyHashResult = hashKeys(key);
-        return new AdminUser(key, keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", Instant.now().toEpochMilli(), Set.of(), false);
+        return new AdminUser(key, keyHashResult.getHash(), keyHashResult.getSalt(), "name", "contact", Instant.now().toEpochMilli(), Set.of(), false, keyId);
     }
 
     private static void assertAdminUser(AdminUser expected, JsonObject actual) {

@@ -31,7 +31,7 @@ public class AdminUserProviderTest {
     private List<AdminUser> adminUsers;
 
     private AdminUser createAdminUser(KeyHashResult khr, String name, String contact) {
-        return new AdminUser("", khr.getHash(), khr.getSalt(), name, contact, Instant.now().getEpochSecond(), Set.of(), false);
+        return new AdminUser("", khr.getHash(), khr.getSalt(), name, contact, Instant.now().getEpochSecond(), Set.of(), false, "key-id");
     }
 
     @BeforeEach

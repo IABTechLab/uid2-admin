@@ -43,7 +43,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @BeforeEach
     public void setup() {
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(999, "test_site", true));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         LegacyClientKey expectedClient = new LegacyClientBuilder().withServiceId(145).build();
-        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=5&service_id=145", "", response -> {
+        post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=999&service_id=145", "", response -> {
             RevealedKey<ClientKey> revealedClient = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 
             assertAll(
@@ -98,7 +98,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientAddCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        String endpoint = String.format("api/client/add?name=test_client&site_id=5&roles=%s", RequestUtil.getRolesSpec(roles));
+        String endpoint = String.format("api/client/add?name=test_client&site_id=999&roles=%s", RequestUtil.getRolesSpec(roles));
         post(vertx, testContext, endpoint, "", response -> {
             assertAll(
                     "clientAddCreatesSiteKeyIfNoneExists",
@@ -147,7 +147,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         setClientKeys(new LegacyClientBuilder().withServiceId(165).build());
 
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=5&service_id=200", "", response -> {
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=999&service_id=200", "", response -> {
             ClientKey expected = new LegacyClientBuilder().withServiceId(200).build().toClientKey();
             assertAll(
                     "clientUpdate",
@@ -171,7 +171,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                         .build()
         );
 
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=5&service_id=145", "", response -> {
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=999&service_id=145", "", response -> {
             assertAll(
                     "clientUpdateCreatesSiteKeyIfNoneExists",
                     () -> assertEquals(200, response.statusCode()),
@@ -189,7 +189,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @Test
     public void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
-        post(vertx, testContext, "api/client/update?name=test_client&site_id=5", "", expectHttpStatus(testContext, 404));
+        post(vertx, testContext, "api/client/update?name=test_client&site_id=999", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
@@ -244,9 +244,10 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     private static class LegacyClientBuilder {
         private String name = "test_client";
-        private int siteId = 5;
+        private int siteId = 999;
         private Set<Role> roles = Set.of(Role.GENERATOR);
         private int serviceId = 0;
+        private String keyId = "UID2-C-L-999-abcde";
 
         public LegacyClientBuilder withName(String name) {
             this.name = name;
@@ -268,9 +269,14 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             return this;
         }
 
+        public LegacyClientBuilder withKeyId(String keyId) {
+            this.keyId = keyId;
+            return this;
+        }
+
         public LegacyClientKey build() {
             return new LegacyClientKey(
-                    "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
+                    "UID2-C-L-999-abcdeM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
                     EXPECTED_CLIENT_KEY_HASH,
                     EXPECTED_CLIENT_KEY_SALT,
                     "",
@@ -280,7 +286,8 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                     roles,
                     siteId,
                     false,
-                    serviceId
+                    serviceId,
+                    keyId
             );
         }
     }

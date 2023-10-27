@@ -131,6 +131,7 @@ public class AdminKeyService implements IService {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                jo.put("key_id", a.getKeyId());
                 jo.put("name", a.getName());
                 jo.put("contact", a.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(a.getRoles()));
@@ -165,6 +166,21 @@ public class AdminKeyService implements IService {
         }
     }
 
+    private String[] generateKeyAndKeyId() throws Exception {
+        String keyCommonPrefix = this.adminKeyPrefix != null ? this.adminKeyPrefix : "";
+        String key = keyCommonPrefix + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, keyCommonPrefix.length() + 5);
+
+        // Check if keyId is duplicated
+        Optional<AdminUser> existingAdminKeyId = this.adminUserProvider.getAll()
+                .stream().filter(a -> a.getKeyId().equals(keyId))
+                .findFirst();
+        if (existingAdminKeyId.isPresent()) {
+            return generateKeyAndKeyId();
+        }
+        return new String[]{ key, keyId };
+    }
+
     private void handleAdminAdd(RoutingContext rc) {
         try {
             // refresh manually
@@ -195,12 +211,15 @@ public class AdminKeyService implements IService {
                     .collect(Collectors.toList());
 
             // create a random key
-            String key = (this.adminKeyPrefix != null ? this.adminKeyPrefix : "") + keyGenerator.generateFormattedKeyString(32);
+            String[] generatedKeyAndKeyId = generateKeyAndKeyId();
+            String key = generatedKeyAndKeyId[0];
+            String keyId = generatedKeyAndKeyId[1];
+
             KeyHashResult khr = keyHasher.hashKey(key);
 
             // create new admin
             long created = Instant.now().getEpochSecond();
-            AdminUser newAdmin = new AdminUser(key, khr.getHash(), khr.getSalt(), name, name, created, roles, false);
+            AdminUser newAdmin = new AdminUser(key, khr.getHash(), khr.getSalt(), name, name, created, roles, false, keyId);
 
             // add admin to the array
             admins.add(newAdmin);

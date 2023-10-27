@@ -148,6 +148,7 @@ public class ClientKeyService implements IService {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
 
+                jo.put("key_id", c.getKeyId());
                 jo.put("name", c.getName());
                 jo.put("contact", c.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
@@ -184,6 +185,21 @@ public class ClientKeyService implements IService {
         }
     }
 
+    private String[] generateKeyAndKeyId(Site site) throws Exception {
+        String keyCommonPrefix = this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "";
+        String key = keyCommonPrefix + keyGenerator.generateFormattedKeyString(32);
+        String keyId = key.substring(0, keyCommonPrefix.length() + 5);
+
+        // Check if keyId is duplicated
+        Optional<LegacyClientKey> existingClientKeyId = this.clientKeyProvider.getAll()
+                .stream().filter(c -> c.getKeyId().equals(keyId))
+                .findFirst();
+        if (existingClientKeyId.isPresent()) {
+            return generateKeyAndKeyId(site);
+        }
+        return new String[]{ key, keyId };
+    }
+
     private void handleClientAdd(RoutingContext rc) {
         try {
             // refresh manually
@@ -212,7 +228,10 @@ public class ClientKeyService implements IService {
             List<LegacyClientKey> clients = getAllClientKeys();
 
             // create random key and secret
-            String key = (this.clientKeyPrefix != null ? (this.clientKeyPrefix + site.getId() + "-") : "") + keyGenerator.generateFormattedKeyString(32);
+            String[] generatedKeyAndKeyId = generateKeyAndKeyId(site);
+            String key = generatedKeyAndKeyId[0];
+            String keyId = generatedKeyAndKeyId[1];
+
             KeyHashResult khr = keyHasher.hashKey(key);
             String secret = keyGenerator.generateRandomKeyString(32);
 
@@ -229,7 +248,8 @@ public class ClientKeyService implements IService {
                     roles,
                     site.getId(),
                     false,
-                    serviceId
+                    serviceId,
+                    keyId
             );
             if (!newClient.hasValidSiteId()) {
                 ResponseUtil.error(rc, 400, "invalid site id");
