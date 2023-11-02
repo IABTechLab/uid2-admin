@@ -16,7 +16,6 @@ public class RequestUtil {
     private final static ImmutableSet<String> SupportedProtocols = ImmutableSet.of(
             "trusted",
             "aws-nitro",
-            "azure-sgx",
             "gcp-vmid",
             "gcp-oidc",
             "azure-cc"
