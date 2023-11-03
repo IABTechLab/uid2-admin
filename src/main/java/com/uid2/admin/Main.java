@@ -249,7 +249,7 @@ public class Main {
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
-                    new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
+                    new SiteService(auth, writeLock, siteStoreWriter, siteProvider, legacyClientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
                     new JobDispatcherService(auth, jobDispatcher),

@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 public class SiteServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
-        return new SiteService(auth, writeLock, storeWriter, siteProvider, clientKeyProvider);
+        return new SiteService(auth, writeLock, storeWriter, siteProvider, legacyClientKeyProvider);
     }
 
     private void checkSiteResponse(Site[] expectedSites, Object[] actualSites) {

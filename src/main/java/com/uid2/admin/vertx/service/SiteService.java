@@ -1,6 +1,8 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.legacy.ILegacyClientKeyProvider;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.shared.model.ClientType;
 import com.google.common.net.InternetDomainName;
 import com.uid2.admin.store.writer.StoreWriter;
@@ -35,7 +37,7 @@ public class SiteService implements IService {
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
-    private final IClientKeyProvider clientKeyProvider;
+    private final ILegacyClientKeyProvider legacyClientKeyProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
@@ -43,12 +45,12 @@ public class SiteService implements IService {
                        WriteLock writeLock,
                        StoreWriter<Collection<Site>> storeWriter,
                        RotatingSiteStore siteProvider,
-                       IClientKeyProvider clientKeyProvider) {
+                       ILegacyClientKeyProvider legacyClientKeyProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.siteProvider = siteProvider;
-        this.clientKeyProvider = clientKeyProvider;
+        this.legacyClientKeyProvider = legacyClientKeyProvider;
     }
 
     @Override
@@ -99,9 +101,10 @@ public class SiteService implements IService {
             final Collection<Site> sites = this.siteProvider.getAllSites().stream()
                     .sorted(Comparator.comparing(Site::getName))
                     .collect(Collectors.toList());
-            final Map<Integer, List<ClientKey>> clientKeys = this.clientKeyProvider.getAll().stream()
-                    .collect(Collectors.groupingBy(ClientKey::getSiteId));
+            final Map<Integer, List<LegacyClientKey>> legacyClientKeys = this.legacyClientKeyProvider.getAll().stream()
+                    .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<ClientKey> emptySiteKeys = new ArrayList<>();
+            final List<LegacyClientKey> emptySiteLegacyKeys = new ArrayList<>();
             for (Site site : sites) {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
@@ -116,14 +119,14 @@ public class SiteService implements IService {
                 jo.put("domain_names", domainNamesJa);
                 jo.put("created", site.getCreated());
 
-                List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
                 JsonArray jr = new JsonArray();
-                clients.stream()
+                List<LegacyClientKey> legacyClients = legacyClientKeys.getOrDefault(site.getId(), emptySiteLegacyKeys);
+                legacyClients.stream()
                         .map(c -> c.getRoles()).flatMap(Set::stream).collect(Collectors.toSet())
                         .forEach(r -> jr.add(r));
 
                 jo.put("roles", jr);
-                jo.put("client_count", clients.size());
+                jo.put("client_count", legacyClients.size());
             }
 
             rc.response()
