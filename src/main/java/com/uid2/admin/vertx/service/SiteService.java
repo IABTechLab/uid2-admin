@@ -81,6 +81,11 @@ public class SiteService implements IService {
                 this.handleSiteDomains(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteUpdate(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -111,9 +116,11 @@ public class SiteService implements IService {
 
                 jo.put("id", site.getId());
                 jo.put("name", site.getName());
+                jo.put("description", site.getDescription());
                 jo.put("enabled", site.isEnabled());
                 jo.put("clientTypes", site.getClientTypes());
                 jo.put("domain_names", domainNamesJa);
+                jo.put("visible", site.isVisible());
                 jo.put("created", site.getCreated());
 
                 List<ClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
@@ -292,6 +299,43 @@ public class SiteService implements IService {
             rc.response().end(jsonWriter.writeValueAsString(existingSite));
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "set site domain_names failed", e);
+        }
+    }
+
+    private void handleSiteUpdate(RoutingContext rc) {
+        try {
+            // refresh manually
+            siteProvider.loadContent();
+
+            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+            String description = rc.queryParam("description").stream().findFirst().orElse(null);
+            String visibleParam = rc.queryParam("visible").stream().findFirst().orElse(null);
+
+            if (description != null) {
+                existingSite.setDescription(description);
+            }
+            if (visibleParam != null) {
+                if ("true".equalsIgnoreCase(visibleParam)) {
+                    existingSite.setVisible(true);
+                } else if ("false".equalsIgnoreCase(visibleParam)) {
+                    existingSite.setVisible(false);
+                } else {
+                    ResponseUtil.error(rc, 400, "Invalid parameter for visible: " + visibleParam);
+                }
+            }
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            storeWriter.upload(sites, null);
+
+            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+        } catch (Exception e) {
+            rc.fail(500, e);
         }
     }
 
