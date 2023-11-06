@@ -102,13 +102,9 @@ public class Main {
 
             CloudPath clientMetadataPath = new CloudPath(config.getString(Const.Config.ClientsMetadataPathProp));
             GlobalScope clientGlobalScope = new GlobalScope(clientMetadataPath);
-            RotatingClientKeyProvider clientKeyProvider = new RotatingClientKeyProvider(cloudStorage, clientGlobalScope);
+            RotatingLegacyClientKeyProvider clientKeyProvider = new RotatingLegacyClientKeyProvider(cloudStorage, clientGlobalScope);
             clientKeyProvider.loadContent();
-            ClientKeyStoreWriter clientKeyStoreWriter = new ClientKeyStoreWriter(clientKeyProvider, fileManager, jsonWriter, versionGenerator, clock, clientGlobalScope);
-
-            RotatingLegacyClientKeyProvider legacyClientKeyProvider = new RotatingLegacyClientKeyProvider(cloudStorage, clientGlobalScope);
-            legacyClientKeyProvider.loadContent();
-            LegacyClientKeyStoreWriter legacyClientKeyStoreWriter = new LegacyClientKeyStoreWriter(legacyClientKeyProvider, fileManager, jsonWriter, versionGenerator, clock, clientGlobalScope);
+            LegacyClientKeyStoreWriter clientKeyStoreWriter = new LegacyClientKeyStoreWriter(clientKeyProvider, fileManager, jsonWriter, versionGenerator, clock, clientGlobalScope);
 
             CloudPath keyMetadataPath = new CloudPath(config.getString(Const.Config.KeysMetadataPathProp));
             GlobalScope keyGlobalScope = new GlobalScope(keyMetadataPath);
@@ -239,7 +235,7 @@ public class Main {
 
             IService[] services = {
                     new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, keyHasher, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
-                    new ClientKeyService(config, auth, writeLock, legacyClientKeyStoreWriter, legacyClientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
+                    new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
@@ -249,7 +245,7 @@ public class Main {
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
-                    new SiteService(auth, writeLock, siteStoreWriter, siteProvider, legacyClientKeyProvider),
+                    new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
                     new JobDispatcherService(auth, jobDispatcher),

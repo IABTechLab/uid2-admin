@@ -3,9 +3,9 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
+import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.AdminUserStoreWriter;
-import com.uid2.admin.store.writer.ClientKeyStoreWriter;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
@@ -38,21 +38,22 @@ public class AdminKeyService implements IService {
     private final AdminUserProvider adminUserProvider;
     private final IKeyGenerator keyGenerator;
     private final KeyHasher keyHasher;
-    private final ClientKeyStoreWriter clientKeyStoreWriter;
+    private final LegacyClientKeyStoreWriter clientKeyStoreWriter;
     private final EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     private final KeyAclStoreWriter keyAclStoreWriter;
     private final String adminKeyPrefix;
 
-    public AdminKeyService(JsonObject config,
-                           AuthMiddleware auth,
-                           WriteLock writeLock,
-                           AdminUserStoreWriter storeWriter,
-                           AdminUserProvider adminUserProvider,
-                           IKeyGenerator keyGenerator,
-                           KeyHasher keyHasher,
-                           ClientKeyStoreWriter clientKeyStoreWriter,
-                           EncryptionKeyStoreWriter encryptionKeyStoreWriter,
-                           KeyAclStoreWriter keyAclStoreWriter) {
+    public AdminKeyService(
+            JsonObject config,
+            AuthMiddleware auth,
+            WriteLock writeLock,
+            AdminUserStoreWriter storeWriter,
+            AdminUserProvider adminUserProvider,
+            IKeyGenerator keyGenerator,
+            KeyHasher keyHasher,
+            LegacyClientKeyStoreWriter clientKeyStoreWriter,
+            EncryptionKeyStoreWriter encryptionKeyStoreWriter,
+            KeyAclStoreWriter keyAclStoreWriter) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;

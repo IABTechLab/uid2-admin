@@ -61,8 +61,7 @@ public abstract class ServiceTestBase {
     @Mock protected FileManager fileManager;
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
     @Mock protected StoreWriter storeWriter;
-    @Mock protected ClientKeyStoreWriter clientKeyStoreWriter;
-    @Mock protected LegacyClientKeyStoreWriter legacyClientKeyStoreWriter;
+    @Mock protected LegacyClientKeyStoreWriter clientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
     @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
     @Mock protected ClientSideKeypairStoreWriter keypairStoreWriter;
@@ -81,8 +80,7 @@ public abstract class ServiceTestBase {
     @Mock protected IKeysetKeyManager keysetKeyManager;
     @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;
-    @Mock protected RotatingClientKeyProvider clientKeyProvider;
-    @Mock protected RotatingLegacyClientKeyProvider legacyClientKeyProvider;
+    @Mock protected RotatingLegacyClientKeyProvider clientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
     @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
     @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
@@ -173,19 +171,17 @@ public abstract class ServiceTestBase {
     }
 
     protected void setClientKeys(LegacyClientKey... clientKeys) {
-        when(legacyClientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
-        when(clientKeyProvider.getAll()).thenReturn(Arrays.stream(clientKeys).map(LegacyClientKey::toClientKey).collect(Collectors.toList()));
+        when(clientKeyProvider.getAll()).thenReturn(Arrays.asList(clientKeys));
         for (LegacyClientKey clientKey : clientKeys) {
-            when(legacyClientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
-            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey.toClientKey());
+            when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);
         }
     }
 
-    protected void setClientKeys(Map<String, ClientKey> clientKeys) {
+    protected void setClientKeys(Map<String, LegacyClientKey> clientKeys) {
         when(clientKeyProvider.getAll()).thenReturn(clientKeys.values());
-        for (Map.Entry<String, ClientKey> entry : clientKeys.entrySet()) {
+        for (Map.Entry<String, LegacyClientKey> entry : clientKeys.entrySet()) {
             String plaintextKey = entry.getKey();
-            ClientKey clientKey = entry.getValue();
+            LegacyClientKey clientKey = entry.getValue();
 
             when(clientKeyProvider.getClientKey(plaintextKey)).thenReturn(clientKey);
             when(clientKeyProvider.getClientKeyFromHash(clientKey.getKeyHash())).thenReturn(clientKey);

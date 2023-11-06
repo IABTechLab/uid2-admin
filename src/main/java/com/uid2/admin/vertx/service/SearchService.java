@@ -2,10 +2,11 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
+import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.middleware.AuthMiddleware;
-import com.uid2.shared.store.reader.RotatingClientKeyProvider;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
@@ -20,13 +21,13 @@ public class SearchService implements IService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
     private final AuthMiddleware auth;
-    private final RotatingClientKeyProvider clientKeyProvider;
+    private final RotatingLegacyClientKeyProvider clientKeyProvider;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
     private final AdminUserProvider adminUserProvider;
 
     public SearchService(
             AuthMiddleware auth,
-            RotatingClientKeyProvider clientKeyProvider,
+            RotatingLegacyClientKeyProvider clientKeyProvider,
             RotatingOperatorKeyProvider operatorKeyProvider,
             AdminUserProvider adminUserProvider) {
         this.auth = auth;
@@ -63,9 +64,9 @@ public class SearchService implements IService {
                     .filter(c -> c.getSecret().contains(queryParam))
                     .forEach(clientKeyResults::add);
 
-            ClientKey clientKeyByKey = this.clientKeyProvider.getClientKey(queryParam);
+            LegacyClientKey clientKeyByKey = this.clientKeyProvider.getClientKey(queryParam);
             if (clientKeyByKey != null) {
-                clientKeyResults.add(clientKeyByKey);
+                clientKeyResults.add(clientKeyByKey.toClientKey());
             }
 
             OperatorKey operatorKeyByKey = this.operatorKeyProvider.getOperatorKey(queryParam);
@@ -78,9 +79,9 @@ public class SearchService implements IService {
                 adminUserResults.add(adminUserByKey);
             }
 
-            ClientKey clientKeyByHash = this.clientKeyProvider.getClientKeyFromHash(queryParam);
+            LegacyClientKey clientKeyByHash = this.clientKeyProvider.getClientKeyFromHash(queryParam);
             if (clientKeyByHash != null) {
-                clientKeyResults.add(clientKeyByHash);
+                clientKeyResults.add(clientKeyByHash.toClientKey());
             }
 
             OperatorKey operatorKeyByHash = this.operatorKeyProvider.getOperatorKeyFromHash(queryParam);

@@ -2,6 +2,7 @@ package com.uid2.admin.vertx;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.AdminUser;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SearchService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -76,7 +77,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @MethodSource("searchByClientKeyNotFound")
-    void searchByClientKeyNotFound(Map<String, ClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+    void searchByClientKeyNotFound(Map<String, LegacyClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
@@ -101,7 +102,7 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static Stream<Arguments> searchByClientKeyNotFound() {
-        Map<String, ClientKey> clientKeys = getClientKeys();
+        Map<String, LegacyClientKey> clientKeys = getClientKeys();
         Map<String, OperatorKey> operatorKeys = getOperatorKeys();
         AdminUser[] adminUsers = getAdminUsers();
 
@@ -115,11 +116,11 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        Map<String, ClientKey> clientKeys = getClientKeys();
+        Map<String, LegacyClientKey> clientKeys = getClientKeys();
 
         setClientKeys(clientKeys);
         String expectedPlaintextClientKey = "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=";
-        ClientKey expectedClientKey = clientKeys.get(expectedPlaintextClientKey);
+        ClientKey expectedClientKey = clientKeys.get(expectedPlaintextClientKey).toClientKey();
         post(vertx, testContext, searchUrl, expectedPlaintextClientKey, response -> {
             JsonObject result = response.bodyAsJsonObject();
             JsonArray foundKeys = result.getJsonArray("ClientKeys");
@@ -137,11 +138,11 @@ public class SearchServiceTest extends ServiceTestBase {
     @Test
     void searchClientKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
-        Map<String, ClientKey> clientKeys = getClientKeys();
+        Map<String, LegacyClientKey> clientKeys = getClientKeys();
 
         setClientKeys(clientKeys);
         String expectedPlaintextClientKey = "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=";
-        ClientKey expectedClientKey = clientKeys.get(expectedPlaintextClientKey);
+        ClientKey expectedClientKey = clientKeys.get(expectedPlaintextClientKey).toClientKey();
         post(vertx, testContext, searchUrl, expectedClientKey.getKeyHash(), response -> {
             JsonObject result = response.bodyAsJsonObject();
             JsonArray foundKeys = result.getJsonArray("ClientKeys");
@@ -242,7 +243,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @MethodSource("searchByClientSecretSuccess")
-    void searchByClientSecretSuccess(Map<String, ClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
+    void searchByClientSecretSuccess(Map<String, LegacyClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, AdminUser[] adminUsers, String searchString, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setClientKeys(clientKeys);
@@ -253,7 +254,8 @@ public class SearchServiceTest extends ServiceTestBase {
         ClientKey expectedClientKey = clientKeys.values().stream()
                 .filter(c -> expectedSecret.equals(c.getSecret()))
                 .collect(Collectors.toList())
-                .get(0);
+                .get(0)
+                .toClientKey();
         post(vertx, testContext, searchUrl, searchString, response -> {
             JsonObject result = response.bodyAsJsonObject();
             JsonArray foundKeys = result.getJsonArray("ClientKeys");
@@ -269,7 +271,7 @@ public class SearchServiceTest extends ServiceTestBase {
     }
 
     private static Stream<Arguments> searchByClientSecretSuccess() {
-        Map<String, ClientKey> clientKeys = getClientKeys();
+        Map<String, LegacyClientKey> clientKeys = getClientKeys();
         Map<String, OperatorKey> operatorKeys = getOperatorKeys();
         AdminUser[] adminUsers = getAdminUsers();
 
@@ -287,7 +289,7 @@ public class SearchServiceTest extends ServiceTestBase {
         return keyHasher.hashKey(key);
     }
 
-    private static Map<String, ClientKey> getClientKeys() {
+    private static Map<String, LegacyClientKey> getClientKeys() {
         Map<String, Map.Entry<String, String>> plaintextClientKeyAndSecretMap = Map.of(
                 "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=", new AbstractMap.SimpleEntry("DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=", "UID2-C-L-999-fCXrM"),
                 "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=", new AbstractMap.SimpleEntry("c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=", "LOCALbGlvb"),
@@ -300,9 +302,9 @@ public class SearchServiceTest extends ServiceTestBase {
                 ));
     }
 
-    private static ClientKey createClientKey(String key, String secret, String keyId) {
+    private static LegacyClientKey createClientKey(String key, String secret, String keyId) {
         KeyHashResult keyHashResult = hashKeys(key);
-        return new ClientKey(keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3, keyId);
+        return new LegacyClientKey(key, keyHashResult.getHash(), keyHashResult.getSalt(), secret, key, Instant.now(), Set.of(), 3, keyId);
     }
 
     private static Map<String, OperatorKey> getOperatorKeys() {
