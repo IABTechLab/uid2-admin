@@ -187,12 +187,14 @@ public class SiteService implements IService {
                 types = getTypes(rc.queryParam("types").get(0));
             }
 
+            String description = rc.queryParam("description").stream().findFirst().orElse(null);
+
             final List<Site> sites = this.siteProvider.getAllSites()
                     .stream().sorted(Comparator.comparingInt(Site::getId))
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
-            final Site newSite = new Site(siteId, name, enabled, types, new HashSet<>(normalizedDomainNames));
 
+            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), true);
             // add site to the array
             sites.add(newSite);
 

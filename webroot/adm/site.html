@@ -64,7 +64,8 @@
         $('#doAdd').on('click', function () {
             var siteName = encodeURIComponent($('#siteName').val());
             var types = encodeURIComponent($('#types').val());
-            var url = '/api/site/add?name=' + siteName + '&types=' + types;
+            var description = encodeURIComponent($('#description').val());
+            var url = '/api/site/add?name=' + siteName + '&types=' + types + '&description=' + description;
 
             let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
             doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames}));
