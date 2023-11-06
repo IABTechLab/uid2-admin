@@ -2,6 +2,7 @@
   {
     "id": 999,
     "name": "Special",
+    "description": "A special description",
     "enabled": true,
     "clientTypes": ["DSP", "PUBLISHER", "DATA_PROVIDER", "ADVERTISER"]
   },
@@ -37,7 +38,8 @@
   {
     "id": 128,
     "name": "Legacy DSP",
-    "enabled": true
+    "enabled": true,
+    "visible": false
   },
   {
     "id": 129,
