@@ -11,11 +11,9 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
-import com.uid2.shared.store.IClientKeyProvider;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -101,10 +99,9 @@ public class SiteService implements IService {
             final Collection<Site> sites = this.siteProvider.getAllSites().stream()
                     .sorted(Comparator.comparing(Site::getName))
                     .collect(Collectors.toList());
-            final Map<Integer, List<LegacyClientKey>> legacyClientKeys = this.legacyClientKeyProvider.getAll().stream()
+            final Map<Integer, List<LegacyClientKey>> clientKeys = this.legacyClientKeyProvider.getAll().stream()
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
-            final List<ClientKey> emptySiteKeys = new ArrayList<>();
-            final List<LegacyClientKey> emptySiteLegacyKeys = new ArrayList<>();
+            final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
             for (Site site : sites) {
                 JsonObject jo = new JsonObject();
                 ja.add(jo);
@@ -120,13 +117,15 @@ public class SiteService implements IService {
                 jo.put("created", site.getCreated());
 
                 JsonArray jr = new JsonArray();
-                List<LegacyClientKey> legacyClients = legacyClientKeys.getOrDefault(site.getId(), emptySiteLegacyKeys);
-                legacyClients.stream()
-                        .map(c -> c.getRoles()).flatMap(Set::stream).collect(Collectors.toSet())
-                        .forEach(r -> jr.add(r));
+                List<LegacyClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
+                clients.stream()
+                        .map(LegacyClientKey::getRoles)
+                        .flatMap(Set::stream)
+                        .collect(Collectors.toSet())
+                        .forEach(jr::add);
 
                 jo.put("roles", jr);
-                jo.put("client_count", legacyClients.size());
+                jo.put("client_count", clients.size());
             }
 
             rc.response()
