@@ -4,31 +4,36 @@
     "name": "Special",
     "description": "A special description",
     "enabled": true,
-    "clientTypes": ["DSP", "PUBLISHER", "DATA_PROVIDER", "ADVERTISER"]
+    "clientTypes": ["DSP", "PUBLISHER", "DATA_PROVIDER", "ADVERTISER"],
+    "visible": true
   },
   {
     "id": 123,
     "name": "DSP",
     "enabled": true,
-    "clientTypes": ["DSP"]
+    "clientTypes": ["DSP"],
+    "visible": true
   },
   {
     "id": 124,
     "name": "Publisher",
     "enabled": true,
-    "clientTypes": ["PUBLISHER"]
+    "clientTypes": ["PUBLISHER"],
+    "visible": true
   },
   {
     "id": 125,
     "name": "Data Provider",
     "enabled": true,
-    "clientTypes": ["DATA_PROVIDER"]
+    "clientTypes": ["DATA_PROVIDER"],
+    "visible": true
   },
   {
     "id": 126,
     "name": "Advertiser",
     "enabled": true,
-    "clientTypes": ["ADVERTISER"]
+    "clientTypes": ["ADVERTISER"],
+    "visible": true
   },
   {
     "id": 127,
@@ -44,16 +49,19 @@
   {
     "id": 129,
     "name": "Legacy Publisher",
-    "enabled": true
+    "enabled": true,
+    "visible": false
   },
   {
     "id": 130,
     "name": "Legacy Data Provider",
-    "enabled": true
+    "enabled": true,
+    "visible": false
   },
   {
-    "id": 130,
+    "id": 131,
     "name": "Legacy Advertiser",
-    "enabled": true
+    "enabled": true,
+    "visible": false
   }
 ]
