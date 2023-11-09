@@ -72,13 +72,18 @@ public class SiteService implements IService {
             }
         }, Role.CLIENTKEY_ISSUER));
         router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
-                    synchronized (writeLock) {
-                        this.handleSiteTypesSet(ctx);
-                    }
-                    }, Role.CLIENTKEY_ISSUER));
+            synchronized (writeLock) {
+                this.handleSiteTypesSet(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+        router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteUpdate(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
     }
@@ -111,9 +116,11 @@ public class SiteService implements IService {
 
                 jo.put("id", site.getId());
                 jo.put("name", site.getName());
+                jo.put("description", site.getDescription());
                 jo.put("enabled", site.isEnabled());
                 jo.put("clientTypes", site.getClientTypes());
                 jo.put("domain_names", domainNamesJa);
+                jo.put("visible", site.isVisible());
                 jo.put("created", site.getCreated());
 
                 JsonArray jr = new JsonArray();
@@ -162,7 +169,7 @@ public class SiteService implements IService {
                 JsonArray domainNamesJa = body.getJsonArray("domain_names");
                 if (domainNamesJa != null) {
                     normalizedDomainNames = getNormalizedDomainNames(rc, domainNamesJa);
-                    if(normalizedDomainNames == null) return;
+                    if (normalizedDomainNames == null) return;
                 }
             }
 
@@ -178,17 +185,18 @@ public class SiteService implements IService {
             }
 
             Set<ClientType> types = new HashSet<>();
-            if(!rc.queryParam("types").isEmpty())
-            {
+            if (!rc.queryParam("types").isEmpty()) {
                 types = getTypes(rc.queryParam("types").get(0));
             }
+
+            String description = rc.queryParam("description").stream().findFirst().orElse(null);
 
             final List<Site> sites = this.siteProvider.getAllSites()
                     .stream().sorted(Comparator.comparingInt(Site::getId))
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
-            final Site newSite = new Site(siteId, name, enabled, types, new HashSet<>(normalizedDomainNames));
 
+            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), true);
             // add site to the array
             sites.add(newSite);
 
@@ -210,7 +218,7 @@ public class SiteService implements IService {
             }
 
             Set<ClientType> types = getTypes(rc.queryParam("types").get(0));
-            if(types == null) {
+            if (types == null) {
                 ResponseUtil.error(rc, 400, "Invalid Types");
                 return;
             }
@@ -277,7 +285,7 @@ public class SiteService implements IService {
 
             JsonObject body = rc.body().asJsonObject();
             JsonArray domainNamesJa = body.getJsonArray("domain_names");
-            if(domainNamesJa == null) {
+            if (domainNamesJa == null) {
                 ResponseUtil.error(rc, 400, "required parameters: domain_names");
                 return;
             }
@@ -298,11 +306,48 @@ public class SiteService implements IService {
         }
     }
 
+    private void handleSiteUpdate(RoutingContext rc) {
+        try {
+            // refresh manually
+            siteProvider.loadContent();
+
+            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+            String description = rc.queryParam("description").stream().findFirst().orElse(null);
+            String visibleParam = rc.queryParam("visible").stream().findFirst().orElse(null);
+
+            if (description != null) {
+                existingSite.setDescription(description);
+            }
+            if (visibleParam != null) {
+                if ("true".equalsIgnoreCase(visibleParam)) {
+                    existingSite.setVisible(true);
+                } else if ("false".equalsIgnoreCase(visibleParam)) {
+                    existingSite.setVisible(false);
+                } else {
+                    ResponseUtil.error(rc, 400, "Invalid parameter for visible: " + visibleParam);
+                }
+            }
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            storeWriter.upload(sites, null);
+
+            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
     private static List<String> getNormalizedDomainNames(RoutingContext rc, JsonArray domainNamesJa) {
         List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
 
         List<String> normalizedDomainNames = new ArrayList<>();
-        for(String domain : domainNames) {
+        for (String domain : domainNames) {
             try {
                 String tld = getTopLevelDomainName(domain);
                 normalizedDomainNames.add(tld);
@@ -331,11 +376,10 @@ public class SiteService implements IService {
         //InternetDomainName will normalise the domain name to lower case already
         InternetDomainName name = InternetDomainName.from(host);
         //if the domain name has a proper TLD suffix
-        if(name.isUnderPublicSuffix()) {
+        if (name.isUnderPublicSuffix()) {
             try {
                 return name.topPrivateDomain().toString();
-            }
-            catch(Exception e) {
+            } catch (Exception e) {
                 throw e;
             }
         }
