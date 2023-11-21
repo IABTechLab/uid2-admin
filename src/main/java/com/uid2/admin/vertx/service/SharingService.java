@@ -345,9 +345,11 @@ public class SharingService implements IService {
         final Set<Integer> newlist;
 
         if (allowedSites != null){
-            final Set<Integer> existingAllowedSites = existingSites;
+            final Set<Integer> existingAllowedSites = (existingSites != null) ? existingSites : new HashSet<>();
             OptionalInt firstInvalidSite = allowedSites.stream()
-                    .mapToInt(s -> (Integer) s).filter(s -> !existingAllowedSites.contains(s) && !isSiteIdEditable(s)).findFirst();
+                    .mapToInt(s -> (Integer) s)
+                    .filter(s -> !existingAllowedSites.contains(s) && !isSiteIdEditable(s))
+                    .findFirst();
             if (firstInvalidSite.isPresent()) {
                 ResponseUtil.error(rc, 400, "Site id " + firstInvalidSite.getAsInt() + " not valid");
                 return null;

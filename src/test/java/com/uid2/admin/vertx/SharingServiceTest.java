@@ -1,19 +1,18 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.shared.model.ClientType;
+import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SharingService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.Site;
-import com.uid2.admin.auth.AdminKeyset;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
-import org.assertj.core.util.Sets;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,13 +21,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.*;
 
 public class SharingServiceTest extends ServiceTestBase {
     @Override
@@ -139,6 +142,39 @@ public class SharingServiceTest extends ServiceTestBase {
             compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
             assertEquals(expected.getAllowedSites(), keysets.get(3).getAllowedSites());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void listSiteSetWithNullExistingAllowedSites(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.SHARING_PORTAL);
+
+        final int myKeysetId = 3;
+        final int mySiteId = 5;
+        final int anotherSiteId = 22;
+
+        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+            put(myKeysetId, new AdminKeyset(myKeysetId, mySiteId, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+        }};
+        mockSiteExistence(mySiteId, anotherSiteId);
+
+        setAdminKeysets(keysets);
+
+        String body = "  {\n" +
+                "    \"allowed_sites\": [\n" +
+                "      " + anotherSiteId + "\n" +
+                "    ],\n" +
+                "    \"hash\": " + keysets.get(myKeysetId).hashCode() + "\n" +
+                "  }";
+
+        post(vertx, testContext, "api/sharing/list/" + mySiteId, body, response -> {
+            assertEquals(200, response.statusCode());
+
+            AdminKeyset expected = new AdminKeyset(myKeysetId, mySiteId, "test", Set.of(anotherSiteId), Instant.now().getEpochSecond(), true, true, new HashSet<>());
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+
+            assertEquals(expected.getAllowedSites(), keysets.get(myKeysetId).getAllowedSites());
             testContext.completeNow();
         });
     }
@@ -574,6 +610,7 @@ public class SharingServiceTest extends ServiceTestBase {
         };
     }*/
 
+    @Test
     void KeysetCanUpdateAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
