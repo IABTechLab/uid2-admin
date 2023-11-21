@@ -150,29 +150,31 @@ public class SharingServiceTest extends ServiceTestBase {
     void listSiteSetWithNullExistingAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
+        final int myKeysetId = 3;
+        final int mySiteId = 5;
+        final int anotherSiteId = 22;
+
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(3, new AdminKeyset(3, 5, "test", null, Instant.now().getEpochSecond(),true, true, new HashSet<>()));
-            put(5, new AdminKeyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(myKeysetId, new AdminKeyset(myKeysetId, mySiteId, "test", null, Instant.now().getEpochSecond(),true, true, new HashSet<>()));
         }};
-        mockSiteExistence(5,4,22,25,6);
+        mockSiteExistence(mySiteId, anotherSiteId);
 
         setAdminKeysets(keysets);
-        mockSiteExistence(5,4);
 
         String body = "  {\n" +
                 "    \"allowed_sites\": [\n" +
-                "      22\n" +
+                "      " + anotherSiteId + "\n" +
                 "    ],\n" +
-                "    \"hash\": " + keysets.get(3).hashCode() + "\n" +
+                "    \"hash\": " + keysets.get(myKeysetId).hashCode() + "\n" +
                 "  }";
 
-        post(vertx, testContext, "api/sharing/list/5", body, response -> {
+        post(vertx, testContext, "api/sharing/list/" + mySiteId, body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(3, 5, "test", Set.of(22), Instant.now().getEpochSecond(), true, true, new HashSet<>());
+            AdminKeyset expected = new AdminKeyset(myKeysetId, mySiteId, "test", Set.of(anotherSiteId), Instant.now().getEpochSecond(), true, true, new HashSet<>());
             compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
 
-            assertEquals(expected.getAllowedSites(), keysets.get(3).getAllowedSites());
+            assertEquals(expected.getAllowedSites(), keysets.get(myKeysetId).getAllowedSites());
             testContext.completeNow();
         });
     }
