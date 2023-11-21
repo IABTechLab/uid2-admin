@@ -155,7 +155,7 @@ public class SharingServiceTest extends ServiceTestBase {
         final int anotherSiteId = 22;
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(myKeysetId, new AdminKeyset(myKeysetId, mySiteId, "test", null, Instant.now().getEpochSecond(),true, true, new HashSet<>()));
+            put(myKeysetId, new AdminKeyset(myKeysetId, mySiteId, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>()));
         }};
         mockSiteExistence(mySiteId, anotherSiteId);
 
