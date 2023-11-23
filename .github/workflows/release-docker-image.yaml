@@ -1,7 +1,6 @@
 name: Release Docker Image
 run-name: ${{ inputs.release_type == 'Snapshot' && 'Publish pre-release' || format('Release {0}', inputs.release_type)}} Docker Image by @${{ github.actor }}  
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       release_type:
@@ -19,4 +18,5 @@ jobs:
     with: 
       release_type: ${{ inputs.release_type }}
       cloud_provider: 'default'
+      force_release: 'true'
     secrets: inherit
