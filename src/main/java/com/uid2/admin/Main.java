@@ -1,6 +1,8 @@
 package com.uid2.admin;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.GithubAuthFactory;
 import com.uid2.admin.auth.AuthFactory;
@@ -21,6 +23,7 @@ import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
@@ -256,9 +259,27 @@ public class Main {
                     "admins", 10000, adminUserProvider);
             vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
-            val v2RouterModule = new V2RouterModule(clientSideKeypairService, auth);
+            /*
+             Begin introducing dependency injection - for now, it just knows about:
+              - all of the IService classes
+              - v2 API handlers
+              - authHandler
+             N.b. there should only ever be one injector!
+            */
+            Injector injector = Guice.createInjector(
+                    new RequireInjectAnnotationsModule(),
+                    new ServicesModule(services),
+                    new SingletonsModule(auth),
+                    new V2RouterModule()
+            );
+            /*
+             Grab the V2 API route provider. N.b. there should usually only be a single call to injector.
+             The next step is probably to get Guice to construct the Admin verticle instead of the v2 router -
+             but we'll need to get the Admin Verticle's other dependencies managed by Guice first.
+            */
+            val v2Api = injector.getInstance(V2Router.class);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services, v2RouterModule.getRouter());
+            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services, v2Api);
             vertx.deployVerticle(adminVerticle);
 
             CloudPath keysetMetadataPath = new CloudPath(config.getString("keysets_metadata_path"));

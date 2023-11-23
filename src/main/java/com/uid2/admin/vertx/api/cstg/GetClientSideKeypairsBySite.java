@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.api.cstg;
 
 import com.google.common.collect.Streams;
+import com.google.inject.Inject;
 import com.uid2.admin.secret.IKeypairManager;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.api.IRouteProvider;
@@ -9,6 +10,7 @@ import com.uid2.admin.vertx.api.annotations.ApiMethod;
 import com.uid2.admin.vertx.api.annotations.Method;
 import com.uid2.admin.vertx.api.annotations.Path;
 import com.uid2.admin.vertx.api.annotations.Roles;
+import com.uid2.admin.vertx.service.ClientSideKeypairService;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -21,6 +23,8 @@ public class GetClientSideKeypairsBySite implements IRouteProvider {
 
     private final IKeypairManager keypairManager;
 
+
+    @Inject
     public GetClientSideKeypairsBySite(IKeypairManager keypairManager) {
         this.keypairManager = keypairManager;
     }

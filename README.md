@@ -22,7 +22,9 @@ Per the above setup steps, the UI runs on `http://localhost:8089/`. To see your 
 
 ## V2 API
 
-The v2 API is based on individual route provider classes. Each class should provide exactly one endpoint and must implement IRouteProvider or IBlockingRouteProvider. 
+The v2 API is based on individual route provider classes. Each class should provide exactly one endpoint and must implement IRouteProvider  or IBlockingRouteProvider. It may accept constructor parameters, which will be auto-wired by our DI system. Currently, DI is configured to provide:
+- All the IService classes which are provided to the Admin Verticle.
+- The Auth middleware (but see IRouteProvider - you probably don't need it).
 
 ### IRouteProvider
 
@@ -30,4 +32,12 @@ The v2 API is based on individual route provider classes. Each class should prov
 
 IRouteProvider requires a `getHandler` method, which should return a valid handler function - see `GetClientSideKeypairsBySite.java`. This method *must* be annotated with the Path, Method, and Roles annotations.
 
-The route handler will automatically be wrapped by the Auth middleware based on the roles specified in the Roles annotation.
+All classes which implement IRouteProvider will automatically be picked up by DI and registered as route handlers. The route handler will automatically be wrapped by the Auth middleware based on the roles specified in the Roles annotation.
+
+Currently, we require the explicit `@Inject` annotation on all constructors which are valid for the DI framework to use. Your IRouteProvider implementation *must* have a constructor with the @Inject annotation. 
+
+## Dependency injection - current state and plans
+
+We are in the process of introducing dependency injection to the code base. Currently, a number of singletons which are constructed explicitly are provided via `ServicesModule` (for `IService` classes) and the `SingletonsModule` (for other singletons - e.g. the Auth middleware).
+
+Over time, it would be nice to expand what is being constructed via DI and reduce our reliance on manually constructing objects. Once we have all of the dependencies for `AdminVerticle` available via DI, we can stop creating the `V2Router` via DI and instead just create the `AdminVerticle` (DI will then create the `V2Router` for us).

@@ -1,29 +1,47 @@
 package com.uid2.admin.vertx.api;
 
-import com.uid2.admin.secret.IKeypairManager;
-import com.uid2.admin.vertx.api.cstg.GetClientSideKeypairsBySite;
-import com.uid2.shared.middleware.AuthMiddleware;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.reflect.ClassPath;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
+import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class V2RouterModule {
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+public class V2RouterModule extends AbstractModule {
     private static final Logger LOGGER = LoggerFactory.getLogger(V2RouterModule.class);
 
-    private final IKeypairManager keypairManager;
-    private final AuthMiddleware authMiddleware;
+    /*
+     Finds all classes in com.uid2.admin.vertx.api which implement IRouterProvider and register them.
+     They are registered both as IRouterProvider and as their individual class.
+    */
+    @Override
+    protected void configure() {
+        try {
+            Multibinder<IRouteProvider> interfaceBinder = Multibinder.newSetBinder(binder(), IRouteProvider.class);
 
-    public V2RouterModule(IKeypairManager keypairManager, AuthMiddleware authMiddleware) {
-        this.keypairManager = keypairManager;
-        this.authMiddleware = authMiddleware;
-    }
-
-    protected IRouteProvider[] getRouteProviders() {
-        return new IRouteProvider[] {
-                new GetClientSideKeypairsBySite(keypairManager)
-        };
-    }
-
-    public V2Router getRouter() {
-        return new V2Router(getRouteProviders(), authMiddleware);
+            val cp = ClassPath.from(getClass().getClassLoader());
+            val routerProviders = cp
+                    .getTopLevelClasses()
+                    .stream()
+                    .filter(ci -> ci.getName().startsWith("com.uid2.admin.vertx.api"))
+                    .map(ci -> ci.load())
+                    .filter(cl -> !cl.isInterface() && Arrays.stream(cl.getInterfaces()).anyMatch(interf -> interf == IRouteProvider.class || interf == IBlockingRouteProvider.class))
+                    .map(cl -> (Class<IRouteProvider>)cl)
+                    .collect(Collectors.toSet());
+            for (val routerProviderClass : routerProviders) {
+                LOGGER.info("Registering v2 route provider " + routerProviderClass.getName());
+                bind(routerProviderClass);
+                interfaceBinder.addBinding().to(routerProviderClass);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

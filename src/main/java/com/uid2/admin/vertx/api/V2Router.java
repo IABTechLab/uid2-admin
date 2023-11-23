@@ -1,11 +1,14 @@
 package com.uid2.admin.vertx.api;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.uid2.admin.vertx.api.annotations.Method;
 import com.uid2.admin.vertx.api.annotations.Path;
 import com.uid2.admin.vertx.api.annotations.Roles;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +16,14 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Set;
 
+@Singleton
 public class V2Router {
     private static final Logger LOGGER = LoggerFactory.getLogger(V2Router.class);
-    private final IRouteProvider[] routeProviders;
+    private final Set<IRouteProvider> routeProviders;
     private final AuthMiddleware auth;
 
-    public V2Router(IRouteProvider[] routeProviders, AuthMiddleware auth) {
+    @Inject
+    public V2Router(Set<IRouteProvider> routeProviders, AuthMiddleware auth) {
         this.routeProviders = routeProviders;
         this.auth = auth;
     }
