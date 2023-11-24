@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-admin</artifactId>
-    <version>2.32.12-4672f5c719-tjm-UID2-2325-new-shared-docker-image-pipeline</version>
+    <version>2.32.13-feccdfaa2a-tjm-UID2-2325-new-shared-docker-image-pipeline</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
