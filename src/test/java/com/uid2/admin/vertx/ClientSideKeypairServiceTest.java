@@ -233,7 +233,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void addKeypair(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.SHARING_PORTAL);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
