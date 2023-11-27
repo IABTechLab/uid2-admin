@@ -18,5 +18,4 @@ jobs:
     with: 
       release_type: ${{ inputs.release_type }}
       cloud_provider: 'default'
-      force_release: 'true'
     secrets: inherit
