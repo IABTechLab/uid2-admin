@@ -1,5 +1,5 @@
 name: Release Docker Image
-run-name: ${{ inputs.release_type == 'Snapshot' && 'Publish pre-release' || format('Release {0}', inputs.release_type)}} Docker Image by @${{ github.actor }}  
+run-name: ${{ inputs.release_type == 'Snapshot' && 'Publish Pre-release' || format('Release {0}', inputs.release_type)}} Docker Image by @${{ github.actor }}  
 on:
   workflow_dispatch:
     inputs:
