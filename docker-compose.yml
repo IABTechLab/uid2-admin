@@ -8,5 +8,14 @@ services:
     volumes:
       - "./src/main/resources/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
       - "./src/main/resources/localstack/s3:/s3"
+      - "./src/main/resources/localstack/kms/seed.yaml:/init/seed.yaml"
     environment:
       - EDGE_PORT=5001
+      - KMS_PROVIDER=local-kms
+    healthcheck:
+      test: awslocal s3api wait bucket-exists --bucket test-core-bucket
+        && awslocal s3api wait bucket-exists --bucket test-snowflake-bucket
+        && awslocal s3api wait bucket-exists --bucket test-optout-bucket
+      interval: 5s
+      timeout: 5s
+      retries: 3
