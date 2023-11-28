@@ -75,7 +75,7 @@ public class SiteService implements IService {
             synchronized (writeLock) {
                 this.handleSiteTypesSet(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
