@@ -68,7 +68,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             synchronized (writeLock) {
                 this.handleAddKeypair(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.ADMINISTRATOR, Role.SHARING_PORTAL));
         router.post("/api/client_side_keypairs/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdateKeypair(ctx);
