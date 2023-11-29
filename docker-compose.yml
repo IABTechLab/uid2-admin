@@ -6,9 +6,9 @@ services:
     ports:
       - "127.0.0.1:5001:5001"
     volumes:
-      - "./src/main/resources/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
-      - "./src/main/resources/localstack/s3:/s3"
-      - "./src/main/resources/localstack/kms/seed.yaml:/init/seed.yaml"
+      - ./src/main/resources/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      - ./src/main/resources/localstack/s3:/s3
+      - ./src/main/resources/localstack/kms/seed.yaml:/init/seed.yaml
     environment:
       - EDGE_PORT=5001
       - KMS_PROVIDER=local-kms
@@ -18,4 +18,3 @@ services:
         && awslocal s3api wait bucket-exists --bucket test-optout-bucket
       interval: 5s
       timeout: 5s
-      retries: 3
