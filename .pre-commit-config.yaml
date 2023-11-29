@@ -13,5 +13,5 @@ repos:
           - --skip-dirs
           - /src/.idea
           - --skip-files
-          - src/main/resources/localstack/kms/seed.yaml
+          - /src/src/main/resources/localstack/kms/seed.yaml
           - .
