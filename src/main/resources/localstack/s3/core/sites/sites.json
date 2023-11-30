@@ -28,5 +28,10 @@
     "id": 127,
     "name": "OptOut",
     "enabled": true
+  },
+  {
+    "id": 1000,
+    "name": "Legacy Site",
+    "enabled": true
   }
 ]

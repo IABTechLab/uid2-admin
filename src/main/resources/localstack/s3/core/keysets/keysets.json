@@ -31,7 +31,7 @@
     "site_id": 999,
     "name" : "Special keyset",
     "allowed_sites" : [],
-    "created" : 1617149276,
+    "created" : 1701210253,
     "enabled" : true,
     "default" : true
   },
@@ -76,6 +76,15 @@
     "keyset_id": 127,
     "site_id": 127,
     "name" : "OptOut keyset",
+    "allowed_sites" : [],
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+  },
+  {
+    "keyset_id": 1000,
+    "site_id": 1000,
+    "name" : "Legacy Site keyset",
     "allowed_sites" : [],
     "created" : 1617149276,
     "enabled" : true,
