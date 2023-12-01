@@ -1,0 +1,30 @@
+[
+    {
+        "key": "UID2-A-L-WYHV5i.Se6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=",
+        "name": "test.user@uidapi.com",
+        "contact": "test.user@uidapi.com",
+        "created": 1628834719,
+        "roles": [
+            "ADMINISTRATOR",
+            "ACCOUNT_MANAGER"
+        ],
+        "disabled": false,
+        "key_hash": "DRmT9fZL4h9k+jREBh7/v3koT3Nd2C9VDY/5hR8VhEnRnuvaE9OnCA0Zitubease+Jc/ku3DVoE0uNFiLdD0nw==",
+        "key_salt": "8ufjzC2ptzH6M+an9obCJEFRfnEwvWzeb1DNuEk/BnM=",
+        "key_id": "UID2-A-L-WYHV5"
+    },
+    {
+        "key": "ADLCLWYHV5iSe6uQDk/N1KsKk4T8CWAFSU5oyObkCes9yFG8=",
+        "name": "test.user.old@uidapi.com",
+        "contact": "test.user.old@uidapi.com",
+        "created": 1628834719,
+        "roles": [
+            "ADMINISTRATOR",
+            "ACCOUNT_MANAGER"
+        ],
+        "disabled": false,
+        "key_hash": "Ss0KQJLaqeqLcJ8qptxhiY6yUsUADummN3R9Xc3sar+uDFpO8HK6ztQoXfuH1WOak4DLJ8XN8FIfgrM0LmnqYA==",
+        "key_salt": "H/pti772QGthP/pLinIn0EPsoKw+glCvHiD/Hsy5ctw=",
+        "key_id": "ADLCL"
+    }
+]

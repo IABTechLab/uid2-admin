@@ -4,7 +4,7 @@
     "name": "Special",
     "contact": "Special",
     "protocol": "trusted",
-    "created": 1618873215,
+    "created": 1701210253,
     "disabled": false,
     "roles": [
       "OPERATOR",
@@ -12,16 +12,16 @@
     ],
     "site_id": 999,
     "operator_type": "PUBLIC",
-    "key_hash": "up4UeBTF8uqGBzIuDFmV0YhHGHNOyEve+lhX+9m0bnznk2BCtbuGH4xFBfXliIGGmIy3rNQvGna7GxnPjqJubw==",
-    "key_salt": "erLKpOM2KmHjm5WnJcEVKb8t8Oq6nCNOC22A7cTHwF4=",
+    "key_hash": "rTD7MpJn5/j4G6N+Ph659F4FGtiJy7MLNtfVA7XUdu6cYC9ok6EwGeI2upyDOvxvPkOCUn7HBKay8ubPQmRc0A==",
+    "key_salt": "ZpqdDFksFeWx/ouPAoWi39TVuGrSGwijfCN4f0pAl2Y=",
     "key_id": "UID2-O-L-999-dp9Dt"
   },
   {
     "key": "OPLCLAjLRWcVlCDl9+BbwR38gzxYdiWFa751ynWLuI7JU4iA=",
-    "name": "Special (Old, Private)",
-    "contact": "Special (Old, Private)",
+    "name": "Special (Legacy Key, Private)",
+    "contact": "Special (Legacy Key, Private)",
     "protocol": "trusted",
-    "created": 1618873215,
+    "created": 1701210253,
     "disabled": false,
     "roles": [
       "OPERATOR",
@@ -29,8 +29,8 @@
     ],
     "site_id": 999,
     "operator_type": "PRIVATE",
-    "key_hash": "88tp2FCHQdQ3g8uwQhvtiXOzhizj8xh0dsmfD/UpVBLkk/mnTO944yKne4j3a+Ymb4LT5YG6+AHl9Qi/b2zqBQ==",
-    "key_salt": "h50xq+sFkkVioTgMUXMZfcR22LJn4n2cxqR8pnk4S6Y=",
+    "key_hash": "SzTmabzOsL5TV9IEa7qQnyEeMOV8Atn9sy0ALnYAHDvDi8YO7nuNSCnf0eBGUaYEsqZTi9toB+38DNGFeITVrQ==",
+    "key_salt": "1QcfCgHA0arN/3a8mShATET1hVmNS90N6S4YBITfXKk=",
     "key_id": "OPLCL"
   },
   {
@@ -46,15 +46,15 @@
     ],
     "site_id": 123,
     "operator_type": "PUBLIC",
-    "key_hash": "JVZjSVxMjM95wcVKgRJ0+bH4I/8qhHCg6aeSsv/wOAen84HAPJevhPBcHIt7jca23mUV3uH5e5vrITcH2kH3aA==",
-    "key_salt": "4ztuzew4Cv4P5UHd2CGJ9qF4DMoiOehvR2xd4DcQxiU=",
+    "key_hash": "kwm4bs6JwsxYA4HRarBQrzeBt9VM0rZ/KhjuyWIkrIH/EcApllVLpWcShzqQSxP3VVZCEwIbCHLLPV83PeHVKw==",
+    "key_salt": "r86XKx52T4NCbTI1Z084HuDOEmtiaGYkmuAVUjXNTC8=",
     "key_id": "UID2-O-L-123-Xt/gh"
   },
   {
     "key": "UID2-O-L-124-cr24Bt.dYP+Wpo6NWlP7CbvwpzHn0lXS3Cst6Y+qFDK4=",
     "name": "Publisher (Private, GCP)",
     "contact": "Publisher (Private, GCP)",
-    "protocol": "gcp-vmid",
+    "protocol": "gcp-oidc",
     "created": 1618873215,
     "disabled": false,
     "roles": [
@@ -62,9 +62,25 @@
     ],
     "site_id": 124,
     "operator_type": "PRIVATE",
-    "key_hash": "HfZS+oLwd5+R5+LUHB9DPbrlwxliDtRb66G/UXzrk7Q8Gc2G1l9dlyhYK06HjRaDQq3bQAL0B7D1T0VOmlhGGA==",
-    "key_salt": "5iRO0dp0wIV8h4Pt8uBVFc7Dj3qo3oOuG/oEwXEscy4=",
+    "key_hash": "jgl4NnuoVVuYVkWW7IUWHyL9aA5Uglzlb2c0xCAsVk09Tno2RQYIJ2nEqACGpMMarKp1uFbTAr2qKwh2q+ro6g==",
+    "key_salt": "kyrXH8X4F/SCTgw8SkWLBZSXQWBSZKgNqiQQFpJ5h04=",
     "key_id": "UID2-O-L-124-cr24B"
+  },
+  {
+    "key": "UID2-azure-cc-operator-key",
+    "name": "Publisher (Private, Azure CC)",
+    "contact": "Publisher (Private, Azure CC)",
+    "protocol": "azure-cc",
+    "created": 1618873215,
+    "disabled": false,
+    "roles": [
+      "OPERATOR"
+    ],
+    "site_id": 124,
+    "operator_type": "PRIVATE",
+    "key_hash": "rtXong4ZyjwdshMNEICQv8Kd/vvX6d7PcB02AwcV3ElCnG7tXQvO+NKyqc93ObcVbwcJfZ1RPAGLjJhxdQQ55w==",
+    "key_salt": "0Qw0Ln9qym9pcyQ1lT0oIB0uZ2nWhnVsGBhe8CYJ5xI=",
+    "key_id": "UID2-azure"
   },
   {
     "key": "UID2-O-L-127-pDqphU.6FuXzThQMY8YEsCA8crqvAlzyGrjcF8P6XO84=",
@@ -78,8 +94,8 @@
     ],
     "site_id": 127,
     "operator_type": "PUBLIC",
-    "key_hash": "5Wl/P6hWy+qK0SxZWO1GSkbJP/iDv8+tSZ+hryb+c9kO2gfYxvAnaHZcqGahSpgGVcX+Siyus9B0trkkV5p5Uw==",
-    "key_salt": "PpmlmZ89Iz5bU70E+qv3rFCyuzKHU08iYhjAkfJwpvY=",
+    "key_hash": "rx3SYxt2PdnIIbhGMc0Cue3/JTk9WwyDiMMOp5WiU6pXbdkhjZ+BxgIChzMMZeLqAi/E4G5XZHMFnOe8Zzx3jg==",
+    "key_salt": "0L8h9CSPfDFEHurZZ33OOogd26zSjApBTWLmYHtauC8=",
     "key_id": "UID2-O-L-127-pDqph"
   }
 ]
