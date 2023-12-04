@@ -59,7 +59,8 @@
     "contact": "Publisher",
     "created": 1609459200,
     "roles": [
-      "GENERATOR"
+      "GENERATOR",
+      "ID_READER"
     ],
     "disabled": false,
     "site_id": 124,
@@ -90,7 +91,8 @@
     "contact": "Advertiser",
     "created": 1609459200,
     "roles": [
-      "MAPPER"
+      "MAPPER",
+      "SHARER"
     ],
     "disabled": false,
     "site_id": 126,
