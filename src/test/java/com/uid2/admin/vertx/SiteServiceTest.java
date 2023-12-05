@@ -149,6 +149,109 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void getSiteWithStringKeyKeys(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site3", false),
+        };
+        setSites(sites);
+
+        get(vertx, testContext, "api/site/asdf", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("unable to parse site id For input string: \"asdf\"", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void getSiteWithInvalidKeys(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site3", false),
+        };
+        setSites(sites);
+
+
+        get(vertx, testContext, "api/site/0", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify a valid site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void getSiteWithUnusedKeys(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site3", false),
+        };
+        setSites(sites);
+
+        get(vertx, testContext, "api/site/10", response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("site not found", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void getSiteNoSites(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] sites = {
+        };
+        setSites(sites);
+
+        get(vertx, testContext, "api/site/10", response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("site not found", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void getSiteWithValidKeys(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site3", false),
+        };
+        setSites(sites);
+
+        LegacyClientKey[] clientKeys = {
+                new LegacyClientKey("UID2-C-L-11-ck111111", "ckh1", "cks1", "cs1", "c1", Instant.MIN, Set.of(Role.GENERATOR, Role.ID_READER), 11, "UID2-C-L-11-ck111"),
+                new LegacyClientKey("UID2-C-L-12-ck222222", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12, "UID2-C-L-12-ck222"),
+                new LegacyClientKey("UID2-C-L-11-ck333333", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11, "UID2-C-L-11-ck333"),
+                new LegacyClientKey("UID2-C-L-13-ck444444", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13, "UID2-C-L-13-ck444"),
+        };
+        setClientKeys(clientKeys);
+
+        get(vertx, testContext, "api/site/11", response -> {
+            assertAll(
+                    "listSitesWithKeys",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> checkSiteResponse(sites[0], response.bodyAsJsonObject()),
+                    () -> checkSiteResponseWithKeys(new Object[]{response.bodyAsJsonObject()}, 11, 2, Role.GENERATOR, Role.ID_READER, Role.MAPPER));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void addSiteNoExistingSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
