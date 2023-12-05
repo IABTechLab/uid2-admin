@@ -11,6 +11,15 @@
 <br>
 <br>
 
+<h3>Search</h3>
+<div>
+    <label for="searchSiteId">Site Id:</label>
+    <input type="text" id="searchSiteId" name="siteId">
+</div>
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="searchList">Search Sites by SiteId</a></li>
+</ul>
+
 <h3>Inputs</h3>
 
 <div>
@@ -57,6 +66,15 @@
 
 <script language="JavaScript">
     $(document).ready(function () {
+
+        $('#searchList').on('click', function () {
+            if(!$('#searchSiteId').val()) {
+                $('#errorOutput').html("Required Parameters: site_id")
+                return;
+            }
+            doApiCall('GET', '/api/site/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
+        });
+
         $('#doList').on('click', function () {
             doApiCall('GET', '/api/site/list', '#standardOutput', '#errorOutput');
         });
