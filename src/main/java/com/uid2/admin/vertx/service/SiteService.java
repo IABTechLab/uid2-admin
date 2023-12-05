@@ -19,7 +19,6 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
@@ -111,31 +110,7 @@ public class SiteService implements IService {
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
             for (Site site : sites) {
-                JsonObject jo = new JsonObject();
-                ja.add(jo);
-
-                JsonArray domainNamesJa = new JsonArray();
-                site.getDomainNames().forEach(domainNamesJa::add);
-
-                jo.put("id", site.getId());
-                jo.put("name", site.getName());
-                jo.put("description", site.getDescription());
-                jo.put("enabled", site.isEnabled());
-                jo.put("clientTypes", site.getClientTypes());
-                jo.put("domain_names", domainNamesJa);
-                jo.put("visible", site.isVisible());
-                jo.put("created", site.getCreated());
-
-                JsonArray jr = new JsonArray();
-                List<LegacyClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
-                clients.stream()
-                        .map(LegacyClientKey::getRoles)
-                        .flatMap(Set::stream)
-                        .collect(Collectors.toSet())
-                        .forEach(jr::add);
-
-                jo.put("roles", jr);
-                jo.put("client_count", clients.size());
+                ja.add(createSiteObject(site, clientKeys, emptySiteKeys));
             }
 
             rc.response()
@@ -144,6 +119,34 @@ public class SiteService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private static JsonObject createSiteObject(Site site, Map<Integer, List<LegacyClientKey>> clientKeys, List<LegacyClientKey> emptySiteKeys) {
+        JsonObject jo = new JsonObject();
+
+        JsonArray domainNamesJa = new JsonArray();
+        site.getDomainNames().forEach(domainNamesJa::add);
+
+        jo.put("id", site.getId());
+        jo.put("name", site.getName());
+        jo.put("description", site.getDescription());
+        jo.put("enabled", site.isEnabled());
+        jo.put("clientTypes", site.getClientTypes());
+        jo.put("domain_names", domainNamesJa);
+        jo.put("visible", site.isVisible());
+        jo.put("created", site.getCreated());
+
+        JsonArray jr = new JsonArray();
+        List<LegacyClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
+        clients.stream()
+                .map(LegacyClientKey::getRoles)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet())
+                .forEach(jr::add);
+
+        jo.put("roles", jr);
+        jo.put("client_count", clients.size());
+        return jo;
     }
 
     private void handleSite(RoutingContext rc) {
@@ -157,30 +160,7 @@ public class SiteService implements IService {
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
 
-            JsonObject jo = new JsonObject();
-
-            JsonArray domainNamesJa = new JsonArray();
-            site.getDomainNames().forEach(domainNamesJa::add);
-
-            jo.put("id", site.getId());
-            jo.put("name", site.getName());
-            jo.put("description", site.getDescription());
-            jo.put("enabled", site.isEnabled());
-            jo.put("clientTypes", site.getClientTypes());
-            jo.put("domain_names", domainNamesJa);
-            jo.put("visible", site.isVisible());
-            jo.put("created", site.getCreated());
-
-            JsonArray jr = new JsonArray();
-            List<LegacyClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
-            clients.stream()
-                    .map(LegacyClientKey::getRoles)
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toSet())
-                    .forEach(jr::add);
-
-            jo.put("roles", jr);
-            jo.put("client_count", clients.size());
+            JsonObject jo = createSiteObject(site, clientKeys, emptySiteKeys);
 
 
             rc.response()
