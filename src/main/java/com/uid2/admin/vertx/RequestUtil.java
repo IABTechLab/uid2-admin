@@ -7,7 +7,6 @@ import com.uid2.shared.model.Site;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.ISiteStore;
 import io.vertx.ext.web.RoutingContext;
-import lombok.val;
 
 import java.time.Duration;
 import java.util.*;
