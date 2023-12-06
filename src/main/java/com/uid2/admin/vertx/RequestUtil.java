@@ -52,7 +52,7 @@ public class RequestUtil {
         }
     }
 
-    public static Site getSite(RoutingContext rc, String param, ISiteStore siteProvider) {
+    public static Site getSiteFromParam(RoutingContext rc, String param, ISiteStore siteProvider) {
         final List<String> siteIds = rc.queryParam(param);
         if (siteIds.isEmpty()) {
             ResponseUtil.error(rc, 400, "must specify site id");
@@ -67,6 +67,22 @@ public class RequestUtil {
             return null;
         }
 
+        return getSite(rc, siteProvider, siteId);
+    }
+
+    public static Site getSiteFromUrl(RoutingContext rc, String param, ISiteStore siteProvider) {
+        int siteId;
+        try {
+            siteId = Integer.parseInt(rc.pathParam(param));
+        } catch (Exception ex) {
+            ResponseUtil.error(rc, 400, "unable to parse site id " + ex.getMessage());
+            return null;
+        }
+
+        return getSite(rc, siteProvider, siteId);
+    }
+
+    private static Site getSite(RoutingContext rc, ISiteStore siteProvider, int siteId) {
         if (!SiteUtil.isValidSiteId(siteId)) {
             ResponseUtil.error(rc, 400, "must specify a valid site id");
             return null;

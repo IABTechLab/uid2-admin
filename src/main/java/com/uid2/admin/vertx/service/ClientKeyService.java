@@ -220,7 +220,7 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+            final Site site = RequestUtil.getSiteFromParam(rc, "site_id", this.siteProvider);
             if (site == null) return;
 
             final int serviceId = this.getServiceId(rc);
@@ -317,7 +317,7 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+            final Site site = RequestUtil.getSiteFromParam(rc, "site_id", this.siteProvider);
             if (site == null) return;
 
             final int serviceId = this.getServiceId(rc);
