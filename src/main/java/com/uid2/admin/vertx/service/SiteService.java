@@ -62,7 +62,7 @@ public class SiteService implements IService {
         router.get("/api/site/list").handler(
                 auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
         router.get("/api/site/:siteId").handler(
-                auth.handle(this::handleSite, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+                auth.handle(this::handleSiteById, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
@@ -149,7 +149,7 @@ public class SiteService implements IService {
         return jo;
     }
 
-    private void handleSite(RoutingContext rc) {
+    private void handleSiteById(RoutingContext rc) {
         try {
             final Site site = RequestUtil.getSiteFromUrl(rc, "siteId", this.siteProvider);
             if (site == null) {
