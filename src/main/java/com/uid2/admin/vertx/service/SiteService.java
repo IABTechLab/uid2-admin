@@ -110,7 +110,7 @@ public class SiteService implements IService {
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
             for (Site site : sites) {
-                ja.add(createSiteObject(site, clientKeys, emptySiteKeys));
+                ja.add(createSiteJsonObject(site, clientKeys, emptySiteKeys));
             }
 
             rc.response()
@@ -121,7 +121,7 @@ public class SiteService implements IService {
         }
     }
 
-    private static JsonObject createSiteObject(Site site, Map<Integer, List<LegacyClientKey>> clientKeys, List<LegacyClientKey> emptySiteKeys) {
+    private static JsonObject createSiteJsonObject(Site site, Map<Integer, List<LegacyClientKey>> clientKeys, List<LegacyClientKey> emptySiteKeys) {
         JsonObject jo = new JsonObject();
 
         JsonArray domainNamesJa = new JsonArray();
@@ -160,7 +160,7 @@ public class SiteService implements IService {
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
 
-            JsonObject jo = createSiteObject(site, clientKeys, emptySiteKeys);
+            JsonObject jo = createSiteJsonObject(site, clientKeys, emptySiteKeys);
 
 
             rc.response()
