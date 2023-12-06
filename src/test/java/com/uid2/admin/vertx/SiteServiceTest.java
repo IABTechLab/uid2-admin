@@ -149,7 +149,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void getSiteWithStringKeyKeys(Vertx vertx, VertxTestContext testContext){
+    void getSiteWithStringId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
@@ -168,7 +168,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void getSiteWithInvalidKeys(Vertx vertx, VertxTestContext testContext){
+    void getSiteWithInvalidId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
@@ -188,7 +188,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void getSiteWithUnusedKeys(Vertx vertx, VertxTestContext testContext){
+    void getSiteWithUnusedId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
@@ -210,8 +210,7 @@ public class SiteServiceTest extends ServiceTestBase {
     void getSiteNoSites(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        Site[] sites = {
-        };
+        Site[] sites = {};
         setSites(sites);
 
         get(vertx, testContext, "api/site/10", response -> {
@@ -222,7 +221,7 @@ public class SiteServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void getSiteWithValidKeys(Vertx vertx, VertxTestContext testContext) {
+    void getSiteWithValidId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         Site[] sites = {
