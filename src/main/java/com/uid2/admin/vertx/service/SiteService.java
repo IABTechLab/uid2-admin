@@ -160,12 +160,11 @@ public class SiteService implements IService {
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
 
-            JsonObject jo = createSiteJsonObject(site, clientKeys, emptySiteKeys);
 
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(jo.encode());
+                    .end(createSiteJsonObject(site, clientKeys, emptySiteKeys).encode());
         } catch (Exception e) {
             rc.fail(500, e);
         }
