@@ -92,18 +92,18 @@ public class JobDispatcher {
         }
     }
 
-    public void executeNextJob() {
+    public CompletableFuture<Boolean> executeNextJob() {
         String currentJobId;
 
         synchronized (jobLock) {
             LOGGER.debug("Checking for jobs");
             if (jobQueue.isEmpty()) {
                 LOGGER.debug("No jobs to run");
-                return;
+                return CompletableFuture.completedFuture(null);
             }
-            if (currentJob != null) {
-                LOGGER.debug("Job already running: {}", currentJob.getId());
-                return;
+            if (isExecutingJob()) {
+                LOGGER.warn("Job already running: {}", currentJob.getId());
+                return CompletableFuture.completedFuture(null);
             }
 
             currentJob = jobQueue.poll();
@@ -113,11 +113,14 @@ public class JobDispatcher {
             LOGGER.info("Executing job: {} ({} jobs remaining in queue)", currentJobId, jobQueue.size());
         }
 
-        jobExecutor.execute(() -> {
+        return CompletableFuture.supplyAsync(() -> {
+            boolean success = false;
+
             for (int retryCount = 1; retryCount <= maxRetries; retryCount++) {
                 try {
                     long before = System.currentTimeMillis();
                     currentJob.execute();
+                    success = true;
                     long after = System.currentTimeMillis();
                     long durationMs = after - before;
                     LOGGER.info("Job successfully executed: {} in {}ms", currentJobId, durationMs);
@@ -136,7 +139,9 @@ public class JobDispatcher {
             synchronized (jobLock) {
                 currentJob = null;
             }
-        });
+
+            return success;
+        }, jobExecutor);
     }
 
     public List<JobInfo> getJobQueueInfo() {

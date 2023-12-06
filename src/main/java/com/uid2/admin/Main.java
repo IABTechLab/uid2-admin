@@ -64,6 +64,7 @@ import io.vertx.micrometer.backends.BackendRegistries;
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 
@@ -294,9 +295,6 @@ public class Main {
                 }
             }
 
-            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
-            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
-            jobDispatcher.executeNextJob();
             // Data type keys should be matching uid2_config_store_version reported by operator, core, etc
             DataStoreMetrics.addDataStoreMetrics("admins", adminUserProvider);
             DataStoreMetrics.addDataStoreMetrics("site", siteProvider);
@@ -311,12 +309,17 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("salt", saltProvider);
             DataStoreMetrics.addDataStoreMetrics("partners", partnerConfigProvider);
 
+            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
+            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
+            CompletableFuture<Boolean> replaceSharingTypesWithSitesJobFuture = jobDispatcher.executeNextJob();
+            replaceSharingTypesWithSitesJobFuture.get();
+
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
-            PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
-            jobDispatcher.enqueue(job);
-            jobDispatcher.executeNextJob();
-
+            PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
+            jobDispatcher.enqueue(privateSiteDataSyncJob);
+            CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
+            privateSiteDataSyncJobFuture.get();
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
