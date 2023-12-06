@@ -99,7 +99,7 @@ public class KeyAclService implements IService {
             // refresh manually
             keyAclProvider.loadContent();
 
-            final Site existingSite = RequestUtil.getSite(rc, "site_id", siteProvider);
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "site_id", siteProvider);
             if (existingSite == null) return;
 
             Boolean isWhitelist = RequestUtil.getKeyAclType(rc);
@@ -126,7 +126,7 @@ public class KeyAclService implements IService {
             // refresh manually
             keyAclProvider.loadContent();
 
-            final Site site = RequestUtil.getSite(rc, "site_id", siteProvider);
+            final Site site = RequestUtil.getSiteFromParam(rc, "site_id", siteProvider);
             if (site == null) return;
 
             final Map<Integer, EncryptionKeyAcl> collection = this.keyAclProvider.getSnapshot().getAllAcls();
