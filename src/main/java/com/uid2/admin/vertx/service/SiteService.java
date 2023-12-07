@@ -61,6 +61,8 @@ public class SiteService implements IService {
 
         router.get("/api/site/list").handler(
                 auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        router.get("/api/site/:siteId").handler(
+                auth.handle(this::handleSiteById, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
@@ -108,31 +110,7 @@ public class SiteService implements IService {
                     .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
             final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
             for (Site site : sites) {
-                JsonObject jo = new JsonObject();
-                ja.add(jo);
-
-                JsonArray domainNamesJa = new JsonArray();
-                site.getDomainNames().forEach(domainNamesJa::add);
-
-                jo.put("id", site.getId());
-                jo.put("name", site.getName());
-                jo.put("description", site.getDescription());
-                jo.put("enabled", site.isEnabled());
-                jo.put("clientTypes", site.getClientTypes());
-                jo.put("domain_names", domainNamesJa);
-                jo.put("visible", site.isVisible());
-                jo.put("created", site.getCreated());
-
-                JsonArray jr = new JsonArray();
-                List<LegacyClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
-                clients.stream()
-                        .map(LegacyClientKey::getRoles)
-                        .flatMap(Set::stream)
-                        .collect(Collectors.toSet())
-                        .forEach(jr::add);
-
-                jo.put("roles", jr);
-                jo.put("client_count", clients.size());
+                ja.add(createSiteJsonObject(site, clientKeys, emptySiteKeys));
             }
 
             rc.response()
@@ -143,6 +121,52 @@ public class SiteService implements IService {
         }
     }
 
+    private static JsonObject createSiteJsonObject(Site site, Map<Integer, List<LegacyClientKey>> clientKeys, List<LegacyClientKey> emptySiteKeys) {
+        JsonObject jo = new JsonObject();
+
+        JsonArray domainNamesJa = new JsonArray();
+        site.getDomainNames().forEach(domainNamesJa::add);
+
+        jo.put("id", site.getId());
+        jo.put("name", site.getName());
+        jo.put("description", site.getDescription());
+        jo.put("enabled", site.isEnabled());
+        jo.put("clientTypes", site.getClientTypes());
+        jo.put("domain_names", domainNamesJa);
+        jo.put("visible", site.isVisible());
+        jo.put("created", site.getCreated());
+
+        JsonArray jr = new JsonArray();
+        List<LegacyClientKey> clients = clientKeys.getOrDefault(site.getId(), emptySiteKeys);
+        clients.stream()
+                .map(LegacyClientKey::getRoles)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet())
+                .forEach(jr::add);
+
+        jo.put("roles", jr);
+        jo.put("client_count", clients.size());
+        return jo;
+    }
+
+    private void handleSiteById(RoutingContext rc) {
+        try {
+            final Site site = RequestUtil.getSiteFromUrl(rc, "siteId", this.siteProvider);
+            if (site == null) {
+                return;
+            }
+
+            final Map<Integer, List<LegacyClientKey>> clientKeys = this.legacyClientKeyProvider.getAll().stream()
+                    .collect(Collectors.groupingBy(LegacyClientKey::getSiteId));
+            final List<LegacyClientKey> emptySiteKeys = new ArrayList<>();
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(createSiteJsonObject(site, clientKeys, emptySiteKeys).encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
     private void handleSiteAdd(RoutingContext rc) {
         try {
             // refresh manually
@@ -212,7 +236,7 @@ public class SiteService implements IService {
 
     private void handleSiteTypesSet(RoutingContext rc) {
         try {
-            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "id", siteProvider);
             if (existingSite == null) {
                 return;
             }
@@ -242,7 +266,7 @@ public class SiteService implements IService {
             // refresh manually
             siteProvider.loadContent();
 
-            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "id", siteProvider);
             if (existingSite == null) {
                 return;
             }
@@ -278,7 +302,7 @@ public class SiteService implements IService {
             // refresh manually
             siteProvider.loadContent();
 
-            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "id", siteProvider);
             if (existingSite == null) {
                 return;
             }
@@ -311,7 +335,7 @@ public class SiteService implements IService {
             // refresh manually
             siteProvider.loadContent();
 
-            final Site existingSite = RequestUtil.getSite(rc, "id", siteProvider);
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "id", siteProvider);
             if (existingSite == null) {
                 return;
             }

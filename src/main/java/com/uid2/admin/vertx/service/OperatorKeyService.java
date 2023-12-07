@@ -373,7 +373,7 @@ public class OperatorKeyService implements IService {
             }
 
             if (!rc.queryParam("site_id").isEmpty()) {
-                final Site site = RequestUtil.getSite(rc, "site_id", this.siteProvider);
+                final Site site = RequestUtil.getSiteFromParam(rc, "site_id", this.siteProvider);
                 if (site == null) {
                     ResponseUtil.error(rc, 404, "site id not found");
                     return;
