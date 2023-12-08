@@ -22,8 +22,6 @@
     <input type="text" id="siteId" name="siteId">
     <label for="linkName">Link Name:</label>
     <input type="text" id="linkName" name="linkName">
-    <label for="roles">Roles:</label>
-    <input type="text" id="roles" name="roles">
 </div>
 
 <br>
@@ -80,7 +78,6 @@
                 $('#errorOutput').text("required parameters: link_id, service_id, site_id")
                 return
             }
-            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
             doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
         });
 
@@ -93,8 +90,7 @@
                 $('#errorOutput').text("required parameters: service_id, site_id, name")
                 return
             }
-            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles}));
+            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
         });
 
         $('#doDelete').on('click', function () {

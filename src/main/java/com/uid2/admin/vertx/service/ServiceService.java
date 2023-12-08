@@ -280,11 +280,13 @@ public class ServiceService implements IService {
         return jsonObject;
     }
 
-    private boolean siteExists(Integer siteId, String name, int serviceId) {
-        return ((siteId != null && siteId != 0 && name != null && !name.isEmpty())
-                && serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId && s.getSiteId() == siteId && s.getName().equals(name)));
-    }
     private boolean nameExists(String name) {
         return ((name != null && !name.isEmpty()) && serviceProvider.getAllServices().stream().anyMatch(s -> s.getName().equals(name)));
+    }
+
+    private boolean siteExists(Integer siteId, String name, int serviceId) {
+        return (siteId != null && siteId != 0 && name != null && !name.isEmpty())
+                && serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId
+                    && s.getSiteId() == siteId && s.getName().equals(name));
     }
 }

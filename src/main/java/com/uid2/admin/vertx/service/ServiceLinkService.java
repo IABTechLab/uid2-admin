@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ServiceLinkService implements IService {
@@ -93,9 +92,8 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            JsonArray rolesSpec = body.getJsonArray("roles");
-            if (linkId == null || serviceId == null || siteId == null || name == null || rolesSpec == null) {
-                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name, roles");
+            if (linkId == null || serviceId == null || siteId == null || name == null) {
+                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name");
                 return;
             }
 
@@ -108,19 +106,6 @@ public class ServiceLinkService implements IService {
                 ResponseUtil.error(rc, 404, "site_id " + siteId + " not valid");
                 return;
             }
-
-            final Set<Role> roles;
-            try {
-                roles = rolesSpec.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
-            } catch (IllegalArgumentException e) {
-                ResponseUtil.error(rc, 400, "invalid parameter: roles");
-                return;
-            }
-            Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
-            if (!serviceRoles.containsAll(roles)) {
-                ResponseUtil.error(rc, 400, "invalid parameter: roles");
-            }
-
 
             final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
                     .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
