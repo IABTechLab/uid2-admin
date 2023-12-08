@@ -192,7 +192,7 @@ public class ServiceService implements IService {
             }
 
             // check that this does not create a duplicate service
-            if (siteExists(siteId, name, serviceId)) {
+            if (siteHasService(siteId, name, serviceId)) {
                 ResponseUtil.error(rc, 400, "site_id " + siteId + " already has service of name " + name);
                 return;
             }
@@ -284,7 +284,7 @@ public class ServiceService implements IService {
         return ((name != null && !name.isEmpty()) && serviceProvider.getAllServices().stream().anyMatch(s -> s.getName().equals(name)));
     }
 
-    private boolean siteExists(Integer siteId, String name, int serviceId) {
+    private boolean siteHasService(Integer siteId, String name, int serviceId) {
         return (siteId != null && siteId != 0 && name != null && !name.isEmpty())
                 && serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId
                     && s.getSiteId() == siteId && s.getName().equals(name));
