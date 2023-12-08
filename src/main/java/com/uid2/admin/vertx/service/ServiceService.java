@@ -129,8 +129,7 @@ public class ServiceService implements IService {
                 return;
             }
 
-            boolean existsName = serviceProvider.getAllServices().stream().anyMatch(s -> s.getName().equals(name));
-            if (existsName) {
+            if (nameExists(name)) {
                 ResponseUtil.error(rc, 400, "service name " + name + " already exists");
                 return;
             }
@@ -193,21 +192,15 @@ public class ServiceService implements IService {
             }
 
             // check that this does not create a duplicate service
-            if (siteId != null && siteId != 0 && name != null && !name.isEmpty()) {
-                boolean exists = serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId && s.getSiteId() == siteId && s.getName().equals(name));
-                if (exists) {
-                    ResponseUtil.error(rc, 400, "site_id " + siteId + " already has service of name " + name);
-                    return;
-                }
+            if (siteExists(siteId, name, serviceId)) {
+                ResponseUtil.error(rc, 400, "site_id " + siteId + " already has service of name " + name);
+                return;
             }
 
             // check name is not duplicate
-            if (name != null && !name.isEmpty()) {
-                boolean existsName = serviceProvider.getAllServices().stream().anyMatch(s -> s.getName().equals(name));
-                if (existsName) {
-                    ResponseUtil.error(rc, 400, "service name " + name + " already exists");
-                    return;
-                }
+            if (nameExists(name)) {
+                ResponseUtil.error(rc, 400, "service name " + name + " already exists");
+                return;
             }
 
             if (rolesSpec != null) {
@@ -285,5 +278,13 @@ public class ServiceService implements IService {
         jsonObject.put("name", s.getName());
         jsonObject.put("roles", s.getRoles());
         return jsonObject;
+    }
+
+    private boolean siteExists(Integer siteId, String name, int serviceId) {
+        return ((siteId != null && siteId != 0 && name != null && !name.isEmpty())
+                && serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId && s.getSiteId() == siteId && s.getName().equals(name)));
+    }
+    private boolean nameExists(String name) {
+        return ((name != null && !name.isEmpty()) && serviceProvider.getAllServices().stream().anyMatch(s -> s.getName().equals(name)));
     }
 }
