@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ServiceLinkService implements IService {
@@ -92,6 +93,7 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
+            JsonArray rolesJson = body.getJsonArray("roles");
             if (linkId == null || serviceId == null || siteId == null || name == null) {
                 ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name");
                 return;
@@ -107,11 +109,35 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
+            Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
+            final Set<Role> roles;
+            if (rolesJson == null) {
+                // if no roles provided and service only allows for one role, populate automatically
+                if (serviceRoles.size() == 1) {
+                    roles = Set.copyOf(serviceRoles);
+                } else {
+                    ResponseUtil.error(rc, 400, "required parameter: roles");
+                    return;
+                }
+            } else {
+                try {
+                    roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
+                    return;
+                }
+                // roles must be a subset of roles allowed in service
+                if (!serviceRoles.containsAll(roles)) {
+                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(",")));
+                    return;
+                }
+            }
+
             final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
                     .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
                     .collect(Collectors.toList());
 
-            ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name);
+            ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name, roles);
 
             if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceLink.getServiceId() && sl.getLinkId().equals(serviceLink.getLinkId()))) {
                 ResponseUtil.error(rc, 400, "service link already exists");
@@ -128,7 +154,7 @@ public class ServiceLinkService implements IService {
         }
     }
 
-    // The only property that can be edited is the name.
+    // The only property that can be edited is the name and roles
     private void handleServiceLinkUpdate(RoutingContext rc) {
 
         try {
@@ -144,8 +170,9 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            if (siteId == null || serviceId == null || name == null || linkId == null || linkId.isEmpty()) {
-                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id, name");
+            JsonArray rolesJson = body.getJsonArray("roles");
+            if (siteId == null || serviceId == null || linkId == null || linkId.isEmpty()) {
+                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id");
                 return;
             }
 
@@ -172,7 +199,26 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
-            serviceLink.setName(name);
+            if (name != null && !name.isEmpty()) {
+                serviceLink.setName(name);
+            }
+
+            if (rolesJson != null) {
+                final Set<Role> roles;
+                try {
+                    roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
+                    return;
+                }
+                Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
+                // roles must be a subset of roles allowed in service
+                if (!serviceRoles.containsAll(roles)) {
+                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(",")));
+                    return;
+                }
+                serviceLink.setRoles(roles);
+            }
 
             storeWriter.upload(serviceLinks, null);
 
