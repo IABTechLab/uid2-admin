@@ -19,8 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class ServiceLinkServiceTest extends ServiceTestBase {
@@ -186,25 +185,153 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLink(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLinkOneRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link1");
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
+        JsonArray rolesJson = new JsonArray();
+        rolesJson.add(Role.CLIENTKEY_ISSUER);
+        jo.put("roles", rolesJson);
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLinkEmptyRoleWithSingleAllowed(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER)));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", null);
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLinkSubsetRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.CLIENTKEY_ISSUER, Role.SHARER, Role.OPTOUT)));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        JsonArray rolesJson = new JsonArray();
+        rolesJson.add(Role.MAPPER);
+        rolesJson.add(Role.SHARER);
+        jo.put("roles", rolesJson);
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            testContext.completeNow();
+        });
+    }
+    @Test
+    void addServiceLinkIllegalRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.CLIENTKEY_ISSUER, Role.SHARER, Role.OPTOUT)));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        JsonArray rolesJson = new JsonArray();
+        rolesJson.add("IllegalRole");
+        jo.put("roles", rolesJson);
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLinkEmptyRoleWithMultipleAllowed(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", null);
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameter: roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLinkRoleNotInSubset(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        JsonArray rolesJson = new JsonArray();
+        rolesJson.add(Role.ADMINISTRATOR);
+        jo.put("roles", rolesJson);
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("roles allowed: "));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
     }
@@ -218,7 +345,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
         setServiceLinks(existingLink);
 
-        ServiceLink expected = new ServiceLink("link2", 1, 123, "name1");
+        ServiceLink expected = new ServiceLink("link2", 1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link2");
@@ -262,12 +389,12 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateNameSucceeds(Vertx vertx, VertxTestContext testContext) {
+    void updateNameSucceedsNoRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
-        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -276,13 +403,124 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "newname");
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname");
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.MAPPER));
 
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateRoleSucceeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("roles", JsonArray.of(Role.SHARER));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.SHARER));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateRoleAndName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of(Role.MAPPER, Role.SHARER));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.MAPPER, Role.SHARER));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateIllegalRole(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of("IllegalRole"));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname");
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid parameter: roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateRoleNotInServiceRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of(Role.ADMINISTRATOR));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.ADMINISTRATOR));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("roles allowed: "));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
 
             testContext.completeNow();
         });

@@ -128,7 +128,7 @@ public class ServiceLinkService implements IService {
                 }
                 // roles must be a subset of roles allowed in service
                 if (!serviceRoles.containsAll(roles)) {
-                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(",")));
+                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
                     return;
                 }
             }
