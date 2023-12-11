@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 public class PrivateSiteDataRefreshService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
 
@@ -55,8 +57,10 @@ public class PrivateSiteDataRefreshService implements IService {
         try {
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
+
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
+
             rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -68,10 +72,14 @@ public class PrivateSiteDataRefreshService implements IService {
         try {
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
-            jobDispatcher.executeNextJob();
-            PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
-            jobDispatcher.enqueue(job);
-            jobDispatcher.executeNextJob();
+            CompletableFuture<Boolean> replaceSharingTypesWithSitesJobFuture = jobDispatcher.executeNextJob();
+            replaceSharingTypesWithSitesJobFuture.get();
+
+            PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
+            jobDispatcher.enqueue(privateSiteDataSyncJob);
+            CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
+            privateSiteDataSyncJobFuture.get();
+
             rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
