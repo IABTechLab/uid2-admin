@@ -229,6 +229,28 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void addServiceDuplicateName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "serviceName1", Set.of(Role.ID_READER)));
+
+        setSites(new Site(456, "name2", false));
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 456);
+        jo.put("name", "serviceName1");
+        jo.put("roles", new JsonArray());
+
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("service name serviceName1 already exists", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void addServiceBadRoles(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -534,6 +556,27 @@ public class ServiceServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("site_id 123 already has service of name name1", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateServiceDuplicateName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService1 = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService2 = new Service(2, 789, "name2", Set.of(Role.CLIENTKEY_ISSUER));
+        setServices(existingService1, existingService2);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 2);
+        jo.put("site_id", 789);
+        jo.put("name", "name1");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("service name name1 already exists", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
