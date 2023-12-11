@@ -24,8 +24,7 @@
     "created": 1701210253,
     "disabled": false,
     "roles": [
-      "OPERATOR",
-      "OPTOUT"
+      "OPERATOR"
     ],
     "site_id": 999,
     "operator_type": "PRIVATE",
