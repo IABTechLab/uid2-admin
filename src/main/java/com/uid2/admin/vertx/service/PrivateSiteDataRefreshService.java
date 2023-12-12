@@ -44,11 +44,8 @@ public class PrivateSiteDataRefreshService implements IService {
                 //can be other role
                 Role.ADMINISTRATOR, Role.SECRET_MANAGER));
 
-        router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle((ctx) -> {
-                    synchronized (writeLock) {
-                        this.handlePrivateSiteDataGenerateNow(ctx);
-                    }
-                },
+        router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle(
+                this::handlePrivateSiteDataGenerateNow,
                 //can be other role
                 Role.ADMINISTRATOR, Role.SECRET_MANAGER));
     }
