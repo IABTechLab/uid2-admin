@@ -8,6 +8,7 @@ import com.uid2.shared.model.Service;
 import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.model.Site;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
@@ -69,10 +70,10 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         fakeAuth(Role.ADMINISTRATOR);
 
         ServiceLink[] expectedServiceLinks = {
-                new ServiceLink("link1", 1, 123, "name1"),
-                new ServiceLink("link2", 1, 123, "name2"),
-                new ServiceLink("link3", 2, 124, "name3"),
-                new ServiceLink("link4", 3, 125, "name4"),
+                new ServiceLink("link1", 1, 123, "name1", null),
+                new ServiceLink("link2", 1, 123, "name2", null),
+                new ServiceLink("link3", 2, 124, "name3", null),
+                new ServiceLink("link4", 3, 125, "name4", null),
         };
 
         setServiceLinks(expectedServiceLinks);
@@ -167,7 +168,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        setServiceLinks(new ServiceLink("link1", 1, 123, "name1"));
+        setServiceLinks(new ServiceLink("link1", 1, 123, "name1", null));
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link1");
@@ -198,15 +199,38 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
-        JsonArray rolesJson = new JsonArray();
-        rolesJson.add(Role.CLIENTKEY_ISSUER);
-        jo.put("roles", rolesJson);
+        jo.put("roles", JsonArray.of(Role.CLIENTKEY_ISSUER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             checkServiceLinkJson(expected, response.bodyAsJsonObject());
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLinkMissingRole(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", null);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", new JsonArray());
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameter: roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
     }
@@ -250,10 +274,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
-        JsonArray rolesJson = new JsonArray();
-        rolesJson.add(Role.MAPPER);
-        rolesJson.add(Role.SHARER);
-        jo.put("roles", rolesJson);
+        jo.put("roles", JsonArray.of(Role.MAPPER, Role.SHARER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
@@ -275,9 +296,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
-        JsonArray rolesJson = new JsonArray();
-        rolesJson.add("IllegalRole");
-        jo.put("roles", rolesJson);
+        jo.put("roles", JsonArray.of("IllegalRole"));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -323,9 +342,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
-        JsonArray rolesJson = new JsonArray();
-        rolesJson.add(Role.ADMINISTRATOR);
-        jo.put("roles", rolesJson);
+        jo.put("roles", JsonArray.of(Role.ADMINISTRATOR));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -342,7 +359,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         ServiceLink expected = new ServiceLink("link2", 1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
@@ -368,7 +385,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -377,7 +394,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "newName");
 
-        ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName");
+        ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName", null);
 
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -486,7 +503,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("name", "newname");
         jo.put("roles", JsonArray.of("IllegalRole"));
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname");
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", null);
 
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -532,7 +549,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -554,9 +571,9 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
-        ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2");
-        ServiceLink existingLink3 = new ServiceLink("link3", 1, 123, "name3");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
+        ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2", null);
+        ServiceLink existingLink3 = new ServiceLink("link3", 1, 123, "name3", null);
         setServiceLinks(existingLink, existingLink2, existingLink3);
 
         JsonObject jo = new JsonObject();
@@ -578,7 +595,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -601,7 +618,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();

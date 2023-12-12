@@ -111,7 +111,7 @@ public class ServiceLinkService implements IService {
 
             Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
             final Set<Role> roles;
-            if (rolesJson == null) {
+            if (rolesJson == null || rolesJson.isEmpty()) {
                 // if no roles provided and service only allows for one role, populate automatically
                 if (serviceRoles.size() == 1) {
                     roles = Set.copyOf(serviceRoles);
@@ -203,7 +203,7 @@ public class ServiceLinkService implements IService {
                 serviceLink.setName(name);
             }
 
-            if (rolesJson != null) {
+            if (rolesJson != null && !rolesJson.isEmpty()) {
                 final Set<Role> roles;
                 try {
                     roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
@@ -214,7 +214,7 @@ public class ServiceLinkService implements IService {
                 Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
                 // roles must be a subset of roles allowed in service
                 if (!serviceRoles.containsAll(roles)) {
-                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(",")));
+                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
                     return;
                 }
                 serviceLink.setRoles(roles);
@@ -272,6 +272,7 @@ public class ServiceLinkService implements IService {
         jsonObject.put("service_id", s.getServiceId());
         jsonObject.put("site_id", s.getSiteId());
         jsonObject.put("name", s.getName());
+        jsonObject.put("roles", s.getRoles());
         return jsonObject;
     }
 }
