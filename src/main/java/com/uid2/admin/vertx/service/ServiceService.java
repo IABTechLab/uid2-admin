@@ -6,6 +6,7 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
+import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.store.reader.RotatingServiceLinkStore;
 import com.uid2.shared.store.reader.RotatingServiceStore;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -204,17 +205,15 @@ public class ServiceService implements IService {
                     ResponseUtil.error(rc, 400, "invalid parameter: roles");
                     return;
                 }
-                // check if role is removed, that it is no longer in use by service links
-                Set<Role> removedRoles = service.getRoles().stream().filter(r -> !roles.contains(r)).collect(Collectors.toSet());
-                boolean removedRolesNotInUse = serviceLinkProvider.getAllServiceLinks().stream().filter(sl -> sl.getServiceId() == serviceId)
-                        .allMatch(sl -> Collections.disjoint(sl.getRoles(), removedRoles));
-                if (removedRolesNotInUse) {
-                    service.setRoles(roles);
-                } else {
-                    ResponseUtil.error(rc, 400, "roles: " + removedRoles.stream().map(Role::toString).collect(Collectors.joining(", ")) + " may still be in use");
-                    return;
+                // check that if role is removed, it is no longer in use by service links
+                Set<Role> rolesToRemove = service.getRoles().stream().filter(r -> !roles.contains(r)).collect(Collectors.toSet());
+                for (ServiceLink sl : serviceLinkProvider.getAllServiceLinks()) {
+                    if (sl.getServiceId() == serviceId && !Collections.disjoint(sl.getRoles(), rolesToRemove)) {
+                        ResponseUtil.error(rc, 400, "roles: " + rolesToRemove.stream().map(Role::toString).collect(Collectors.joining(", ")) + " may still be in use");
+                        return;
+                    }
                 }
-
+                service.setRoles(roles);
             }
 
             if (siteId != null && siteId != 0) {

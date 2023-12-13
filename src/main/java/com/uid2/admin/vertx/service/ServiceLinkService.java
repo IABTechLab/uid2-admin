@@ -115,20 +115,18 @@ public class ServiceLinkService implements IService {
             }
 
             Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
-            final Set<Role> roles;
+
             if (rolesJson == null || rolesJson.isEmpty()) {
-                // if no roles provided and service only allows for one role, populate automatically
-                if (serviceRoles.size() == 1) {
-                    roles = Set.copyOf(serviceRoles);
-                } else {
-                    ResponseUtil.error(rc, 400, "required parameter: roles");
-                    return;
-                }
-            } else {
-                roles = getValidRoles(rolesJson, serviceRoles, rc);
-                if (roles == null) {
-                    return;
-                }
+                ResponseUtil.error(rc, 400, "required parameter: roles. Roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+                return;
+            }
+
+            final Set<Role> roles;
+            try {
+                roles = validateRoles(rolesJson, serviceRoles);
+            } catch (IllegalArgumentException e) {
+                ResponseUtil.error(rc, 400, e.getMessage());
+                return;
             }
 
             final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
@@ -202,8 +200,11 @@ public class ServiceLinkService implements IService {
             }
 
             if (rolesJson != null && !rolesJson.isEmpty()) {
-                final Set<Role> roles = getValidRoles(rolesJson, serviceProvider.getService(serviceId).getRoles(), rc);
-                if (roles == null) {
+                final Set<Role> roles;
+                try {
+                    roles = validateRoles(rolesJson, serviceProvider.getService(serviceId).getRoles());
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.error(rc, 400, e.getMessage());
                     return;
                 }
                 serviceLink.setRoles(roles);
@@ -266,18 +267,16 @@ public class ServiceLinkService implements IService {
     }
 
     /** Given roles in json, return a set of valid roles. If roles are invalid, return null. **/
-    private Set<Role> getValidRoles(JsonArray rolesJson, Set<Role> serviceRoles, RoutingContext rc) {
+    private Set<Role> validateRoles(JsonArray rolesToValidate, Set<Role> serviceRoles) {
         Set<Role> roles;
         try {
-            roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+            roles = rolesToValidate.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            ResponseUtil.error(rc, 400, "invalid parameter: roles");
-            return null;
+            throw new IllegalArgumentException("invalid parameter: roles. Roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
         }
         // roles must be a subset of roles allowed in service
         if (!serviceRoles.containsAll(roles)) {
-            ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
-            return null;
+            throw new IllegalArgumentException("roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
         }
         return roles;
     }
