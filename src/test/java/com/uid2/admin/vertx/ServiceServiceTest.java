@@ -5,6 +5,7 @@ import com.uid2.admin.vertx.service.ServiceService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Service;
+import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.model.Site;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -26,7 +27,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        return new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider);
+        return new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider, serviceLinkProvider);
     }
 
     private void checkServiceResponse(Service[] expectedServices, JsonArray actualServices) {
@@ -414,6 +415,53 @@ public class ServiceServiceTest extends ServiceTestBase {
             existingService.setRoles(Set.of(Role.GENERATOR, Role.ADMINISTRATOR));
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void removeRolesNotUsedByServiceLinks(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER));
+        setServices(existingService);
+        ServiceLink sl1 = new ServiceLink("abc123", 1, 123, "link1", Set.of(Role.MAPPER));
+        ServiceLink sl2 = new ServiceLink("cde", 1, 123, "link2", Set.of(Role.MAPPER, Role.SHARER));
+        ServiceLink sl3 = new ServiceLink("ghi789", 1, 123, "link3", Set.of(Role.SHARER));
+        setServiceLinks(sl1, sl2, sl3);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("roles", JsonArray.of("MAPPER", "SHARER"));
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setRoles(Set.of(Role.MAPPER, Role.SHARER));
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void removeRolesUsedByServiceLinks(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER));
+        setServices(existingService);
+        ServiceLink sl1 = new ServiceLink("abc123", 1, 123, "link1", Set.of(Role.MAPPER));
+        ServiceLink sl2 = new ServiceLink("cde", 1, 123, "link2", Set.of(Role.MAPPER, Role.SHARER));
+        ServiceLink sl3 = new ServiceLink("ghi789", 1, 123, "link3", Set.of(Role.SHARER));
+        setServiceLinks(sl1, sl2, sl3);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("roles", JsonArray.of("CLIENTKEY_ISSUER", "SHARER"));
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("roles: MAPPER may still be in use", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
     }

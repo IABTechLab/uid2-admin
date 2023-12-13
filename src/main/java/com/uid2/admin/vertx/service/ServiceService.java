@@ -6,6 +6,7 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
+import com.uid2.shared.store.reader.RotatingServiceLinkStore;
 import com.uid2.shared.store.reader.RotatingServiceStore;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
@@ -16,10 +17,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ServiceService implements IService {
@@ -29,18 +27,21 @@ public class ServiceService implements IService {
     private final StoreWriter<Collection<Service>> storeWriter;
     private final RotatingServiceStore serviceProvider;
     private final RotatingSiteStore siteProvider;
+    private final RotatingServiceLinkStore serviceLinkProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceService.class);
 
     public ServiceService(AuthMiddleware auth,
                           WriteLock writeLock,
                           StoreWriter<Collection<Service>> storeWriter,
                           RotatingServiceStore serviceProvider,
-                          RotatingSiteStore siteProvider) {
+                          RotatingSiteStore siteProvider,
+                          RotatingServiceLinkStore serviceLinkProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.serviceProvider = serviceProvider;
         this.siteProvider = siteProvider;
+        this.serviceLinkProvider = serviceLinkProvider;
     }
 
     @Override
@@ -203,7 +204,17 @@ public class ServiceService implements IService {
                     ResponseUtil.error(rc, 400, "invalid parameter: roles");
                     return;
                 }
-                service.setRoles(roles);
+                // check if role is removed, that it is no longer in use by service links
+                Set<Role> removedRoles = service.getRoles().stream().filter(r -> !roles.contains(r)).collect(Collectors.toSet());
+                boolean removedRolesNotInUse = serviceLinkProvider.getAllServiceLinks().stream().filter(sl -> sl.getServiceId() == serviceId)
+                        .allMatch(sl -> Collections.disjoint(sl.getRoles(), removedRoles));
+                if (removedRolesNotInUse) {
+                    service.setRoles(roles);
+                } else {
+                    ResponseUtil.error(rc, 400, "roles: " + removedRoles.stream().map(Role::toString).collect(Collectors.joining(", ")) + " may still be in use");
+                    return;
+                }
+
             }
 
             if (siteId != null && siteId != 0) {
@@ -217,6 +228,7 @@ public class ServiceService implements IService {
             final List<Service> services = this.serviceProvider.getAllServices()
                     .stream().sorted(Comparator.comparingInt(Service::getServiceId))
                     .collect(Collectors.toList());
+
 
             storeWriter.upload(services, null);
 
