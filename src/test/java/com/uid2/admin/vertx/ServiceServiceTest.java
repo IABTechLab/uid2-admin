@@ -420,7 +420,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void removeRolesNotUsedByServiceLinks(Vertx vertx, VertxTestContext testContext) {
+    void updateService_removeRolesNotUsedByServiceLinks_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER));
@@ -444,7 +444,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void removeRolesUsedByServiceLinks(Vertx vertx, VertxTestContext testContext) {
+    void updateService_removeRolesInUseByServiceLinks_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER));

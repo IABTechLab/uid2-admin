@@ -51,7 +51,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listLinksNoLinks(Vertx vertx, VertxTestContext testContext) {
+    void listLinks_NoLinks_ReturnsEmptyArray(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         get(vertx, testContext, "api/service_link/list", response -> {
@@ -65,7 +65,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listLinksMultipleLinks(Vertx vertx, VertxTestContext testContext) {
+    void listLinks_MultipleLinks_ReturnsAllLinks(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         ServiceLink[] expectedServiceLinks = {
@@ -87,7 +87,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addLinkMissingPayload(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_MissingPayload_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         postWithoutBody(vertx, testContext, "api/service_link/add", response -> {
                     assertEquals(400, response.statusCode());
@@ -101,7 +101,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @ValueSource(strings = {"link_id", "service_id", "site_id", "name"})
-    void addServiceLinkMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_MissingParameters_ReturnsError(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         JsonObject jo = new JsonObject();
@@ -122,7 +122,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkBadServiceId(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_InvalidServiceId_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         JsonObject jo = new JsonObject();
@@ -141,7 +141,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkBadSiteId(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_InvalidSiteId_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
@@ -162,7 +162,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addDuplicateServiceLinkFails(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_DuplicateServiceLink_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -185,7 +185,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkOneRole(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_AllFieldsValid_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -210,7 +210,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkMissingRole(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_EmptyRoleWithMultipleAllowed_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -235,7 +235,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkEmptyRoleWithSingleAllowed(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_EmptyRoleWithSingleAllowed_PopulatesRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -260,7 +260,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkSubsetRoles(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_RolesSubsetOfAllowedRoles_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -284,7 +284,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         });
     }
     @Test
-    void addServiceLinkIllegalRoles(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_RoleDoesNotExist_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -307,30 +307,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkEmptyRoleWithMultipleAllowed(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
-
-        setSites(new Site(123, "name1", false));
-        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
-
-        JsonObject jo = new JsonObject();
-        jo.put("link_id", "link1");
-        jo.put("service_id", 1);
-        jo.put("site_id", 123);
-        jo.put("name", "name1");
-        jo.put("roles", null);
-
-        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
-            assertEquals(400, response.statusCode());
-            assertEquals("required parameter: roles", response.bodyAsJsonObject().getString("message"));
-            verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(null, null);
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void addServiceLinkRoleNotInSubset(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_RoleNotInSubset_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -353,7 +330,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkToExistingList(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_AddToExistingList_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -379,7 +356,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateNameAndLinkIdFails(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_NameAndLinkIdDoesNotExist_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -405,7 +382,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateNameSucceedsNoRole(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_UpdateNameOnly_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -432,7 +409,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateRoleSucceeds(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_UpdateRoleOnly_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -459,7 +436,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateRoleAndName(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_UpdateRoleAndName_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -487,7 +464,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateIllegalRole(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_RoleDoesNotExist_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -515,7 +492,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateRoleNotInServiceRoles(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_RoleNotAllowedInServiceRoles_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -543,7 +520,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteLinkId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_OneServiceLinkExists_Succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -565,7 +542,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteOneLinkId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_MultipleServiceLinksExist_CorrectServiceLinkDeleted(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -589,7 +566,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteWrongLinkId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_InvalidLinkId_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -612,7 +589,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteWrongServiceId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_InvalidServiceId_ReturnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
