@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.okta.jwt.Jwt;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.service.IService;
@@ -8,17 +9,11 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.vertx.ext.auth.authentication.TokenCredentials;
-import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
@@ -63,20 +58,17 @@ public class AdminVerticle extends AbstractVerticle {
     private Router createRoutesSetup() {
         final Router router = Router.router(vertx);
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
-
-        final OAuth2Auth oauth2Provider = (OAuth2Auth) authFactory.createAuthProvider(vertx);
-        final AuthenticationHandler authHandler = authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"), oauth2Provider);
-
+        final AuthenticationHandler oktaHandler = this.authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"));
         router.route().handler(BodyHandler.create());
         router.route().handler(StaticHandler.create("webroot"));
 
-        router.route("/login").handler(authHandler);
-        router.route("/adm/*").handler(authHandler);
+        router.route("/login").handler(oktaHandler);
+        router.route("/adm/*").handler(oktaHandler); 
 
         router.get("/login").handler(new RedirectToRootHandler(false));
         router.get("/logout").handler(new RedirectToRootHandler(true));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
-        router.get("/api/token/get").handler(ctx -> handleTokenGet(ctx, oauth2Provider));
+        router.get("/api/token/get").handler(ctx -> handleTokenGet(ctx));
         router.get("/protected").handler(this::handleProtected);
 
         for (IService service : this.services) {
@@ -94,51 +86,32 @@ public class AdminVerticle extends AbstractVerticle {
         rc.response().end("OK");
     }
 
-    private void handleTokenGet(RoutingContext rc, OAuth2Auth oauth2Provider) {
+    private void handleTokenGet(RoutingContext rc) {
         if (isAuthDisabled(config)) {
             respondWithTestAdminUser(rc);
         } else {
-            respondWithRealUser(rc, oauth2Provider);
+            respondWithRealUser(rc);
         }
     }
 
-    private void respondWithRealUser(RoutingContext rc, OAuth2Auth oauth2Provider) {
-        if (rc.user() != null) {
-            oauth2Provider.userInfo(rc.user())
-                    .onFailure(e -> {
-                        rc.session().destroy();
-                        rc.fail(e);
-                    })
-                    .onSuccess(userInfo -> {
-                        String contact = userInfo.getString("email");
-                        if (contact == null) {
-                            WebClient.create(rc.vertx())
-                                    .getAbs("https://api.github.com/user/emails")
-                                    .authentication(new TokenCredentials(rc.user().<String>get("access_token")))
-                                    .as(BodyCodec.jsonArray())
-                                    .send()
-                                    .onFailure(e -> {
-                                        rc.session().destroy();
-                                        rc.fail(e);
-                                    })
-                                    .onSuccess(res -> {
-                                        JsonArray emails = res.body();
-                                        if (emails.size() > 0) {
-                                            final String publicEmail = emails.getJsonObject(0).getString("email");
-                                            handleEmailContactInfo(rc, publicEmail);
-                                        } else {
-                                            LOGGER.error("No public emails");
-                                            rc.fail(new Throwable("No public emails"));
-                                        }
-                                    });
-                        } else {
-                            handleEmailContactInfo(rc, contact);
-                        }
-                    });
+    private void respondWithRealUser(RoutingContext rc) {
+        //Need to get email from claim and not query for OKta lofin
+        if ( !getEmailClaim(rc).equals("")) {
+            handleEmailContactInfo(rc, getEmailClaim(rc));
         } else {
             rc.response().setStatusCode(401).end("Not logged in");
         }
     }
+
+    String getEmailClaim(RoutingContext ctx) {
+        try {
+            var access_token = ctx.user().principal().getString("id_token");
+            Jwt jwt = this.authFactory.createTokenVerifier().decode(access_token);
+            return jwt.getClaims().get("email").toString().replace("unifiedid", "thetradedesk");
+        } catch (Exception e) {
+            return "";
+        } 
+     }
 
     private void respondWithTestAdminUser(RoutingContext rc) {
         // This test user is set up in localstack

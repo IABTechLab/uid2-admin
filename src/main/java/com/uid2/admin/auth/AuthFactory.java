@@ -1,11 +1,12 @@
 package com.uid2.admin.auth;
 
+import com.okta.jwt.AccessTokenVerifier;
+
 import io.vertx.core.Vertx;
-import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 
 public interface AuthFactory {
-    AuthenticationHandler createAuthHandler(Vertx vertx, Route callbackRoute, AuthenticationProvider authProvider);
-    AuthenticationProvider createAuthProvider(Vertx vertx);
+    AuthenticationHandler createAuthHandler(Vertx vertx, Route callbackRoute);
+    AccessTokenVerifier createTokenVerifier();
 }

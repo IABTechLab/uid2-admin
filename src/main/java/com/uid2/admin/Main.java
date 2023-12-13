@@ -2,7 +2,7 @@ package com.uid2.admin;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.admin.auth.GithubAuthFactory;
+import com.uid2.admin.auth.OktaAuthFactory;
 import com.uid2.admin.auth.AuthFactory;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
@@ -82,7 +82,7 @@ public class Main {
     public void run() {
         try {
             boolean enableKeysets = config.getBoolean(enableKeysetConfigProp);
-            AuthFactory authFactory = new GithubAuthFactory(config);
+            AuthFactory authFactory = new OktaAuthFactory(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
             ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
