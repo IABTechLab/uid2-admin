@@ -96,7 +96,7 @@ public class AdminVerticle extends AbstractVerticle {
 
     private void respondWithRealUser(RoutingContext rc) {
         //Need to get email from claim and not query for OKta lofin
-        if ( !getEmailClaim(rc).equals("")) {
+        if (getEmailClaim(rc) != null) {
             handleEmailContactInfo(rc, getEmailClaim(rc));
         } else {
             rc.response().setStatusCode(401).end("Not logged in");
@@ -109,7 +109,7 @@ public class AdminVerticle extends AbstractVerticle {
             Jwt jwt = this.authFactory.createTokenVerifier().decode(access_token);
             return jwt.getClaims().get("email").toString().replace("unifiedid", "thetradedesk");
         } catch (Exception e) {
-            return "";
+            return null;
         } 
      }
 
