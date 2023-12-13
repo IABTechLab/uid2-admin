@@ -109,6 +109,11 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
+            if (name.isEmpty()) {
+                ResponseUtil.error(rc, 400, "name cannot be empty");
+                return;
+            }
+
             Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
             final Set<Role> roles;
             if (rolesJson == null || rolesJson.isEmpty()) {
@@ -120,15 +125,8 @@ public class ServiceLinkService implements IService {
                     return;
                 }
             } else {
-                try {
-                    roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
-                } catch (IllegalArgumentException e) {
-                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
-                    return;
-                }
-                // roles must be a subset of roles allowed in service
-                if (!serviceRoles.containsAll(roles)) {
-                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+                roles = getValidRoles(rolesJson, serviceRoles, rc);
+                if (roles == null) {
                     return;
                 }
             }
@@ -156,7 +154,6 @@ public class ServiceLinkService implements IService {
 
     // The only property that can be edited is the name and roles
     private void handleServiceLinkUpdate(RoutingContext rc) {
-
         try {
             siteProvider.loadContent();
             serviceProvider.loadContent();
@@ -171,6 +168,7 @@ public class ServiceLinkService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             JsonArray rolesJson = body.getJsonArray("roles");
+
             if (siteId == null || serviceId == null || linkId == null || linkId.isEmpty()) {
                 ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id");
                 return;
@@ -204,17 +202,8 @@ public class ServiceLinkService implements IService {
             }
 
             if (rolesJson != null && !rolesJson.isEmpty()) {
-                final Set<Role> roles;
-                try {
-                    roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
-                } catch (IllegalArgumentException e) {
-                    ResponseUtil.error(rc, 400, "invalid parameter: roles");
-                    return;
-                }
-                Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
-                // roles must be a subset of roles allowed in service
-                if (!serviceRoles.containsAll(roles)) {
-                    ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+                final Set<Role> roles = getValidRoles(rolesJson, serviceProvider.getService(serviceId).getRoles(), rc);
+                if (roles == null) {
                     return;
                 }
                 serviceLink.setRoles(roles);
@@ -274,5 +263,22 @@ public class ServiceLinkService implements IService {
         jsonObject.put("name", s.getName());
         jsonObject.put("roles", s.getRoles());
         return jsonObject;
+    }
+
+    /** Given roles in json, return a set of valid roles. If roles are invalid, return null. **/
+    private Set<Role> getValidRoles(JsonArray rolesJson, Set<Role> serviceRoles, RoutingContext rc) {
+        Set<Role> roles;
+        try {
+            roles = rolesJson.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.error(rc, 400, "invalid parameter: roles");
+            return null;
+        }
+        // roles must be a subset of roles allowed in service
+        if (!serviceRoles.containsAll(roles)) {
+            ResponseUtil.error(rc, 400, "roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+            return null;
+        }
+        return roles;
     }
 }
