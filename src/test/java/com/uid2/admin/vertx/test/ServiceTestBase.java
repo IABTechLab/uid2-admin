@@ -56,7 +56,7 @@ public abstract class ServiceTestBase {
     protected AuthMiddleware auth;
 
     @Mock protected AuthenticationHandler authHandler;
-    @Mock protected AuthFactory authFactory;
+    @Mock protected AuthProvider authProvider;
 
     @Mock protected FileManager fileManager;
     @Mock protected AdminUserStoreWriter adminUserStoreWriter;
@@ -102,7 +102,7 @@ public abstract class ServiceTestBase {
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         mocks = MockitoAnnotations.openMocks(this);
-        when(authFactory.createAuthHandler(any(), any())).thenReturn(authHandler);
+        when(authProvider.createAuthHandler(any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
         when(keysetKeyProvider.getSnapshot()).thenReturn(keysetKeyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
@@ -117,7 +117,7 @@ public abstract class ServiceTestBase {
 
         auth = new AuthMiddleware(this.adminUserProvider);
         IService[] services = {createService()};
-        AdminVerticle verticle = new AdminVerticle(config, authFactory, adminUserProvider, services, null);
+        AdminVerticle verticle = new AdminVerticle(config, authProvider, adminUserProvider, services, null);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
