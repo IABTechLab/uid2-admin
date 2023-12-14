@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GithubAuthFactoryTest {
+class OktaAuthFactoryTest {
     Vertx vertx = mock(Vertx.class);
     Route route = mock(Route.class);
     OAuth2Auth provider = mock(OAuth2Auth.class);
@@ -27,25 +27,25 @@ class GithubAuthFactoryTest {
     public void buildsRealAuthHandlerWhenAuthIsEnabled() {
         JsonObject config = new JsonObject();
         config.put("is_auth_disabled", false);
-        config.put("github_client_id", "id1");
-        config.put("github_client_secret", "secret1");
-        config.put("oauth2_callback_url", "http://localhost/oauth2-callback");
+        config.put("okta_client_id", "id1");
+        config.put("okta_client_secret", "secret1");
+        config.put("okta_issuer", "http://uid2.okta.com");
+        config.put("okta_callback", "http://localhost/oauth2-callbac");
 
-        GithubAuthFactory factory = new GithubAuthFactory(config);
-        AuthenticationHandler handler = factory.createAuthHandler(vertx, route, provider);
-
+        OktaAuthFactory factory = new OktaAuthFactory(config);
+        AuthenticationHandler handler = factory.createAuthHandler(vertx, route);
         assertEquals(handler.getClass(), OAuth2AuthHandlerImpl.class);
     }
 
     @Test
     public void buildsRealAuthHandlerWhenAuthIsNotInTheConfig() {
         JsonObject config = new JsonObject();
-        config.put("github_client_id", "id1");
-        config.put("github_client_secret", "secret1");
-        config.put("oauth2_callback_url", "http://localhost/oauth2-callback");
-
-        GithubAuthFactory factory = new GithubAuthFactory(config);
-        AuthenticationHandler handler = factory.createAuthHandler(vertx, route, provider);
+        config.put("okta_client_id", "id1");
+        config.put("okta_client_secret", "secret1");
+        config.put("okta_issuer", "http://uid2.okta.com");
+        config.put("okta_callback", "http://localhost/oauth2-callbac");
+        OktaAuthFactory factory = new OktaAuthFactory(config);
+        AuthenticationHandler handler = factory.createAuthHandler(vertx, route);
 
         assertEquals(handler.getClass(), OAuth2AuthHandlerImpl.class);
     }
@@ -55,8 +55,8 @@ class GithubAuthFactoryTest {
         JsonObject config = new JsonObject();
         config.put("is_auth_disabled", true);
 
-        GithubAuthFactory factory = new GithubAuthFactory(config);
-        AuthenticationHandler handler = factory.createAuthHandler(vertx, route, provider);
+        OktaAuthFactory factory = new OktaAuthFactory(config);
+        AuthenticationHandler handler = factory.createAuthHandler(vertx, route);
 
         assertEquals(handler.getClass(), NoopAuthHandler.class);
     }

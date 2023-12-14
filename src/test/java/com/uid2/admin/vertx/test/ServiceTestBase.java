@@ -102,7 +102,7 @@ public abstract class ServiceTestBase {
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         mocks = MockitoAnnotations.openMocks(this);
-        when(authFactory.createAuthHandler(any(), any(), any())).thenReturn(authHandler);
+        when(authFactory.createAuthHandler(any(), any())).thenReturn(authHandler);
         when(keyProvider.getSnapshot()).thenReturn(keyProviderSnapshot);
         when(keysetKeyProvider.getSnapshot()).thenReturn(keysetKeyProviderSnapshot);
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
