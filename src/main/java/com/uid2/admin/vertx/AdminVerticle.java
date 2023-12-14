@@ -23,19 +23,19 @@ public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
 
     private final JsonObject config;
-    private final AuthFactory authFactory;
+    private final AuthProvider authProvider;
     private final IAdminUserProvider adminUserProvider;
     private final IService[] services;
     private final V2Router v2Router;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
     public AdminVerticle(JsonObject config,
-                         AuthFactory authFactory,
+                         AuthProvider authProvider,
                          IAdminUserProvider adminUserProvider,
                          IService[] services,
                          V2Router v2Router) {
         this.config = config;
-        this.authFactory = authFactory;
+        this.authProvider = authProvider;
         this.adminUserProvider = adminUserProvider;
         this.services = services;
         this.v2Router = v2Router;
@@ -58,7 +58,7 @@ public class AdminVerticle extends AbstractVerticle {
     private Router createRoutesSetup() {
         final Router router = Router.router(vertx);
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
-        final AuthenticationHandler oktaHandler = this.authFactory.createAuthHandler(vertx, router.route("/oauth2-callback"));
+        final AuthenticationHandler oktaHandler = this.authProvider.createAuthHandler(vertx, router.route("/oauth2-callback"));
         router.route().handler(BodyHandler.create());
         router.route().handler(StaticHandler.create("webroot"));
 
@@ -105,7 +105,7 @@ public class AdminVerticle extends AbstractVerticle {
 
     String getEmailClaim(RoutingContext ctx) {
         try {
-            Jwt jwt = this.authFactory.createTokenVerifier().decode(ctx.user().principal().getString("id_token"));
+            Jwt jwt = this.authProvider.createTokenVerifier().decode(ctx.user().principal().getString("id_token"));
             return jwt.getClaims().get("email").toString();
         } catch (Exception e) {
             return null;

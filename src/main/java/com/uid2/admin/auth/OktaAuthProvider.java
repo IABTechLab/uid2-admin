@@ -15,11 +15,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
 
-public class OktaAuthFactory implements AuthFactory {
+public class OktaAuthProvider implements AuthProvider {
     private final JsonObject config;
     private List<String> scopes = Collections.unmodifiableList(Arrays.asList("openid",  "profile" ,"email" ,"groups"));
 
-    public OktaAuthFactory(JsonObject config) {
+    public OktaAuthProvider(JsonObject config) {
         this.config = config;
     }
 

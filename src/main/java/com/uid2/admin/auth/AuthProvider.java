@@ -7,7 +7,7 @@ import io.vertx.ext.web.Route;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import java.util.List;
 
-public interface AuthFactory {
+public interface AuthProvider {
     AuthenticationHandler createAuthHandler(Vertx vertx, Route callbackRoute);
     AccessTokenVerifier createTokenVerifier();
     List<String> getScopes();

@@ -2,8 +2,8 @@ package com.uid2.admin;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminUserProvider;
-import com.uid2.admin.auth.OktaAuthFactory;
-import com.uid2.admin.auth.AuthFactory;
+import com.uid2.admin.auth.OktaAuthProvider;
+import com.uid2.admin.auth.AuthProvider;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
@@ -82,7 +82,7 @@ public class Main {
     public void run() {
         try {
             boolean enableKeysets = config.getBoolean(enableKeysetConfigProp);
-            AuthFactory authFactory = new OktaAuthFactory(config);
+            AuthProvider authProvider = new OktaAuthProvider(config);
             TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
             FileStorage fileStorage = new TmpFileStorage();
             ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
@@ -259,7 +259,7 @@ public class Main {
 
             val v2RouterModule = new V2RouterModule(clientSideKeypairService, auth);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authFactory, adminUserProvider, services, v2RouterModule.getRouter());
+            AdminVerticle adminVerticle = new AdminVerticle(config, authProvider, adminUserProvider, services, v2RouterModule.getRouter());
             vertx.deployVerticle(adminVerticle);
 
             CloudPath keysetMetadataPath = new CloudPath(config.getString("keysets_metadata_path"));
