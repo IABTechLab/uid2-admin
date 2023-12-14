@@ -258,14 +258,15 @@ public class ServiceLinkService implements IService {
     /** Given roles in json, return a set of valid roles. If roles are invalid, return null. **/
     private Set<Role> validateRoles(JsonArray rolesToValidate, Set<Role> serviceRoles) {
         Set<Role> roles;
+        String allowedRoles = serviceRoles.isEmpty() ? "none" : serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", "));
         try {
             roles = rolesToValidate.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("invalid parameter: roles. Roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+            throw new IllegalArgumentException("invalid parameter: roles. Roles allowed: " + allowedRoles);
         }
         // roles must be a subset of roles allowed in service
         if (!serviceRoles.containsAll(roles)) {
-            throw new IllegalArgumentException("roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+            throw new IllegalArgumentException("roles allowed: " + allowedRoles);
         }
         return roles;
     }
