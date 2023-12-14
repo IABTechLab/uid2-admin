@@ -95,7 +95,6 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void respondWithRealUser(RoutingContext rc) {
-        //Need to get email from claim and not query for OKta lofin
         if (getEmailClaim(rc) != null) {
             handleEmailContactInfo(rc, getEmailClaim(rc));
         } else {
