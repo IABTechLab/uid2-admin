@@ -94,8 +94,8 @@ public class ServiceLinkService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             JsonArray rolesJson = body.getJsonArray("roles");
-            if (linkId == null || serviceId == null || siteId == null || name == null) {
-                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name");
+            if (linkId == null || serviceId == null || siteId == null || name == null || name.isEmpty() || rolesJson == null || rolesJson.isEmpty()) {
+                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name, roles");
                 return;
             }
 
@@ -109,18 +109,16 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
-            if (name.isEmpty()) {
-                ResponseUtil.error(rc, 400, "name cannot be empty");
+            final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
+                    .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
+                    .collect(Collectors.toList());
+
+            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceId && sl.getLinkId().equals(linkId))) {
+                ResponseUtil.error(rc, 400, "service link already exists");
                 return;
             }
 
             Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
-
-            if (rolesJson == null || rolesJson.isEmpty()) {
-                ResponseUtil.error(rc, 400, "required parameter: roles. Roles allowed: " + serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", ")));
-                return;
-            }
-
             final Set<Role> roles;
             try {
                 roles = validateRoles(rolesJson, serviceRoles);
@@ -129,16 +127,7 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
-            final List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks()
-                    .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
-                    .collect(Collectors.toList());
-
             ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name, roles);
-
-            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceLink.getServiceId() && sl.getLinkId().equals(serviceLink.getLinkId()))) {
-                ResponseUtil.error(rc, 400, "service link already exists");
-                return;
-            }
 
             serviceLinks.add(serviceLink);
 

@@ -100,7 +100,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"link_id", "service_id", "site_id", "name"})
+    @ValueSource(strings = {"link_id", "service_id", "site_id", "name", "roles"})
     void addServiceLink_missingParameters_returnsError(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
@@ -109,12 +109,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         jo.remove(parameter);
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("required parameters: link_id, service_id, site_id, name", response.bodyAsJsonObject().getString("message"));
+            assertEquals("required parameters: link_id, service_id, site_id, name, roles", response.bodyAsJsonObject().getString("message"));
             verifyNoInteractions(serviceStoreWriter);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
@@ -130,6 +131,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 124);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -151,6 +153,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 124);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.CLIENTKEY_ISSUER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -228,7 +231,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("required parameter: roles. Roles allowed: "));
+            assertEquals("required parameters: link_id, service_id, site_id, name, roles", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
