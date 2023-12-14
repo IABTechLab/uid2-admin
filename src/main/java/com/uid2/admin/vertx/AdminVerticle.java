@@ -105,9 +105,8 @@ public class AdminVerticle extends AbstractVerticle {
 
     String getEmailClaim(RoutingContext ctx) {
         try {
-            var access_token = ctx.user().principal().getString("id_token");
-            Jwt jwt = this.authFactory.createTokenVerifier().decode(access_token);
-            return jwt.getClaims().get("email").toString().replace("unifiedid", "thetradedesk");
+            Jwt jwt = this.authFactory.createTokenVerifier().decode(ctx.user().principal().getString("id_token"));
+            return jwt.getClaims().get("email").toString();
         } catch (Exception e) {
             return null;
         } 

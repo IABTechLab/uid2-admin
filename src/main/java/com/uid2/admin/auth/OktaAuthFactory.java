@@ -3,6 +3,7 @@ package com.uid2.admin.auth;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
+import io.vertx.ext.auth.oauth2.OAuth2FlowType;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
@@ -31,7 +32,7 @@ public class OktaAuthFactory implements AuthFactory {
             .setUserInfoPath("/v1/userinfo")
         );
         OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(vertx, oktaAuth, this.config.getString("okta_callback"));
-        authHandler.extraParams(new JsonObject("{\"scope\":\"openid profile email\"}"));
+        authHandler.extraParams(new JsonObject("{\"scope\":\"openid profile email groups\"}"));
         authHandler.setupCallback(callbackRoute);
         return authHandler;   
     }
