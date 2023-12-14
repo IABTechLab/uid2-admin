@@ -6,10 +6,11 @@ import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2FlowType;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.Route;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import com.okta.jwt.AccessTokenVerifier;
 import com.okta.jwt.JwtVerifiers;
-
+import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 import java.time.Duration;
 
 public class OktaAuthFactory implements AuthFactory {
@@ -20,7 +21,10 @@ public class OktaAuthFactory implements AuthFactory {
     }
 
     @Override
-    public OAuth2AuthHandler createAuthHandler(Vertx vertx, Route callbackRoute) {
+    public AuthenticationHandler createAuthHandler(Vertx vertx, Route callbackRoute) {
+        if (isAuthDisabled(config)) {
+            return new NoopAuthHandler();
+        }
 
         OAuth2Auth oktaAuth = OAuth2Auth.create(vertx, 
         new OAuth2Options()
