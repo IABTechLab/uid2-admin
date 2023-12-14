@@ -350,13 +350,11 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "newName");
 
-        ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName", null);
-
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("failed to find a service_link for serviceId: 1, site_id: 123 and link_id: newLink", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
     }
@@ -459,13 +457,11 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("name", "newname");
         jo.put("roles", JsonArray.of("IllegalRole"));
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", null);
-
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertTrue(response.bodyAsJsonObject().getString("message").startsWith("invalid parameter: roles. Roles allowed: "));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
 
             testContext.completeNow();
         });
@@ -487,13 +483,11 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("name", "newname");
         jo.put("roles", JsonArray.of(Role.ADMINISTRATOR));
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.ADMINISTRATOR));
-
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertTrue(response.bodyAsJsonObject().getString("message").startsWith("roles allowed: "));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
 
             testContext.completeNow();
         });
