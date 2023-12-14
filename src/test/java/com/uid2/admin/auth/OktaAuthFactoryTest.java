@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +49,19 @@ class OktaAuthFactoryTest {
         AuthenticationHandler handler = factory.createAuthHandler(vertx, route);
 
         assertEquals(handler.getClass(), OAuth2AuthHandlerImpl.class);
+    }
+
+    @Test
+    public void ensureAuthHandlerRequestForEmailAndGroup() {
+        JsonObject config = new JsonObject();
+        config.put("okta_client_id", "id1");
+        config.put("okta_client_secret", "secret1");
+        config.put("okta_issuer", "http://uid2.okta.com");
+        config.put("okta_callback", "http://localhost/oauth2-callbac");
+        OktaAuthFactory factory = new OktaAuthFactory(config);
+        assertTrue(factory.getScopes().contains("groups"));
+        assertTrue(factory.getScopes().contains("email"));
+        assertTrue(factory.getScopes().contains("profile"));
     }
 
     @Test
