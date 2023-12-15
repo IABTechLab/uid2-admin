@@ -180,7 +180,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("name", "name1");
-        jo.put("roles", new JsonArray());
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -199,7 +199,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("name", "");
-        jo.put("roles", new JsonArray());
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -219,7 +219,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("name", "testName1");
-        jo.put("roles", new JsonArray());
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -252,7 +252,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceEmptyRoles(Vertx vertx, VertxTestContext testContext) {
+    void addService_emptyRoles_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
@@ -263,10 +263,9 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("roles", new JsonArray());
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
-            assertEquals(200, response.statusCode());
-            Service expectedService = new Service(1, 123, "name1", Set.of());
-            checkServiceJson(expectedService, response.bodyAsJsonObject());
-            verify(serviceStoreWriter, times(1)).upload(List.of(expectedService), null);
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameters: site_id, name, roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
     }
