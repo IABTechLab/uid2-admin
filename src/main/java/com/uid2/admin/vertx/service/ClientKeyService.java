@@ -77,7 +77,7 @@ public class ClientKeyService implements IService {
                 auth.handle(this::handleClientList, Role.CLIENTKEY_ISSUER));
 
         router.get("/api/client/listBySite/:siteId").handler(
-                auth.handle(this::handleClientListBySite, Role.CLIENTKEY_ISSUER));
+                auth.handle(this::handleClientListBySite, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
