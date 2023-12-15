@@ -257,11 +257,17 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void listBySiteWorking(Vertx vertx, VertxTestContext testContext) {
+    public void listBySite(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        setSites(new Site(666, "test2_site", true), new Site(999, "test_site", true));
-        setClientKeys(new LegacyClientBuilder().withSiteId(999).withName("999").build(), new LegacyClientBuilder().withSiteId(666).withName("666").build());
+        setSites(
+                new Site(666, "test2_site", true),
+                new Site(999, "test_site", true)
+        );
+        setClientKeys(
+                new LegacyClientBuilder().withSiteId(999).withName("999").build(),
+                new LegacyClientBuilder().withSiteId(666).withName("666").build()
+        );
 
         get(vertx, testContext, "api/client/listBySite/999", response -> {
             assertAll(
