@@ -22,6 +22,8 @@
     <input type="text" id="siteId" name="siteId">
     <label for="linkName">Link Name:</label>
     <input type="text" id="linkName" name="linkName">
+    <label for="roles">Roles:</label>
+    <input type="text" id="roles" name="roles">
 </div>
 
 <br>
@@ -78,7 +80,9 @@
                 $('#errorOutput').text("required parameters: link_id, service_id, site_id")
                 return
             }
-            doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
+
+            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles}));
         });
 
         $('#doUpdate').on('click', function () {
@@ -86,11 +90,12 @@
             const serviceId = parseInt($('#serviceId').val())
             const siteId = parseInt($('#siteId').val())
             const linkName = $('#linkName').val()
-            if(!siteId || !serviceId || linkName === null || linkName.length === 0) {
-                $('#errorOutput').text("required parameters: service_id, site_id, name")
+            if(!siteId || !serviceId || !linkId) {
+                $('#errorOutput').text("required parameters: link_id, service_id, site_id")
                 return
             }
-            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName}));
+            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles}));
         });
 
         $('#doDelete').on('click', function () {
