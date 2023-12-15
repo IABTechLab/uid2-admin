@@ -11,6 +11,15 @@
 <br>
 <br>
 
+<h3>Search</h3>
+
+<label for="searchSiteId">Site Id:</label>
+<input type="text" id="searchSiteId" name="searchSiteId">
+
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="searchList">Search Keys by SiteId</a></li>
+</ul>
+
 <h3>Inputs</h3>
 
 <label for="clientName">Name:</label>
@@ -57,6 +66,15 @@
 
 <script language="JavaScript">
     $(document).ready(function () {
+
+        $('#searchList').on('click', function () {
+            if(!$('#searchSiteId').val()) {
+                $('#errorOutput').html("Required Parameters: site_id")
+                return;
+            }
+            doApiCall('GET', '/api/client/listBySite/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
+        });
+
         $('#doMeta').on('click', function () {
             doApiCall('GET', '/api/client/metadata', '#standardOutput', '#errorOutput');
         });
