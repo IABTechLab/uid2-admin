@@ -110,7 +110,7 @@ public class ServiceService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             JsonArray rolesSpec = body.getJsonArray("roles");
-            if (siteId == null || name == null || rolesSpec == null) {
+            if (siteId == null || name == null || rolesSpec == null || rolesSpec.isEmpty()) {
                 ResponseUtil.error(rc, 400, "required parameters: site_id, name, roles");
                 return;
             }
@@ -208,7 +208,7 @@ public class ServiceService implements IService {
                 // check that if role is removed, it is no longer in use by service links
                 Set<Role> rolesToRemove = service.getRoles().stream().filter(r -> !roles.contains(r)).collect(Collectors.toSet());
                 List<ServiceLink> serviceLinks = this.serviceLinkProvider.getAllServiceLinks().stream().filter(sl -> sl.getServiceId() == serviceId).collect(Collectors.toList());
-                if (serviceLinks.stream().anyMatch(sl -> !Collections.disjoint(sl.getRoles(), rolesToRemove))) {
+                if (serviceLinks.stream().anyMatch(sl -> sl.getRoles().stream().anyMatch(rolesToRemove::contains))) {
                     ResponseUtil.error(rc, 400, "roles: " + rolesToRemove.stream().map(Role::toString).collect(Collectors.joining(", ")) + " may still be in use");
                     return;
                 }
