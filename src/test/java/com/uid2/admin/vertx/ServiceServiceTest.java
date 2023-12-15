@@ -241,7 +241,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         JsonObject jo = new JsonObject();
         jo.put("site_id", 456);
         jo.put("name", "serviceName1");
-        jo.put("roles", new JsonArray());
+        jo.put("roles", Set.of(Role.ID_READER));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
