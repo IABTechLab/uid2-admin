@@ -19,8 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class ServiceLinkServiceTest extends ServiceTestBase {
@@ -52,7 +51,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listLinksNoLinks(Vertx vertx, VertxTestContext testContext) {
+    void listLinks_noLinks_returnsEmptyArray(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         get(vertx, testContext, "api/service_link/list", response -> {
@@ -66,14 +65,14 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listLinksMultipleLinks(Vertx vertx, VertxTestContext testContext) {
+    void listLinks_multipleLinks_returnsAllLinks(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         ServiceLink[] expectedServiceLinks = {
-                new ServiceLink("link1", 1, 123, "name1"),
-                new ServiceLink("link2", 1, 123, "name2"),
-                new ServiceLink("link3", 2, 124, "name3"),
-                new ServiceLink("link4", 3, 125, "name4"),
+                new ServiceLink("link1", 1, 123, "name1", null),
+                new ServiceLink("link2", 1, 123, "name2", null),
+                new ServiceLink("link3", 2, 124, "name3", null),
+                new ServiceLink("link4", 3, 125, "name4", null),
         };
 
         setServiceLinks(expectedServiceLinks);
@@ -88,7 +87,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addLinkMissingPayload(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_missingPayload_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
         postWithoutBody(vertx, testContext, "api/service_link/add", response -> {
                     assertEquals(400, response.statusCode());
@@ -101,8 +100,8 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"link_id", "service_id", "site_id", "name"})
-    void addServiceLinkMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
+    @ValueSource(strings = {"link_id", "service_id", "site_id", "name", "roles"})
+    void addServiceLink_missingParameters_returnsError(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         JsonObject jo = new JsonObject();
@@ -110,12 +109,13 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         jo.remove(parameter);
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("required parameters: link_id, service_id, site_id, name", response.bodyAsJsonObject().getString("message"));
+            assertEquals("required parameters: link_id, service_id, site_id, name, roles", response.bodyAsJsonObject().getString("message"));
             verifyNoInteractions(serviceStoreWriter);
             verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
@@ -123,7 +123,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkBadServiceId(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_invalidServiceId_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         JsonObject jo = new JsonObject();
@@ -131,6 +131,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 124);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.ADMINISTRATOR));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -142,7 +143,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkBadSiteId(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_invalidSiteId_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
@@ -152,6 +153,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", 124);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.CLIENTKEY_ISSUER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -163,18 +165,19 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addDuplicateServiceLinkFails(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_duplicateServiceLink_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        setServiceLinks(new ServiceLink("link1", 1, 123, "name1"));
+        setServiceLinks(new ServiceLink("link1", 1, 123, "name1", null));
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link1");
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.CLIENTKEY_ISSUER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -186,19 +189,20 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLink(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_allFieldsValid_succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link1");
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
+        jo.put("roles", JsonArray.of(Role.CLIENTKEY_ISSUER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
@@ -210,21 +214,117 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void addServiceLinkToExistingList(Vertx vertx, VertxTestContext testContext) {
+    void addServiceLink_emptyRole_returnsError(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", null);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", new JsonArray());
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameters: link_id, service_id, site_id, name, roles", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLink_rolesSubsetOfAllowedRoles_succeeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.CLIENTKEY_ISSUER, Role.SHARER, Role.OPTOUT)));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", JsonArray.of(Role.MAPPER, Role.SHARER));
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            testContext.completeNow();
+        });
+    }
+    @Test
+    void addServiceLink_roleDoesNotExist_returnsError(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.CLIENTKEY_ISSUER, Role.SHARER, Role.OPTOUT)));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", JsonArray.of("IllegalRole"));
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("invalid parameter: roles. Roles allowed: "));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLink_roleNotInSubset_returnsError(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", JsonArray.of(Role.ADMINISTRATOR));
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("roles allowed: "));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addServiceLink_addToExistingList_succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
-        ServiceLink expected = new ServiceLink("link2", 1, 123, "name1");
+        ServiceLink expected = new ServiceLink("link2", 1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
 
         JsonObject jo = new JsonObject();
         jo.put("link_id", "link2");
         jo.put("service_id", 1);
         jo.put("site_id", 123);
         jo.put("name", "name1");
+        jo.put("roles", Set.of(Role.CLIENTKEY_ISSUER));
 
         post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
@@ -236,12 +336,12 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateNameAndLinkIdFails(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_nameAndLinkIdDoesNotExist_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -250,24 +350,22 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "newName");
 
-        ServiceLink expected = new ServiceLink("newLink", 1, 123, "newName");
-
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
             assertEquals("failed to find a service_link for serviceId: 1, site_id: 123 and link_id: newLink", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
-            verify(serviceLinkStoreWriter, never()).upload(List.of(expected), null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
     }
 
     @Test
-    void updateNameSucceeds(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_updateNameOnly_succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
-        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -276,7 +374,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "newname");
 
-        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname");
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.MAPPER));
 
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
@@ -289,12 +387,119 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteLinkId(Vertx vertx, VertxTestContext testContext) {
+    void updateServiceLink_updateRoleOnly_succeeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("roles", JsonArray.of(Role.SHARER));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.SHARER));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateServiceLink_updateRoleAndName_succeeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of(Role.MAPPER, Role.SHARER));
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.MAPPER, Role.SHARER));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateServiceLink_roleDoesNotExist_returnsError(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of("IllegalRole"));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("invalid parameter: roles. Roles allowed: "));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateServiceLink_roleNotAllowedInServiceRoles_returnsError(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.ADMINISTRATOR);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of(Role.ADMINISTRATOR));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertTrue(response.bodyAsJsonObject().getString("message").startsWith("roles allowed: "));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, never()).upload(null, null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteServiceLink_oneServiceLinkExists_succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -311,14 +516,14 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteOneLinkId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_multipleServiceLinksExist_correctServiceLinkDeleted(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
-        ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2");
-        ServiceLink existingLink3 = new ServiceLink("link3", 1, 123, "name3");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
+        ServiceLink existingLink2 = new ServiceLink("link2", 1, 123, "name2", null);
+        ServiceLink existingLink3 = new ServiceLink("link3", 1, 123, "name3", null);
         setServiceLinks(existingLink, existingLink2, existingLink3);
 
         JsonObject jo = new JsonObject();
@@ -335,12 +540,12 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteWrongLinkId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_invalidLinkId_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();
@@ -358,12 +563,12 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void deleteWrongServiceId(Vertx vertx, VertxTestContext testContext) {
+    void deleteServiceLink_invalidServiceId_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.ADMINISTRATOR);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
-        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1");
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", null);
         setServiceLinks(existingLink);
 
         JsonObject jo = new JsonObject();

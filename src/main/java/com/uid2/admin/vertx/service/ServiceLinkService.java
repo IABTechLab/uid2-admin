@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ServiceLinkService implements IService {
@@ -92,8 +93,9 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            if (linkId == null || serviceId == null || siteId == null || name == null) {
-                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name");
+            JsonArray rolesJson = body.getJsonArray("roles");
+            if (linkId == null || serviceId == null || siteId == null || name == null || name.isEmpty() || rolesJson == null || rolesJson.isEmpty()) {
+                ResponseUtil.error(rc, 400, "required parameters: link_id, service_id, site_id, name, roles");
                 return;
             }
 
@@ -111,12 +113,21 @@ public class ServiceLinkService implements IService {
                     .stream().sorted(Comparator.comparing(ServiceLink::getLinkId))
                     .collect(Collectors.toList());
 
-            ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name);
-
-            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceLink.getServiceId() && sl.getLinkId().equals(serviceLink.getLinkId()))) {
+            if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceId && sl.getLinkId().equals(linkId))) {
                 ResponseUtil.error(rc, 400, "service link already exists");
                 return;
             }
+
+            Set<Role> serviceRoles = serviceProvider.getService(serviceId).getRoles();
+            final Set<Role> roles;
+            try {
+                roles = validateRoles(rolesJson, serviceRoles);
+            } catch (IllegalArgumentException e) {
+                ResponseUtil.error(rc, 400, e.getMessage());
+                return;
+            }
+
+            ServiceLink serviceLink = new ServiceLink(linkId, serviceId, siteId, name, roles);
 
             serviceLinks.add(serviceLink);
 
@@ -128,9 +139,8 @@ public class ServiceLinkService implements IService {
         }
     }
 
-    // The only property that can be edited is the name.
+    // The only property that can be edited is the name and roles
     private void handleServiceLinkUpdate(RoutingContext rc) {
-
         try {
             siteProvider.loadContent();
             serviceProvider.loadContent();
@@ -144,8 +154,10 @@ public class ServiceLinkService implements IService {
             Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
-            if (siteId == null || serviceId == null || name == null || linkId == null || linkId.isEmpty()) {
-                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id, name");
+            JsonArray rolesJson = body.getJsonArray("roles");
+
+            if (siteId == null || serviceId == null || linkId == null || linkId.isEmpty()) {
+                ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id");
                 return;
             }
 
@@ -172,7 +184,20 @@ public class ServiceLinkService implements IService {
                 return;
             }
 
-            serviceLink.setName(name);
+            if (name != null && !name.isEmpty()) {
+                serviceLink.setName(name);
+            }
+
+            if (rolesJson != null && !rolesJson.isEmpty()) {
+                final Set<Role> roles;
+                try {
+                    roles = validateRoles(rolesJson, serviceProvider.getService(serviceId).getRoles());
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.error(rc, 400, e.getMessage());
+                    return;
+                }
+                serviceLink.setRoles(roles);
+            }
 
             storeWriter.upload(serviceLinks, null);
 
@@ -226,6 +251,23 @@ public class ServiceLinkService implements IService {
         jsonObject.put("service_id", s.getServiceId());
         jsonObject.put("site_id", s.getSiteId());
         jsonObject.put("name", s.getName());
+        jsonObject.put("roles", s.getRoles());
         return jsonObject;
+    }
+
+    /** Given roles in json, return a set of valid roles. If roles are invalid, return null. **/
+    private Set<Role> validateRoles(JsonArray rolesToValidate, Set<Role> serviceRoles) {
+        Set<Role> roles;
+        String allowedRoles = serviceRoles.isEmpty() ? "none" : serviceRoles.stream().map(Role::toString).collect(Collectors.joining(", "));
+        try {
+            roles = rolesToValidate.stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("invalid parameter: roles. Roles allowed: " + allowedRoles);
+        }
+        // roles must be a subset of roles allowed in service
+        if (!serviceRoles.containsAll(roles)) {
+            throw new IllegalArgumentException("roles allowed: " + allowedRoles);
+        }
+        return roles;
     }
 }
