@@ -32,9 +32,10 @@
   "site_key_expires_after_seconds": 90000,
   "salt_snapshot_activates_in_seconds": 180,
   "salt_snapshot_expires_after_seconds": 180000,
-  "is_auth_disabled": true,
-  "oauth2_callback_url": "http://localhost:8089/oauth2-callback",
-  "github_client_id": "generate client id",
-  "github_client_secret": "generate client secret",
-  "enable_keysets": true
+  "is_auth_disabled": false,
+  "enable_keysets": true,
+  "okta_client_id": "0oa1og75xc1tZZXEj1d8",
+  "okta_client_secret": "GET_FROM_LOCAL_APPs",
+  "okta_issuer": "https://uid2.okta.com/",
+  "okta_callback": "http://localhost:8089/oauth2-callback"
 }
