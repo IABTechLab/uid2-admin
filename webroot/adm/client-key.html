@@ -72,7 +72,7 @@
                 $('#errorOutput').html("Required Parameters: site_id")
                 return;
             }
-            doApiCall('GET', '/api/client/listBySite/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
+            doApiCall('GET', '/api/client/list/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
         });
 
         $('#doMeta').on('click', function () {
