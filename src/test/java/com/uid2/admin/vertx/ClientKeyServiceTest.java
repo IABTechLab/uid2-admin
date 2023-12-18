@@ -239,21 +239,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void listBySiteStringId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, testContext, "api/client/listBySite/test", expectHttpStatus(testContext, 400));
+        get(vertx, testContext, "api/client/list/test", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void listBySiteInvalidId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, testContext, "api/client/listBySite/0", expectHttpStatus(testContext, 400));
+        get(vertx, testContext, "api/client/list/0", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void listBySiteUnusedId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
-        get(vertx, testContext, "api/client/listBySite/100", expectHttpStatus(testContext, 404));
+        get(vertx, testContext, "api/client/list/100", expectHttpStatus(testContext, 404));
     }
 
     @Test
@@ -269,7 +269,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                 new LegacyClientBuilder().withSiteId(666).withName("666").build()
         );
 
-        get(vertx, testContext, "api/client/listBySite/999", response -> {
+        get(vertx, testContext, "api/client/list/999", response -> {
             assertAll(
                     "Should just get key for this site",
                     () -> assertEquals(200, response.statusCode()),
