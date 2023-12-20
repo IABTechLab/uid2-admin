@@ -14,7 +14,7 @@ on:
 
 jobs:
   Image:
-    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-docker-versioned.yaml@v2.8
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-docker-versioned.yaml@v2
     with: 
       release_type: ${{ inputs.release_type }}
       cloud_provider: 'default'
