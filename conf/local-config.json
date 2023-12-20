@@ -32,7 +32,7 @@
   "site_key_expires_after_seconds": 90000,
   "salt_snapshot_activates_in_seconds": 180,
   "salt_snapshot_expires_after_seconds": 180000,
-  "is_auth_disabled": false,
+  "is_auth_disabled": true,
   "enable_keysets": true,
   "okta_client_id": "0oa1og75xc1tZZXEj1d8",
   "okta_client_secret": "GET_FROM_LOCAL_APPs",
