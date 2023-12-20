@@ -34,8 +34,8 @@
   "salt_snapshot_expires_after_seconds": 180000,
   "is_auth_disabled": true,
   "enable_keysets": true,
-  "okta_client_id": "0oa1og75xc1tZZXEj1d8",
-  "okta_client_secret": "GET_FROM_LOCAL_APPs",
+  "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
+  "okta_client_secret": "GET_FROM_1PASSWORD",
   "okta_issuer": "https://uid2.okta.com/",
   "okta_callback": "http://localhost:8089/oauth2-callback"
 }
