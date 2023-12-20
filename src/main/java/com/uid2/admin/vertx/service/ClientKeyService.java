@@ -189,6 +189,7 @@ public class ClientKeyService implements IService {
                 jo.put("contact", c.getContact());
                 jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
                 jo.put("created", c.getCreated());
+                jo.put("site_id", c.getSiteId());
                 jo.put("disabled", c.isDisabled());
                 jo.put("service_id", c.getServiceId());
             }
