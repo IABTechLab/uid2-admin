@@ -72,8 +72,13 @@ public class ClientKeyService implements IService {
                 this.handleRewriteMetadata(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
+
         router.get("/api/client/list").handler(
                 auth.handle(this::handleClientList, Role.CLIENTKEY_ISSUER));
+
+        router.get("/api/client/list/:siteId").handler(
+                auth.handle(this::handleClientListBySite, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
 
@@ -154,6 +159,36 @@ public class ClientKeyService implements IService {
                 jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
                 jo.put("created", c.getCreated());
                 jo.put("site_id", c.getSiteId());
+                jo.put("disabled", c.isDisabled());
+                jo.put("service_id", c.getServiceId());
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(ja.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleClientListBySite(RoutingContext rc) {
+        try {
+            final Site site = RequestUtil.getSiteFromUrl(rc, "siteId", this.siteProvider);
+            if (site == null) {
+                return;
+            }
+
+            JsonArray ja = new JsonArray();
+            List<LegacyClientKey> collection = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getSiteId() == site.getId()).collect(Collectors.toList());
+            for (LegacyClientKey c : collection) {
+                JsonObject jo = new JsonObject();
+                ja.add(jo);
+
+                jo.put("key_id", c.getKeyId());
+                jo.put("name", c.getName());
+                jo.put("contact", c.getContact());
+                jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
+                jo.put("created", c.getCreated());
                 jo.put("disabled", c.isDisabled());
                 jo.put("service_id", c.getServiceId());
             }

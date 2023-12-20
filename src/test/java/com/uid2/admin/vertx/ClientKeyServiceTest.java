@@ -235,6 +235,51 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    public void listBySiteStringId(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        get(vertx, testContext, "api/client/list/test", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void listBySiteInvalidId(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        get(vertx, testContext, "api/client/list/0", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void listBySiteUnusedId(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        get(vertx, testContext, "api/client/list/100", expectHttpStatus(testContext, 404));
+    }
+
+    @Test
+    public void listBySite(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setSites(
+                new Site(666, "test2_site", true),
+                new Site(999, "test_site", true)
+        );
+        setClientKeys(
+                new LegacyClientBuilder().withSiteId(999).withName("999").build(),
+                new LegacyClientBuilder().withSiteId(666).withName("666").build()
+        );
+
+        get(vertx, testContext, "api/client/list/999", response -> {
+            assertAll(
+                    "Should just get key for this site",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(response.bodyAsJsonArray().size(), 1)
+            );
+            testContext.completeNow();
+        });
+    }
+
+
     private static void assertAddedClientKeyEquals(ClientKey expected, ClientKey actual) {
         assertThat(actual)
                 .usingRecursiveComparison()
