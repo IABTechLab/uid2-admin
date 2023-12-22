@@ -242,13 +242,6 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
-                    .findFirst();
-            if (existingClient.isPresent()) {
-                ResponseUtil.error(rc, 400, "key existed");
-                return;
-            }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
@@ -279,7 +272,7 @@ public class ClientKeyService implements IService {
                     khr.getSalt(),
                     secret,
                     name,
-                    name,
+                    site.getName() + '_' + keyId,
                     created.getEpochSecond(),
                     roles,
                     site.getId(),
