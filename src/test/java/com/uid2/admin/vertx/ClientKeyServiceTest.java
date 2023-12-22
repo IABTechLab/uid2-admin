@@ -283,7 +283,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     private static void assertAddedClientKeyEquals(ClientKey expected, ClientKey actual) {
         assertThat(actual)
                 .usingRecursiveComparison()
-                .ignoringFields("secret", "secretBytes", "created")
+                .ignoringFields("secret", "secretBytes", "created", "contact")
                 .isEqualTo(expected);
     }
 

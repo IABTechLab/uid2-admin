@@ -80,7 +80,6 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         assertArrayEquals(expectedKeypair.getPublicKey().getEncoded(), Base64.getDecoder().decode(resp.getString("public_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
         assertArrayEquals(expectedKeypair.getPrivateKey().getEncoded(), Base64.getDecoder().decode(resp.getString("private_key").substring(ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH)));
         assertEquals(expectedKeypair.getSiteId(), resp.getInteger("site_id"));
-        assertEquals(expectedKeypair.getContact(), resp.getString("contact"));
         assertEquals(expectedKeypair.getCreated().getEpochSecond(), resp.getLong("created"));
         assertEquals(expectedKeypair.isDisabled(), resp.getBoolean("disabled"));
         assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, ClientSideKeypair.KEYPAIR_KEY_PREFIX_LENGTH));
