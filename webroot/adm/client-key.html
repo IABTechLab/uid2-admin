@@ -18,6 +18,8 @@
 
 <ul>
     <li class="ro-cki" style="display: none"><a href="#" id="searchList">Search Keys by SiteId</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
 </ul>
 
 <h3>Inputs</h3>
@@ -33,27 +35,26 @@
 <br>
 <br>
 
-<h3>Operations</h3>
+<h3>New Key</h3>
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Client Key</a></li>
+</ul>
+
+
+<h3>Operations on Existing Key</h3>
+
+<label for="clientContact">Contact:</label>
+<input type="text" id="clientContact" name="clientContact">
 
 <ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doReveal">Reveal Client Key</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doRename">Rename Client Site</a></li>
 </ul>
 
-<br>
-
-<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
-
-<ul>
-<!--    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Client Key</a></li>-->
-    <li class="ro-adm" style="display: none"><a href="#" id="doRename">Rename Client Key (Click to enter new client name)</a></li>
-</ul>
 
 <br>
 
@@ -84,8 +85,8 @@
         });
 
         $('#doReveal').on('click', function () {
-            var clientName = encodeURIComponent($('#clientName').val());
-            var url = '/api/client/reveal?name=' + clientName;
+            var clientContact = encodeURIComponent($('#clientContact').val());
+            var url = '/api/client/reveal?contact=' + clientContact;
 
             doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
@@ -105,50 +106,50 @@
                 return;
             }
 
-            var clientName = encodeURIComponent($('#clientName').val());
-            var url = '/api/client/del?name=' + clientName;
+            var clientContact = encodeURIComponent($('#clientContact').val());
+            var url = '/api/client/del?contact=' + clientContact;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doSetRoles').on('click', function () {
-            var clientName = encodeURIComponent($('#clientName').val());
+            var clientContact = encodeURIComponent($('#clientContact').val());
             var roles = encodeURIComponent($('#roles').val());
-            var url = '/api/client/roles?name=' + clientName + '&roles=' + roles;
+            var url = '/api/client/roles?contact=' + clientContact + '&roles=' + roles;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doSetSite').on('click', function () {
-            var clientName = encodeURIComponent($('#clientName').val());
+            var clientContact = encodeURIComponent($('#clientContact').val());
             var siteId = encodeURIComponent($('#siteId').val());
             var serviceId = encodeURIComponent($('#serviceId').val());
-            var url = '/api/client/update?name=' + clientName + '&site_id=' + siteId + '&service_id=' + serviceId;
+            var url = '/api/client/update?contact=' + clientContact + '&site_id=' + siteId + '&service_id=' + serviceId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doDisable').on('click', function () {
-            const clientName = $('#clientName').val();
-            var encodedClientName = encodeURIComponent(clientName);
-            var url = '/api/client/disable?name=' + encodedClientName;
+            const clientContact = $('#clientContact').val();
+            var encodedClientContact = encodeURIComponent(clientContact);
+            var url = '/api/client/disable?contact=' + encodedClientContact;
     
-            if (!validateClientName(encodedClientName)) return;
+            if (!validateClientContact(encodedClientContact)) return;
 
-            const confirmationMessage = `Disabling this client key will prevent this key from generating UID2s in a server-side integration.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${clientName}?`;
+            const confirmationMessage = `Disabling this client key will prevent this key from generating UID2s in a server-side integration.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${clientContact}?`;
             if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doEnable').on('click', function () {
-            const clientName = $('#clientName').val();
-            var encodedClientName = encodeURIComponent(clientName);
-            var url = '/api/client/enable?name=' + encodedClientName;
+            const clientContact = $('#clientContact').val();
+            var encodedClientContact = encodeURIComponent(clientContact);
+            var url = '/api/client/enable?contact=' + encodedClientContact;
 
-            if (!validateClientName(clientName)) return;
+            if (!validateClientContact(encodedClientContact)) return;
 
-            const confirmationMessage = `Enabling this client key will allow this key to generate UID2s in a server-side integration.\n\nAre you sure you want to enable ${clientName}?`;
+            const confirmationMessage = `Enabling this client key will allow this key to generate UID2s in a server-side integration.\n\nAre you sure you want to enable ${clientContact}?`;
             if (!confirm(confirmationMessage)) return;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
@@ -159,15 +160,15 @@
                 return;
             }
 
-            var newClientName = prompt("Enter the new client name", "new client name here");
-            var oldClientName = encodeURIComponent($('#clientName').val());
-            var url = '/api/client/rename?oldName=' + oldClientName + '&newName=' + newClientName;
+            var clientContact = encodeURIComponent($('#clientContact').val());
+            var newClientName = encodeURIComponent($('#clientName').val());
+            var url = '/api/client/rename?contact=' + clientContact + '&newName=' + newClientName;
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
-        function validateClientName(clientName) {
-            if (!clientName) {
-                $('#errorOutput').text("required parameter: name")
+        function validateClientContact(clientContact) {
+            if (!clientContact) {
+                $('#errorOutput').text("required parameter: contact")
                 return false;
             }
             return true;

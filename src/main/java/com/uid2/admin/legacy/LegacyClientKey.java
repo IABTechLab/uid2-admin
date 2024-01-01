@@ -122,11 +122,6 @@ public class LegacyClientKey implements IRoleAuthorizable<Role> {
         return this;
     }
 
-    public LegacyClientKey withNameAndContact(String name) {
-        this.name = this.contact = name;
-        return this;
-    }
-
     public long getCreated() {
         return created;
     }
