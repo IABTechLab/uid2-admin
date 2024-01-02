@@ -118,6 +118,12 @@ public class ClientKeyService implements IService {
             }
         }, Role.CLIENTKEY_ISSUER));
 
+        router.post("/api/client/contact").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleClientContact(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+
         router.post("/api/client/rename").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
@@ -441,6 +447,47 @@ public class ClientKeyService implements IService {
 
             LegacyClientKey c = existingClient.get();
             c.withRoles(roles);
+
+            // upload to storage
+            storeWriter.upload(clients, null);
+
+            this.keysetManager.createKeysetForClient(c.toClientKey());
+
+            // return client with new key
+            rc.response().end(JSON_WRITER.writeValueAsString(c.toClientKey()));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleClientContact(RoutingContext rc) {
+        try {
+            // refresh manually
+            clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
+
+            final String oldContact = rc.queryParam("oldContact").get(0);
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getContact().equals(oldContact))
+                    .findFirst();
+            if (existingClient.isEmpty()) {
+                ResponseUtil.error(rc, 404, "client not found");
+                return;
+            }
+
+            final String newContact = rc.queryParam("newContact").get(0);
+
+            Optional<LegacyClientKey> existingClientWithNewContact = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getContact().equals(newContact))
+                    .findFirst();
+            if (existingClientWithNewContact.isPresent()) {
+                ResponseUtil.error(rc, 400, "Client with contact already exists. Contact must be unique.");
+                return;
+            }
+
+            List<LegacyClientKey> clients = getAllClientKeys();
+
+            LegacyClientKey c = existingClient.get();
+            c.withContact(newContact);
 
             // upload to storage
             storeWriter.upload(clients, null);

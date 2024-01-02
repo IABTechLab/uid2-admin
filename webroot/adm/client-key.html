@@ -55,6 +55,10 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doRename">Rename Client Key</a></li>
 </ul>
 
+<h4>Low Level</h4>
+<ul>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetContact">Set Contact</a></li>
+</ul>
 
 <br>
 
@@ -163,6 +167,17 @@
             var clientContact = encodeURIComponent($('#clientContact').val());
             var newClientName = encodeURIComponent($('#clientName').val());
             var url = '/api/client/rename?contact=' + clientContact + '&newName=' + newClientName;
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doSetContact').on('click', function () {
+            var newClientContact = prompt("Enter the new contact", "new contact here");
+            var oldClientContact = encodeURIComponent($('#clientContact').val());
+
+            const confirmationMessage = `Confirm changing the contact to: ` + newClientContact;
+            if (!confirm(confirmationMessage)) return;
+
+            var url = '/api/client/contact?oldContact=' + oldClientContact + '&newContact=' + newClientContact;
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 

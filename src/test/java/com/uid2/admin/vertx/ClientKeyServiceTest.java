@@ -268,6 +268,37 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    public void setContact(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setClientKeys(new LegacyClientBuilder().build());
+
+        post(vertx, testContext, "api/client/contact?oldContact=test_contact&newContact=test_contact1", "", response -> {
+            ClientKey expected = new LegacyClientBuilder().withContact("test_contact1").build().toClientKey();
+            assertAll(
+                    "clientSetContact",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(expected, OBJECT_MAPPER.readValue(response.bodyAsString(), ClientKey.class)),
+                    () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
+            );
+            testContext.completeNow();
+        });
+
+    }
+
+    @Test
+    public void setContactWithExistingContact(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setClientKeys(
+                new LegacyClientBuilder().build(),
+                new LegacyClientBuilder().withContact("test_contact1").build()
+        );
+
+        post(vertx, testContext, "api/client/contact?oldContact=test_contact&newContact=test_contact1", "", expectHttpStatus(testContext, 400));
+
+    }
 
     private static void assertAddedClientKeyEquals(ClientKey expected, ClientKey actual) {
         assertThat(actual)
