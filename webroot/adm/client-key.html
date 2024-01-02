@@ -13,11 +13,15 @@
 
 <h3>Search</h3>
 
-<label for="searchSiteId">Site Id:</label>
-<input type="text" id="searchSiteId" name="searchSiteId">
 
 <ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="searchList">Search Keys by SiteId</a></li>
+    <li>
+        <form id="searchBySiteForm">
+            <label for="searchSiteId">Site Id:</label>
+            <input type="text" id="searchSiteId" name="searchSiteId">
+            <button type="button" id="searchList">Search Keys by SiteId</button>
+        </form>
+    </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
 </ul>
