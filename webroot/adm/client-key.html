@@ -12,8 +12,6 @@
 <br>
 
 <h3>Search</h3>
-
-
 <ul>
     <li>
         <form id="searchBySiteForm">
@@ -26,11 +24,8 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
 </ul>
 
-
-
-<br>
-
-<h3>New Key</h3>
+<h3>Add Key</h3>
+<form id="addKeyForm">
 <label for="addClientName">Name:</label>
 <input type="text" id="addClientName" name="addClientName">
 <label for="addRoles">Roles:</label>
@@ -39,17 +34,12 @@
 <input type="text" id="addSiteId" name="addSiteId" value="1">
 <label for="addServiceId">Service Id:</label>
 <input type="text" id="addServiceId" name="addServiceId" value="0">
-<br>
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Client Key</a></li>
-</ul>
+<button type="button" id="doAdd">Add Client Key</button>
+</form>
 
-
-<h3>Existing Key</h3>
-
+<h3>Edit Key</h3>
 <label for="clientContact">Contact:</label>
 <input type="text" id="clientContact" name="clientContact">
-
 <ul>
     <li class="ro-cki" style="display: none"><a href="#" id="doReveal">Reveal Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
@@ -59,12 +49,10 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doRename">Rename Client Key</a></li>
 </ul>
 
-<h5>Low Level Operations - Do Not Use Unless Necessary</h5>
+<h4>Low Level Operations - Do Not Use Unless Necessary</h4>
 <ul>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetContact">Set Contact</a></li>
 </ul>
-
-<br>
 
 <h3>Output</h3>
 
