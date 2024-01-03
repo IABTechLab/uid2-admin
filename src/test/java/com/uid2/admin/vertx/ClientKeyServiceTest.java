@@ -284,7 +284,6 @@ public class ClientKeyServiceTest extends ServiceTestBase {
             );
             testContext.completeNow();
         });
-
     }
 
     @Test
@@ -297,7 +296,6 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         );
 
         post(vertx, testContext, "api/client/contact?oldContact=test_contact&newContact=test_contact1", "", expectHttpStatus(testContext, 400));
-
     }
 
     private static void assertAddedClientKeyEquals(ClientKey expected, ClientKey actual) {
