@@ -26,26 +26,26 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
 </ul>
 
-<h3>Operations</h3>
 
-<label for="clientName">Name:</label>
-<input type="text" id="clientName" name="clientName">
-<label for="roles">Roles:</label>
-<input type="text" id="roles" name="roles">
-<label for="siteId">Site Id:</label>
-<input type="text" id="siteId" name="siteId" value="1">
-<label for="serviceId">Service Id:</label>
-<input type="text" id="serviceId" name="serviceId" value="0">
-<br>
+
 <br>
 
-<h4>New Key</h4>
+<h3>New Key</h3>
+<label for="addClientName">Name:</label>
+<input type="text" id="addClientName" name="addClientName">
+<label for="addRoles">Roles:</label>
+<input type="text" id="addRoles" name="addRoles">
+<label for="addSiteId">Site Id:</label>
+<input type="text" id="addSiteId" name="addSiteId" value="1">
+<label for="addServiceId">Service Id:</label>
+<input type="text" id="addServiceId" name="addServiceId" value="0">
+<br>
 <ul>
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Client Key</a></li>
 </ul>
 
 
-<h4>Existing Key</h4>
+<h3>Existing Key</h3>
 
 <label for="clientContact">Contact:</label>
 <input type="text" id="clientContact" name="clientContact">
@@ -100,10 +100,10 @@
         });
 
         $('#doAdd').on('click', function () {
-            var clientName = encodeURIComponent($('#clientName').val());
-            var roles = encodeURIComponent($('#roles').val());
-            var siteId = encodeURIComponent($('#siteId').val());
-            var serviceId = encodeURIComponent($('#serviceId').val());
+            var clientName = encodeURIComponent($('#addClientName').val());
+            var roles = encodeURIComponent($('#addRoles').val());
+            var siteId = encodeURIComponent($('#addSiteId').val());
+            var serviceId = encodeURIComponent($('#addServiceId').val());
             var url = '/api/client/add?name=' + clientName + '&roles=' + roles + '&site_id=' + siteId + '&service_id=' + serviceId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
@@ -122,7 +122,12 @@
 
         $('#doSetRoles').on('click', function () {
             var clientContact = encodeURIComponent($('#clientContact').val());
-            var roles = encodeURIComponent($('#roles').val());
+            var roles = prompt("Enter the new roles", "");
+            if (!roles){
+                if (roles === '') $('#errorOutput').html("Required Parameter: new roles");
+                return;
+            }
+
             var url = '/api/client/roles?contact=' + clientContact + '&roles=' + roles;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
@@ -130,8 +135,18 @@
 
         $('#doSetSite').on('click', function () {
             var clientContact = encodeURIComponent($('#clientContact').val());
-            var siteId = encodeURIComponent($('#siteId').val());
-            var serviceId = encodeURIComponent($('#serviceId').val());
+
+            var siteId = prompt("Enter the new siteId", "");
+            if (!siteId){
+                if (siteId === '') $('#errorOutput').html("Required Parameter: siteId");
+                return;
+            }
+            var serviceId = prompt("Enter the new serviceId", "");
+            if (!serviceId){
+                if (serviceId === '') $('#errorOutput').html("Required Parameter: serviceId");
+                return;
+            }
+
             var url = '/api/client/update?contact=' + clientContact + '&site_id=' + siteId + '&service_id=' + serviceId;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
@@ -164,18 +179,28 @@
         });
 
         $('#doRename').on('click', function () {
-            if (!confirm("Are you sure?")) {
+            var clientContact = encodeURIComponent($('#clientContact').val());
+            var newClientName = prompt("Enter the new name", "");
+            if (!newClientName){
+                if (newClientName === '') $('#errorOutput').html("Required Parameter: name");
                 return;
             }
 
-            var clientContact = encodeURIComponent($('#clientContact').val());
-            var newClientName = encodeURIComponent($('#clientName').val());
+            if (!confirm("Are you sure you want to rename the key to: " + newClientName)) {
+                return;
+            }
+
             var url = '/api/client/rename?contact=' + clientContact + '&newName=' + newClientName;
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doSetContact').on('click', function () {
-            var newClientContact = prompt("Enter the new contact", "new contact here");
+            var newClientContact = prompt("Enter the new contact", "");
+            if (!newClientContact){
+                if (newClientContact === '') $('#errorOutput').html("Required Parameter: new contact");
+                return;
+            }
+
             var oldClientContact = encodeURIComponent($('#clientContact').val());
 
             const confirmationMessage = `Confirm changing the contact to: ` + newClientContact;
