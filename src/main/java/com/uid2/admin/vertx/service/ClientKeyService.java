@@ -486,16 +486,16 @@ public class ClientKeyService implements IService {
 
             List<LegacyClientKey> clients = getAllClientKeys();
 
-            LegacyClientKey c = existingClient.get();
-            c.withContact(newContact);
+            LegacyClientKey existingClientObject = existingClient.get();
+            existingClientObject.withContact(newContact);
 
             // upload to storage
             storeWriter.upload(clients, null);
 
-            this.keysetManager.createKeysetForClient(c.toClientKey());
+            this.keysetManager.createKeysetForClient(existingClientObject.toClientKey());
 
             // return client with new key
-            rc.response().end(JSON_WRITER.writeValueAsString(c.toClientKey()));
+            rc.response().end(JSON_WRITER.writeValueAsString(existingClientObject.toClientKey()));
         } catch (Exception e) {
             rc.fail(500, e);
         }
