@@ -45,7 +45,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetSiteAndServiceId">Update Site ID and Service ID</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doRename">Rename Client Key</a></li>
 </ul>
 
@@ -121,7 +121,7 @@
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
-        $('#doSetSite').on('click', function () {
+        $('#doSetSiteAndServiceId').on('click', function () {
             var clientContact = encodeURIComponent($('#clientContact').val());
 
             var siteId = prompt("Enter the new siteId", "");
@@ -129,7 +129,7 @@
                 if (siteId === '') $('#errorOutput').html("Required Parameter: siteId");
                 return;
             }
-            var serviceId = prompt("Enter the new serviceId", "");
+            var serviceId = prompt("Enter the new serviceId", "0");
             if (!serviceId){
                 if (serviceId === '') $('#errorOutput').html("Required Parameter: serviceId");
                 return;
