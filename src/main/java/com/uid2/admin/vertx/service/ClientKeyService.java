@@ -86,7 +86,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
         router.post("/api/client/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -115,6 +115,12 @@ public class ClientKeyService implements IService {
         router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
+            }
+        }, Role.CLIENTKEY_ISSUER));
+
+        router.post("/api/client/contact").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleClientContact(ctx);
             }
         }, Role.CLIENTKEY_ISSUER));
 
@@ -204,9 +210,9 @@ public class ClientKeyService implements IService {
 
     private void handleClientReveal(RoutingContext rc) {
         try {
-            final String name = rc.queryParam("name").get(0);
+            final String contact = rc.queryParam("contact").get(0);
             Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
+                    .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst();
             if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client not found");
@@ -242,13 +248,6 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
-                    .findFirst();
-            if (existingClient.isPresent()) {
-                ResponseUtil.error(rc, 400, "key existed");
-                return;
-            }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
@@ -279,7 +278,7 @@ public class ClientKeyService implements IService {
                     khr.getSalt(),
                     secret,
                     name,
-                    name,
+                    site.getName() + '_' + keyId,
                     created.getEpochSecond(),
                     roles,
                     site.getId(),
@@ -312,9 +311,9 @@ public class ClientKeyService implements IService {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String contact = rc.queryParam("contact").get(0);
             Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
+                    .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst();
             if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client key not found");
@@ -344,9 +343,9 @@ public class ClientKeyService implements IService {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String contact = rc.queryParam("contact").get(0);
             final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
+                    .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst().orElse(null);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
@@ -389,9 +388,9 @@ public class ClientKeyService implements IService {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String contact = rc.queryParam("contact").get(0);
             Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
+                    .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst();
             if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client key not found");
@@ -429,9 +428,9 @@ public class ClientKeyService implements IService {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String contact = rc.queryParam("contact").get(0);
             Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(name))
+                    .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst();
             if (existingClient.isEmpty()) {
                 ResponseUtil.error(rc, 404, "client not found");
@@ -461,29 +460,63 @@ public class ClientKeyService implements IService {
         }
     }
 
+    private void handleClientContact(RoutingContext rc) {
+        try {
+            // refresh manually
+            clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
+
+            final String oldContact = rc.queryParam("oldContact").get(0);
+            Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getContact().equals(oldContact))
+                    .findFirst();
+            if (existingClient.isEmpty()) {
+                ResponseUtil.error(rc, 404, "client not found");
+                return;
+            }
+
+            final String newContact = rc.queryParam("newContact").get(0);
+
+            Optional<LegacyClientKey> existingClientWithNewContact = this.clientKeyProvider.getAll()
+                    .stream().filter(c -> c.getContact().equals(newContact))
+                    .findFirst();
+            if (existingClientWithNewContact.isPresent()) {
+                ResponseUtil.error(rc, 400, "Client with contact already exists. Contact must be unique.");
+                return;
+            }
+
+            List<LegacyClientKey> clients = getAllClientKeys();
+
+            LegacyClientKey existingClientObject = existingClient.get();
+            existingClientObject.withContact(newContact);
+
+            // upload to storage
+            storeWriter.upload(clients, null);
+
+            this.keysetManager.createKeysetForClient(existingClientObject.toClientKey());
+
+            // return client with new key
+            rc.response().end(JSON_WRITER.writeValueAsString(existingClientObject.toClientKey()));
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
     private void handleClientRename(RoutingContext rc) {
         try {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String oldName = rc.queryParam("oldName").get(0);
+            final String contact = rc.queryParam("contact").get(0);
             final String newName = rc.queryParam("newName").get(0);
             final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(oldName))
+                    .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst().orElse(null);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;
             }
-            final LegacyClientKey existingClientWithNewName = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getName().equals(newName))
-                    .findFirst().orElse(null);
-            if (existingClientWithNewName != null) {
-                ResponseUtil.error(rc, 400, "already exist a client with name " + newName);
-                return;
-            }
 
-            existingClient.withNameAndContact(newName);
+            existingClient.withName(newName);
 
             List<LegacyClientKey> clients = getAllClientKeys();
 
