@@ -64,6 +64,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    public void clientRenameBlankNewName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setClientKeys(new LegacyClientBuilder().build());
+
+        post(vertx, testContext, "api/client/rename?contact=test_contact&newName=", "", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void clientRenameBlankInvalidContact(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        post(vertx, testContext, "api/client/rename?contact=test_contact&newName=testing", "", expectHttpStatus(testContext, 404));
+    }
+
+    @Test
     public void clientAdd(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
@@ -129,6 +144,12 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientAddSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=2", "", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void clientAddInvalidRole(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        post(vertx, testContext, "api/client/add?name=test_client&roles=invalid&site_id=999", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
@@ -303,6 +324,17 @@ public class ClientKeyServiceTest extends ServiceTestBase {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         post(vertx, testContext, "api/client/contact?oldContact=test_contact&newContact=test_contact1", "", expectHttpStatus(testContext, 404));
+    }
+
+    @Test
+    public void setContactWithBlankNewContact(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setClientKeys(
+                new LegacyClientBuilder().build()
+        );
+
+        post(vertx, testContext, "api/client/contact?oldContact=test_contact&newContact=", "", expectHttpStatus(testContext, 400));
     }
 
     private static void assertAddedClientKeyEquals(ClientKey expected, ClientKey actual) {
