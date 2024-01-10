@@ -516,9 +516,8 @@ public class ClientKeyService implements IService {
 
             final String contact = rc.queryParam("contact").get(0);
             final String newName = rc.queryParam("newName").get(0);
-
             if (newName.isEmpty()){
-                ResponseUtil.error(rc, 400, "name cannot be blank");
+                ResponseUtil.error(rc, 400, "new name cannot be blank");
                 return;
             }
 

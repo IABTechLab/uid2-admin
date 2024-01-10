@@ -72,7 +72,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void clientRenameBlankInvalidContact(Vertx vertx, VertxTestContext testContext) {
+    public void clientRenameInvalidContact(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
         post(vertx, testContext, "api/client/rename?contact=test_contact&newName=testing", "", expectHttpStatus(testContext, 404));
@@ -150,6 +150,12 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     public void clientAddInvalidRole(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.CLIENTKEY_ISSUER);
         post(vertx, testContext, "api/client/add?name=test_client&roles=invalid&site_id=999", "", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void clientAddBlankName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        post(vertx, testContext, "api/client/add?name=&roles=generator&site_id=999", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
