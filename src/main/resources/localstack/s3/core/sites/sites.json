@@ -19,7 +19,8 @@
     "name": "Publisher",
     "enabled": true,
     "clientTypes": ["PUBLISHER"],
-    "visible": true
+    "visible": true,
+    "domain_names": ["example.com"]
   },
   {
     "id": 125,
