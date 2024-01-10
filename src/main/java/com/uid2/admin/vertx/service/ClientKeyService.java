@@ -248,6 +248,10 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
+            if (name.isEmpty()){
+                ResponseUtil.error(rc, 400, "name cannot be blank");
+                return;
+            }
 
             Set<Role> roles = RequestUtil.getRoles(rc.queryParam("roles").get(0));
             if (roles == null) {
@@ -475,6 +479,10 @@ public class ClientKeyService implements IService {
             }
 
             final String newContact = rc.queryParam("newContact").get(0);
+            if (newContact.isEmpty()){
+                ResponseUtil.error(rc, 400, "new contact cannot be blank");
+                return;
+            }
 
             Optional<LegacyClientKey> existingClientWithNewContact = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getContact().equals(newContact))
@@ -508,6 +516,11 @@ public class ClientKeyService implements IService {
 
             final String contact = rc.queryParam("contact").get(0);
             final String newName = rc.queryParam("newName").get(0);
+            if (newName.isEmpty()){
+                ResponseUtil.error(rc, 400, "new name cannot be blank");
+                return;
+            }
+
             final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst().orElse(null);
