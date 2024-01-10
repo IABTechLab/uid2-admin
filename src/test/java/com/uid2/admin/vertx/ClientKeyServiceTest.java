@@ -252,6 +252,50 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    public void updateRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setClientKeys(new LegacyClientBuilder().build());
+
+        Set<Role> newRoles = Set.of(Role.SHARER, Role.MAPPER);
+
+        post(vertx, testContext, "api/client/roles?contact=test_contact&roles=" + RequestUtil.getRolesSpec(newRoles), "", response -> {
+            ClientKey expected = new LegacyClientBuilder().withRoles(newRoles).build().toClientKey();
+            assertAll(
+                    "clientUpdate",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals(expected, OBJECT_MAPPER.readValue(response.bodyAsString(), ClientKey.class)),
+                    () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
+            );
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    public void updateRolesWithInvalidContact(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        Set<Role> newRoles = Set.of(Role.SHARER, Role.MAPPER);
+
+        post(vertx, testContext, "api/client/roles?contact=test_contact&roles=" + RequestUtil.getRolesSpec(newRoles), "", expectHttpStatus(testContext, 404));
+    }
+
+    @Test
+    public void updateRolesWithNoRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setClientKeys(new LegacyClientBuilder().build());
+
+        post(vertx, testContext, "api/client/roles?contact=test_contact&roles=", "", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void updateRolesWithInvalidRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+        setClientKeys(new LegacyClientBuilder().build());
+
+        post(vertx, testContext, "api/client/roles?contact=test_contact&roles=invalid", "", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
     public void listBySiteStringId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 
