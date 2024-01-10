@@ -116,7 +116,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
         router.post("/api/client/contact").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -128,7 +128,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
