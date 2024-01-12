@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "link_id": "Special",
+    "service_id": 1,
+    "site_id": 999,
+    "name": "snowflake Special",
+    "roles": [
+      "MAPPER",
+      "SHARER"
+    ]
+  },
+  {
+    "link_id": "Special (Legacy Key)",
+    "service_id": 1,
+    "site_id": 999,
+    "name": "snowflake Special (Legacy Key)",
+    "roles": [
+      "MAPPER",
+      "SHARER"
+    ]
+  }
+]
