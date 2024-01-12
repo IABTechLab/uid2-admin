@@ -46,5 +46,11 @@
     "name": "Legacy Site",
     "enabled": true,
     "visible": false
+  },
+  {
+    "id": 1001,
+    "name": "Snowflake",
+    "enabled": false,
+    "visible": true
   }
 ]
