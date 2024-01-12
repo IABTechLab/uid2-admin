@@ -50,11 +50,7 @@
   {
     "id": 1001,
     "name": "snowflake",
-    "description": "",
     "enabled": false,
-    "clientTypes": [],
-    "domain_names": [],
-    "visible": true,
-    "created": 1704250406
+    "visible": true
   }
 ]
