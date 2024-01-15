@@ -79,6 +79,9 @@ public class ClientKeyService implements IService {
         router.get("/api/client/list/:siteId").handler(
                 auth.handle(this::handleClientListBySite, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
+        router.get("/api/client/keyId").handler(
+                auth.handle(this::handleClientByKeyId, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
 
@@ -156,17 +159,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             Collection<LegacyClientKey> collection = this.clientKeyProvider.getAll();
             for (LegacyClientKey c : collection) {
-                JsonObject jo = new JsonObject();
-                ja.add(jo);
-
-                jo.put("key_id", c.getKeyId());
-                jo.put("name", c.getName());
-                jo.put("contact", c.getContact());
-                jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
-                jo.put("created", c.getCreated());
-                jo.put("site_id", c.getSiteId());
-                jo.put("disabled", c.isDisabled());
-                jo.put("service_id", c.getServiceId());
+                ja.add(getClientReturnObject(c));
             }
 
             rc.response()
@@ -187,17 +180,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             List<LegacyClientKey> collection = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getSiteId() == site.getId()).collect(Collectors.toList());
             for (LegacyClientKey c : collection) {
-                JsonObject jo = new JsonObject();
-                ja.add(jo);
-
-                jo.put("key_id", c.getKeyId());
-                jo.put("name", c.getName());
-                jo.put("contact", c.getContact());
-                jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
-                jo.put("created", c.getCreated());
-                jo.put("site_id", c.getSiteId());
-                jo.put("disabled", c.isDisabled());
-                jo.put("service_id", c.getServiceId());
+                ja.add(getClientReturnObject(c));
             }
 
             rc.response()
@@ -206,6 +189,47 @@ public class ClientKeyService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private void handleClientByKeyId(RoutingContext rc) {
+        try {
+            String keyId;
+
+            try{
+                keyId = rc.queryParam("keyId").get(0);
+            } catch (Exception e) {
+                ResponseUtil.error(rc, 400, "unable to parse keyId " + e.getMessage());
+                return;
+            }
+
+            LegacyClientKey clientKey = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getKeyId().equals(keyId)).findFirst().orElse(null);
+
+            if (clientKey == null){
+                ResponseUtil.error(rc, 404, "unable to find key");
+                return;
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(getClientReturnObject(clientKey).encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+
+    private static JsonObject getClientReturnObject(LegacyClientKey clientKey) {
+        JsonObject returnObject = new JsonObject();
+
+        returnObject.put("key_id", clientKey.getKeyId());
+        returnObject.put("name", clientKey.getName());
+        returnObject.put("contact", clientKey.getContact());
+        returnObject.put("roles", RequestUtil.getRolesSpec(clientKey.getRoles()));
+        returnObject.put("created", clientKey.getCreated());
+        returnObject.put("site_id", clientKey.getSiteId());
+        returnObject.put("disabled", clientKey.isDisabled());
+        returnObject.put("service_id", clientKey.getServiceId());
+        return returnObject;
     }
 
     private void handleClientReveal(RoutingContext rc) {
