@@ -82,6 +82,9 @@ public class ClientKeyService implements IService {
         router.get("/api/client/keyId").handler(
                 auth.handle(this::handleClientByKeyId, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
+        router.get("/api/client/contact").handler(
+                auth.handle(this::handleClientByContact, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
 
@@ -203,6 +206,32 @@ public class ClientKeyService implements IService {
             }
 
             LegacyClientKey clientKey = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getKeyId().equals(keyId)).findFirst().orElse(null);
+
+            if (clientKey == null){
+                ResponseUtil.error(rc, 404, "unable to find key");
+                return;
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(getClientReturnObject(clientKey).encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleClientByContact(RoutingContext rc) {
+        try {
+            String contact;
+
+            try{
+                contact = rc.queryParam("contact").get(0);
+            } catch (Exception e) {
+                ResponseUtil.error(rc, 400, "unable to parse contact " + e.getMessage());
+                return;
+            }
+
+            LegacyClientKey clientKey = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getContact().equals(contact)).findFirst().orElse(null);
 
             if (clientKey == null){
                 ResponseUtil.error(rc, 404, "unable to find key");
