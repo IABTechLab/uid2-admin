@@ -27,6 +27,13 @@
             <button type="button" id="searchKeyId">Search Key by KeyId</button>
         </form>
     </li>
+    <li>
+        <form id="searchByContactForm">
+            <label for="searchByContact">Contact:</label>
+            <input type="text" id="searchByContact" name="searchContact">
+            <button type="button" id="searchContact">Search Key by Contact</button>
+        </form>
+    </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
 </ul>
@@ -85,6 +92,14 @@
                 return;
             }
             doApiCall('GET', '/api/client/keyId?keyId=' + $('#searchByKeyId').val(), '#standardOutput', '#errorOutput');
+        });
+
+        $('#searchContact').on('click', function () {
+            if(!$('#searchByContact').val()) {
+                $('#errorOutput').html("Required Parameters: key_id")
+                return;
+            }
+            doApiCall('GET', '/api/client/contact?contact=' + $('#searchByContact').val(), '#standardOutput', '#errorOutput');
         });
 
         $('#doMeta').on('click', function () {
