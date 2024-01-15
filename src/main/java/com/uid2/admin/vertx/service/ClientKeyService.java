@@ -217,7 +217,6 @@ public class ClientKeyService implements IService {
         }
     }
 
-
     private static JsonObject getClientReturnObject(LegacyClientKey clientKey) {
         JsonObject returnObject = new JsonObject();
 
