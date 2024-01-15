@@ -23,7 +23,7 @@
     <li>
         <form id="searchByKeyIdForm">
             <label for="searchByKeyId">Key Id:</label>
-            <input type="text" id="searchByKeyId" name="searchSiteId">
+            <input type="text" id="searchByKeyId" name="searchByKeyId">
             <button type="button" id="searchKeyId">Search Key by KeyId</button>
         </form>
     </li>
@@ -78,8 +78,8 @@
 <script language="JavaScript">
     $(document).ready(function () {
 
-        $('#searchBySiteId').on('click', function () {
-            if(!$('#searchSiteId').val()) {
+        $('#searchSiteId').on('click', function () {
+            if(!$('#searchBySiteId').val()) {
                 $('#errorOutput').html("Required Parameters: site_id")
                 return;
             }
