@@ -165,7 +165,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             Collection<LegacyClientKey> collection = this.clientKeyProvider.getAll();
             for (LegacyClientKey c : collection) {
-                ja.add(createClientKeyJsonObject(c));
+                ja.add(getClientReturnObject(c));
             }
 
             rc.response()
@@ -186,7 +186,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             List<LegacyClientKey> collection = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getSiteId() == site.getId()).collect(Collectors.toList());
             for (LegacyClientKey c : collection) {
-                ja.add(createClientKeyJsonObject(c));
+                ja.add(getClientReturnObject(c));
             }
 
             rc.response()
