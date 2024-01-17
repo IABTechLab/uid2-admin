@@ -6,27 +6,30 @@ import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.shared.model.Site;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.Site;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ISiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
@@ -162,7 +165,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             Collection<LegacyClientKey> collection = this.clientKeyProvider.getAll();
             for (LegacyClientKey c : collection) {
-                ja.add(getClientReturnObject(c));
+                ja.add(createClientKeyJsonObject(c));
             }
 
             rc.response()
@@ -183,7 +186,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             List<LegacyClientKey> collection = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getSiteId() == site.getId()).collect(Collectors.toList());
             for (LegacyClientKey c : collection) {
-                ja.add(getClientReturnObject(c));
+                ja.add(createClientKeyJsonObject(c));
             }
 
             rc.response()
@@ -196,18 +199,15 @@ public class ClientKeyService implements IService {
 
     private void handleClientByKeyId(RoutingContext rc) {
         try {
-            String keyId;
-
-            try{
-                keyId = rc.queryParam("keyId").get(0);
-            } catch (Exception e) {
-                ResponseUtil.error(rc, 400, "unable to parse keyId " + e.getMessage());
+            String keyId = rc.queryParam("keyId").stream().findFirst().orElse(null);
+            if (keyId == null) {
+                ResponseUtil.error(rc, 400, "unable to parse keyId ");
                 return;
             }
 
-            LegacyClientKey clientKey = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getKeyId().equals(keyId)).findFirst().orElse(null);
+            LegacyClientKey clientKey = getClientKey(keyId);
 
-            if (clientKey == null){
+            if (clientKey == null) {
                 ResponseUtil.error(rc, 404, "unable to find key");
                 return;
             }
@@ -220,11 +220,15 @@ public class ClientKeyService implements IService {
         }
     }
 
+    private LegacyClientKey getClientKey(String keyId) {
+        return this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getKeyId().equals(keyId)).findFirst().orElse(null);
+    }
+
     private void handleClientByContact(RoutingContext rc) {
         try {
             String contact;
 
-            try{
+            try {
                 contact = rc.queryParam("contact").get(0);
             } catch (Exception e) {
                 ResponseUtil.error(rc, 400, "unable to parse contact " + e.getMessage());
@@ -233,7 +237,7 @@ public class ClientKeyService implements IService {
 
             LegacyClientKey clientKey = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getContact().equals(contact)).findFirst().orElse(null);
 
-            if (clientKey == null){
+            if (clientKey == null) {
                 ResponseUtil.error(rc, 404, "unable to find key");
                 return;
             }
@@ -291,7 +295,7 @@ public class ClientKeyService implements IService {
         if (existingClientKeyId.isPresent()) {
             return generateKeyAndKeyId(site);
         }
-        return new String[]{ key, keyId };
+        return new String[]{key, keyId};
     }
 
     private void handleClientAdd(RoutingContext rc) {
@@ -300,7 +304,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            if (name.isEmpty()){
+            if (name.isEmpty()) {
                 ResponseUtil.error(rc, 400, "name cannot be blank");
                 return;
             }
@@ -531,7 +535,7 @@ public class ClientKeyService implements IService {
             }
 
             final String newContact = rc.queryParam("newContact").get(0);
-            if (newContact.isEmpty()){
+            if (newContact.isEmpty()) {
                 ResponseUtil.error(rc, 400, "new contact cannot be blank");
                 return;
             }
@@ -568,7 +572,7 @@ public class ClientKeyService implements IService {
 
             final String contact = rc.queryParam("contact").get(0);
             final String newName = rc.queryParam("newName").get(0);
-            if (newName.isEmpty()){
+            if (newName.isEmpty()) {
                 ResponseUtil.error(rc, 400, "new name cannot be blank");
                 return;
             }
