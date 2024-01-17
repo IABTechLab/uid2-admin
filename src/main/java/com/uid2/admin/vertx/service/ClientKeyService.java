@@ -85,6 +85,9 @@ public class ClientKeyService implements IService {
         router.get("/api/client/keyId").handler(
                 auth.handle(this::handleClientByKeyId, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
+        router.get("/api/client/contact").handler(
+                auth.handle(this::handleClientByContact, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
 
@@ -202,7 +205,7 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            LegacyClientKey clientKey = getClientKey(keyId);
+            LegacyClientKey clientKey = getClientKeyByKeyId(keyId);
 
             if (clientKey == null) {
                 ResponseUtil.error(rc, 404, "unable to find key");
@@ -217,8 +220,35 @@ public class ClientKeyService implements IService {
         }
     }
 
-    private LegacyClientKey getClientKey(String keyId) {
+    private LegacyClientKey getClientKeyByKeyId(String keyId) {
         return this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getKeyId().equals(keyId)).findFirst().orElse(null);
+    }
+
+    private void handleClientByContact(RoutingContext rc) {
+        try {
+            String contact = rc.queryParam("contact").stream().findFirst().orElse(null);
+            if (contact == null) {
+                ResponseUtil.error(rc, 400, "unable to parse contact ");
+                return;
+            }
+
+            LegacyClientKey clientKey = getClientKeyByContact(contact);
+
+            if (clientKey == null) {
+                ResponseUtil.error(rc, 404, "unable to find key");
+                return;
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(createClientKeyJsonObject(clientKey).encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private LegacyClientKey getClientKeyByContact(String contact) {
+        return this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getContact().equals(contact)).findFirst().orElse(null);
     }
 
     private static JsonObject createClientKeyJsonObject(LegacyClientKey clientKey) {
@@ -375,9 +405,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String contact = rc.queryParam("contact").get(0);
-            final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getContact().equals(contact))
-                    .findFirst().orElse(null);
+            final LegacyClientKey existingClient = getClientKeyByContact(contact);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;
@@ -548,9 +576,7 @@ public class ClientKeyService implements IService {
                 return;
             }
 
-            final LegacyClientKey existingClient = this.clientKeyProvider.getAll()
-                    .stream().filter(c -> c.getContact().equals(contact))
-                    .findFirst().orElse(null);
+            final LegacyClientKey existingClient = getClientKeyByContact(contact);
             if (existingClient == null) {
                 ResponseUtil.error(rc, 404, "client not found");
                 return;

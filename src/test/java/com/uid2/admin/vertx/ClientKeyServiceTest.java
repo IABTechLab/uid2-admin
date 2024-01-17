@@ -359,6 +359,39 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    public void getByContactInvalidContact(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        get(vertx, testContext, "api/client/contact?contact=100", expectHttpStatus(testContext, 404));
+    }
+
+    @Test
+    public void getByContactNoGivenContact(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        get(vertx, testContext, "api/client/contact", expectHttpStatus(testContext, 400));
+    }
+
+    @Test
+    public void getByContact(Vertx vertx, VertxTestContext testContext){
+        fakeAuth(Role.CLIENTKEY_ISSUER);
+
+        setClientKeys(
+                new LegacyClientBuilder().withContact("testContact1").build(),
+                new LegacyClientBuilder().withContact("testContact2").build()
+        );
+
+        get(vertx, testContext, "/api/client/contact?contact=testContact1", response -> {
+            assertAll(
+                    "clientUpdate",
+                    () -> assertEquals(200, response.statusCode()),
+                    () -> assertEquals("testContact1", response.bodyAsJsonObject().getString("contact"))
+            );
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     public void getByKeyIdInvalidId(Vertx vertx, VertxTestContext testContext){
         fakeAuth(Role.CLIENTKEY_ISSUER);
 

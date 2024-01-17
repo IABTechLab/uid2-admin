@@ -27,6 +27,13 @@
             <button type="button" id="searchKeyId">Search Key by KeyId</button>
         </form>
     </li>
+    <li>
+        <form id="searchByContactForm">
+            <label for="searchByContact">Contact:</label>
+            <input type="text" id="searchByContact" name="searchByContact">
+            <button type="button" id="searchContact">Search Key by Contact</button>
+        </form>
+    </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
 </ul>
@@ -52,7 +59,9 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetSiteAndServiceId">Update Site ID and Service ID</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetSiteAndServiceId">
+        Update Site ID and Service ID</a>
+    </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doRename">Rename Client Key</a></li>
 </ul>
 
@@ -73,7 +82,7 @@
 
         $('#searchSiteId').on('click', function () {
             if(!$('#searchBySiteId').val()) {
-                $('#errorOutput').html("Required Parameters: site_id")
+                $('#errorOutput').html("Required Parameter: site_id")
                 return;
             }
             doApiCall('GET', '/api/client/list/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
@@ -81,10 +90,18 @@
 
         $('#searchKeyId').on('click', function () {
             if(!$('#searchByKeyId').val()) {
-                $('#errorOutput').html("Required Parameters: key_id")
+                $('#errorOutput').html("Required Parameter: key_id")
                 return;
             }
             doApiCall('GET', '/api/client/keyId?keyId=' + $('#searchByKeyId').val(), '#standardOutput', '#errorOutput');
+        });
+
+        $('#searchContact').on('click', function () {
+            if(!$('#searchByContact').val()) {
+                $('#errorOutput').html("Required Parameter: contact")
+                return;
+            }
+            doApiCall('GET', '/api/client/contact?contact=' + $('#searchByContact').val(), '#standardOutput', '#errorOutput');
         });
 
         $('#doMeta').on('click', function () {
