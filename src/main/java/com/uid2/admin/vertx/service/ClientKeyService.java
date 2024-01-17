@@ -6,27 +6,30 @@ import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.shared.model.Site;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.model.Site;
+import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ISiteStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ClientKeyService implements IService {
@@ -79,6 +82,9 @@ public class ClientKeyService implements IService {
         router.get("/api/client/list/:siteId").handler(
                 auth.handle(this::handleClientListBySite, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
+        router.get("/api/client/keyId").handler(
+                auth.handle(this::handleClientByKeyId, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+
         router.get("/api/client/reveal").handler(
                 auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
 
@@ -116,7 +122,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
         router.post("/api/client/contact").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -128,7 +134,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -156,17 +162,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             Collection<LegacyClientKey> collection = this.clientKeyProvider.getAll();
             for (LegacyClientKey c : collection) {
-                JsonObject jo = new JsonObject();
-                ja.add(jo);
-
-                jo.put("key_id", c.getKeyId());
-                jo.put("name", c.getName());
-                jo.put("contact", c.getContact());
-                jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
-                jo.put("created", c.getCreated());
-                jo.put("site_id", c.getSiteId());
-                jo.put("disabled", c.isDisabled());
-                jo.put("service_id", c.getServiceId());
+                ja.add(createClientKeyJsonObject(c));
             }
 
             rc.response()
@@ -187,17 +183,7 @@ public class ClientKeyService implements IService {
             JsonArray ja = new JsonArray();
             List<LegacyClientKey> collection = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getSiteId() == site.getId()).collect(Collectors.toList());
             for (LegacyClientKey c : collection) {
-                JsonObject jo = new JsonObject();
-                ja.add(jo);
-
-                jo.put("key_id", c.getKeyId());
-                jo.put("name", c.getName());
-                jo.put("contact", c.getContact());
-                jo.put("roles", RequestUtil.getRolesSpec(c.getRoles()));
-                jo.put("created", c.getCreated());
-                jo.put("site_id", c.getSiteId());
-                jo.put("disabled", c.isDisabled());
-                jo.put("service_id", c.getServiceId());
+                ja.add(createClientKeyJsonObject(c));
             }
 
             rc.response()
@@ -206,6 +192,47 @@ public class ClientKeyService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private void handleClientByKeyId(RoutingContext rc) {
+        try {
+            String keyId = rc.queryParam("keyId").stream().findFirst().orElse(null);
+            if (keyId == null) {
+                ResponseUtil.error(rc, 400, "unable to parse keyId ");
+                return;
+            }
+
+            LegacyClientKey clientKey = getClientKey(keyId);
+
+            if (clientKey == null) {
+                ResponseUtil.error(rc, 404, "unable to find key");
+                return;
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(createClientKeyJsonObject(clientKey).encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private LegacyClientKey getClientKey(String keyId) {
+        return this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getKeyId().equals(keyId)).findFirst().orElse(null);
+    }
+
+    private static JsonObject createClientKeyJsonObject(LegacyClientKey clientKey) {
+        JsonObject returnObject = new JsonObject();
+
+        returnObject.put("key_id", clientKey.getKeyId());
+        returnObject.put("name", clientKey.getName());
+        returnObject.put("contact", clientKey.getContact());
+        returnObject.put("roles", RequestUtil.getRolesSpec(clientKey.getRoles()));
+        returnObject.put("created", clientKey.getCreated());
+        returnObject.put("site_id", clientKey.getSiteId());
+        returnObject.put("disabled", clientKey.isDisabled());
+        returnObject.put("service_id", clientKey.getServiceId());
+        return returnObject;
     }
 
     private void handleClientReveal(RoutingContext rc) {
@@ -239,7 +266,7 @@ public class ClientKeyService implements IService {
         if (existingClientKeyId.isPresent()) {
             return generateKeyAndKeyId(site);
         }
-        return new String[]{ key, keyId };
+        return new String[]{key, keyId};
     }
 
     private void handleClientAdd(RoutingContext rc) {
@@ -248,7 +275,7 @@ public class ClientKeyService implements IService {
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
-            if (name.isEmpty()){
+            if (name.isEmpty()) {
                 ResponseUtil.error(rc, 400, "name cannot be blank");
                 return;
             }
@@ -479,7 +506,7 @@ public class ClientKeyService implements IService {
             }
 
             final String newContact = rc.queryParam("newContact").get(0);
-            if (newContact.isEmpty()){
+            if (newContact.isEmpty()) {
                 ResponseUtil.error(rc, 400, "new contact cannot be blank");
                 return;
             }
@@ -516,7 +543,7 @@ public class ClientKeyService implements IService {
 
             final String contact = rc.queryParam("contact").get(0);
             final String newName = rc.queryParam("newName").get(0);
-            if (newName.isEmpty()){
+            if (newName.isEmpty()) {
                 ResponseUtil.error(rc, 400, "new name cannot be blank");
                 return;
             }

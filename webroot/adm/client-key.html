@@ -15,9 +15,16 @@
 <ul>
     <li>
         <form id="searchBySiteForm">
-            <label for="searchSiteId">Site Id:</label>
-            <input type="text" id="searchSiteId" name="searchSiteId">
-            <button type="button" id="searchList">Search Keys by SiteId</button>
+            <label for="searchBySiteId">Site Id:</label>
+            <input type="text" id="searchBySiteId" name="searchBySiteId">
+            <button type="button" id="searchSiteId">Search Keys by SiteId</button>
+        </form>
+    </li>
+    <li>
+        <form id="searchByKeyIdForm">
+            <label for="searchByKeyId">Key Id:</label>
+            <input type="text" id="searchByKeyId" name="searchByKeyId">
+            <button type="button" id="searchKeyId">Search Key by KeyId</button>
         </form>
     </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
@@ -64,12 +71,20 @@
 <script language="JavaScript">
     $(document).ready(function () {
 
-        $('#searchList').on('click', function () {
-            if(!$('#searchSiteId').val()) {
+        $('#searchSiteId').on('click', function () {
+            if(!$('#searchBySiteId').val()) {
                 $('#errorOutput').html("Required Parameters: site_id")
                 return;
             }
             doApiCall('GET', '/api/client/list/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
+        });
+
+        $('#searchKeyId').on('click', function () {
+            if(!$('#searchByKeyId').val()) {
+                $('#errorOutput').html("Required Parameters: key_id")
+                return;
+            }
+            doApiCall('GET', '/api/client/keyId?keyId=' + $('#searchByKeyId').val(), '#standardOutput', '#errorOutput');
         });
 
         $('#doMeta').on('click', function () {
