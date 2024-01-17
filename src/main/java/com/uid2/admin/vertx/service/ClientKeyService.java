@@ -226,12 +226,9 @@ public class ClientKeyService implements IService {
 
     private void handleClientByContact(RoutingContext rc) {
         try {
-            String contact;
-
-            try {
-                contact = rc.queryParam("contact").get(0);
-            } catch (Exception e) {
-                ResponseUtil.error(rc, 400, "unable to parse contact " + e.getMessage());
+            String contact = rc.queryParam("contact").stream().findFirst().orElse(null);
+            if (contact == null) {
+                ResponseUtil.error(rc, 400, "unable to parse contact ");
                 return;
             }
 
