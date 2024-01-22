@@ -1,0 +1,55 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Site API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/site/list": {
+      "get": {
+        "summary": "Fetch a list of sites",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer your_actual_token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "sites": [
+                    {
+                      "id": 1,
+                      "name": "Site 1"
+                    },
+                    {
+                      "id": 2,
+                      "name": "Site 2"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    }
+  }
+}

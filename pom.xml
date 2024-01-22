@@ -69,6 +69,12 @@
             <artifactId>vertx-auth-oauth2</artifactId>
             <version>${vertx.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.vertx/vertx-web-api-contract -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-api-contract</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-jmx</artifactId>
