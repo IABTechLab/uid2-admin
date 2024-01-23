@@ -211,7 +211,9 @@ paths:
           required: true
           description: Roles for the client key
           schema:
-            type: string
+            type: array
+            items:
+              $ref: '#/components/schemas/Role'
         - in: query
           name: site_id
           required: true
@@ -325,6 +327,19 @@ paths:
       operationId: updateClientContact
       tags:
         - Client Key
+      parameters:
+        - in: query
+          name: oldContact
+          required: true
+          description: Old Contact
+          schema:
+            type: string
+        - in: query
+          name: newContact
+          required: true
+          description: New Contact
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -336,6 +351,13 @@ paths:
       operationId: revealClientKey
       tags:
         - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
