@@ -12,13 +12,11 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
             "Authorization": authHeader
         },
         data : body,
-        success: function (text) {
-            var pretty = JSON.stringify(JSON.parse(text),null,2);
-            $(outputDiv).text(pretty);
-        },
-        error: function (err) { standardErrorCallback(err, errorDiv) }
+        success: text => setOutput(text, outputDiv),
+        error: err => standardErrorCallback(err, errorDiv)
     });
 }
+
 function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
     $(outputDiv).text("");
     $(errorDiv).text("");
@@ -33,15 +31,35 @@ function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
         headers: {
             "Authorization": authHeader
         },
-        success: function (text) {
-            var pretty = JSON.stringify(JSON.parse(text),null,2);
-            $(outputDiv).text(pretty);
-        },
-        error: function (err) { standardErrorCallback(err, errorDiv) }
+        success: text => setOutput(text, outputDiv),
+        error: err => standardErrorCallback(err, errorDiv)
     });
 }
 
-function errorCallback(err) { standardErrorCallback(err, "#errorOutput") }
+function doApiCallWithCallback(method, url, onSuccess, onError, body) {
+    authHeader = "Bearer " + window.__uid2_admin_token;
+
+    $.ajax({
+        type: method,
+        url: url,
+        dataType: "text",
+        headers: {
+            "Authorization": authHeader
+        },
+        data : body,
+        success: text => onSuccess(text),
+        error: err => onError(err)
+    });
+}
+
+function setOutput(text, div) {
+    const pretty = JSON.stringify(JSON.parse(text), null, 2);
+    $(div).text(pretty);
+}
+
+function errorCallback(err) {
+    standardErrorCallback(err, "#errorOutput");
+}
 
 function standardErrorCallback(err, errorDiv) {
     $(errorDiv).text("Error: " + err.status + ": " + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
@@ -56,35 +74,17 @@ function isJsonString(str) {
     return true;
 }
 
-function doApiCallWithCallback(method, url, onSuccess, onError, body) {
-    authHeader = "Bearer " + window.__uid2_admin_token;
-
-    $.ajax({
-        type: method,
-        url: url,
-        dataType: "text",
-        headers: {
-            "Authorization": authHeader
-        },
-        data : body,
-        success: function (text) {
-            onSuccess(text);
-        },
-        error: function (err) {
-            onError(err);
-        }
-    });
-}
-
 function init() {
     $.ajax({
         type: "GET",
         url: "/api/token/get",
         dataType: "text",
-        success: function (text) {
-            var u = JSON.parse(text);
+        success: text => {
+            const u = JSON.parse(text);
+
             $("#loginEmail").text(u.contact);
             $(".authed").show();
+
             if (u.roles.findIndex(e => e === "CLIENTKEY_ISSUER") >= 0) {
                 $(".ro-cki").show();
             }
@@ -104,13 +104,13 @@ function init() {
             window.__uid2_admin_user = u
             window.__uid2_admin_token = window.__uid2_admin_user.key;
         },
-        error: function (err) {
+        error: err => {
             // alert("Error: " + err.status + ": " + JSON.parse(err).message);
             $(".notauthed").show();
         }
     });
 
-    $(document).ready(function () {
+    $(document).ready(() => {
         const header = $("h1").first();
 
         if (window.location.origin.includes("prod")) {
