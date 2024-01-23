@@ -115,6 +115,14 @@ function init() {
             let header = $("h1").first();
             header.text(header.text().replace("UID2", "EUID"));
         }
+
+        if (window.location.origin.includes("integ")) {
+            let header = $("h1").first();
+            header.text(header.text() + " - Integ");
+        } else if (window.location.origin.includes("prod")) {
+            let header = $("h1").first();
+            header.text(header.text() + " - Prod");
+        }
     });
 }
 
