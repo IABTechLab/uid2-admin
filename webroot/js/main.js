@@ -111,17 +111,20 @@ function init() {
     });
 
     $(document).ready(function () {
-        if (window.location.origin.endsWith(".eu")) {
-            let header = $("h1").first();
-            header.text(header.text().replace("UID2", "EUID"));
+        const header = $("h1").first();
+
+        if (window.location.origin.includes("prod")) {
+            header.text(header.text().replace("Env", "Prod"));
+        } else if (window.location.origin.includes("integ")) {
+            header.text(header.text().replace("Env", "Integ"));
+        } else if (window.location.origin.includes("localhost")) {
+            header.text(header.text().replace("Env", "Dev"));
+        } else {
+            header.text(header.text().replace("Env", ""));
         }
 
-        if (window.location.origin.includes("integ")) {
-            let header = $("h1").first();
-            header.text(header.text() + " - Integ");
-        } else if (window.location.origin.includes("prod")) {
-            let header = $("h1").first();
-            header.text(header.text() + " - Prod");
+        if (window.location.origin.endsWith(".eu")) {
+            header.text(header.text().replace("UID2", "EUID"));
         }
     });
 }
