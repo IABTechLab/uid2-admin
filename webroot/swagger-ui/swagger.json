@@ -4,6 +4,20 @@
     "title": "Site API",
     "version": "1.0.0"
   },
+  "tags" : [ {
+    "name" : "Site",
+    "description" : "Operations for Sites",
+    "externalDocs" : {
+      "description" : "Find out more",
+      "url" : "https://github.com/IABTechLab/uid2-shared/blob/main/src/main/java/com/uid2/shared/model/Site.java"
+    }
+  }, {
+    "name" : "Client Key",
+    "description" : "Operations for Client API keys"
+  }, {
+    "name" : "Operator Key",
+    "description" : "Operations for Operator keys"
+  } ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {
@@ -21,6 +35,7 @@
     "/api/site/list": {
       "get": {
         "summary": "Fetch a list of sites",
+        "tags" : [ "Site" ],
         "security": [
           {
             "bearerAuth": []
@@ -61,6 +76,7 @@
     "/api/site/{siteId}": {
       "get": {
         "summary": "Get information about a specific site",
+        "tags" : [ "Site" ],
         "parameters": [
           {
             "name": "siteId",
@@ -101,6 +117,7 @@
     "/api/site/add": {
       "post": {
         "summary": "Add a new site",
+        "tags" : [ "Site" ],
         "parameters": [
           {
             "name": "name",
@@ -182,6 +199,53 @@
           },
           "500": {
             "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/client/add": {
+      "post": {
+        "summary": "Adds a new client key",
+        "operationId": "addClientKey",
+        "tags": ["Client Key"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "description": "Name of the client key",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "roles",
+            "required": true,
+            "description": "Roles for the client key",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "site_id",
+            "required": true,
+            "description": "Site ID for the client key",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Client key added successfully"
+          },
+          "400": {
+            "description": "Bad request, parameters are missing or incorrect"
+          },
+          "500": {
+            "description": "Internal server error"
           }
         }
       }
