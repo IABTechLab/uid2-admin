@@ -4,19 +4,26 @@
     "title": "Site API",
     "version": "1.0.0"
   },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/api/site/list": {
       "get": {
         "summary": "Fetch a list of sites",
-        "parameters": [
+        "security": [
           {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "Bearer your_actual_token"
+            "bearerAuth": []
           }
         ],
         "responses": {
