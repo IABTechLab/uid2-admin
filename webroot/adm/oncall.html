@@ -1,0 +1,46 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Admin - On-call Support Workflow</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<h3>Inputs</h3>
+
+<label for="input1">Input 1:</label>
+<input type="text" id="input1" name="input1">
+
+<br>
+<br>
+
+<h3>Operations</h3>
+
+<ul>
+    <li class="ro-adm" style="display: none"><a href="#" id="doSth">Do Something</a></li>
+</ul>
+
+<br>
+
+<h3>Output</h3>
+
+<div id="output">
+    <pre id="errorOutput"></pre>
+    <pre id="standardOutput"></pre>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doSomething').on('click', function () {
+            doApiCall('GET', '/api/sth', '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+
+</body>
+</html>
