@@ -57,6 +57,134 @@
           }
         }
       }
+    },
+    "/api/site/{siteId}": {
+      "get": {
+        "summary": "Get information about a specific site",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "description": "ID of the site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "site": {
+                    "id": 123,
+                    "name": "Example Site"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/site/add": {
+      "post": {
+        "summary": "Add a new site",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Name of the site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "description": "Client types",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "DSP",
+                  "ADVERTISER",
+                  "DATA_PROVIDER",
+                  "PUBLISHER"
+                ]
+              }
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "description": "Description of the site",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "domain_names",
+            "in": "query",
+            "description": "Domains of the site",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "description": "Enable site",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "name": "Example Site",
+                  "description": "Site description",
+                  "enabled": true,
+                  "clientTypes": ["PUBLISHER"],
+                  "domainNames": ["example.com", "example.org"],
+                  "visible": true,
+                  "created": 1234567890
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
     }
   }
 }
