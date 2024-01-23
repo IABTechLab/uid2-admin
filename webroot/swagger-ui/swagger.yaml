@@ -225,3 +225,117 @@ paths:
           description: Bad request, parameters are missing or incorrect
         '500':
           description: Internal server error
+  "/api/client/metadata":
+    get:
+      summary: Get client keys metadata
+      operationId: getClientMetadata
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/rewrite_metadata":
+    post:
+      summary: Rewrite client keys metadata
+      operationId: rewriteClientMetadata
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/list":
+    get:
+      summary: Get list of all client keys
+      operationId: getClientList
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/list/{siteId}":
+    get:
+      summary: Get list of client keys by site ID
+      operationId: getClientListBySite
+      tags:
+        - Client Key
+      parameters:
+        - in: path
+          name: siteId
+          required: true
+          description: Site ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/keyId":
+    get:
+      summary: Get client key by key ID
+      operationId: getClientByKeyId
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: keyId
+          required: true
+          description: Key ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Bad request, unable to parse keyId
+        '404':
+          description: Not found, unable to find key
+        '500':
+          description: Internal server error
+  "/api/client/contact":
+    get:
+      summary: Get client key by contact
+      operationId: getClientByContact
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Bad request, unable to parse contact
+        '404':
+          description: Not found, unable to find key
+        '500':
+          description: Internal server error
+    post:
+      summary: Update client contact
+      operationId: updateClientContact
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/reveal":
+    get:
+      summary: Reveal client key
+      operationId: revealClientKey
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
