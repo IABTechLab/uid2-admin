@@ -46,6 +46,7 @@
                 <h3>Operations</h3>
                 <ul>
                     <li><a href="#create" id="createSite">Create site</a></li>
+                    <li><a href="#create" id="updateSite">Update site - domain names and description</a></li>
                 </ul>
 
                 <hr>
@@ -75,6 +76,37 @@
 
                     <a href="#create" id="createSite-workflow-submit">Create</a>
                 </div>
+
+                <div id="updateSite-workflow" style="display: none">
+                    <h3>Update an existing site</h3>
+
+                    <label for="updateSite-workflow-siteId">Site ID:</label>
+                    <input type="text" id="updateSite-workflow-siteId" name="updateSite-workflow-siteId">
+                    <a href="#create" id="updateSite-workflow-search">Search</a>
+                    <br>
+                    <pre id="updateSite-workflow-searchOutput"></pre>
+
+                    <br>
+
+                    <div id="updateSite-workflow-afterSearch" style="display: none">
+                        Name: <span id="updateSite-workflow-afterSearch-siteName"></span>
+
+                        <br>
+
+                        <label for="updateSite-workflow-afterSearch-siteDomainNames">Domain Names (comma-seperated list):</label>
+                        <input type="text" id="updateSite-workflow-afterSearch-siteDomainNames" name="updateSite-workflow-afterSearch-siteDomainNames">
+
+                        <br>
+
+                        <label for="updateSite-workflow-afterSearch-siteDescription">Description (Optional):</label>
+                        <input type="text" id="updateSite-workflow-afterSearch-siteDescription" name="updateSite-workflow-afterSearch-siteDescription">
+
+                        <br>
+                        <br>
+
+                        <a href="#create" id="updateSite-workflow-submit">Update</a>
+                    </div>
+                </div>
             </td>
         </tr>
     </table>
@@ -83,16 +115,18 @@
 <script language="JavaScript">
     $(document).ready(() => {
         $("#searchParticipant").on("click", () => {
-            const name = encodeURIComponent($("#participantName").val());
+            const name = $("#participantName").val();
+
             search("site", name);
         });
 
         $("#createSite").on("click", () => {
             $("#createSite-workflow").show();
+            $("#updateSite-workflow").hide();
         });
 
         $("#createSite-workflow-submit").on("click", () => {
-            let domainNames = $("#createSite-workflow-siteDomainNames").val().replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            let domainNames = convertDomainNamesToArray($("#createSite-workflow-siteDomainNames").val());
             if (domainNames.length === 0) {
                 window.alert("Domain names cannot be empty");
                 return;
@@ -137,19 +171,78 @@ ${JSON.stringify(site, null, 2)}`;
             }, (err) => standardErrorCallback(err, `#siteSearchOutput`));
         });
 
+        $("#updateSite").on("click", () => {
+            $("#createSite-workflow").hide();
+            $("#updateSite-workflow").show();
+        });
+
+        $("#updateSite-workflow-search").on("click", () => {
+            $("#updateSite-workflow-searchOutput").text("");
+            $("#updateSite-workflow-afterSearch").hide();
+
+            const siteId = encodeURIComponent($("#updateSite-workflow-siteId").val());
+
+            doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                    const searchList = JSON.parse(text);
+
+                    const siteList = searchList.filter(s => s.id.toString() === siteId);
+                    if (siteList.length === 0) {
+                        $("#updateSite-workflow-searchOutput").text("No results");
+                    } else {
+                        $("#updateSite-workflow-afterSearch").show();
+
+                        const site = siteList[0];
+                        $("#updateSite-workflow-afterSearch-siteName").text(site.name);
+                        $("#updateSite-workflow-afterSearch-siteDomainNames").val(site.domain_names.join(","));
+                        $("#updateSite-workflow-afterSearch-siteDescription").val(site.description);
+                    }
+                }, (err) => standardErrorCallback(err, "#updateSite-workflow-searchOutput"));
+        });
+
+        $("#updateSite-workflow-submit").on("click", () => {
+            $("#siteSearchOutput").text("");
+
+            const id = encodeURIComponent($("#updateSite-workflow-siteId").val());
+            const name = $("#updateSite-workflow-afterSearch-siteName").text();
+            const domainNames = convertDomainNamesToArray($("#updateSite-workflow-afterSearch-siteDomainNames").val());
+            const description = encodeURIComponent($("#updateSite-workflow-afterSearch-siteDescription").val());
+
+            const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
+            const updateDescriptionUrl = `/api/site/update?id=${id}&description=${description}`;
+
+            const updateDomainNamesPayload = {domain_names: domainNames};
+
+            doApiCallWithCallback(
+                "POST",
+                updateDomainNamesUrl, 
+                () => doApiCallWithCallback(
+                    "POST",
+                    updateDescriptionUrl,
+                    () => search("site", name),
+                    (err) => standardErrorCallback(err, "#siteSearchOutput")
+                ),
+                (err) => standardErrorCallback(err, "#siteSearchOutput"),
+                JSON.stringify(updateDomainNamesPayload)
+            );
+        });
+
         const search = (type, name) => {
             $(`#${type}SearchOutput`).text("");
 
             doApiCallWithCallback("GET", `/api/${type}/list`, (text) => {
                     const searchList = JSON.parse(text);
 
-                    const similarList = searchList.filter(s => s.name.toLowerCase().includes(name.toLowerCase()));
+                    const similarList = searchList.filter((s) => s.name.toLowerCase().includes(name.toLowerCase()));
                     if (similarList.length === 0) {
                         $(`#${type}SearchOutput`).text("No results");
                     } else {
                         $(`#${type}SearchOutput`).text(JSON.stringify(similarList, null, 2));
                     }
                 }, (err) => standardErrorCallback(err, `#${type}SearchOutput`));
+        }
+
+        const convertDomainNamesToArray = (domainNames) => {
+            return domainNames.replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
         }
     });
 </script>
