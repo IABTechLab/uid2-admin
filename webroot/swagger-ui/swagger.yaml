@@ -96,6 +96,7 @@ components:
       enum: [ DSP, ADVERTISER, DATA_PROVIDER, PUBLISHER ]
 security:
   - bearerAuth: []
+############################## SITE #################################
 paths:
   "/api/site/list":
     get:
@@ -193,6 +194,7 @@ paths:
           description: Forbidden
         '500':
           description: Internal Server Error
+########################### CLIENT KEY ##############################
   "/api/client/add":
     post:
       summary: Adds a new client key
@@ -361,3 +363,137 @@ paths:
       responses:
         '200':
           description: Successful operation
+  "/api/client/del":
+    post:
+      summary: Delete a client
+      operationId: deleteClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/update":
+    post:
+      summary: Update a client
+      operationId: updateClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+        - in: query
+          name: site_id
+          required: true
+          description: Site Id
+          schema:
+            type: integer
+        - in: query
+          name: service_id
+          required: false
+          description: Service Id
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/disable":
+    post:
+      summary: Disable a client
+      operationId: disableClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/enable":
+    post:
+      summary: Enable a client
+      operationId: enableClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server errors
+  "/api/client/roles":
+    post:
+      summary: Update client key roles
+      operationId: updateClientRoles
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+        - in: query
+          name: roles
+          required: true
+          description: Roles for the client key
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/rename":
+    post:
+      summary: Rename a client
+      operationId: renameClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+        - in: query
+          name: newName
+          required: true
+          description: New Client Key Name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
