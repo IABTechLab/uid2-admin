@@ -30,11 +30,11 @@
     <table id="searchTable">
         <tr>
             <th>Sites</th>
+            <th>CSTG Keypairs</th>
         </tr>
         <tr>
-            <td>
-                <pre id="siteSearchOutput"></pre>
-            </td>
+            <td><pre id="siteSearchOutput"></pre></td>
+            <td><pre id="keypairSearchOutput"></pre></td>
         </tr>
         <tr>
             <td id="create" colspan="2" style="text-align: center">
@@ -106,6 +106,27 @@
 
                         <a href="#create" id="updateSite-workflow-submit">Update</a>
                     </div>
+                </div>
+            </td>
+            <td>
+                <h3>Operations</h3>
+                <ul>
+                    <li><a href="#create" id="createKeypair">Create keypair</a></li>
+                </ul>
+
+                <hr>
+
+                <div id="createKeypair-workflow" style="display: none">
+                    <h3>Create a new CSTG keypair</h3>
+
+                    <br>
+
+                    <label for="createKeypair-workflow-keypairSiteId">Site ID:</label>
+                    <input type="text" id="createKeypair-workflow-keypairSiteId" name="createKeypair-workflow-keypairSiteId">
+
+                    <br>
+
+                    <a href="#create" id="createKeypair-workflow-submit">Create</a>
                 </div>
             </td>
         </tr>
