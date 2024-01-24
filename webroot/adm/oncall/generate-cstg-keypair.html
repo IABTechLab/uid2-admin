@@ -142,9 +142,30 @@
 <script language="JavaScript">
     $(document).ready(() => {
         $("#searchParticipant").on("click", () => {
+            $("#siteSearchOutput").text("");
+            $("#keypairSearchOutput").text("");
+
             const name = $("#participantName").val();
 
-            search("site", name);
+            doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                    const searchList = JSON.parse(text);
+
+                    const similarList = searchList.filter((site) => site.name.toLowerCase().includes(name.toLowerCase()));
+                    if (similarList.length === 0) {
+                        $("#siteSearchOutput").text("No results");
+                    } else {
+                        $("#siteSearchOutput").text(JSON.stringify(similarList, null, 2));
+
+                        doApiCallWithCallback("GET", "/api/client_side_keypairs/list", (text) => {
+                            const siteIds = similarList.map((site) => site.id);
+                            const keypairs = JSON.parse(text);
+                            const filteredKeypairs = keypairs.filter((keypair) => siteIds.includes(keypair.site_id));
+
+                            $("#keypairSearchOutput").text(JSON.stringify(filteredKeypairs, null, 2));
+                        },
+                        (err) => standardErrorCallback(err, "#keypairSearchOutput"));
+                    }
+                }, (err) => standardErrorCallback(err, "#siteSearchOutput"));
         });
 
         $("#createSite").on("click", () => {
@@ -195,8 +216,8 @@ ${JSON.stringify(site, null, 2)}`;
 
                     $("#siteSearchOutput").text(outputMessage);
                     window.alert(alertMessage);
-                }, (err) => standardErrorCallback(err, `#siteSearchOutput`), JSON.stringify(payload));
-            }, (err) => standardErrorCallback(err, `#siteSearchOutput`));
+                }, (err) => standardErrorCallback(err, "#siteSearchOutput"), JSON.stringify(payload));
+            }, (err) => standardErrorCallback(err, "#siteSearchOutput"));
         });
 
         $("#updateSite").on("click", () => {
@@ -213,7 +234,7 @@ ${JSON.stringify(site, null, 2)}`;
             doApiCallWithCallback("GET", "/api/site/list", (text) => {
                     const searchList = JSON.parse(text);
 
-                    const siteList = searchList.filter(s => s.id.toString() === siteId);
+                    const siteList = searchList.filter((site) => site.id.toString() === siteId);
                     if (siteList.length === 0) {
                         $("#updateSite-workflow-searchOutput").text("No results");
                     } else {
@@ -315,23 +336,8 @@ ${JSON.stringify(keypair, null, 2)}`;
 
                 $("#keypairSearchOutput").text(outputMessage);
                 window.alert(alertMessage);
-            }, (err) => standardErrorCallback(err, `#keypairSearchOutput`), JSON.stringify(payload));
+            }, (err) => standardErrorCallback(err, "#keypairSearchOutput"), JSON.stringify(payload));
         });
-
-        const search = (type, name) => {
-            $(`#${type}SearchOutput`).text("");
-
-            doApiCallWithCallback("GET", `/api/${type}/list`, (text) => {
-                    const searchList = JSON.parse(text);
-
-                    const similarList = searchList.filter((s) => s.name.toLowerCase().includes(name.toLowerCase()));
-                    if (similarList.length === 0) {
-                        $(`#${type}SearchOutput`).text("No results");
-                    } else {
-                        $(`#${type}SearchOutput`).text(JSON.stringify(similarList, null, 2));
-                    }
-                }, (err) => standardErrorCallback(err, `#${type}SearchOutput`));
-        }
 
         const convertDomainNamesToArray = (domainNames) => {
             return domainNames.replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
