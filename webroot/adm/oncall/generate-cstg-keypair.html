@@ -8,6 +8,10 @@
             border: 1px solid;
             vertical-align: top;
         }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -18,7 +22,7 @@
 <br>
 <br>
 
-<div class="ro-adm" style="display: none">
+<div class="ro-adm hidden">
     <h3>Please input the participant's name.</h3>
     <label for="participantName">Name:</label>
     <input type="text" id="participantName" name="participantName">
@@ -51,7 +55,7 @@
 
                 <hr>
 
-                <div id="createSite-workflow" style="display: none">
+                <div id="createSite-workflow" class="hidden">
                     <h3>Create a new site</h3>
 
                     <label for="createSite-workflow-name">Name:</label>
@@ -77,7 +81,7 @@
                     <a href="#create" id="createSite-workflow-submit">Create</a>
                 </div>
 
-                <div id="updateSite-workflow" style="display: none">
+                <div id="updateSite-workflow" class="hidden">
                     <h3>Update an existing site</h3>
 
                     <label for="updateSite-workflow-siteId">Site ID:</label>
@@ -88,7 +92,7 @@
 
                     <br>
 
-                    <div id="updateSite-workflow-afterSearch" style="display: none">
+                    <div id="updateSite-workflow-afterSearch" class="hidden">
                         Name: <span id="updateSite-workflow-afterSearch-name"></span>
 
                         <br>
@@ -116,7 +120,7 @@
 
                 <hr>
 
-                <div id="createKeypair-workflow" style="display: none">
+                <div id="createKeypair-workflow" class="hidden">
                     <h3>Create a new CSTG keypair</h3>
 
                     <br>
