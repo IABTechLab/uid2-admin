@@ -126,6 +126,12 @@
 
                     <br>
 
+                    <label for="createKeypair-workflow-name">Name (Optional):</label>
+                    <input type="text" id="createKeypair-workflow-name" name="createKeypair-workflow-name">
+
+                    <br>
+                    <br>
+
                     <a href="#create" id="createKeypair-workflow-submit">Create</a>
                 </div>
             </td>
@@ -165,6 +171,7 @@
 
             const name = encodeURIComponent($("#createSite-workflow-name").val());
             const description = encodeURIComponent($("#createSite-workflow-description").val());
+
             const createSiteUrl = `/api/site/add?name=${name}&types=PUBLISHER&description=${description}`;
 
             doApiCallWithCallback("POST", createSiteUrl, (text) => {
@@ -259,6 +266,56 @@ ${JSON.stringify(site, null, 2)}`;
                 (err) => standardErrorCallback(err, "#siteSearchOutput"),
                 JSON.stringify(updateDomainNamesPayload)
             );
+        });
+
+        $("#createKeypair").on("click", () => {
+            $("#createKeypair-workflow").show();
+        });
+
+        $("#createKeypair-workflow-submit").on("click", () => {
+            $("#keypairSearchOutput").text("");
+
+            const siteId = encodeURIComponent($("#createKeypair-workflow-siteId").val());
+            const name = encodeURIComponent($("#createKeypair-workflow-name").val());
+
+            const payload = {"site_id": parseInt(siteId), "name": name, "disabled": false}
+
+            doApiCallWithCallback("POST", "/api/client_side_keypairs/add", (text) => {
+                const keypair = JSON.parse(text);
+
+                const alertMessage = `Created CSTG keypair for site ID [${keypair.site_id}]`;
+
+                const privateMessage = `\
+Subscription ID: ${keypair.subscription_id}
+Public key: ${keypair.public_key}`;
+
+                const jiraBody = JSON.parse(JSON.stringify(keypair));
+                delete jiraBody.subscription_id;
+                delete jiraBody.public_key;
+                delete jiraBody.private_key;
+
+                const outputMessage = `\
+${alertMessage}
+
+--------------------------------------------------
+
+Please copy the following into a private message:
+
+${privateMessage}
+
+--------------------------------------------------
+
+Please copy the following into the JIRA ticket:
+
+${JSON.stringify(jiraBody, null, 2)}
+
+--------------------------------------------------
+
+${JSON.stringify(keypair, null, 2)}`;
+
+                $("#keypairSearchOutput").text(outputMessage);
+                window.alert(alertMessage);
+            }, (err) => standardErrorCallback(err, `#keypairSearchOutput`), JSON.stringify(payload));
         });
 
         const search = (type, name) => {
