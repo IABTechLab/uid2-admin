@@ -239,7 +239,21 @@ ${JSON.stringify(site, null, 2)}`;
                 () => doApiCallWithCallback(
                     "POST",
                     updateDescriptionUrl,
-                    () => search("site", name),
+                    (text) => {
+                        const site = JSON.parse(text);
+
+                        const alertMessage = `Updated site [${site.name}] with site ID [${site.id}]`;
+
+                        const outputMessage = `\
+${alertMessage}
+
+--------------------------------------------------
+
+${JSON.stringify(site, null, 2)}`;
+
+                        $("#siteSearchOutput").text(outputMessage);
+                        window.alert(alertMessage);
+                    },
                     (err) => standardErrorCallback(err, "#siteSearchOutput")
                 ),
                 (err) => standardErrorCallback(err, "#siteSearchOutput"),
