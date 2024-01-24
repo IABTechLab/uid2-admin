@@ -1,8 +1,8 @@
 ---
 openapi: 3.0.0
 info:
-  title: Site API
-  version: 1.0.0
+  title: Admin API
+  version: 4.5.4-8f846ab080
 tags:
   - name: Site
     description: Operations for Sites
@@ -13,6 +13,8 @@ tags:
     description: Operations for Client API keys
   - name: Operator Key
     description: Operations for Operator keys
+  - name: Client Side Keypair Management
+    description: Operations for Client Side Keypair Management
 components:
   securitySchemes:
     bearerAuth:
@@ -94,6 +96,26 @@ components:
     ClientType:
       type: string
       enum: [ DSP, ADVERTISER, DATA_PROVIDER, PUBLISHER ]
+    ClientSideKeypair:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+        publicKey:
+          type: string
+        privateKey:
+          type: string
+        siteId:
+          type: integer
+        contact:
+          type: string
+        created:
+          type: string
+          format: date-time
+        disabled:
+          type: boolean
+        name:
+          type: string
 security:
   - bearerAuth: []
 ############################## SITE #################################
@@ -497,3 +519,125 @@ paths:
           description: Successful operation
         '500':
           description: Internal server error
+###################### CLIENT SIDE KEY PAIR #########################
+  /api/client_side_keypairs/add:
+    post:
+      summary: Add a new keypair (Requires- Administrator, Sharing Portal)
+      tags:
+        - Client Side Keypair Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                site_id:
+                  required: true
+                  type: integer
+                contact:
+                  type: string
+                disabled:
+                  type: boolean
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSideKeypair'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+
+  /api/client_side_keypairs/update:
+    post:
+      summary: Update an existing keypair (Requires- Administrator)
+      tags:
+        - Client Side Keypair Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subscription_id:
+                  required: true
+                  type: string
+                contact:
+                  type: string
+                disabled:
+                  type: boolean
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSideKeypair'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+
+  /api/client_side_keypairs/list:
+    get:
+      summary: List all keypairs (Requires- Administrator)
+      tags:
+        - Client Side Keypair Management
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientSideKeypair'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+
+  /api/client_side_keypairs/{subscriptionId}:
+    get:
+      summary: Get keypair by Subscription ID (Requires Administrator)
+      tags:
+        - Client Side Keypair Management
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSideKeypair'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
