@@ -54,22 +54,22 @@
                 <div id="createSite-workflow" style="display: none">
                     <h3>Create a new site</h3>
 
-                    <label for="createSite-workflow-siteName">Name:</label>
-                    <input type="text" id="createSite-workflow-siteName" name="createSite-workflow-siteName">
+                    <label for="createSite-workflow-name">Name:</label>
+                    <input type="text" id="createSite-workflow-name" name="createSite-workflow-name">
 
                     <br>
 
-                    <label for="createSite-workflow-siteDomainNames">Domain Names (comma-seperated list):</label>
-                    <input type="text" id="createSite-workflow-siteDomainNames" name="createSite-workflow-siteDomainNames">
+                    <label for="createSite-workflow-domainNames">Domain Names (comma-seperated list):</label>
+                    <input type="text" id="createSite-workflow-domainNames" name="createSite-workflow-domainNames">
 
                     <br>
 
-                    <label for="createSite-workflow-siteDescription">Description (Optional):</label>
-                    <input type="text" id="createSite-workflow-siteDescription" name="createSite-workflow-siteDescription">
+                    <label for="createSite-workflow-description">Description (Optional):</label>
+                    <input type="text" id="createSite-workflow-description" name="createSite-workflow-description">
 
                     <div>
-                        <input type="checkbox" id="createSite-workflow-siteClientTypes-PUBLISHER" name="createSite-workflow-siteClientTypes[]" value="PUBLISHER">
-                        <label for="createSite-workflow-siteClientTypes-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.</label>
+                        <input type="checkbox" id="createSite-workflow-clientTypes-PUBLISHER" name="createSite-workflow-clientTypes[]" value="PUBLISHER">
+                        <label for="createSite-workflow-clientTypes-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.</label>
                     </div>
 
                     <br>
@@ -89,17 +89,17 @@
                     <br>
 
                     <div id="updateSite-workflow-afterSearch" style="display: none">
-                        Name: <span id="updateSite-workflow-afterSearch-siteName"></span>
+                        Name: <span id="updateSite-workflow-afterSearch-name"></span>
 
                         <br>
 
-                        <label for="updateSite-workflow-afterSearch-siteDomainNames">Domain Names (comma-seperated list):</label>
-                        <input type="text" id="updateSite-workflow-afterSearch-siteDomainNames" name="updateSite-workflow-afterSearch-siteDomainNames">
+                        <label for="updateSite-workflow-afterSearch-domainNames">Domain Names (comma-seperated list):</label>
+                        <input type="text" id="updateSite-workflow-afterSearch-domainNames" name="updateSite-workflow-afterSearch-domainNames">
 
                         <br>
 
-                        <label for="updateSite-workflow-afterSearch-siteDescription">Description (Optional):</label>
-                        <input type="text" id="updateSite-workflow-afterSearch-siteDescription" name="updateSite-workflow-afterSearch-siteDescription">
+                        <label for="updateSite-workflow-afterSearch-description">Description (Optional):</label>
+                        <input type="text" id="updateSite-workflow-afterSearch-description" name="updateSite-workflow-afterSearch-description">
 
                         <br>
                         <br>
@@ -121,8 +121,8 @@
 
                     <br>
 
-                    <label for="createKeypair-workflow-keypairSiteId">Site ID:</label>
-                    <input type="text" id="createKeypair-workflow-keypairSiteId" name="createKeypair-workflow-keypairSiteId">
+                    <label for="createKeypair-workflow-siteId">Site ID:</label>
+                    <input type="text" id="createKeypair-workflow-siteId" name="createKeypair-workflow-siteId">
 
                     <br>
 
@@ -147,13 +147,13 @@
         });
 
         $("#createSite-workflow-submit").on("click", () => {
-            let domainNames = convertDomainNamesToArray($("#createSite-workflow-siteDomainNames").val());
+            let domainNames = convertDomainNamesToArray($("#createSite-workflow-domainNames").val());
             if (domainNames.length === 0) {
                 window.alert("Domain names cannot be empty");
                 return;
             }
 
-            const isPublisherChecked = $("#createSite-workflow-siteClientTypes-PUBLISHER").is(":checked");
+            const isPublisherChecked = $("#createSite-workflow-clientTypes-PUBLISHER").is(":checked");
             if (!isPublisherChecked) {
                 window.alert("Unable to create site - only publishers are allowed to use CSTG.");
                 return;
@@ -163,8 +163,8 @@
 
             $("#siteSearchOutput").text("");
 
-            const name = encodeURIComponent($("#createSite-workflow-siteName").val());
-            const description = encodeURIComponent($("#createSite-workflow-siteDescription").val());
+            const name = encodeURIComponent($("#createSite-workflow-name").val());
+            const description = encodeURIComponent($("#createSite-workflow-description").val());
             const createSiteUrl = `/api/site/add?name=${name}&types=PUBLISHER&description=${description}`;
 
             doApiCallWithCallback("POST", createSiteUrl, (text) => {
@@ -213,9 +213,9 @@ ${JSON.stringify(site, null, 2)}`;
                         $("#updateSite-workflow-afterSearch").show();
 
                         const site = siteList[0];
-                        $("#updateSite-workflow-afterSearch-siteName").text(site.name);
-                        $("#updateSite-workflow-afterSearch-siteDomainNames").val(site.domain_names.join(","));
-                        $("#updateSite-workflow-afterSearch-siteDescription").val(site.description);
+                        $("#updateSite-workflow-afterSearch-name").text(site.name);
+                        $("#updateSite-workflow-afterSearch-domainNames").val(site.domain_names.join(","));
+                        $("#updateSite-workflow-afterSearch-description").val(site.description);
                     }
                 }, (err) => standardErrorCallback(err, "#updateSite-workflow-searchOutput"));
         });
@@ -224,9 +224,9 @@ ${JSON.stringify(site, null, 2)}`;
             $("#siteSearchOutput").text("");
 
             const id = encodeURIComponent($("#updateSite-workflow-siteId").val());
-            const name = $("#updateSite-workflow-afterSearch-siteName").text();
-            const domainNames = convertDomainNamesToArray($("#updateSite-workflow-afterSearch-siteDomainNames").val());
-            const description = encodeURIComponent($("#updateSite-workflow-afterSearch-siteDescription").val());
+            const name = $("#updateSite-workflow-afterSearch-name").text();
+            const domainNames = convertDomainNamesToArray($("#updateSite-workflow-afterSearch-domainNames").val());
+            const description = encodeURIComponent($("#updateSite-workflow-afterSearch-description").val());
 
             const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
             const updateDescriptionUrl = `/api/site/update?id=${id}&description=${description}`;
