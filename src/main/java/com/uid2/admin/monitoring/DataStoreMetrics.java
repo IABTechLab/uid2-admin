@@ -31,6 +31,8 @@ public final class DataStoreMetrics {
                 .builder("uid2_data_store_entry_count", () -> {
                     try {
                         // Warning: this downloads metadata from the underlying remote data store
+                        serviceStore.loadContent(serviceStore.getMetadata());
+                        serviceLinkStore.loadContent(serviceLinkStore.getMetadata());
                         Optional<Service> snowflakeService = serviceStore.getAllServices().stream().filter(s -> s.getName().equals("snowflake")).findFirst();
                         if (snowflakeService.isEmpty()) { throw new IllegalStateException("snowflake service does not exist, unable to find snowflake accounts"); }
                         long entryCount = serviceLinkStore.getAllServiceLinks().stream()
