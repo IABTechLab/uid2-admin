@@ -26,25 +26,26 @@ public final class DataStoreMetrics {
                 .description("version from metadata of a data store")
                 .register(globalRegistry);
     }
-    public static void addDataStoreSnowflakeMetrics(String dataType, RotatingServiceLinkStore serviceLinkStore, RotatingServiceStore serviceStore) {
-        Gauge
-                .builder("uid2_data_store_entry_count", () -> {
-                    try {
-                        // Warning: this downloads metadata from the underlying remote data store
-                        serviceStore.loadContent(serviceStore.getMetadata());
-                        serviceLinkStore.loadContent(serviceLinkStore.getMetadata());
-                        Optional<Service> snowflakeService = serviceStore.getAllServices().stream().filter(s -> s.getName().equals("snowflake")).findFirst();
-                        if (snowflakeService.isEmpty()) { throw new IllegalStateException("snowflake service does not exist, unable to find snowflake accounts"); }
+
+    public static void addDataStoreServiceLinkEntryCount(String serviceName, RotatingServiceLinkStore serviceLinkStore, RotatingServiceStore serviceStore) {
+        try {
+            // Warning: this downloads metadata from the underlying remote data store
+            serviceStore.loadContent(serviceStore.getMetadata());
+            serviceLinkStore.loadContent(serviceLinkStore.getMetadata());
+            Optional<Service> service = serviceStore.getAllServices().stream().filter(s -> s.getName().equals(serviceName)).findFirst();
+
+            service.ifPresent(targetService -> Gauge
+                    .builder("uid2_data_store_entry_count", () -> {
                         long entryCount = serviceLinkStore.getAllServiceLinks().stream()
-                                                                    .filter(s -> s.getServiceId() == snowflakeService.get().getServiceId())
-                                                                    .count();
+                                .filter(s -> s.getServiceId() == targetService.getServiceId())
+                                .count();
                         return entryCount;
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .tag("store", dataType)
-                .description("entry count from metadata of a data store")
-                .register(globalRegistry);
+                    })
+                    .tag("store", serviceName.toLowerCase())
+                    .description("entry count of a data store")
+                    .register(globalRegistry));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
