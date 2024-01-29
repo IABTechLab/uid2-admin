@@ -41,7 +41,7 @@ public final class DataStoreMetrics {
                                 .count();
                         return entryCount;
                     })
-                    .tag("store", serviceName.toLowerCase())
+                    .tag("store", serviceName.toLowerCase() + "_service_link")
                     .description("entry count of a data store")
                     .register(globalRegistry));
         } catch (Exception e) {
