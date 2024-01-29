@@ -113,7 +113,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientDisable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
 
         router.post("/api/client/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
