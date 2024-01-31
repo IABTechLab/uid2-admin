@@ -48,6 +48,17 @@
 </ul>
 
 <br>
+<h3>Oncall actions</h3>
+<div>
+  <label for="clientTypes">Client Types:</label>
+  <input type="text" id="clientTypes" name="clientTypes">
+  <label for="isIdReaderRole">Is ID_READER role:</label>
+  <input type="checkbox" id="isIdReaderRole" name="isIdReaderRole" value="true">
+</div>
+<ul>
+  <li class="ro-adm" style="display: none"><a href="#" id="doListAllRelated">List All Related Keysets</a></li>
+</ul>
+<br>
 
 <h3>Output</h3>
 
@@ -188,6 +199,26 @@
       payload['allowed_types'] = addTypes
 
       doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
+    });
+    $('#doListAllRelated').on('click', function () {
+      const siteId = parseInt($('#siteId').val());
+      if(!siteId) {
+        $('#errorOutput').html("Required Parameters: site_id")
+        return;
+      }
+      const clientTypes = $('#clientTypes').val();
+      if(!clientTypes) {
+        $('#errorOutput').html("Required Parameters: client_types")
+        return;
+      }
+      const isIdReaderRole = $('#isIdReaderRole').is(':checked');
+
+      const url = '/api/sharing/keysets/related?site_id=' + siteId + '&client_types=' + clientTypes + '&is_id_reader_role=' + isIdReaderRole;
+      doApiCallWithCallback('GET', url, (text) => {
+        const ja = JSON.parse(text);
+        const pretty = JSON.stringify(ja,null,2);
+        $('#standardOutput').html(pretty);
+      }, errorCallback );
     });
   });
 

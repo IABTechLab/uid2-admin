@@ -4,6 +4,7 @@ import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.AdminKeysetWriter;
+import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
@@ -12,6 +13,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientType;
+import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
@@ -25,6 +27,8 @@ import org.slf4j.Logger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.uid2.admin.vertx.RequestUtil.getTypes;
 
 public class SharingService implements IService {
     private final AuthMiddleware auth;
@@ -72,6 +76,9 @@ public class SharingService implements IService {
         );
         router.get("/api/sharing/keyset/:keyset_id").handler(
                 auth.handle(this::handleListKeyset, Role.ADMINISTRATOR)
+        );
+        router.get("/api/sharing/keysets/related").handler(
+                auth.handle(this::handleListAllKeysetsRelated, Role.ADMINISTRATOR)
         );
     }
 
@@ -389,6 +396,65 @@ public class SharingService implements IService {
 
         this.keysetManager.addOrReplaceKeyset(newKeyset);
         return newKeyset;
+    }
+
+    // Method to check if one set contains any values from another set
+    private static <T> boolean containsAny(Set<T> set1, Set<T> set2) {
+        for (T element : set2) {
+            if (set1.contains(element)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void handleListAllKeysetsRelated(RoutingContext rc) {
+        try {
+            // Get value for site id
+            final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
+            if (!siteIdOpt.isPresent()) return;
+            final int siteId = siteIdOpt.get();
+
+            if (siteId != Const.Data.AdvertisingTokenSiteId && !SiteUtil.isValidSiteId(siteId)) {
+                ResponseUtil.error(rc, 400, "must specify a valid site id");
+                return;
+            }
+
+            // Get value for client type
+            Set<ClientType> clientTypes = new HashSet<>();
+            if (!rc.queryParam("client_types").isEmpty()) {
+                clientTypes = getTypes(rc.queryParam("client_types").get(0));
+            }
+
+            // Check if the key has a ID_READER role
+            boolean isIdReaderRole = false;
+            if (rc.queryParam("is_id_reader_role").get(0).equals("true")) {
+                isIdReaderRole = true;
+            };
+
+            // Get the keyset ids that need to be rotated
+            final JsonArray ja = new JsonArray();
+            Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
+                // The keysets meet any of the below conditions ALL need to be rotated:
+                // a. Keysets where allowed_types include any of the clientTypes that you noted down earlier
+                // b. If leaked key was an ID_READER, we want to rotate the keysets where allowed_sites is set to null
+                // c. Keysets where allowed_sites include the leaked site
+                // d. Keysets belonging to the leaked site itself (can also get these keysets by putting down the "Site id" and click "List All Keysets By Site Id")
+                if (containsAny(keyset.getValue().getAllowedTypes(), clientTypes) ||
+                        isIdReaderRole && keyset.getValue().getAllowedSites() == null ||
+                        keyset.getValue().getAllowedSites() != null && keyset.getValue().getAllowedSites().contains(siteId) ||
+                        keyset.getValue().getSiteId() == siteId) {
+                    ja.add(jsonFullKeyset(keyset.getValue()));
+                }
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(ja.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
     }
 
     private JsonObject jsonFullKeyset(AdminKeyset keyset) {
