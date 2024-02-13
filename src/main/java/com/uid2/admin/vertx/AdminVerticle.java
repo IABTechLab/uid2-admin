@@ -69,7 +69,6 @@ public class AdminVerticle extends AbstractVerticle {
         router.get("/logout").handler(new RedirectToRootHandler(true));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
         router.get("/api/token/get").handler(ctx -> handleTokenGet(ctx));
-        router.get("/protected").handler(this::handleProtected);
 
         for (IService service : this.services) {
             service.setupRoutes(router);
@@ -126,16 +125,6 @@ public class AdminVerticle extends AbstractVerticle {
             rc.response().end(jsonWriter.writeValueAsString(adminUser));
         } catch (Exception ex) {
             rc.fail(ex);
-        }
-    }
-
-    private void handleProtected(RoutingContext rc) {
-        if (rc.failed()) {
-            rc.session().destroy();
-            rc.fail(rc.failure());
-        } else {
-            final String email = rc.user().get("email");
-            rc.response().end(email);
         }
     }
 }

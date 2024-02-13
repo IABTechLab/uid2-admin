@@ -32,10 +32,11 @@
   "site_key_expires_after_seconds": 90000,
   "salt_snapshot_activates_in_seconds": 180,
   "salt_snapshot_expires_after_seconds": 180000,
-  "is_auth_disabled": true,
+  "is_auth_disabled": false,
   "enable_keysets": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
   "okta_client_secret": "GET_FROM_1PASSWORD",
   "okta_issuer": "https://uid2.okta.com/",
+  "okta_auth_server": "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8",
   "okta_callback": "http://localhost:8089/oauth2-callback"
 }

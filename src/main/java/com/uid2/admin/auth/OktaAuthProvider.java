@@ -34,7 +34,7 @@ public class OktaAuthProvider implements AuthProvider {
         new OAuth2Options()
             .setClientId(this.config.getString("okta_client_id"))
             .setClientSecret(this.config.getString("okta_client_secret"))
-            .setSite(String.format("%soauth2/",  this.config.getString("okta_issuer")))
+            .setSite(this.config.getString("okta_auth_server"))
             .setTokenPath("/v1/token")
             .setAuthorizationPath("/v1/authorize")
             .setUserInfoPath("/v1/userinfo")
@@ -48,8 +48,8 @@ public class OktaAuthProvider implements AuthProvider {
     @Override
     public AccessTokenVerifier createTokenVerifier() {
         return JwtVerifiers.accessTokenVerifierBuilder()
-            .setIssuer(this.config.getString("okta_issuer"))
-            .setAudience(this.config.getString("okta_client_id"))                   
+            .setIssuer(this.config.getString("okta_auth_server"))
+            .setAudience(this.config.getString("okta_client_id"))
             .setConnectionTimeout(Duration.ofSeconds(1))
             .setRetryMaxAttempts(2) 
             .setRetryMaxElapsed(Duration.ofSeconds(10))
