@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
@@ -14,7 +15,6 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.SiteUtil;
@@ -56,7 +56,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private static final String REFRESH_KEY_ROTATION_CUT_OFF_DAYS = "refresh_key_rotation_cut_off_days";
     private static final String FILTER_KEY_OVER_CUT_OFF_DAYS = "filter_key_over_cut_off_days";
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final Clock clock;
     private final WriteLock writeLock;
     private final EncryptionKeyStoreWriter storeWriter;
@@ -80,7 +80,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private final boolean enableKeysets;
 
     public EncryptionKeyService(JsonObject config,
-                                AuthMiddleware auth,
+                                AdminAuthMiddleware auth,
                                 WriteLock writeLock,
                                 EncryptionKeyStoreWriter storeWriter,
                                 KeysetKeyStoreWriter keysetKeyStoreWriter,

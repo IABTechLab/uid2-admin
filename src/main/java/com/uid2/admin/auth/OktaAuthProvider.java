@@ -1,5 +1,6 @@
 package com.uid2.admin.auth;
 
+import com.okta.jwt.IdTokenVerifier;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
@@ -11,16 +12,29 @@ import com.okta.jwt.AccessTokenVerifier;
 import com.okta.jwt.JwtVerifiers;
 import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Collections;
 
 public class OktaAuthProvider implements AuthProvider {
     private final JsonObject config;
-    private List<String> scopes = Collections.unmodifiableList(Arrays.asList("openid",  "profile" ,"email" ,"groups"));
-
+    private final List<String> scopes = List.of("openid", "profile", "email", "uid2.admin.human", "offline_access");
+    private final AccessTokenVerifier accessTokenVerifier;
+    private final IdTokenVerifier idTokenVerifier;
     public OktaAuthProvider(JsonObject config) {
         this.config = config;
+        this.accessTokenVerifier = JwtVerifiers.accessTokenVerifierBuilder()
+                .setIssuer(config.getString("okta_auth_server"))
+                .setAudience(config.getString("okta_audience"))
+                .setConnectionTimeout(Duration.ofSeconds(1))
+                .setRetryMaxAttempts(2)
+                .setRetryMaxElapsed(Duration.ofSeconds(10))
+                .build();
+        this.idTokenVerifier = JwtVerifiers.idTokenVerifierBuilder()
+                .setClientId(config.getString("okta_client_id"))
+                .setIssuer(config.getString("okta_auth_server"))
+                .setConnectionTimeout(Duration.ofSeconds(1))
+                .setRetryMaxAttempts(2)
+                .setRetryMaxElapsed(Duration.ofSeconds(10))
+                .build();
     }
 
     @Override
@@ -30,7 +44,7 @@ public class OktaAuthProvider implements AuthProvider {
             return new NoopAuthHandler();
         }
 
-        OAuth2Auth oktaAuth = OAuth2Auth.create(vertx, 
+        OAuth2Auth oktaAuth = OAuth2Auth.create(vertx,
         new OAuth2Options()
             .setClientId(this.config.getString("okta_client_id"))
             .setClientSecret(this.config.getString("okta_client_secret"))
@@ -42,18 +56,18 @@ public class OktaAuthProvider implements AuthProvider {
         OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(vertx, oktaAuth, this.config.getString("okta_callback"));
         authHandler.extraParams(new JsonObject(String.format("{\"scope\":\"%s\"}", String.join(" ", this.scopes))));
         authHandler.setupCallback(callbackRoute);
-        return authHandler;   
+        return authHandler;
+    }
+
+
+    @Override
+    public AccessTokenVerifier getAccessTokenVerifier() {
+        return this.accessTokenVerifier;
     }
 
     @Override
-    public AccessTokenVerifier createTokenVerifier() {
-        return JwtVerifiers.accessTokenVerifierBuilder()
-            .setIssuer(this.config.getString("okta_auth_server"))
-            .setAudience(this.config.getString("okta_client_id"))
-            .setConnectionTimeout(Duration.ofSeconds(1))
-            .setRetryMaxAttempts(2) 
-            .setRetryMaxElapsed(Duration.ofSeconds(10))
-            .build();
+    public IdTokenVerifier getIdTokenVerifier() {
+        return this.idTokenVerifier;
     }
 
     @Override

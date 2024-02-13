@@ -1,6 +1,7 @@
 package com.uid2.admin;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.OktaAuthProvider;
 import com.uid2.admin.auth.AuthProvider;
@@ -218,7 +219,7 @@ public class Main {
             partnerConfigProvider.loadContent();
             PartnerStoreWriter partnerStoreWriter = new PartnerStoreWriter(partnerConfigProvider, fileManager, versionGenerator);
 
-            AuthMiddleware auth = new AuthMiddleware(adminUserProvider);
+            AdminAuthMiddleware auth = new AdminAuthMiddleware(authProvider);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             KeyHasher keyHasher = new KeyHasher();

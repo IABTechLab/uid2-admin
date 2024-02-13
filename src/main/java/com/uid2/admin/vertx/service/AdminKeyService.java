@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
@@ -13,7 +14,6 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import io.vertx.core.http.HttpHeaders;
@@ -32,7 +32,7 @@ public class AdminKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminKeyService.class);
     private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final AdminUserStoreWriter storeWriter;
     private final AdminUserProvider adminUserProvider;
@@ -45,7 +45,7 @@ public class AdminKeyService implements IService {
 
     public AdminKeyService(
             JsonObject config,
-            AuthMiddleware auth,
+            AdminAuthMiddleware auth,
             WriteLock writeLock,
             AdminUserStoreWriter storeWriter,
             AdminUserProvider adminUserProvider,

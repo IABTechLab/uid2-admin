@@ -1,47 +1,40 @@
 package com.uid2.admin.auth;
 
 
-import com.okta.jwt.AccessTokenVerifier;
-import com.okta.jwt.Jwt;
-import com.okta.jwt.JwtVerificationException;
-import com.okta.jwt.JwtVerifiers;
+import com.okta.jwt.*;
+import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
+import java.time.ZoneId;
 import java.util.*;
 
 public class AdminAuthMiddleware {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminAuthMiddleware.class);
     private final AuthProvider authProvider;
-    private final AccessTokenVerifier tokenVerifier;
     public AdminAuthMiddleware(AuthProvider authProvider) {
         this.authProvider = authProvider;
-        this.tokenVerifier = JwtVerifiers.accessTokenVerifierBuilder()
-                .setIssuer("https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8")
-                .setAudience("https://api.admin.com/api")
-                .setConnectionTimeout(Duration.ofSeconds(1))
-                .build();
     }
 
-    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, AdminRole... roles) {
+    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }
-        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), tokenVerifier);
+        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles));
         return adminAuthHandler::handle;
     }
 
     private static class AdminAuthHandler {
         private final Handler<RoutingContext> innerHandler;
-        private final Set<AdminRole> allowedRoles;
+        private final Set<Role> allowedRoles;
         private final List<String> oktaRoles = List.of("developer", "developer-elevated", "infra-admin", "admin");
         private final AuthProvider authProvider;
-        private final AccessTokenVerifier tokenVerifier;
-        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<AdminRole> allowedRoles, AccessTokenVerifier tokenVerifier) {
+        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles) {
             this.innerHandler = handler;
             this.authProvider = authProvider;
             this.allowedRoles = allowedRoles;
-            this.tokenVerifier = tokenVerifier;
         }
 
         public static String extractBearerToken(String headerValue) {
@@ -88,7 +81,7 @@ public class AdminAuthMiddleware {
         private void validateAccessToken(RoutingContext rc, String accessToken) {
             Jwt jwt;
             try {
-                jwt = tokenVerifier.decode(accessToken);
+                jwt = authProvider.getAccessTokenVerifier().decode(accessToken);
             } catch (JwtVerificationException e) {
                 rc.response().setStatusCode(401).end();
                 return;
@@ -102,9 +95,13 @@ public class AdminAuthMiddleware {
         }
 
         private void validateIdToken(RoutingContext rc, String idToken) {
+            LOGGER.info(idToken);
+            LOGGER.info(rc.user().principal().getString("refresh_token"));
+            LOGGER.info(rc.user().principal().getString("access_token"));
             Jwt jwt;
             try {
-                jwt = tokenVerifier.decode(idToken);
+                jwt = authProvider.getIdTokenVerifier().decode(idToken, null);
+                LOGGER.info(jwt.getExpiresAt().atZone(ZoneId.of("MST", ZoneId.SHORT_IDS)).toString());
             } catch (JwtVerificationException e) {
                 rc.response().setStatusCode(401).end();
                 return;

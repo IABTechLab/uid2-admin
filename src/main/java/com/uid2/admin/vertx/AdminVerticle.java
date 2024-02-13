@@ -59,11 +59,16 @@ public class AdminVerticle extends AbstractVerticle {
         final Router router = Router.router(vertx);
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
         final AuthenticationHandler oktaHandler = this.authProvider.createAuthHandler(vertx, router.route("/oauth2-callback"));
+        final TokenRefreshHandler tokenRefreshHandler = new TokenRefreshHandler(this.authProvider.getIdTokenVerifier(), config);
+
         router.route().handler(BodyHandler.create());
         router.route().handler(StaticHandler.create("webroot"));
 
         router.route("/login").handler(oktaHandler);
-        router.route("/adm/*").handler(oktaHandler); 
+        router.route("/adm/*").handler(tokenRefreshHandler);
+        router.route("/adm/*").handler(oktaHandler);
+        router.route("/api/*").handler(tokenRefreshHandler);
+        router.route("/api/*").handler(oktaHandler);
 
         router.get("/login").handler(new RedirectToRootHandler(false));
         router.get("/logout").handler(new RedirectToRootHandler(true));
@@ -103,7 +108,7 @@ public class AdminVerticle extends AbstractVerticle {
 
     String getEmailClaim(RoutingContext ctx) {
         try {
-            Jwt jwt = this.authProvider.createTokenVerifier().decode(ctx.user().principal().getString("id_token"));
+            Jwt jwt = this.authProvider.getIdTokenVerifier().decode(ctx.user().principal().getString("id_token"), null);
             return jwt.getClaims().get("email").toString();
         } catch (Exception e) {
             return null;

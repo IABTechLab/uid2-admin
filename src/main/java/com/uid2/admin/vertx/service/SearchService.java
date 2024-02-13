@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminUser;
 import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.legacy.LegacyClientKey;
@@ -20,13 +21,13 @@ public class SearchService implements IService {
     private static final Integer QUERY_PARAMETER_MIN_LENGTH = 6;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final RotatingLegacyClientKeyProvider clientKeyProvider;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
     private final AdminUserProvider adminUserProvider;
 
     public SearchService(
-            AuthMiddleware auth,
+            AdminAuthMiddleware auth,
             RotatingLegacyClientKeyProvider clientKeyProvider,
             RotatingOperatorKeyProvider operatorKeyProvider,
             AdminUserProvider adminUserProvider) {
