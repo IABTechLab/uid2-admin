@@ -8,6 +8,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
@@ -17,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TokenRefreshHandler implements Handler<RoutingContext> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(TokenRefreshHandler.class);
     private final IdTokenVerifier idTokenVerifier;
     private final URLConnectionHttpClient httpClient;
     private final String authServer;
@@ -46,13 +48,11 @@ public class TokenRefreshHandler implements Handler<RoutingContext> {
             } catch (JwtVerificationException e) {
                 refreshToken(rc, refreshToken);
             }
-        } else if (refreshToken != null) {
-            refreshToken(rc, refreshToken);
         }
         rc.next();
     }
 
-    public void refreshToken(RoutingContext rc, String refreshToken) {
+    private void refreshToken(RoutingContext rc, String refreshToken) {
         HttpResponse<String> response;
         try {
             response = httpClient.post(String.format("%s/v1/token?grant_type=refresh_token&refresh_token=%s", this.authServer, refreshToken), "", this.authHeaders);

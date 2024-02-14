@@ -8,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.ZoneId;
 import java.util.*;
 
 public class AdminAuthMiddleware {
@@ -55,7 +54,11 @@ public class AdminAuthMiddleware {
             return oktaRoles.stream().anyMatch(userGroups::contains);
         }
         private boolean isAuthorizedService(List<String> scopes) {
-            return true; // TODO
+            if (scopes.contains("uid2.admin.ss-portal") && allowedRoles.contains(Role.SHARING_PORTAL)) {
+                return true;
+            } else if (scopes.contains("uid2.admin.secret-rotation") && allowedRoles.contains(Role.SECRET_MANAGER)) {
+                return true;
+            } else return scopes.contains("uid2.admin.site-sync") && allowedRoles.contains(Role.SECRET_MANAGER);
         }
         public void handle(RoutingContext rc) {
             // human user
@@ -95,15 +98,12 @@ public class AdminAuthMiddleware {
         }
 
         private void validateIdToken(RoutingContext rc, String idToken) {
-            LOGGER.info(idToken);
-            LOGGER.info(rc.user().principal().getString("refresh_token"));
-            LOGGER.info(rc.user().principal().getString("access_token"));
             Jwt jwt;
             try {
                 jwt = authProvider.getIdTokenVerifier().decode(idToken, null);
-                LOGGER.info(jwt.getExpiresAt().atZone(ZoneId.of("MST", ZoneId.SHORT_IDS)).toString());
             } catch (JwtVerificationException e) {
-                rc.response().setStatusCode(401).end();
+                rc.session().destroy();
+                rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
                 return;
             }
             List<String> groups = (List<String>) jwt.getClaims().get("groups");
