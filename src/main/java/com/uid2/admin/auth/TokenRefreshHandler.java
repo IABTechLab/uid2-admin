@@ -5,6 +5,7 @@ import com.okta.jwt.IdTokenVerifier;
 import com.okta.jwt.JwtVerificationException;
 import com.uid2.shared.util.URLConnectionHttpClient;
 import io.vertx.core.Handler;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
@@ -44,12 +45,11 @@ public class TokenRefreshHandler implements Handler<RoutingContext> {
                 idTokenVerifier.decode(idToken, null);
             } catch (JwtVerificationException e) {
                 refreshToken(rc, refreshToken);
-                rc.next();
             }
         } else if (refreshToken != null) {
             refreshToken(rc, refreshToken);
-            rc.next();
         }
+        rc.next();
     }
 
     public void refreshToken(RoutingContext rc, String refreshToken) {
@@ -60,7 +60,7 @@ public class TokenRefreshHandler implements Handler<RoutingContext> {
             return;
         }
         if(response.statusCode() == 200) {
-            JsonObject responseJson = JsonObject.mapFrom(response.body());
+            JsonObject responseJson = (JsonObject) Json.decodeValue(response.body());
             rc.user().principal().put("access_token", responseJson.getValue("access_token"));
             rc.user().principal().put("id_token", responseJson.getValue("id_token"));
             rc.user().principal().put("refresh_token", responseJson.getValue("refresh_token"));
