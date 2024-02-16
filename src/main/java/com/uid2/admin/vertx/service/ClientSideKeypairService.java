@@ -111,7 +111,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        final JsonObject json = toJsonWithPrivateKey(newKeypair);
+        final JsonObject json = createKeypairJsonObject(toJsonWithPrivateKey(newKeypair));
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
@@ -172,7 +172,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        final JsonObject json = toJsonWithoutPrivateKey(newKeypair);
+        final JsonObject json = createKeypairJsonObject(toJsonWithoutPrivateKey(newKeypair));
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
@@ -183,10 +183,16 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
     private void handleListAllKeypairs(RoutingContext rc) {
         final JsonArray ja = new JsonArray();
-        this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJsonWithoutPrivateKey(k)));
+        this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(createKeypairJsonObject(toJsonWithoutPrivateKey(k))));
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(ja.encode());
+    }
+
+    private JsonObject createKeypairJsonObject(JsonObject jo) {
+        String siteName = this.siteProvider.getSite(jo.getInteger("site_id")).getName();
+        jo.put("site_name", siteName);
+        return jo;
     }
 
     private void handleListKeypair(RoutingContext rc) {
@@ -199,7 +205,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        JsonObject jo = toJsonWithPrivateKey(keypair);
+        JsonObject jo = createKeypairJsonObject(toJsonWithPrivateKey(keypair));
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(jo.encode());
