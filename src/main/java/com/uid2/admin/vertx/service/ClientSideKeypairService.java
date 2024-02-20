@@ -111,7 +111,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        final JsonObject json = createKeypairJsonObject(toJsonWithPrivateKey(newKeypair));
+        final JsonObject json = createKeypairJsonObject(toJsonWithoutPrivateKey(newKeypair));
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
