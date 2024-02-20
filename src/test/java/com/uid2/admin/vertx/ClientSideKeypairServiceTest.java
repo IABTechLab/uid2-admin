@@ -273,11 +273,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals("email@email.com", resp.getString("contact"));
             assertEquals(10, resp.getString("subscription_id").length());
             assertNotNull(resp.getString("public_key"));
-            assertNotNull(resp.getString("private_key"));
+            assertNull(resp.getString("private_key"));
             assertTrue(resp.getString("public_key").length() > 9);
             assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, 9));
-            assertTrue(resp.getString("private_key").length() > 9);
-            assertEquals("UID2-Y-L-", resp.getString("private_key").substring(0, 9));
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
             verify(keypairStoreWriter, times(1)).upload(any(), isNull());
@@ -308,11 +306,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals("", resp.getString("contact"));
             assertEquals(10, resp.getString("subscription_id").length());
             assertNotNull(resp.getString("public_key"));
-            assertNotNull(resp.getString("private_key"));
+            assertNull(resp.getString("private_key"));
             assertTrue(resp.getString("public_key").length() > 9);
             assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, 9));
-            assertTrue(resp.getString("private_key").length() > 9);
-            assertEquals("UID2-Y-L-", resp.getString("private_key").substring(0, 9));
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
             assertEquals(false, resp.getBoolean("disabled"));
@@ -346,9 +342,8 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals("email@email.com", resp.getString("contact"));
             assertEquals(10, resp.getString("subscription_id").length());
             assertNotNull(resp.getString("public_key"));
-            assertNotNull(resp.getString("private_key"));
+            assertNull(resp.getString("private_key"));
             assertTrue(resp.getString("public_key").length() > 0);
-            assertTrue(resp.getString("private_key").length() > 0);
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(true, resp.getBoolean("disabled"));
             verify(keypairStoreWriter, times(1)).upload(any(), isNull());
