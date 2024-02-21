@@ -2,7 +2,6 @@ package com.uid2.admin;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
-import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.auth.OktaAuthProvider;
 import com.uid2.admin.auth.AuthProvider;
 import com.uid2.admin.job.JobDispatcher;
@@ -22,7 +21,6 @@ import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
@@ -36,13 +34,11 @@ import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
 import com.uid2.shared.store.scope.GlobalScope;
-import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -55,7 +51,6 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
-import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.micrometer.Label;
@@ -91,11 +86,6 @@ public class Main {
             FileManager fileManager = new FileManager(cloudStorage, fileStorage);
             Clock clock = new InstantClock();
             VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
-
-            String adminsMetadataPath = config.getString(AdminUserProvider.ADMINS_METADATA_PATH);
-            AdminUserProvider adminUserProvider = new AdminUserProvider(cloudStorage, adminsMetadataPath);
-            adminUserProvider.loadContent(adminUserProvider.getMetadata());
-            AdminUserStoreWriter adminUserStoreWriter = new AdminUserStoreWriter(adminUserProvider, fileManager, jsonWriter, versionGenerator);
 
             CloudPath sitesMetadataPath = new CloudPath(config.getString(RotatingSiteStore.SITES_METADATA_PATH));
             GlobalScope siteGlobalScope = new GlobalScope(sitesMetadataPath);
@@ -237,7 +227,6 @@ public class Main {
             ClientSideKeypairService clientSideKeypairService = new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock);
 
             IService[] services = {
-                    new AdminKeyService(config, auth, writeLock, adminUserStoreWriter, adminUserProvider, keyGenerator, keyHasher, clientKeyStoreWriter, encryptionKeyStoreWriter, keyAclStoreWriter),
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
                     encryptionKeyService,
@@ -252,16 +241,13 @@ public class Main {
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
                     new JobDispatcherService(auth, jobDispatcher),
-                    new SearchService(auth, clientKeyProvider, operatorKeyProvider, adminUserProvider)
+                    new SearchService(auth, clientKeyProvider, operatorKeyProvider)
             };
 
-            RotatingStoreVerticle rotatingAdminUserStoreVerticle = new RotatingStoreVerticle(
-                    "admins", 10000, adminUserProvider);
-            vertx.deployVerticle(rotatingAdminUserStoreVerticle);
 
             V2RouterModule v2RouterModule = new V2RouterModule(clientSideKeypairService, auth);
 
-            AdminVerticle adminVerticle = new AdminVerticle(config, authProvider, adminUserProvider, services, v2RouterModule.getRouter());
+            AdminVerticle adminVerticle = new AdminVerticle(config, authProvider, services, v2RouterModule.getRouter());
             vertx.deployVerticle(adminVerticle);
 
             CloudPath keysetMetadataPath = new CloudPath(config.getString("keysets_metadata_path"));
@@ -298,7 +284,6 @@ public class Main {
             }
 
             // Data type keys should be matching uid2_config_store_version reported by operator, core, etc
-            DataStoreMetrics.addDataStoreMetrics("admins", adminUserProvider);
             DataStoreMetrics.addDataStoreMetrics("site", siteProvider);
             DataStoreMetrics.addDataStoreMetrics("auth", clientKeyProvider);
             DataStoreMetrics.addDataStoreMetrics("key", keyProvider);

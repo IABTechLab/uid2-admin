@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class TokenRefreshHandler implements Handler<RoutingContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TokenRefreshHandler.class);
@@ -24,9 +25,9 @@ public class TokenRefreshHandler implements Handler<RoutingContext> {
     private final URLConnectionHttpClient httpClient;
     private final String authServer;
     private final Map<String, String> authHeaders;
-    public TokenRefreshHandler(IdTokenVerifier idTokenVerifier, JsonObject config) {
+    public TokenRefreshHandler(IdTokenVerifier idTokenVerifier, JsonObject config, URLConnectionHttpClient httpClient) {
         this.idTokenVerifier = idTokenVerifier;
-        this.httpClient = new URLConnectionHttpClient(null);
+        this.httpClient = Objects.requireNonNullElseGet(httpClient, () -> new URLConnectionHttpClient(null));
         this.authServer = config.getString("okta_auth_server");
 
         String base64AuthValue = Base64.getEncoder().encodeToString(String.format("%s:%s", config.getString("okta_client_id"), config.getString("okta_client_secret")).getBytes(StandardCharsets.UTF_8));
@@ -34,6 +35,11 @@ public class TokenRefreshHandler implements Handler<RoutingContext> {
             put("Authorization", String.format("Basic %s", base64AuthValue));
         }};
     }
+
+    public TokenRefreshHandler(IdTokenVerifier idTokenVerifier, JsonObject config) {
+        this(idTokenVerifier, config, null);
+    }
+
     @Override
     public void handle(RoutingContext rc) {
         String idToken = null;

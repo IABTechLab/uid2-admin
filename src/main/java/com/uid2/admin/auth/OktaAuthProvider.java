@@ -21,6 +21,11 @@ public class OktaAuthProvider implements AuthProvider {
     private final IdTokenVerifier idTokenVerifier;
     public OktaAuthProvider(JsonObject config) {
         this.config = config;
+        if(isAuthDisabled(config)) {
+            this.accessTokenVerifier = null;
+            this.idTokenVerifier = null;
+            return;
+        }
         this.accessTokenVerifier = JwtVerifiers.accessTokenVerifierBuilder()
                 .setIssuer(config.getString("okta_auth_server"))
                 .setAudience(config.getString("okta_audience"))

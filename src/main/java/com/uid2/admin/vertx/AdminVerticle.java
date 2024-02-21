@@ -29,7 +29,6 @@ public class AdminVerticle extends AbstractVerticle {
 
     public AdminVerticle(JsonObject config,
                          AuthProvider authProvider,
-                         IAdminUserProvider adminUserProvider,
                          IService[] services,
                          V2Router v2Router) {
         this.config = config;
@@ -54,7 +53,7 @@ public class AdminVerticle extends AbstractVerticle {
 
     private Router createRoutesSetup() {
         final Router router = Router.router(vertx);
-        router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
+        router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)).setSessionTimeout(32400000)); // 9 hr session timeout
         final AuthenticationHandler oktaHandler = this.authProvider.createAuthHandler(vertx, router.route("/oauth2-callback"));
         final TokenRefreshHandler tokenRefreshHandler = new TokenRefreshHandler(this.authProvider.getIdTokenVerifier(), config);
 
@@ -64,6 +63,7 @@ public class AdminVerticle extends AbstractVerticle {
         router.route("/login").handler(oktaHandler);
         router.route("/adm/*").handler(oktaHandler);
         router.route("/api/*").handler(tokenRefreshHandler);
+        router.route("/api/*").handler(oktaHandler);
 
         router.get("/login").handler(new RedirectToRootHandler(false));
         router.get("/logout").handler(new RedirectToRootHandler(true));

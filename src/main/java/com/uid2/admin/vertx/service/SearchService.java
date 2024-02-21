@@ -1,13 +1,10 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
-import com.uid2.admin.auth.AdminUser;
-import com.uid2.admin.auth.AdminUserProvider;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
@@ -24,17 +21,14 @@ public class SearchService implements IService {
     private final AdminAuthMiddleware auth;
     private final RotatingLegacyClientKeyProvider clientKeyProvider;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
-    private final AdminUserProvider adminUserProvider;
 
     public SearchService(
             AdminAuthMiddleware auth,
             RotatingLegacyClientKeyProvider clientKeyProvider,
-            RotatingOperatorKeyProvider operatorKeyProvider,
-            AdminUserProvider adminUserProvider) {
+            RotatingOperatorKeyProvider operatorKeyProvider) {
         this.auth = auth;
         this.clientKeyProvider = clientKeyProvider;
         this.operatorKeyProvider = operatorKeyProvider;
-        this.adminUserProvider = adminUserProvider;
     }
 
     @Override
@@ -75,11 +69,6 @@ public class SearchService implements IService {
                 operatorKeyResults.add(operatorKeyByKey);
             }
 
-            AdminUser adminUserByKey = this.adminUserProvider.getAdminUser(queryParam);
-            if (adminUserByKey != null) {
-                adminUserResults.add(adminUserByKey);
-            }
-
             LegacyClientKey clientKeyByHash = this.clientKeyProvider.getClientKeyFromHash(queryParam);
             if (clientKeyByHash != null) {
                 clientKeyResults.add(clientKeyByHash.toClientKey());
@@ -88,11 +77,6 @@ public class SearchService implements IService {
             OperatorKey operatorKeyByHash = this.operatorKeyProvider.getOperatorKeyFromHash(queryParam);
             if (operatorKeyByHash != null) {
                 operatorKeyResults.add(operatorKeyByHash);
-            }
-
-            AdminUser adminUserByHash = this.adminUserProvider.getAdminUserFromHash(queryParam);
-            if (adminUserByHash != null) {
-                adminUserResults.add(adminUserByHash);
             }
 
             rc.response()

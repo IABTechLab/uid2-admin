@@ -30,8 +30,9 @@ class OktaAuthProviderTest {
         config.put("is_auth_disabled", false);
         config.put("okta_client_id", "id1");
         config.put("okta_client_secret", "secret1");
-        config.put("okta_issuer", "http://uid2.okta.com");
-        config.put("okta_callback", "http://localhost/oauth2-callbac");
+        config.put("okta_audience", "https://api.admin.com/api");
+        config.put("okta_auth_server", "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
+        config.put("okta_callback", "http://localhost/oauth2-callback");
 
         OktaAuthProvider provider = new OktaAuthProvider(config);
         AuthenticationHandler handler = provider.createAuthHandler(vertx, route);
@@ -43,7 +44,8 @@ class OktaAuthProviderTest {
         JsonObject config = new JsonObject();
         config.put("okta_client_id", "id1");
         config.put("okta_client_secret", "secret1");
-        config.put("okta_issuer", "http://uid2.okta.com");
+        config.put("okta_audience", "https://api.admin.com/api");
+        config.put("okta_auth_server", "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
         config.put("okta_callback", "http://localhost/oauth2-callbac");
         OktaAuthProvider provider = new OktaAuthProvider(config);
         AuthenticationHandler handler = provider.createAuthHandler(vertx, route);
@@ -52,14 +54,14 @@ class OktaAuthProviderTest {
     }
 
     @Test
-    public void ensureAuthHandlerRequestForEmailAndGroup() {
+    public void ensureAuthHandlerRequestForEmail() {
         JsonObject config = new JsonObject();
         config.put("okta_client_id", "id1");
         config.put("okta_client_secret", "secret1");
-        config.put("okta_issuer", "http://uid2.okta.com");
+        config.put("okta_audience", "https://api.admin.com/api");
+        config.put("okta_auth_server", "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
         config.put("okta_callback", "http://localhost/oauth2-callbac");
         OktaAuthProvider provider = new OktaAuthProvider(config);
-        assertTrue(provider.getScopes().contains("groups"));
         assertTrue(provider.getScopes().contains("email"));
         assertTrue(provider.getScopes().contains("profile"));
     }
