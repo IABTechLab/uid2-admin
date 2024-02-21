@@ -147,7 +147,6 @@ public abstract class ServiceTestBase {
         when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("developer", "developer-elevated", "infra-admin", "admin")));
     }
     protected void fakeAuth(List<String> roles) { // TODO Update tests for okta role mapping
-        fakeAuth();
         when(jwt.getClaims()).thenReturn(Map.of("groups", roles));
     }
 

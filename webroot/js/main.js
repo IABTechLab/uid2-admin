@@ -8,9 +8,6 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
         type: method,
         url: url,
         dataType: 'text',
-        headers: {
-            "Authorization": authHeader
-        },
         data : body,
         success: function (text) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
@@ -24,7 +21,7 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
                 $(function () {
                     setTimeout(function() {
                         window.location.replace("/login");
-                    }, 5000);
+                    }, 3000);
                 });
             } else {
                 standardErrorCallback(err, errorDiv)
@@ -43,9 +40,6 @@ function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
         url: url,
         data: body,
         dataType: 'text',
-        headers: {
-            "Authorization": authHeader
-        },
         success: function (text) {
             var pretty = JSON.stringify(JSON.parse(text),null,2);
             $(outputDiv).text(pretty);
@@ -58,7 +52,7 @@ function doApiCallWithBody(method, url, body, outputDiv, errorDiv) {
                 $(function () {
                     setTimeout(function() {
                         window.location.replace("/login");
-                    }, 5000);
+                    }, 3000);
                 });
             } else {
                 standardErrorCallback(err, errorDiv)
@@ -89,9 +83,6 @@ function doApiCallWithCallback(method, url, onSuccess, onError, body) {
         type: method,
         url: url,
         dataType: 'text',
-        headers: {
-            "Authorization": authHeader
-        },
         data : body,
         success: function (text) {
             onSuccess(text);
@@ -104,7 +95,7 @@ function doApiCallWithCallback(method, url, onSuccess, onError, body) {
                 $(function () {
                     setTimeout(function() {
                         window.location.replace("/login");
-                    }, 5000);
+                    }, 3000);
                 });
             } else {
                 onError(err);
