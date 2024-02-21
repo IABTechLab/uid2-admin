@@ -209,7 +209,7 @@ public class Main {
             partnerConfigProvider.loadContent();
             PartnerStoreWriter partnerStoreWriter = new PartnerStoreWriter(partnerConfigProvider, fileManager, versionGenerator);
 
-            AdminAuthMiddleware auth = new AdminAuthMiddleware(authProvider);
+            AdminAuthMiddleware auth = new AdminAuthMiddleware(authProvider, config.getString("environment"));
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
             KeyHasher keyHasher = new KeyHasher();

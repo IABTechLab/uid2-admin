@@ -13,24 +13,28 @@ import java.util.*;
 public class AdminAuthMiddleware {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminAuthMiddleware.class);
     private final AuthProvider authProvider;
-    public AdminAuthMiddleware(AuthProvider authProvider) {
+    private final String environment;
+    public AdminAuthMiddleware(AuthProvider authProvider, String environment) {
         this.authProvider = authProvider;
+        this.environment = environment;
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }
-        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles));
+        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment);
         return adminAuthHandler::handle;
     }
 
     private static class AdminAuthHandler {
+        private final String environment;
         private final Handler<RoutingContext> innerHandler;
         private final Set<Role> allowedRoles;
         private final List<String> oktaRoles = List.of("developer", "developer-elevated", "infra-admin", "admin");
         private final AuthProvider authProvider;
-        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles) {
+        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles, String environment) {
+            this.environment = environment;
             this.innerHandler = handler;
             this.authProvider = authProvider;
             this.allowedRoles = allowedRoles;
@@ -89,6 +93,10 @@ public class AdminAuthMiddleware {
                 rc.response().setStatusCode(401).end();
                 return;
             }
+            if(jwt.getClaims().get("environment") == null || !jwt.getClaims().get("environment").toString().equals(environment)) {
+                rc.response().setStatusCode(401).end();
+                return;
+            }
             List<String> scopes = (List<String>) jwt.getClaims().get("scp");
             if(isAuthorizedService(scopes)) {
                 innerHandler.handle(rc);
@@ -104,6 +112,10 @@ public class AdminAuthMiddleware {
             } catch (JwtVerificationException e) {
                 rc.session().destroy();
                 rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
+                return;
+            }
+            if(jwt.getClaims().get("environment") == null || !jwt.getClaims().get("environment").toString().equals(environment)) {
+                rc.response().setStatusCode(401).end();
                 return;
             }
             List<String> groups = (List<String>) jwt.getClaims().get("groups");

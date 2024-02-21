@@ -125,7 +125,7 @@ public abstract class ServiceTestBase {
         });
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
-        auth = new AdminAuthMiddleware(authProvider);
+        auth = new AdminAuthMiddleware(authProvider, "local");
 
         IService[] services = {createService()};
         AdminVerticle verticle = new AdminVerticle(config, authProvider, services, null);
@@ -144,10 +144,10 @@ public abstract class ServiceTestBase {
     }
 
     protected void fakeAuth(Role... roles) { // TODO Update tests for okta role mapping
-        when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("developer", "developer-elevated", "infra-admin", "admin")));
+        when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("developer", "developer-elevated", "infra-admin", "admin"), "environment", "local"));
     }
     protected void fakeAuth(List<String> roles) { // TODO Update tests for okta role mapping
-        when(jwt.getClaims()).thenReturn(Map.of("groups", roles));
+        when(jwt.getClaims()).thenReturn(Map.of("groups", roles, "environment", "local"));
     }
 
 
