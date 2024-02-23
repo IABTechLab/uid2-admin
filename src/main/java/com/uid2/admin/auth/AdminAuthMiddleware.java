@@ -4,6 +4,7 @@ package com.uid2.admin.auth;
 import com.okta.jwt.*;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,12 +15,15 @@ public class AdminAuthMiddleware {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminAuthMiddleware.class);
     private final AuthProvider authProvider;
     private final String environment;
-    public AdminAuthMiddleware(AuthProvider authProvider, String environment) {
+    private final boolean isAuthDisabled;
+    public AdminAuthMiddleware(AuthProvider authProvider, JsonObject config) {
         this.authProvider = authProvider;
-        this.environment = environment;
+        this.environment = config.getString("environment", "local");
+        this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
+        if (isAuthDisabled) return handler;
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }

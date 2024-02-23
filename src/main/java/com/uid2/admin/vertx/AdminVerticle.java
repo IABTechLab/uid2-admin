@@ -20,6 +20,8 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 
 import java.util.List;
 
+import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
+
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
 
@@ -88,6 +90,8 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void handleUserinfo(RoutingContext rc) {
+        if(isAuthDisabled(config)) rc.response().setStatusCode(200).end(
+                JsonObject.of("groups", JsonArray.of("developer", "developer-elevated", "infra-admin", "admin"), "email", "test.user@unifiedid.com").toString());
         try {
             Jwt idJwt = this.authProvider.getIdTokenVerifier().decode(rc.user().principal().getString("id_token"), null);
             JsonObject jo = new JsonObject();

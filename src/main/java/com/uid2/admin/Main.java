@@ -210,7 +210,7 @@ public class Main {
             partnerConfigProvider.loadContent();
             PartnerStoreWriter partnerStoreWriter = new PartnerStoreWriter(partnerConfigProvider, fileManager, versionGenerator);
 
-            AdminAuthMiddleware auth = new AdminAuthMiddleware(authProvider, config.getString("environment"));
+            AdminAuthMiddleware auth = new AdminAuthMiddleware(authProvider, config);
             TokenRefreshHandler tokenRefreshHandler = new TokenRefreshHandler(authProvider.getIdTokenVerifier(), config);
             WriteLock writeLock = new WriteLock();
             IKeyGenerator keyGenerator = new SecureKeyGenerator();

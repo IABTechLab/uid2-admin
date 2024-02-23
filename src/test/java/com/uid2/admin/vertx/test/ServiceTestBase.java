@@ -128,7 +128,7 @@ public abstract class ServiceTestBase {
         })).when(tokenRefreshHandler).handle(any());
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
-        auth = new AdminAuthMiddleware(authProvider, "local");
+        auth = new AdminAuthMiddleware(authProvider, config);
 
         IService[] services = {createService()};
         AdminVerticle verticle = new AdminVerticle(config, authProvider, tokenRefreshHandler, services, null);

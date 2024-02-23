@@ -46,7 +46,7 @@ public class AdminAuthMiddlewareTest {
     @BeforeEach
     public void setup() {
         mocks = MockitoAnnotations.openMocks(this);
-        this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, "local");
+        this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, JsonObject.of());
 
         when(authProvider.getIdTokenVerifier()).thenReturn(idTokenVerifier);
         when(authProvider.getAccessTokenVerifier()).thenReturn(accessTokenVerifier);
