@@ -31,6 +31,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.AuthenticationHandler;
@@ -56,6 +57,7 @@ public abstract class ServiceTestBase {
     protected final WriteLock writeLock = new WriteLock();
 
     protected AdminAuthMiddleware auth;
+    @Mock private TokenRefreshHandler tokenRefreshHandler;
     @Mock private IdTokenVerifier idTokenVerifier;
     @Mock private AccessTokenVerifier accessTokenVerifier;
     @Mock private Jwt jwt;
@@ -118,17 +120,18 @@ public abstract class ServiceTestBase {
 
         when(authProvider.getAccessTokenVerifier()).thenReturn(accessTokenVerifier);
         when(authProvider.getIdTokenVerifier()).thenReturn(idTokenVerifier);
-        when(authProvider.createAuthHandler(any(), any())).thenReturn((rc) -> {
-            User user = User.create(new JsonObject().put("id_token", "testIdToken"));
-            rc.setUser(user);
-            rc.next();
-        });
+        doAnswer((invocationOnMock -> {
+            User user = User.create(JsonObject.of("id_token", "testIdToken"));
+            ((RoutingContext) invocationOnMock.getArgument(0)).setUser(user);
+            ((RoutingContext) invocationOnMock.getArgument(0)).next();
+            return null;
+        })).when(tokenRefreshHandler).handle(any());
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
         auth = new AdminAuthMiddleware(authProvider, "local");
 
         IService[] services = {createService()};
-        AdminVerticle verticle = new AdminVerticle(config, authProvider, services, null);
+        AdminVerticle verticle = new AdminVerticle(config, authProvider, tokenRefreshHandler, services, null);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 

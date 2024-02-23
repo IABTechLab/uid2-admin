@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import ch.qos.logback.core.subst.Token;
 import com.okta.jwt.Jwt;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.vertx.api.V2Router;
@@ -24,15 +25,18 @@ public class AdminVerticle extends AbstractVerticle {
 
     private final JsonObject config;
     private final AuthProvider authProvider;
+    private final TokenRefreshHandler tokenRefreshHandler;
     private final IService[] services;
     private final V2Router v2Router;
 
     public AdminVerticle(JsonObject config,
                          AuthProvider authProvider,
+                         TokenRefreshHandler tokenRefreshHandler,
                          IService[] services,
                          V2Router v2Router) {
         this.config = config;
         this.authProvider = authProvider;
+        this.tokenRefreshHandler = tokenRefreshHandler;
         this.services = services;
         this.v2Router = v2Router;
     }
@@ -55,7 +59,6 @@ public class AdminVerticle extends AbstractVerticle {
         final Router router = Router.router(vertx);
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)).setSessionTimeout(32400000)); // 9 hr session timeout
         final AuthenticationHandler oktaHandler = this.authProvider.createAuthHandler(vertx, router.route("/oauth2-callback"));
-        final TokenRefreshHandler tokenRefreshHandler = new TokenRefreshHandler(this.authProvider.getIdTokenVerifier(), config);
 
         router.route().handler(BodyHandler.create());
         router.route().handler(StaticHandler.create("webroot"));
@@ -63,7 +66,6 @@ public class AdminVerticle extends AbstractVerticle {
         router.route("/login").handler(oktaHandler);
         router.route("/adm/*").handler(oktaHandler);
         router.route("/api/*").handler(tokenRefreshHandler);
-        router.route("/api/*").handler(oktaHandler);
 
         router.get("/login").handler(new RedirectToRootHandler(false));
         router.get("/logout").handler(new RedirectToRootHandler(true));

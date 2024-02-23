@@ -36,8 +36,8 @@
   "enable_keysets": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
   "okta_client_secret": "GET_FROM_1PASSWORD",
-  "okta_issuer": "https://uid2.okta.com/",
   "okta_auth_server": "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8",
   "okta_audience": "https://api.admin.com/api",
-  "okta_callback": "http://localhost:8089/oauth2-callback"
+  "okta_callback": "http://localhost:8089/oauth2-callback",
+  "environment": "local"
 }
