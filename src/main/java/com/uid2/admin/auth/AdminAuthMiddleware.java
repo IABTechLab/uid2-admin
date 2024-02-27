@@ -45,15 +45,16 @@ public class AdminAuthMiddleware {
         }
 
         public static String extractBearerToken(String headerValue) {
+            final String bearerPrefix = "bearer ";
             if (headerValue == null) {
                 return null;
             } else {
                 String v = headerValue.trim();
-                if (v.length() < "bearer ".length()) {
+                if (v.length() < bearerPrefix.length()) {
                     return null;
                 } else {
-                    String givenPrefix = v.substring(0, "bearer ".length());
-                    return !"bearer ".equalsIgnoreCase(givenPrefix) ? null : v.substring("bearer ".length());
+                    String givenPrefix = v.substring(0, bearerPrefix.length());
+                    return !bearerPrefix.equalsIgnoreCase(givenPrefix) ? null : v.substring(bearerPrefix.length());
                 }
             }
         }

@@ -15,8 +15,13 @@ import java.time.Duration;
 import java.util.List;
 
 public class OktaAuthProvider implements AuthProvider {
+    public static final String OKTA_AUTH_SERVER = "okta_auth_server";
+    public static final String OKTA_AUDIENCE = "okta_audience";
+    public static final String OKTA_CLIENT_ID = "okta_client_id";
+    public static final String OKTA_CLIENT_SECRET = "okta_client_secret";
+    public static final String OKTA_CALLBACK = "okta_callback";
     private final JsonObject config;
-    private final List<String> scopes = List.of("openid", "profile", "email", "uid2.admin.human", "offline_access");
+    private final List<String> scopes = List.of("openid", "email", "uid2.admin.human");
     private final AccessTokenVerifier accessTokenVerifier;
     private final IdTokenVerifier idTokenVerifier;
     public OktaAuthProvider(JsonObject config) {
@@ -27,15 +32,15 @@ public class OktaAuthProvider implements AuthProvider {
             return;
         }
         this.accessTokenVerifier = JwtVerifiers.accessTokenVerifierBuilder()
-                .setIssuer(config.getString("okta_auth_server"))
-                .setAudience(config.getString("okta_audience"))
+                .setIssuer(config.getString(OKTA_AUTH_SERVER))
+                .setAudience(config.getString(OKTA_AUDIENCE))
                 .setConnectionTimeout(Duration.ofSeconds(1))
                 .setRetryMaxAttempts(2)
                 .setRetryMaxElapsed(Duration.ofSeconds(10))
                 .build();
         this.idTokenVerifier = JwtVerifiers.idTokenVerifierBuilder()
-                .setClientId(config.getString("okta_client_id"))
-                .setIssuer(config.getString("okta_auth_server"))
+                .setClientId(config.getString(OKTA_CLIENT_ID))
+                .setIssuer(config.getString(OKTA_AUTH_SERVER))
                 .setConnectionTimeout(Duration.ofSeconds(1))
                 .setRetryMaxAttempts(2)
                 .setRetryMaxElapsed(Duration.ofSeconds(10))
@@ -51,14 +56,14 @@ public class OktaAuthProvider implements AuthProvider {
 
         OAuth2Auth oktaAuth = OAuth2Auth.create(vertx,
         new OAuth2Options()
-            .setClientId(this.config.getString("okta_client_id"))
-            .setClientSecret(this.config.getString("okta_client_secret"))
-            .setSite(this.config.getString("okta_auth_server"))
+            .setClientId(this.config.getString(OKTA_CLIENT_ID))
+            .setClientSecret(this.config.getString(OKTA_CLIENT_SECRET))
+            .setSite(this.config.getString(OKTA_AUTH_SERVER))
             .setTokenPath("/v1/token")
             .setAuthorizationPath("/v1/authorize")
             .setUserInfoPath("/v1/userinfo")
         );
-        OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(vertx, oktaAuth, this.config.getString("okta_callback"));
+        OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(vertx, oktaAuth, this.config.getString(OKTA_CALLBACK));
         authHandler.extraParams(new JsonObject(String.format("{\"scope\":\"%s\"}", String.join(" ", this.scopes))));
         authHandler.setupCallback(callbackRoute);
         return authHandler;

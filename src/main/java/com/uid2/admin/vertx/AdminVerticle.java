@@ -59,7 +59,7 @@ public class AdminVerticle extends AbstractVerticle {
 
     private Router createRoutesSetup() {
         final Router router = Router.router(vertx);
-        router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)).setSessionTimeout(32400000)); // 9 hr session timeout
+        router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)).setSessionTimeout(config.getInteger("vertx_session_timeout", 32400000))); // default 9 hr session timeout
         final AuthenticationHandler oktaHandler = this.authProvider.createAuthHandler(vertx, router.route("/oauth2-callback"));
 
         router.route().handler(BodyHandler.create());

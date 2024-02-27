@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.uid2.admin.auth.OktaAuthProvider.*;
+
 public class TokenRefreshHandler implements Handler<RoutingContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TokenRefreshHandler.class);
     private final IdTokenVerifier idTokenVerifier;
@@ -28,9 +30,9 @@ public class TokenRefreshHandler implements Handler<RoutingContext> {
     public TokenRefreshHandler(IdTokenVerifier idTokenVerifier, JsonObject config, URLConnectionHttpClient httpClient) {
         this.idTokenVerifier = idTokenVerifier;
         this.httpClient = Objects.requireNonNullElseGet(httpClient, () -> new URLConnectionHttpClient(null));
-        this.authServer = config.getString("okta_auth_server");
+        this.authServer = config.getString(OKTA_AUTH_SERVER);
 
-        String base64AuthValue = Base64.getEncoder().encodeToString(String.format("%s:%s", config.getString("okta_client_id"), config.getString("okta_client_secret")).getBytes(StandardCharsets.UTF_8));
+        String base64AuthValue = Base64.getEncoder().encodeToString(String.format("%s:%s", config.getString(OKTA_CLIENT_ID), config.getString(OKTA_CLIENT_SECRET)).getBytes(StandardCharsets.UTF_8));
         authHeaders = new HashMap<>() {{
             put("Authorization", String.format("Basic %s", base64AuthValue));
         }};

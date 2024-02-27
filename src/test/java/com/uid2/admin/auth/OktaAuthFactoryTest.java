@@ -9,6 +9,7 @@ import io.vertx.ext.web.handler.impl.OAuth2AuthHandlerImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.uid2.admin.auth.OktaAuthProvider.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -17,7 +18,6 @@ import static org.mockito.Mockito.when;
 class OktaAuthProviderTest {
     Vertx vertx = mock(Vertx.class);
     Route route = mock(Route.class);
-    OAuth2Auth provider = mock(OAuth2Auth.class);
 
     @BeforeEach
     public void setup() {
@@ -28,11 +28,11 @@ class OktaAuthProviderTest {
     public void buildsRealAuthHandlerWhenAuthIsEnabled() {
         JsonObject config = new JsonObject();
         config.put("is_auth_disabled", false);
-        config.put("okta_client_id", "id1");
-        config.put("okta_client_secret", "secret1");
-        config.put("okta_audience", "https://api.admin.com/api");
-        config.put("okta_auth_server", "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
-        config.put("okta_callback", "http://localhost/oauth2-callback");
+        config.put(OKTA_CLIENT_ID, "id1");
+        config.put(OKTA_CLIENT_SECRET, "secret1");
+        config.put(OKTA_AUDIENCE, "https://api.admin.com/api");
+        config.put(OKTA_AUTH_SERVER, "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
+        config.put(OKTA_CALLBACK, "http://localhost/oauth2-callbac");
 
         OktaAuthProvider provider = new OktaAuthProvider(config);
         AuthenticationHandler handler = provider.createAuthHandler(vertx, route);
@@ -42,11 +42,11 @@ class OktaAuthProviderTest {
     @Test
     public void buildsRealAuthHandlerWhenAuthIsNotInTheConfig() {
         JsonObject config = new JsonObject();
-        config.put("okta_client_id", "id1");
-        config.put("okta_client_secret", "secret1");
-        config.put("okta_audience", "https://api.admin.com/api");
-        config.put("okta_auth_server", "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
-        config.put("okta_callback", "http://localhost/oauth2-callbac");
+        config.put(OKTA_CLIENT_ID, "id1");
+        config.put(OKTA_CLIENT_SECRET, "secret1");
+        config.put(OKTA_AUDIENCE, "https://api.admin.com/api");
+        config.put(OKTA_AUTH_SERVER, "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
+        config.put(OKTA_CALLBACK, "http://localhost/oauth2-callbac");
         OktaAuthProvider provider = new OktaAuthProvider(config);
         AuthenticationHandler handler = provider.createAuthHandler(vertx, route);
 
@@ -56,14 +56,13 @@ class OktaAuthProviderTest {
     @Test
     public void ensureAuthHandlerRequestForEmail() {
         JsonObject config = new JsonObject();
-        config.put("okta_client_id", "id1");
-        config.put("okta_client_secret", "secret1");
-        config.put("okta_audience", "https://api.admin.com/api");
-        config.put("okta_auth_server", "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
-        config.put("okta_callback", "http://localhost/oauth2-callbac");
+        config.put(OKTA_CLIENT_ID, "id1");
+        config.put(OKTA_CLIENT_SECRET, "secret1");
+        config.put(OKTA_AUDIENCE, "https://api.admin.com/api");
+        config.put(OKTA_AUTH_SERVER, "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8");
+        config.put(OKTA_CALLBACK, "http://localhost/oauth2-callbac");
         OktaAuthProvider provider = new OktaAuthProvider(config);
         assertTrue(provider.getScopes().contains("email"));
-        assertTrue(provider.getScopes().contains("profile"));
     }
 
     @Test

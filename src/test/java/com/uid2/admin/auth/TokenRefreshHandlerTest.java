@@ -15,6 +15,7 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 
+import static com.uid2.admin.auth.OktaAuthProvider.*;
 import static org.mockito.Mockito.*;
 
 public class TokenRefreshHandlerTest {
@@ -32,9 +33,9 @@ public class TokenRefreshHandlerTest {
         mocks = MockitoAnnotations.openMocks(this);
 
         JsonObject config = new JsonObject();
-        config.put("okta_client_id", "testClientId");
-        config.put("okta_client_secret", "testClientSecret");
-        config.put("okta_auth_server", "testAuthServer");
+        config.put(OKTA_CLIENT_ID, "testClientId");
+        config.put(OKTA_CLIENT_SECRET, "testClientSecret");
+        config.put(OKTA_AUTH_SERVER, "testAuthServer");
         this.tokenRefreshHandler = new TokenRefreshHandler(idTokenVerifier, config, httpClient);
     }
 
