@@ -100,7 +100,8 @@ public class AdminVerticle extends AbstractVerticle {
             jo.put("email", idJwt.getClaims().get("email"));
             rc.response().setStatusCode(200).end(jo.toString());
         } catch (Exception e) {
-            rc.response().setStatusCode(500).end();
+            rc.session().destroy();
+            rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
         }
     }
 
