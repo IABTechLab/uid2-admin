@@ -30,7 +30,7 @@
 <script language="JavaScript">
     $(document).ready(function () {
         $('#doSearch').on('click', function () {
-            var keyString = $('#key').val();
+            var keyString = encodeURIComponent($('#key').val());
             const url = '/api/search';
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput', keyString);

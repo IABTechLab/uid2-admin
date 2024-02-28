@@ -68,11 +68,14 @@
     $(document).ready(function () {
 
         $('#searchList').on('click', function () {
-            if(!$('#searchSiteId').val()) {
+            var siteId = encodeURIComponent($('#searchSiteId').val());
+            if (!siteId) {
                 $('#errorOutput').html("Required Parameters: site_id")
                 return;
             }
-            doApiCall('GET', '/api/site/' + $('#searchSiteId').val(), '#standardOutput', '#errorOutput');
+            var url = `/api/site/${siteId}`;
+
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doList').on('click', function () {
