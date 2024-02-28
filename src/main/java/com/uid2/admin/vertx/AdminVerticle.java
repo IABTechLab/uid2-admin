@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx;
 
-import ch.qos.logback.core.subst.Token;
 import com.okta.jwt.Jwt;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.vertx.api.V2Router;
@@ -90,7 +89,7 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void handleUserinfo(RoutingContext rc) {
-        if(isAuthDisabled(config)) rc.response().setStatusCode(200).end(
+        if (isAuthDisabled(config)) rc.response().setStatusCode(200).end(
                 JsonObject.of("groups", JsonArray.of("developer", "developer-elevated", "infra-admin", "admin"), "email", "test.user@unifiedid.com").toString());
         try {
             Jwt idJwt = this.authProvider.getIdTokenVerifier().decode(rc.user().principal().getString("id_token"), null);
@@ -100,7 +99,9 @@ public class AdminVerticle extends AbstractVerticle {
             jo.put("email", idJwt.getClaims().get("email"));
             rc.response().setStatusCode(200).end(jo.toString());
         } catch (Exception e) {
-            rc.session().destroy();
+            if (rc.session() !=  null) {
+                rc.session().destroy();
+            }
             rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
         }
     }
