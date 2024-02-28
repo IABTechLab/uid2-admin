@@ -81,7 +81,7 @@
     $(document).ready(function () {
 
         $('#searchSiteId').on('click', function () {
-            var siteId = encodeURIComponent($('#searchBySiteId').val())
+            var siteId = encodeURIComponent($('#searchBySiteId').val());
             if (!siteId) {
                 $('#errorOutput').html("Required Parameter: site_id")
                 return;

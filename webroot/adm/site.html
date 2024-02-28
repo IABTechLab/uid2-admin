@@ -73,7 +73,7 @@
                 $('#errorOutput').html("Required Parameters: site_id")
                 return;
             }
-            var url = `/api/site/${siteId}`
+            var url = `/api/site/${siteId}`;
 
             doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
