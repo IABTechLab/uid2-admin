@@ -67,7 +67,7 @@ public class SiteService implements IService {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
         router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);
