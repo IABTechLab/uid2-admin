@@ -23,7 +23,10 @@
 <input type="text" id="activatesIn" name="activatesIn">
 <label for="force">Force:</label>
 <input type="checkbox" id="force" name="force" value="true">
-
+<br>
+<label for="keysets">Keysets:</label>
+<br>
+<textarea id="keysets" name="keysets" rows="4" cols="50"></textarea>
 <br>
 <br>
 
@@ -43,6 +46,7 @@
     <li class="ro-sem" style="display: none"><a href="#" id="doListKeysetKeys">List Keyset Keys</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doListKeysetKeysByKeysetId">List Keyset Keys By Keyset Id</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotateKeysetKey">Rotate Keyset Key</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotateKeysetKeys">Rotate Keyset Keys</a></li>
 </ul>
 
 <h4>Master Keys</h4>
@@ -158,6 +162,17 @@
             if ($('#force').is(':checked')) url = url + '&force=true';
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doRotateKeysetKeys').on('click', function () {
+            var keysets = ($('#keysets').val());
+            const ja = JSON.parse(keysets);
+            ja.forEach(function(keyset) {
+                var url = '/api/key/rotate_keyset_key?min_age_seconds=3600' + "&keyset_id=" + keyset.keyset_id;
+                if ($('#force').is(':checked')) url = url + '&force=true';
+
+                doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            });
         });
     });
 </script>
