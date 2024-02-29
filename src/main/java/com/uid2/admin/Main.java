@@ -309,6 +309,9 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("enclaves", enclaveIdProvider);
             DataStoreMetrics.addDataStoreMetrics("salt", saltProvider);
             DataStoreMetrics.addDataStoreMetrics("partners", partnerConfigProvider);
+            DataStoreMetrics.addDataStoreMetrics("service_link", serviceLinkProvider);
+            DataStoreMetrics.addDataStoreServiceLinkEntryCount("snowflake", serviceLinkProvider, serviceProvider);
+
 
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
