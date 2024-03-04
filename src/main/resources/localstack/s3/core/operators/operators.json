@@ -79,7 +79,7 @@
     "operator_type": "PRIVATE",
     "key_hash": "WygXXdIoEH7Te0bAYFh+yvIgPu0Hn8dkQih3v1lC/HNIWdCXnyd32m/p7gSPG7awpC1XOfERJjKtL+ano5gqyg==",
     "key_salt": "a9OTKkkFsff4lgawC3aK8zG9y9AGB14dmtg+6hzA7jI=",
-    "key_id": "UID2-O-L-124-"
+    "key_id": "UID2-O-L-124-gcp-o"
   },
   {
     "key": "UID2-O-L-124-azure-operator-key",
@@ -95,7 +95,7 @@
     "operator_type": "PRIVATE",
     "key_hash": "BBj2cpn1PpSUdusKDNjVUA7wSBko41DwgbeK+L2LvD0hBCliGr17q66K9osKHjL2OWYTKM7lFVI08rp0FcTrng==",
     "key_salt": "cHew+yYJ3qS+ZbFqANZxDFiZqkmohSn0FSaNGBVQHxg=",
-    "key_id": "UID2-O-L-124-"
+    "key_id": "UID2-O-L-124-azure"
   },
   {
     "key": "UID2-O-L-124-aws-operator-key",
@@ -111,7 +111,7 @@
     "operator_type": "PRIVATE",
     "key_hash": "Ta2D1xkF8BlU+gzfgMgSkBsryYklIEiYL5MKDgjRGYYC+/IgM8LBESH62JR4J4tlKQU9RsUbd/f++moKD4o6WA==",
     "key_salt": "9WtKvBwKJRZ9ZTQuluH1Cw8EdK1MblH7+wSFfeqFeA8=",
-    "key_id": "UID2-O-L-124-"
+    "key_id": "UID2-O-L-124-aws-o"
   },
   {
     "key": "UID2-O-L-127-pDqphU.6FuXzThQMY8YEsCA8crqvAlzyGrjcF8P6XO84=",
