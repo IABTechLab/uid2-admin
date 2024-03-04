@@ -16,10 +16,17 @@ public class AdminAuthMiddleware {
     private final AuthProvider authProvider;
     private final String environment;
     private final boolean isAuthDisabled;
+
+    final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     public AdminAuthMiddleware(AuthProvider authProvider, JsonObject config) {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
+        // TODO extract mapping from config
+        JsonObject roleOktaGroupMappingJson = config.getJsonObject("role_okta_group_mapping");
+        roleToOktaGroups.put(Role.ALL, Arrays.asList(OktaGroup.DEVELOPER));
+        roleToOktaGroups.put(Role.PRIVILEGED, Arrays.asList(OktaGroup.DEVELOPER, OktaGroup.DEVELOPER_ELEVATED));
+        roleToOktaGroups.put(Role.SUPER_USER, Arrays.asList(OktaGroup.DEVELOPER, OktaGroup.DEVELOPER_ELEVATED, OktaGroup.ADMIN));
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
@@ -27,7 +34,7 @@ public class AdminAuthMiddleware {
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }
-        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment);
+        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment, roleToOktaGroups);
         return adminAuthHandler::handle;
     }
 
@@ -35,13 +42,15 @@ public class AdminAuthMiddleware {
         private final String environment;
         private final Handler<RoutingContext> innerHandler;
         private final Set<Role> allowedRoles;
-        private final List<String> oktaRoles = List.of("developer", "developer-elevated", "infra-admin", "admin");
+        private final Map<Role, List<OktaGroup>> roleToOktaGroups;
         private final AuthProvider authProvider;
-        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles, String environment) {
+        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles,
+                                 String environment, Map<Role, List<OktaGroup>> roleToOktaGroups) {
             this.environment = environment;
             this.innerHandler = handler;
             this.authProvider = authProvider;
             this.allowedRoles = allowedRoles;
+            this.roleToOktaGroups = roleToOktaGroups;
         }
 
         public static String extractBearerToken(String headerValue) {
@@ -58,16 +67,23 @@ public class AdminAuthMiddleware {
                 }
             }
         }
-        private boolean isAuthorizedUser(List<String> userGroups) {
-            // TODO temporary, introduce role mapping later
-            return oktaRoles.stream().anyMatch(userGroups::contains);
+        private boolean isAuthorizedUser(List<String> userAssignedGroups) {
+            for (Role role : allowedRoles) {
+                List<OktaGroup> allowedOktaGroupsForRole = roleToOktaGroups.get(role);
+                if (userAssignedGroups.stream().anyMatch(
+                        userGroup -> allowedOktaGroupsForRole.contains(OktaGroup.fromName(userGroup)))) {
+                    return true;
+                }
+            }
+            return false;
         }
         private boolean isAuthorizedService(List<String> scopes) {
-            if (scopes.contains("uid2.admin.ss-portal") && allowedRoles.contains(Role.SHARING_PORTAL)) {
-                return true;
-            } else if (scopes.contains("uid2.admin.secret-rotation") && allowedRoles.contains(Role.SECRET_MANAGER)) {
-                return true;
-            } else return scopes.contains("uid2.admin.site-sync") && allowedRoles.contains(Role.SECRET_MANAGER);
+            for (String scope : scopes) {
+                if (allowedRoles.contains(OktaCustomScope.fromName(scope).getRole())) {
+                    return true;
+                }
+            }
+            return false;
         }
         public void handle(RoutingContext rc) {
             // human user

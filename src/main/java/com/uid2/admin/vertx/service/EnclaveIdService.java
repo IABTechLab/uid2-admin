@@ -42,20 +42,20 @@ public class EnclaveIdService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/enclave/metadata").handler(
-                auth.handle(this::handleEnclaveMetadata, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleEnclaveMetadata, Role.ALL));
         router.get("/api/enclave/list").handler(
-                auth.handle(this::handleEnclaveList, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleEnclaveList, Role.ALL));
 
         router.post("/api/enclave/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveAdd(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.PRIVILEGED));
         router.post("/api/enclave/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.SUPER_USER));
     }
 
     private void handleEnclaveMetadata(RoutingContext rc) {

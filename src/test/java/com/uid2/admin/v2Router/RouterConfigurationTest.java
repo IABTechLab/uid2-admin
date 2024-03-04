@@ -53,7 +53,7 @@ public class RouterConfigurationTest {
             router.setupSubRouter(vertxMock, routerMock);
 
             verify(routeMock).handler(handlerMock);
-            verify(authMiddlewareMock).handle(any(), eq(Role.ADMINISTRATOR), eq(Role.SHARING_PORTAL));
+            verify(authMiddlewareMock).handle(any(), eq(Role.ALL), eq(Role.SHARING_PORTAL));
         }
     }
 }

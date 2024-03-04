@@ -68,47 +68,47 @@ public class OperatorKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/operator/metadata").handler(
-                auth.handle(this::handleOperatorMetadata, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleOperatorMetadata, Role.ALL));
         router.get("/api/operator/list").handler(
-                auth.handle(this::handleOperatorList, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleOperatorList, Role.ALL));
         router.get("/api/operator/reveal").handler(
-                auth.handle(this::handleOperatorReveal, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleOperatorReveal, Role.ALL));
 
         router.post("/api/operator/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.ALL));
 
         router.post("/api/operator/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.SUPER_USER));
 
         router.post("/api/operator/disable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDisable(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.PRIVILEGED));
 
         router.post("/api/operator/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.ALL));
 
         router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorUpdate(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.PRIVILEGED));
 
         router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.PRIVILEGED));
     }
 
     private void handleOperatorMetadata(RoutingContext rc) {
