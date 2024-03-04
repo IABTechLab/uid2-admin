@@ -34,7 +34,7 @@ public class SearchService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.post("/api/search").handler(
-                auth.handle(this::handleSearch, Role.ADMINISTRATOR));
+            auth.handle(this::handleSearch, Role.ALL));
     }
 
     private void handleSearch(RoutingContext rc) {
@@ -48,11 +48,9 @@ public class SearchService implements IService {
 
             JsonArray clientKeyResults = new JsonArray();
             JsonArray operatorKeyResults = new JsonArray();
-            JsonArray adminUserResults = new JsonArray();
             JsonObject results = new JsonObject();
             results.put("ClientKeys", clientKeyResults);
             results.put("OperatorKeys", operatorKeyResults);
-            results.put("AdministratorKeys", adminUserResults);
 
             this.clientKeyProvider.getAll()
                     .stream()

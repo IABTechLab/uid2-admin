@@ -68,16 +68,16 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             synchronized (writeLock) {
                 this.handleAddKeypair(ctx);
             }
-        }, Role.ADMINISTRATOR, Role.SHARING_PORTAL));
+        }, Role.ALL, Role.SHARING_PORTAL));
         router.post("/api/client_side_keypairs/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdateKeypair(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.ALL));
         router.get("/api/client_side_keypairs/list").handler(
-                auth.handle(this::handleListAllKeypairs, Role.ADMINISTRATOR));
+            auth.handle(this::handleListAllKeypairs, Role.ALL));
         router.get("/api/client_side_keypairs/:subscriptionId").handler(
-                auth.handle(this::handleListKeypair, Role.ADMINISTRATOR)
+            auth.handle(this::handleListKeypair, Role.ALL)
         );
     }
 

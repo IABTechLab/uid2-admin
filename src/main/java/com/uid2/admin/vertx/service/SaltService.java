@@ -46,13 +46,13 @@ public class SaltService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/salt/snapshots").handler(
-                auth.handle(this::handleSaltSnapshots, Role.SECRET_MANAGER));
+            auth.handle(this::handleSaltSnapshots, Role.ALL));
 
         router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSaltRotate(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }, Role.SUPER_USER, Role.SECRET_ROTATION));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {

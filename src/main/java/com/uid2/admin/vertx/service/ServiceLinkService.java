@@ -49,22 +49,22 @@ public class ServiceLinkService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/service_link/list").handler(auth.handle(this::handleServiceLinkList, Role.ADMINISTRATOR));
+        router.get("/api/service_link/list").handler(auth.handle(this::handleServiceLinkList, Role.ALL));
         router.post("/api/service_link/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkAdd(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.ALL));
         router.post("/api/service_link/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkUpdate(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.ALL));
         router.post("/api/service_link/delete").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkDelete(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.PRIVILEGED));
     }
 
     private void handleServiceLinkList(RoutingContext rc) {

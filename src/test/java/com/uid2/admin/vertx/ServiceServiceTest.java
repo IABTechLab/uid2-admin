@@ -64,7 +64,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void listServicesNoServices(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.ALL);
 
         get(vertx, testContext, "api/service/list", response -> {
             assertEquals(200, response.statusCode());
@@ -77,11 +77,11 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void listServicesMultipleServices(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.ALL);
 
         Service[] expectedServices = {
                 new Service(1, 123, "name1", Set.of()),
-                new Service(2, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)),
+                new Service(2, 123, "name1", Set.of(Role.ALL)),
                 new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL)),
                 new Service(4, 125, "name1", Set.of())
         };
@@ -98,7 +98,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void listIndividualBadServiceId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.ALL);
 
         Service existingService = new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
         setServices(existingService);
@@ -113,7 +113,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void listIndividualServiceIdNotFound(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.ALL);
 
         Service existingService = new Service(1, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
         setServices(existingService);
@@ -128,7 +128,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void listIndividualService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.ALL);
 
         Service existingService = new Service(3, 124, "name1", Set.of(Role.GENERATOR, Role.SHARING_PORTAL));
         setServices(existingService);
@@ -143,7 +143,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceMissingPayload(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         postWithoutBody(vertx, testContext, "api/service/add", response -> {
             assertEquals(400, response.statusCode());
@@ -156,7 +156,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @ValueSource(strings = {"site_id", "name", "roles"})
     void addServiceMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
@@ -175,12 +175,12 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceBadSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("name", "name1");
-        jo.put("roles", Set.of(Role.ADMINISTRATOR));
+        jo.put("roles", Set.of(Role.PRIVILEGED));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -192,14 +192,14 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceEmptyName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
 
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("name", "");
-        jo.put("roles", Set.of(Role.ADMINISTRATOR));
+        jo.put("roles", Set.of(Role.PRIVILEGED));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -211,7 +211,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceAlreadyExists(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "testName1", Set.of(Role.ID_READER)));
@@ -219,7 +219,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("name", "testName1");
-        jo.put("roles", Set.of(Role.ADMINISTRATOR));
+        jo.put("roles", Set.of(Role.PRIVILEGED));
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -231,7 +231,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceDuplicateName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "serviceName1", Set.of(Role.ID_READER)));
@@ -253,7 +253,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceBadRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
 
@@ -275,7 +275,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addService_emptyRoles_returnsError(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
 
@@ -294,7 +294,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceNonEmptyRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
 
@@ -318,7 +318,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void addServiceToExistingList(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
 
@@ -345,7 +345,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateRolesMissingPayload(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         postWithoutBody(vertx, testContext, "api/service/update", response -> {
             assertEquals(400, response.statusCode());
@@ -358,7 +358,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @ValueSource(strings = {"service_id"})
     void updateRolesMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
         JsonObject jo = new JsonObject();
         jo.put("service_id", 1);
@@ -376,9 +376,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateRolesBadServiceId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        setServices(new Service(1, 123, "name1", Set.of(Role.ALL)));
 
         JsonArray ja = new JsonArray();
         ja.add("bad");
@@ -397,9 +397,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateRolesBadRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        setServices(new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER)));
+        setServices(new Service(1, 123, "name1", Set.of(Role.ALL)));
 
         JsonArray ja = new JsonArray();
         ja.add("bad");
@@ -418,14 +418,14 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonArray ja = new JsonArray();
         ja.add("GENERATOR");
-        ja.add("ADMINISTRATOR");
+        ja.add("PRIVILEGED");
 
         JsonObject jo = new JsonObject();
         jo.put("service_id", 1);
@@ -433,7 +433,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
-            existingService.setRoles(Set.of(Role.GENERATOR, Role.ADMINISTRATOR));
+            existingService.setRoles(Set.of(Role.GENERATOR, Role.PRIVILEGED));
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
             testContext.completeNow();
@@ -442,9 +442,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateService_removeRolesNotUsedByServiceLinks_succeeds(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL, Role.MAPPER, Role.SHARER));
         setServices(existingService);
         ServiceLink sl1 = new ServiceLink("abc123", 1, 123, "link1", Set.of(Role.MAPPER));
         ServiceLink sl2 = new ServiceLink("cde", 1, 123, "link2", Set.of(Role.MAPPER, Role.SHARER));
@@ -466,9 +466,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateService_removeRolesInUseByServiceLinks_returnsError(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER, Role.MAPPER, Role.SHARER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL, Role.MAPPER, Role.SHARER));
         setServices(existingService);
         ServiceLink sl1 = new ServiceLink("abc123", 1, 123, "link1", Set.of(Role.MAPPER));
         ServiceLink sl2 = new ServiceLink("cde", 1, 123, "link2", Set.of(Role.MAPPER, Role.SHARER));
@@ -477,7 +477,7 @@ public class ServiceServiceTest extends ServiceTestBase {
 
         JsonObject jo = new JsonObject();
         jo.put("service_id", 1);
-        jo.put("roles", JsonArray.of("CLIENTKEY_ISSUER", "SHARER"));
+        jo.put("roles", JsonArray.of("ALL", "SHARER"));
 
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
@@ -489,9 +489,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonObject jo = new JsonObject();
@@ -509,9 +509,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonObject jo = new JsonObject();
@@ -529,9 +529,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateWithEmptyValues(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonObject jo = new JsonObject();
@@ -549,9 +549,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateWithEmptyRoleString(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonObject jo = new JsonObject();
@@ -568,9 +568,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateWithEmptyRoleArray(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         Service expectedService = new Service(1, 123, "name1", Set.of());
@@ -589,10 +589,10 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateSiteCreateDuplicateSiteIdAndName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService1 = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
-        Service existingService2 = new Service(2, 789, "name2", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService1 = new Service(1, 123, "name1", Set.of(Role.ALL));
+        Service existingService2 = new Service(2, 789, "name2", Set.of(Role.ALL));
         setServices(existingService1, existingService2);
 
         JsonObject jo = new JsonObject();
@@ -610,10 +610,10 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void updateServiceDuplicateName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.PRIVILEGED);
 
-        Service existingService1 = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
-        Service existingService2 = new Service(2, 789, "name2", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService1 = new Service(1, 123, "name1", Set.of(Role.ALL));
+        Service existingService2 = new Service(2, 789, "name2", Set.of(Role.ALL));
         setServices(existingService1, existingService2);
 
         JsonObject jo = new JsonObject();
@@ -631,9 +631,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void deleteService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.SUPER_USER);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonObject jo = new JsonObject();
@@ -649,9 +649,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void deleteServiceInvalidServiceId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.SUPER_USER);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         JsonObject jo = new JsonObject();
@@ -671,9 +671,9 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void deleteServiceNoBody(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.SUPER_USER);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
         setServices(existingService);
 
         post(vertx, testContext, "api/service/delete", "", response -> {
@@ -690,11 +690,11 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @Test
     void deleteOneService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.SUPER_USER);
 
-        Service existingService = new Service(1, 123, "name1", Set.of(Role.CLIENTKEY_ISSUER));
-        Service existingService2 = new Service(2, 123, "name2", Set.of(Role.CLIENTKEY_ISSUER));
-        Service existingService3 = new Service(32, 123, "name3", Set.of(Role.CLIENTKEY_ISSUER));
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.ALL));
+        Service existingService2 = new Service(2, 123, "name2", Set.of(Role.ALL));
+        Service existingService3 = new Service(32, 123, "name3", Set.of(Role.ALL));
         setServices(existingService, existingService2, existingService3);
 
         JsonObject jo = new JsonObject();

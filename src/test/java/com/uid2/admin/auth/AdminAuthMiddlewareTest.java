@@ -15,11 +15,15 @@ import io.vertx.ext.web.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +46,7 @@ public class AdminAuthMiddlewareTest {
     @Mock private JsonObject principal;
     @Mock private Handler<RoutingContext> innerHandler;
     private AdminAuthMiddleware adminAuthMiddleware;
+    Role[] allRolesArr = new Role[] {Role.ALL, Role.PRIVILEGED, Role.SUPER_USER};
 
     @BeforeEach
     public void setup() {
@@ -90,7 +95,7 @@ public class AdminAuthMiddlewareTest {
 
     @Test
     public void testNoSessionOrAccessToken() {
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
         verifyUnauthorized(false);
     }
@@ -98,7 +103,7 @@ public class AdminAuthMiddlewareTest {
     @Test
     public void testNoIdOrAccessToken() {
         mockSession(false, false);
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
         verifyUnauthorized(false);
     }
@@ -108,7 +113,7 @@ public class AdminAuthMiddlewareTest {
         mockSession(true, true);
         when(idTokenVerifier.decode(anyString(), any())).thenThrow(JwtVerificationException.class);
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
@@ -121,7 +126,7 @@ public class AdminAuthMiddlewareTest {
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("fake-role"), "environment", "incorrect"));
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
@@ -135,7 +140,7 @@ public class AdminAuthMiddlewareTest {
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("fake-role"), "environment", "local"));
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
@@ -143,13 +148,13 @@ public class AdminAuthMiddlewareTest {
         verifyUnauthorized(false);
     }
 
-    @Test
+    @Test // TODO make it parametrized and test all okta groups
     public void testIdToken_GoodTokenAuthorized() throws JwtVerificationException {
         mockSession(true, true);
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
-        when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("developer"), "environment", "local"));
+        when(jwt.getClaims()).thenReturn(Map.of("groups", List.of(OktaGroup.DEVELOPER.getName()), "environment", "local"));
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
@@ -162,7 +167,7 @@ public class AdminAuthMiddlewareTest {
         mockSession(false, true);
         when(accessTokenVerifier.decode(anyString())).thenThrow(JwtVerificationException.class);
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
@@ -175,7 +180,7 @@ public class AdminAuthMiddlewareTest {
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
         when(jwt.getClaims()).thenReturn(Map.of("scp", List.of("uid2.admin.ss-portal"), "environment", "incorrect"));
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER, Role.SECRET_MANAGER, Role.SHARING_PORTAL, Role.ADMINISTRATOR, Role.OPERATOR_MANAGER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allRolesArr);
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
@@ -189,7 +194,7 @@ public class AdminAuthMiddlewareTest {
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
         when(jwt.getClaims()).thenReturn(Map.of("scp", List.of("uid2.admin.ss-portal"), "environment", "local"));
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.CLIENTKEY_ISSUER);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.PRIVATE_OPERATOR_SYNC);
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
@@ -198,17 +203,42 @@ public class AdminAuthMiddlewareTest {
     }
 
     @Test
-    public void testAccessToken_GoodTokenAuthorized() throws JwtVerificationException {
+    public void testAccessToken_BadScopeUnauthorized() throws JwtVerificationException {
         mockSession(false, true);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
-        when(jwt.getClaims()).thenReturn(Map.of("scp", List.of("uid2.admin.ss-portal"), "environment", "local"));
+        when(jwt.getClaims()).thenReturn(Map.of("scp", List.of(OktaCustomScope.SS_PORTAL.getName()), "environment", "local"));
 
-        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.SHARING_PORTAL);
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, Role.PRIVATE_OPERATOR_SYNC);
+        handler.handle(rc);
+
+        verify(accessTokenVerifier).decode(eq("testAccessToken"));
+        verify(jwt, times(3)).getClaims();
+        verifyUnauthorized(false);
+    }
+
+    private static Stream<Arguments> testAccessTokenGoodData() {
+        return Stream.of(
+          Arguments.of(OktaCustomScope.SS_PORTAL, OktaCustomScope.SS_PORTAL.getRole()),
+          Arguments.of(OktaCustomScope.SECRET_ROTATION, OktaCustomScope.SECRET_ROTATION.getRole()),
+          Arguments.of(OktaCustomScope.SITE_SYNC, OktaCustomScope.SITE_SYNC.getRole())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAccessTokenGoodData")
+    public void testAccessToken_GoodTokenAuthorized(OktaCustomScope scope, Role allowedRole) throws JwtVerificationException {
+        mockSession(false, true);
+        when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
+        when(jwt.getClaims()).thenReturn(Map.of("scp", List.of(scope.getName()), "environment", "local"));
+
+        Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allowedRole);
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
         verify(jwt, times(3)).getClaims();
         verify(innerHandler).handle(eq(rc));
     }
+
+
 
 }
