@@ -4,6 +4,7 @@ import com.okta.jwt.AccessTokenVerifier;
 import com.okta.jwt.IdTokenVerifier;
 import com.okta.jwt.Jwt;
 import com.okta.jwt.JwtVerificationException;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
@@ -51,11 +52,13 @@ public class AdminAuthMiddlewareTest {
     @BeforeEach
     public void setup() {
         mocks = MockitoAnnotations.openMocks(this);
-        this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, JsonObject.of(
-                "role_okta_group_map_default", "developer",
-                "role_okta_group_map_privileged", "developer,developer-elevated",
-                "role_okta_group_map_super_user", "developer,developer-elevated,admin"
-        ));
+        final JsonObject config = new JsonObject();
+        config.put(Const.Config.ROLE_OKTA_GROUP_MAP_MAINTAINER, OktaGroup.DEVELOPER.getName());
+        config.put(Const.Config.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER.getName(),
+                OktaGroup.DEVELOPER_ELEVATED.getName()));
+        config.put(Const.Config.ROLE_OKTA_GROUP_MAP_SUPER_USER, String.join(",", OktaGroup.DEVELOPER.getName(),
+                OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
+        this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, config);
 
         when(authProvider.getIdTokenVerifier()).thenReturn(idTokenVerifier);
         when(authProvider.getAccessTokenVerifier()).thenReturn(accessTokenVerifier);

@@ -2,6 +2,7 @@ package com.uid2.admin.auth;
 
 
 import com.okta.jwt.*;
+import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
@@ -22,9 +23,9 @@ public class AdminAuthMiddleware {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
-        roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString("role_okta_group_map_default")));
-        roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString("role_okta_group_map_privileged")));
-        roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString("role_okta_group_map_super_user")));
+        roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString(Const.Config.ROLE_OKTA_GROUP_MAP_MAINTAINER)));
+        roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString(Const.Config.ROLE_OKTA_GROUP_MAP_PRIVILEGED)));
+        roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString(Const.Config.ROLE_OKTA_GROUP_MAP_SUPER_USER)));
     }
 
     private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
