@@ -82,9 +82,9 @@
     "key_id": "UID2-O-L-124-gcp-o"
   },
   {
-    "key": "UID2-O-L-124-azure-operator-key",
-    "name": "Publisher (Private, Azure)",
-    "contact": "Publisher (Private, Azure)",
+    "key": "UID2-azure-cc-operator-key",
+    "name": "Publisher (Private, Azure CC)",
+    "contact": "Publisher (Private, Azure CC)",
     "protocol": "azure-cc",
     "created": 1618873215,
     "disabled": false,
@@ -93,9 +93,9 @@
     ],
     "site_id": 124,
     "operator_type": "PRIVATE",
-    "key_hash": "BBj2cpn1PpSUdusKDNjVUA7wSBko41DwgbeK+L2LvD0hBCliGr17q66K9osKHjL2OWYTKM7lFVI08rp0FcTrng==",
-    "key_salt": "cHew+yYJ3qS+ZbFqANZxDFiZqkmohSn0FSaNGBVQHxg=",
-    "key_id": "UID2-O-L-124-azure"
+    "key_hash": "rtXong4ZyjwdshMNEICQv8Kd/vvX6d7PcB02AwcV3ElCnG7tXQvO+NKyqc93ObcVbwcJfZ1RPAGLjJhxdQQ55w==",
+    "key_salt": "0Qw0Ln9qym9pcyQ1lT0oIB0uZ2nWhnVsGBhe8CYJ5xI=",
+    "key_id": "UID2-azure"
   },
   {
     "key": "UID2-O-L-124-aws-operator-key",
