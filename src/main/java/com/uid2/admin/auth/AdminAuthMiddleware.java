@@ -22,11 +22,17 @@ public class AdminAuthMiddleware {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
-        // TODO extract mapping from config
-        JsonObject roleOktaGroupMappingJson = config.getJsonObject("role_okta_group_mapping");
-        roleToOktaGroups.put(Role.ALL, Arrays.asList(OktaGroup.DEVELOPER));
-        roleToOktaGroups.put(Role.PRIVILEGED, Arrays.asList(OktaGroup.DEVELOPER, OktaGroup.DEVELOPER_ELEVATED));
-        roleToOktaGroups.put(Role.SUPER_USER, Arrays.asList(OktaGroup.DEVELOPER, OktaGroup.DEVELOPER_ELEVATED, OktaGroup.ADMIN));
+        roleToOktaGroups.put(Role.ALL, parseOktaGroups(config.getString("role_okta_group_map_all")));
+        roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString("role_okta_group_map_privileged")));
+        roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString("role_okta_group_map_super_user")));
+    }
+
+    private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
+        final List<OktaGroup> allOktaGroups = new ArrayList<>();
+        for (String group : oktaGroups.split(",")) {
+            allOktaGroups.add(OktaGroup.fromName(group));
+        }
+        return allOktaGroups;
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {

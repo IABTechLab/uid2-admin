@@ -40,5 +40,8 @@
   "okta_audience": "https://api.admin.com/api",
   "okta_callback": "http://localhost:8089/oauth2-callback",
   "environment": "local",
-  "vertx_session_timeout": 32400000
+  "vertx_session_timeout": 32400000,
+  "role_okta_group_map_all" : "developer",
+  "role_okta_group_map_privileged" : "developer,developer-elevated",
+  "role_okta_group_map_super_user" : "developer,developer-elevated,admin"
 }

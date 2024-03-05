@@ -51,7 +51,11 @@ public class AdminAuthMiddlewareTest {
     @BeforeEach
     public void setup() {
         mocks = MockitoAnnotations.openMocks(this);
-        this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, JsonObject.of());
+        this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, JsonObject.of(
+                "role_okta_group_map_all", "developer",
+                "role_okta_group_map_privileged", "developer,developer-elevated",
+                "role_okta_group_map_super_user", "developer,developer-elevated,admin"
+        ));
 
         when(authProvider.getIdTokenVerifier()).thenReturn(idTokenVerifier);
         when(authProvider.getAccessTokenVerifier()).thenReturn(accessTokenVerifier);
