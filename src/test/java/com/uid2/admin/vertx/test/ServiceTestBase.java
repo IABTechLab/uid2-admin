@@ -3,6 +3,7 @@ package com.uid2.admin.vertx.test;
 import com.okta.jwt.AccessTokenVerifier;
 import com.okta.jwt.IdTokenVerifier;
 import com.okta.jwt.Jwt;
+import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
@@ -12,7 +13,6 @@ import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
@@ -128,10 +128,10 @@ public abstract class ServiceTestBase {
         })).when(tokenRefreshHandler).handle(any());
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
-        config.put(Const.Config.ROLE_OKTA_GROUP_MAP_MAINTAINER, OktaGroup.DEVELOPER.getName());
-        config.put(Const.Config.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER.getName(),
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER, OktaGroup.DEVELOPER.getName());
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER.getName(),
             OktaGroup.DEVELOPER_ELEVATED.getName()));
-        config.put(Const.Config.ROLE_OKTA_GROUP_MAP_SUPER_USER, String.join(",", OktaGroup.DEVELOPER.getName(),
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER, String.join(",", OktaGroup.DEVELOPER.getName(),
             OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
         auth = new AdminAuthMiddleware(authProvider, config);
 
