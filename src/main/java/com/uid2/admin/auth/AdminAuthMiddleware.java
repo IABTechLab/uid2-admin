@@ -22,7 +22,7 @@ public class AdminAuthMiddleware {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
-        roleToOktaGroups.put(Role.DEFAULT, parseOktaGroups(config.getString("role_okta_group_map_default")));
+        roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString("role_okta_group_map_default")));
         roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString("role_okta_group_map_privileged")));
         roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString("role_okta_group_map_super_user")));
     }

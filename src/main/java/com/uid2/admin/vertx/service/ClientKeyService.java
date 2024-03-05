@@ -69,7 +69,7 @@ public class ClientKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/client/metadata").handler(
-            auth.handle(this::handleClientMetadata, Role.DEFAULT));
+            auth.handle(this::handleClientMetadata, Role.MAINTAINER));
         router.post("/api/client/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
@@ -77,16 +77,16 @@ public class ClientKeyService implements IService {
         }, Role.PRIVILEGED));
 
         router.get("/api/client/list").handler(
-            auth.handle(this::handleClientList, Role.DEFAULT));
+            auth.handle(this::handleClientList, Role.MAINTAINER));
 
         router.get("/api/client/list/:siteId").handler(
-            auth.handle(this::handleClientListBySite, Role.DEFAULT, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientListBySite, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.get("/api/client/keyId").handler(
-            auth.handle(this::handleClientByKeyId, Role.DEFAULT, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientByKeyId, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.get("/api/client/contact").handler(
-            auth.handle(this::handleClientByContact, Role.DEFAULT, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientByContact, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.get("/api/client/reveal").handler(
             auth.handle(this::handleClientReveal, Role.PRIVILEGED));
@@ -95,7 +95,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
-        }, Role.DEFAULT, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.post("/api/client/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -107,19 +107,19 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientUpdate(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         router.post("/api/client/disable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDisable(ctx);
             }
-        }, Role.DEFAULT, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.post("/api/client/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientEnable(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -131,13 +131,13 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientContact(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         router.post("/api/client/rename").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
             }
-        }, Role.DEFAULT, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

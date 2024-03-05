@@ -399,7 +399,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetList(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, Set.of(ClientType.DSP)));
@@ -420,7 +420,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetListNotFound(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(2, new AdminKeyset(2, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -438,7 +438,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void listAllKeysets(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -465,7 +465,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNoSiteIdOrKeysetId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -494,7 +494,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetBothSiteIdAndKeysetId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(1, new AdminKeyset(1, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -525,7 +525,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetCanUpdateAllowedSitesAndName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(22, 25, 6);
 
@@ -560,7 +560,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetWithType(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(3, new AdminKeyset(3, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));
@@ -612,7 +612,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetCanUpdateAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 22, 25, 6);
 
@@ -646,7 +646,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetCanMakeNew(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(8, 22, 25, 6);
 
@@ -681,7 +681,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetBadSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(null).when(siteProvider).getSite(5);
 
@@ -713,7 +713,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetBadWhitelistSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 22);
 
@@ -744,7 +744,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetIgnoresAlreadySetSitesWhenChecking(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         // 25 is not an existing site
         mockSiteExistence(5, 22, 6);
@@ -779,7 +779,7 @@ public class SharingServiceTest extends ServiceTestBase {
     @Test
     @Disabled
     void KeysetSetNewIdenticalNameAndSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(8, 22, 25, 6);
 
@@ -809,7 +809,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewSameNameDifferentSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(8, 22, 25, 6);
 
@@ -842,7 +842,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewEmptyAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
 
@@ -871,7 +871,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetUpdateEmptyAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(5, "test", true)).when(siteProvider).getSite(5);
 
@@ -901,7 +901,7 @@ public class SharingServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @ValueSource(ints = {Const.Data.AdvertisingTokenSiteId, Const.Data.RefreshKeySiteId, Const.Data.MasterKeySiteId})
     void KeysetSetNewReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
 
@@ -928,7 +928,7 @@ public class SharingServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @ValueSource(ints = {Const.Data.MasterKeysetId, Const.Data.RefreshKeysetId, Const.Data.FallbackPublisherKeysetId})
     void KeysetSetReservedKeyset(int input, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
 
@@ -955,7 +955,7 @@ public class SharingServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @ValueSource(ints = {Const.Data.AdvertisingTokenSiteId, Const.Data.RefreshKeySiteId, Const.Data.MasterKeySiteId})
     void KeysetSetUpdateReservedSite(int input, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(input, "test", true)).when(siteProvider).getSite(input);
 
@@ -981,7 +981,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewDisallowDuplicates(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(8, "test", true)).when(siteProvider).getSite(8);
 
@@ -1007,7 +1007,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetUpdateDisallowDuplicates(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         doReturn(new Site(5, "test", true)).when(siteProvider).getSite(8);
 
@@ -1033,7 +1033,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewDiscardSelf(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(8, 5);
 
@@ -1063,7 +1063,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void xKeysetSetUpdateDiscardSelf(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 8);
 
@@ -1092,7 +1092,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewDisallowMultipleForSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 8);
 
@@ -1117,7 +1117,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 3);
 
@@ -1143,7 +1143,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 3);
 
@@ -1170,7 +1170,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetUpdateNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5);
 
@@ -1196,7 +1196,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetUpdateExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5);
 
@@ -1223,7 +1223,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
     @Test
     void KeysetSetNewWithType(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(3, new AdminKeyset(3, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>()));

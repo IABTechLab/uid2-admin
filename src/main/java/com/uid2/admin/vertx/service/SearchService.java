@@ -34,7 +34,7 @@ public class SearchService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.post("/api/search").handler(
-            auth.handle(this::handleSearch, Role.DEFAULT));
+            auth.handle(this::handleSearch, Role.MAINTAINER));
     }
 
     private void handleSearch(RoutingContext rc) {

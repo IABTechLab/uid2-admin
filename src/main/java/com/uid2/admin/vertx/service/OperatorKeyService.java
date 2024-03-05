@@ -68,17 +68,17 @@ public class OperatorKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/operator/metadata").handler(
-            auth.handle(this::handleOperatorMetadata, Role.DEFAULT));
+            auth.handle(this::handleOperatorMetadata, Role.MAINTAINER));
         router.get("/api/operator/list").handler(
-            auth.handle(this::handleOperatorList, Role.DEFAULT));
+            auth.handle(this::handleOperatorList, Role.MAINTAINER));
         router.get("/api/operator/reveal").handler(
-            auth.handle(this::handleOperatorReveal, Role.DEFAULT));
+            auth.handle(this::handleOperatorReveal, Role.MAINTAINER));
 
         router.post("/api/operator/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         router.post("/api/operator/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -96,7 +96,7 @@ public class OperatorKeyService implements IService {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

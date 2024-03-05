@@ -54,7 +54,7 @@ public class SaltServiceTest extends ServiceTestBase {
 
     @Test
     void listSaltSnapshotsNoSnapshots(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/salt/snapshots", response -> {
             assertEquals(200, response.statusCode());
@@ -65,7 +65,7 @@ public class SaltServiceTest extends ServiceTestBase {
 
     @Test
     void listSaltSnapshotsWithSnapshots(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         final RotatingSaltProvider.SaltSnapshot[] snapshots = {
                 makeSnapshot(Instant.ofEpochMilli(10001), Instant.ofEpochMilli(20001), 10),
