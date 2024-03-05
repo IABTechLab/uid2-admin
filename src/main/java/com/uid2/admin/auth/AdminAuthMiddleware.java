@@ -22,7 +22,7 @@ public class AdminAuthMiddleware {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
-        roleToOktaGroups.put(Role.ALL, parseOktaGroups(config.getString("role_okta_group_map_all")));
+        roleToOktaGroups.put(Role.DEFAULT, parseOktaGroups(config.getString("role_okta_group_map_default")));
         roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString("role_okta_group_map_privileged")));
         roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString("role_okta_group_map_super_user")));
     }
@@ -75,10 +75,12 @@ public class AdminAuthMiddleware {
         }
         private boolean isAuthorizedUser(List<String> userAssignedGroups) {
             for (Role role : allowedRoles) {
-                List<OktaGroup> allowedOktaGroupsForRole = roleToOktaGroups.get(role);
-                if (userAssignedGroups.stream().anyMatch(
-                        userGroup -> allowedOktaGroupsForRole.contains(OktaGroup.fromName(userGroup)))) {
-                    return true;
+                if (roleToOktaGroups.containsKey(role)) {
+                    List<OktaGroup> allowedOktaGroupsForRole = roleToOktaGroups.get(role);
+                    if (userAssignedGroups.stream().anyMatch(
+                            userGroup -> allowedOktaGroupsForRole.contains(OktaGroup.fromName(userGroup)))) {
+                        return true;
+                    }
                 }
             }
             return false;

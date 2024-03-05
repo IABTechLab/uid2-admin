@@ -27,7 +27,7 @@ public class JobDispatcherService implements IService {
                     }
                 },
                 //can be other role
-            Role.ALL));
+            Role.DEFAULT));
 
         router.get("/api/job-dispatcher/job-queue").blockingHandler(auth.handle((ctx) -> {
                     try {
@@ -37,6 +37,6 @@ public class JobDispatcherService implements IService {
                     }
                 },
                 //can be other role
-            Role.ALL));
+            Role.DEFAULT));
     }
 }

@@ -46,7 +46,7 @@ public class SaltService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/salt/snapshots").handler(
-            auth.handle(this::handleSaltSnapshots, Role.ALL));
+            auth.handle(this::handleSaltSnapshots, Role.DEFAULT));
 
         router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

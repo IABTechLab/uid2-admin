@@ -128,6 +128,9 @@ public abstract class ServiceTestBase {
         })).when(tokenRefreshHandler).handle(any());
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
+        config.put("role_okta_group_map_default", "developer");
+        config.put("role_okta_group_map_privileged", "developer,developer-elevated");
+        config.put("role_okta_group_map_super_user", "developer,developer-elevated,admin");
         auth = new AdminAuthMiddleware(authProvider, config);
 
         IService[] services = {createService()};

@@ -30,7 +30,7 @@ public class PartnerConfigService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/partner_config/get").handler(
-            auth.handle(this::handlePartnerConfigGet, Role.ALL));
+            auth.handle(this::handlePartnerConfigGet, Role.DEFAULT));
         router.post("/api/partner_config/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);

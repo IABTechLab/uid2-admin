@@ -60,34 +60,34 @@ public class SiteService implements IService {
         }, Role.PRIVILEGED));
 
         router.get("/api/site/list").handler(
-            auth.handle(this::handleSiteList, Role.ALL, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteList, Role.DEFAULT, Role.SHARING_PORTAL));
         router.get("/api/site/:siteId").handler(
-            auth.handle(this::handleSiteById, Role.ALL, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteById, Role.DEFAULT, Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
-        }, Role.ALL, Role.SHARING_PORTAL));
+        }, Role.DEFAULT, Role.SHARING_PORTAL));
         router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);
             }
-        }, Role.ALL));
+        }, Role.DEFAULT));
         router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteTypesSet(ctx);
             }
-        }, Role.ALL, Role.SHARING_PORTAL));
+        }, Role.DEFAULT, Role.SHARING_PORTAL));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
             }
-        }, Role.ALL));
+        }, Role.DEFAULT));
         router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteUpdate(ctx);
             }
-        }, Role.ALL));
+        }, Role.DEFAULT));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
