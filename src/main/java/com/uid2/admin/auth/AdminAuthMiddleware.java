@@ -84,7 +84,7 @@ public class AdminAuthMiddleware {
             String authHeaderValue = rc.request().getHeader("Authorization");
             String accessToken = extractBearerToken(authHeaderValue);
             if(accessToken == null) {
-                rc.response().setStatusCode(401).end();
+                rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
                 return;
             }
             validateAccessToken(rc, accessToken);
