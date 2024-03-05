@@ -48,7 +48,7 @@ public class KeyAclService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/keys_acl/list").handler(
-            auth.handle(this::handleKeyAclList, Role.ALL));
+            auth.handle(this::handleKeyAclList, Role.DEFAULT));
 
         router.post("/api/keys_acl/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -60,12 +60,12 @@ public class KeyAclService implements IService {
             synchronized (writeLock) {
                 this.handleKeyAclReset(ctx);
             }
-        }, Role.ALL));
+        }, Role.DEFAULT));
         router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleKeyAclUpdate(ctx);
             }
-        }, Role.ALL));
+        }, Role.DEFAULT));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

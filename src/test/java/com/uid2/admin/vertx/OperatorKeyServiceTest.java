@@ -41,7 +41,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void operatorAdd(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
 
         OperatorKey expectedOperator = new OperatorBuilder()
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
@@ -62,7 +62,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void operatorAddUsesConfigPrefix(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
 
         OperatorKey expectedOperator = new OperatorBuilder()
                 .withRoles(Role.OPTOUT, Role.OPERATOR)
@@ -83,13 +83,13 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void operatorAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
         post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=4&roles=optout", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddEmptyRole(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
         post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=&operator_type=private", "", response -> {
@@ -107,7 +107,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void operatorKeyAddWithoutRole(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
 
         OperatorKey expectedOperator = new OperatorBuilder().build();
         post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&operator_type=private", "", response -> {
@@ -125,25 +125,25 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     @Test
     void operatorKeyAddInvalidRoleWithOperatorAndNonExistent(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
         post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,nonexistent", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddInvalidRoleCombinationWithOperatorAndOptoutService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
         post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddInvalidRoleCombinationWithOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
         post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=optout,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void operatorKeyAddInvalidRoleCombinationWithOperatorAndOptoutAndOptoutService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
         post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout,optout_service", "", expectHttpStatus(testContext, 400));
     }
 
@@ -224,7 +224,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void operatorKeySetInvalidRoleCombinationWithOperatorAndOptoutService(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.DEFAULT);
         setOperatorKeys(new OperatorBuilder().build());
         post(vertx, testContext, "api/operator/add?name=test_client&protocol=trusted&site_id=5&roles=operator,optout_service", "", expectHttpStatus(testContext, 400));
     }

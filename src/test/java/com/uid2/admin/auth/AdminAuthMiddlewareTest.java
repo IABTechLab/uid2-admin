@@ -46,13 +46,13 @@ public class AdminAuthMiddlewareTest {
     @Mock private JsonObject principal;
     @Mock private Handler<RoutingContext> innerHandler;
     private AdminAuthMiddleware adminAuthMiddleware;
-    Role[] allRolesArr = new Role[] {Role.ALL, Role.PRIVILEGED, Role.SUPER_USER};
+    Role[] allRolesArr = new Role[] {Role.DEFAULT, Role.PRIVILEGED, Role.SUPER_USER};
 
     @BeforeEach
     public void setup() {
         mocks = MockitoAnnotations.openMocks(this);
         this.adminAuthMiddleware = new AdminAuthMiddleware(authProvider, JsonObject.of(
-                "role_okta_group_map_all", "developer",
+                "role_okta_group_map_default", "developer",
                 "role_okta_group_map_privileged", "developer,developer-elevated",
                 "role_okta_group_map_super_user", "developer,developer-elevated,admin"
         ));
