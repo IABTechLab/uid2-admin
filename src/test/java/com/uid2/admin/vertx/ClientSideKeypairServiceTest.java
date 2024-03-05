@@ -89,7 +89,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void listAllEmpty(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         setKeypairs(new ArrayList<>());
 
@@ -104,7 +104,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     }
     @Test
     void listAll(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("aZ23456789", new ClientSideKeypair("aZ23456789", pub1, priv1, 123, "test@example.com", Instant.now(), false, name1));
@@ -132,7 +132,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void listKeypairSubscriptionIdNotFound(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         setKeypairs(new ArrayList<>());
 
@@ -145,7 +145,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void listKeypair(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         ClientSideKeypair queryKeypair = new ClientSideKeypair("aZ23456789", pub1, priv1, 123, "test@example.com", Instant.now(), false, name1);
 
@@ -169,7 +169,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void addKeypairNoSiteIdOrContact(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -191,7 +191,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void addKeypairNoSiteId(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -214,7 +214,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void addKeypairBadSiteId(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -279,7 +279,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void addKeypairNoContact(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -313,7 +313,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void addKeypairDisabled(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -347,7 +347,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairNoSubscriptionId(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -372,7 +372,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairBadSubscriptionId(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -398,7 +398,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairNoUpdateParams(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
             put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test-two@example.com", Instant.now(), true, name1));
@@ -422,7 +422,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairContactOnly(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
@@ -449,7 +449,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairNameOnly(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
@@ -476,7 +476,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairDisabledOnly(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
@@ -503,7 +503,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairDisabledAndContact(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{
@@ -531,7 +531,7 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
 
     @Test
     void updateKeypairDisabledAndName(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Instant time = Instant.now();
         Map<String, ClientSideKeypair> expectedKeypairs = new HashMap<>() {{

@@ -42,7 +42,7 @@ public class PrivateSiteDataRefreshService implements IService {
                     }
                 },
                 //can be other role
-            Role.DEFAULT, Role.PRIVATE_OPERATOR_SYNC));
+            Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
 
         router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle(
                 this::handlePrivateSiteDataGenerateNow,

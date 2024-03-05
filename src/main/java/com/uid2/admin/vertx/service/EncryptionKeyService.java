@@ -123,11 +123,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/key/list").handler(
-            auth.handle(this::handleKeyList, Role.DEFAULT));
+            auth.handle(this::handleKeyList, Role.MAINTAINER));
 
         if(enableKeysets) {
             router.get("/api/key/list_keyset_keys").handler(
-                auth.handle(this::handleKeysetKeyList, Role.DEFAULT));
+                auth.handle(this::handleKeysetKeyList, Role.MAINTAINER));
         }
 
         router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
@@ -140,33 +140,33 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             synchronized (writeLock) {
                 this.handleRotateMasterKey(ctx);
             }
-        }, Role.DEFAULT, Role.SECRET_ROTATION));
+        }, Role.MAINTAINER, Role.SECRET_ROTATION));
 
         router.post("/api/key/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleAddSiteKey(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         router.post("/api/key/rotate_site").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateSiteKey(ctx);
             }
-        }, Role.DEFAULT));
+        }, Role.MAINTAINER));
 
         if(enableKeysets) {
             router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
                 synchronized (writeLock) {
                     this.handleRotateKeysetKey(ctx);
                 }
-            }, Role.DEFAULT));
+            }, Role.MAINTAINER));
         }
 
         router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateAllSiteKeys(ctx);
             }
-        }, Role.DEFAULT, Role.SECRET_ROTATION));
+        }, Role.MAINTAINER, Role.SECRET_ROTATION));
     }
 
 

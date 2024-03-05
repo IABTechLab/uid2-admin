@@ -81,7 +81,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/site/list", response -> {
             assertAll(
@@ -95,7 +95,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void listSitesHaveSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
@@ -116,7 +116,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void listSitesWithKeys(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
@@ -150,7 +150,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithStringId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
@@ -169,7 +169,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithInvalidId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
@@ -189,7 +189,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithUnusedId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
@@ -208,7 +208,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteNoSites(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {};
         setSites(sites);
@@ -222,7 +222,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithValidId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
@@ -252,7 +252,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteNoExistingSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
         };
@@ -272,7 +272,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteExistingSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(7, "initial_site", false),
@@ -293,7 +293,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithTypes(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(7, "initial_site", false),
@@ -311,7 +311,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteEnabled(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
         };
@@ -330,28 +330,28 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteExistingName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/add?name=test_site", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void addSiteEmptyName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/add?name=", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void addSiteWhitespaceName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/add?name=%20", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void enableSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", false),
@@ -373,7 +373,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void disableSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
@@ -395,7 +395,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void enableSiteAlreadyEnabled(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
@@ -417,7 +417,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void setTypes(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
@@ -438,28 +438,28 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void enableSiteUnknownSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/enable?id=5&enabled=true", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     void enableSiteSpecialSite1(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/enable?id=1&enabled=true", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void enableSiteSpecialSite2(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/enable?id=2&enabled=true", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void domainNameNoSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names", "", response -> {
             assertEquals(400, response.statusCode());
@@ -470,7 +470,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameMissingSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names?id=123", "", response -> {
             assertEquals(404, response.statusCode());
@@ -481,7 +481,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameInvalidSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names?id=2", "", response -> {
             assertEquals(400, response.statusCode());
@@ -492,7 +492,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameBadSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names?id=asdf", "", response -> {
             assertEquals(400, response.statusCode());
@@ -503,7 +503,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameNoDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(123, "name", true));
         JsonObject reqBody = new JsonObject();
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
@@ -515,7 +515,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameEmptyNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
         JsonObject reqBody = new JsonObject();
@@ -529,7 +529,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameInvalidDomainName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -547,7 +547,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameInvalidTld(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -565,7 +565,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameDuplicateDomainName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -584,7 +584,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameMultipleDomainName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -607,7 +607,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameOverWrite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true, Set.of("qwerty.com"));
         setSites(s);
 
@@ -630,7 +630,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         setSites(new Site(123, "name", true, Set.of("qwerty.com")));
 
@@ -653,7 +653,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithBadDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         setSites(new Site(123, "name", true, Set.of("qwerty.com")));
 
@@ -676,7 +676,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithDuplicateDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.DEFAULT);
+        fakeAuth(Role.MAINTAINER);
 
         JsonObject reqBody = new JsonObject();
         JsonArray names = new JsonArray();

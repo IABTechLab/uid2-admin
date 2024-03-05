@@ -46,7 +46,7 @@ public class AdminAuthMiddlewareTest {
     @Mock private JsonObject principal;
     @Mock private Handler<RoutingContext> innerHandler;
     private AdminAuthMiddleware adminAuthMiddleware;
-    Role[] allRolesArr = new Role[] {Role.DEFAULT, Role.PRIVILEGED, Role.SUPER_USER};
+    Role[] allRolesArr = new Role[] {Role.MAINTAINER, Role.PRIVILEGED, Role.SUPER_USER};
 
     @BeforeEach
     public void setup() {
