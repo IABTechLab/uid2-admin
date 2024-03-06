@@ -5,7 +5,7 @@ on:
     inputs:
       release_type:
         type: choice
-        description: 'The type of release'
+        description: The type of release
         options:
         - Major
         - Minor
@@ -14,8 +14,8 @@ on:
 
 jobs:
   Image:
-    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-docker-versioned.yaml@v2
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@v2
     with: 
       release_type: ${{ inputs.release_type }}
-      cloud_provider: 'default'
+      cloud_provider: default
     secrets: inherit
