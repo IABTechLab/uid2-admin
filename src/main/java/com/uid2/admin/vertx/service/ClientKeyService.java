@@ -447,7 +447,7 @@ public class ClientKeyService implements IService {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String contact = rc.queryParam("contact").get(0);
+            final String contact = java.net.URLDecoder.decode(rc.queryParam("contact").get(0), "UTF-8");
             Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst();
