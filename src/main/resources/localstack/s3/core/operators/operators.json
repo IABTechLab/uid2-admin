@@ -8,8 +8,7 @@
     "disabled": false,
     "roles": [
       "OPERATOR",
-      "OPTOUT",
-      "OPTOUT_SERVICE"
+      "OPTOUT"
     ],
     "site_id": 999,
     "operator_type": "PUBLIC",
