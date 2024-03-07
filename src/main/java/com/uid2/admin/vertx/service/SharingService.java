@@ -1,16 +1,13 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
-import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -27,7 +24,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SharingService implements IService {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
 
     private final WriteLock writeLock;
     private final RotatingAdminKeysetStore keysetProvider;
@@ -37,7 +34,7 @@ public class SharingService implements IService {
 
     private final boolean enableKeysets;
 
-    public SharingService(AuthMiddleware auth,
+    public SharingService(AdminAuthMiddleware auth,
                           WriteLock writeLock,
                           RotatingAdminKeysetStore keysetProvider,
                           KeysetManager keysetManager,

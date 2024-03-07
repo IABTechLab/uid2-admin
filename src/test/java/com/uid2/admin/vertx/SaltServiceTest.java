@@ -9,7 +9,6 @@ import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

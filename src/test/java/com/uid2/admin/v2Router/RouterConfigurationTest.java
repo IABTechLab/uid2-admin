@@ -1,12 +1,11 @@
 package com.uid2.admin.v2Router;
 
-import com.uid2.admin.vertx.AdminVerticle;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.vertx.api.IRouteProvider;
 import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.api.cstg.GetClientSideKeypairsBySite;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Route;
@@ -27,7 +26,7 @@ public class RouterConfigurationTest {
     @Mock
     private ClientSideKeypairService clientSideKeypairMock;
     @Mock
-    private AuthMiddleware authMiddlewareMock;
+    private AdminAuthMiddleware authMiddlewareMock;
     @Mock
     private Router routerMock;
     @Mock

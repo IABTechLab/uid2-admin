@@ -1,10 +1,10 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
 import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.store.reader.RotatingServiceLinkStore;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class ServiceService implements IService {
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Service>> storeWriter;
     private final RotatingServiceStore serviceProvider;
@@ -31,7 +31,7 @@ public class ServiceService implements IService {
     private final RotatingServiceLinkStore serviceLinkProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceService.class);
 
-    public ServiceService(AuthMiddleware auth,
+    public ServiceService(AdminAuthMiddleware auth,
                           WriteLock writeLock,
                           StoreWriter<Collection<Service>> storeWriter,
                           RotatingServiceStore serviceProvider,

@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.legacy.ILegacyClientKeyProvider;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.shared.model.ClientType;
@@ -12,7 +13,6 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SiteService implements IService {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
@@ -39,7 +39,7 @@ public class SiteService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
-    public SiteService(AuthMiddleware auth,
+    public SiteService(AdminAuthMiddleware auth,
                        WriteLock writeLock,
                        StoreWriter<Collection<Site>> storeWriter,
                        RotatingSiteStore siteProvider,

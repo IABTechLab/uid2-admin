@@ -33,7 +33,7 @@
             var keyString = $('#key').val();
             const url = '/api/search';
 
-            doApiCallWithBody('POST', url, keyString, '#standardOutput', '#errorOutput');
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', keyString);
         });
     });
 

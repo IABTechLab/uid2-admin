@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeypairManager;
@@ -8,7 +9,6 @@ import com.uid2.admin.store.writer.ClientSideKeypairStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.store.reader.RotatingClientSideKeypairStore;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -29,7 +29,7 @@ import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWit
 import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWithoutPrivateKey;
 
 public class ClientSideKeypairService implements IService, IKeypairManager {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final Clock clock;
     private final WriteLock writeLock;
     private final ClientSideKeypairStoreWriter storeWriter;
@@ -42,7 +42,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientSideKeypairService.class);
 
     public ClientSideKeypairService(JsonObject config,
-                                    AuthMiddleware auth,
+                                    AdminAuthMiddleware auth,
                                     WriteLock writeLock,
                                     ClientSideKeypairStoreWriter storeWriter,
                                     RotatingClientSideKeypairStore keypairStore,

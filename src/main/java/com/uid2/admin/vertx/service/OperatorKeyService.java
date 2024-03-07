@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -10,7 +11,6 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -37,7 +37,7 @@ public class OperatorKeyService implements IService {
             new TreeSet<>(Set.of(Role.OPERATOR, Role.OPTOUT))
     ));
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final OperatorKeyStoreWriter operatorKeyStoreWriter;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
@@ -47,7 +47,7 @@ public class OperatorKeyService implements IService {
     private final String operatorKeyPrefix;
 
     public OperatorKeyService(JsonObject config,
-                              AuthMiddleware auth,
+                              AdminAuthMiddleware auth,
                               WriteLock writeLock,
                               OperatorKeyStoreWriter operatorKeyStoreWriter,
                               RotatingOperatorKeyProvider operatorKeyProvider,

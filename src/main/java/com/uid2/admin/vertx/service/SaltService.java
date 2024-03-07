@@ -1,12 +1,12 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.http.HttpHeaders;
@@ -25,13 +25,13 @@ import java.util.Optional;
 public class SaltService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final SaltStoreWriter storageManager;
     private final RotatingSaltProvider saltProvider;
     private final ISaltRotation saltRotation;
 
-    public SaltService(AuthMiddleware auth,
+    public SaltService(AdminAuthMiddleware auth,
                        WriteLock writeLock,
                        SaltStoreWriter storageManager,
                        RotatingSaltProvider saltProvider,
