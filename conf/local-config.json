@@ -41,7 +41,7 @@
   "okta_callback": "http://localhost:8089/oauth2-callback",
   "environment": "local",
   "vertx_session_timeout": 32400000,
-  "role_okta_group_map_maintainer": "developer,developer-elevated,admin",
-  "role_okta_group_map_privileged" : "developer-elevated,admin",
-  "role_okta_group_map_super_user" : "admin"
+  "role_okta_group_map_maintainer": "developer",
+  "role_okta_group_map_privileged": "developer",
+  "role_okta_group_map_super_user": "developer"
 }
