@@ -94,7 +94,6 @@ public class SearchServiceTest extends ServiceTestBase {
             JsonObject result = response.bodyAsJsonObject();
             JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
             JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
-            JsonArray foundAdminKeys = result.getJsonArray("ALLKeys");
 
             assertAll(
                     "searchByClientKeyNotFound",
