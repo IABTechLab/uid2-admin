@@ -39,10 +39,17 @@ public class SearchServiceTest extends ServiceTestBase {
         return new SearchService(auth, clientKeyProvider, operatorKeyProvider);
     }
 
+    private static Stream<Arguments> searchAsNonMaintainerFailsData() {
+        return Stream.of(
+            Arguments.of(Role.SHARING_PORTAL),
+            Arguments.of(Role.SECRET_ROTATION)
+        );
+    }
+
     @ParameterizedTest
-    @EnumSource(value = Role.class, names = {"MAINTAINER"}, mode = EnumSource.Mode.EXCLUDE)
-    void searchAsNonAdminFails(Role role, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(List.of(role.toString())); // TODO update with okta roles
+    @MethodSource("searchAsNonMaintainerFailsData")
+    void searchAsNonMaintainerFails(Role role, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(role);
         post(vertx, testContext, searchUrl, "1234567", expectHttpStatus(testContext, 401));
     }
 
@@ -57,7 +64,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchWithoutRoleFails(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(List.of()); // TODO update
+        fakeAuth(null);
         post(vertx, testContext, searchUrl, "1234567", expectHttpStatus(testContext, 401));
     }
 
