@@ -31,7 +31,7 @@ public class AdminAuthMiddleware {
     private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
         final List<OktaGroup> allOktaGroups = new ArrayList<>();
         for (String group : oktaGroups.split(",")) {
-            allOktaGroups.add(OktaGroup.fromName(group));
+            allOktaGroups.add(OktaGroup.fromName(group.trim()));
         }
         return allOktaGroups;
     }
