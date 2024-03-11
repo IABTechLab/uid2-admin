@@ -31,7 +31,11 @@ public class AdminAuthMiddleware {
     private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
         final List<OktaGroup> allOktaGroups = new ArrayList<>();
         for (String group : oktaGroups.split(",")) {
-            allOktaGroups.add(OktaGroup.fromName(group.trim()));
+            OktaGroup oktaGroup = OktaGroup.fromName(group.trim());
+            if (oktaGroup.equals(OktaGroup.INVALID)) {
+                throw new IllegalArgumentException("Invalid okta group name " + group);
+            }
+            allOktaGroups.add(oktaGroup);
         }
         return allOktaGroups;
     }
