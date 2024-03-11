@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-admin</artifactId>
-    <version>5.0.15-SNAPSHOT</version>
+    <version>5.1.0-ca76407dc6</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
