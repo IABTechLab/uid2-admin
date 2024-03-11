@@ -201,7 +201,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void listKeysNoKeys(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/key/list", response -> {
             assertEquals(200, response.statusCode());
@@ -212,7 +212,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void listKeysWithKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -231,7 +231,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateMasterKey(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
@@ -254,7 +254,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateRefreshKey(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(12, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI+1), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI+1), 5),
@@ -277,7 +277,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void filterOutMasterKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
@@ -299,7 +299,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void filterOutRefreshKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
@@ -319,7 +319,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateMasterKeyNewEnough(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
@@ -339,7 +339,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateMasterKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
@@ -359,7 +359,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateRefreshKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(13, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -2),
@@ -379,7 +379,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKey(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
@@ -399,7 +399,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateKeysetKey(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final KeysetKey[] keys = {
                 new KeysetKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 4),
@@ -425,7 +425,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKeyNewEnough(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -443,7 +443,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKeyNewEnoughWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -463,7 +463,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKeyNoSiteKey(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         setEncryptionKeys(MAX_KEY_ID);
 
@@ -476,7 +476,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKeyMasterSite(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), -1),
@@ -493,7 +493,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKeySpecialSite1(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 1),
@@ -509,7 +509,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSiteKeySpecialSite2(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
@@ -530,7 +530,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
     void filterOutSiteKeysOverCutoffTime(Vertx vertx, VertxTestContext testContext) throws Exception {
         // set it to be key creation timestamp + 100days so that we can create expired keys [UID2-599]
         when(clock.now()).thenReturn(Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI + A_HUNDRED_DAYS_IN_MILLI));
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 2),
@@ -549,7 +549,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateAllSiteKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -574,7 +574,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateAllSiteKeysWithKeysetkeys(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -607,7 +607,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateAllSiteKeysWithForce(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -631,7 +631,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateAllSiteKeysAllUpToDate(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         final EncryptionKey[] keys = {
                 new EncryptionKey(11, null, Instant.ofEpochMilli(KEY_CREATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_ACTIVATE_TIME_IN_MILLI), Instant.ofEpochMilli(KEY_EXPIRE_TIME_IN_MILLI), 5),
@@ -649,7 +649,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
 
     @Test
     void rotateAllSiteKeysNoSiteKeys(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SECRET_MANAGER);
+        fakeAuth(Role.MAINTAINER);
 
         setEncryptionKeys(MAX_KEY_ID);
 

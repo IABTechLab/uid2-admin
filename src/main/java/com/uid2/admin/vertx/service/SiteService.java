@@ -57,37 +57,37 @@ public class SiteService implements IService {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.PRIVILEGED));
 
         router.get("/api/site/list").handler(
-                auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.get("/api/site/:siteId").handler(
-                auth.handle(this::handleSiteById, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
         router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteTypesSet(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
         router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteUpdate(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

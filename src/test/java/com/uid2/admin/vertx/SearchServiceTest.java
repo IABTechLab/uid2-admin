@@ -39,16 +39,23 @@ public class SearchServiceTest extends ServiceTestBase {
         return new SearchService(auth, clientKeyProvider, operatorKeyProvider);
     }
 
+    private static Stream<Arguments> searchAsNonMaintainerFailsData() {
+        return Stream.of(
+            Arguments.of(Role.SHARING_PORTAL),
+            Arguments.of(Role.SECRET_ROTATION)
+        );
+    }
+
     @ParameterizedTest
-    @EnumSource(value = Role.class, names = {"ADMINISTRATOR"}, mode = EnumSource.Mode.EXCLUDE)
-    void searchAsNonAdminFails(Role role, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(List.of(role.toString())); // TODO update with okta roles
+    @MethodSource("searchAsNonMaintainerFailsData")
+    void searchAsNonMaintainerFails(Role role, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(role);
         post(vertx, testContext, searchUrl, "1234567", expectHttpStatus(testContext, 401));
     }
 
     @Test
     void searchAsAdminPasses(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, searchUrl, "123456", response -> {
             assertEquals(200, response.statusCode());
             testContext.completeNow();
@@ -57,14 +64,14 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchWithoutRoleFails(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(List.of()); // TODO update
+        fakeAuth(null);
         post(vertx, testContext, searchUrl, "1234567", expectHttpStatus(testContext, 401));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"a", "aa", "aaa", "aaaa", "aaaaa"})
     void searchWithShortQueryStringReturns400Error(String parameter, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/search", parameter, response -> {
             assertAll(
                     "searchWithShortQueryStringReturns400Error",
@@ -78,7 +85,7 @@ public class SearchServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @MethodSource("searchByClientKeyNotFound")
     void searchByClientKeyNotFound(Map<String, LegacyClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, String searchString, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(clientKeys);
         setOperatorKeys(operatorKeys);
@@ -87,13 +94,11 @@ public class SearchServiceTest extends ServiceTestBase {
             JsonObject result = response.bodyAsJsonObject();
             JsonArray foundClientKeys = result.getJsonArray("ClientKeys");
             JsonArray foundOperatorKeys = result.getJsonArray("OperatorKeys");
-            JsonArray foundAdminKeys = result.getJsonArray("AdministratorKeys");
 
             assertAll(
                     "searchByClientKeyNotFound",
                     () -> assertEquals(0, foundClientKeys.size()),
-                    () -> assertEquals(0, foundOperatorKeys.size()),
-                    () -> assertEquals(0, foundAdminKeys.size())
+                    () -> assertEquals(0, foundOperatorKeys.size())
             );
 
             testContext.completeNow();
@@ -113,7 +118,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchClientKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
         Map<String, LegacyClientKey> clientKeys = getClientKeys();
 
         setClientKeys(clientKeys);
@@ -135,7 +140,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchClientKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
         Map<String, LegacyClientKey> clientKeys = getClientKeys();
 
         setClientKeys(clientKeys);
@@ -157,7 +162,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchOperatorKeyFindsKey(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
         Map<String, OperatorKey> operatorKeys = getOperatorKeys();
 
         setOperatorKeys(operatorKeys);
@@ -179,7 +184,7 @@ public class SearchServiceTest extends ServiceTestBase {
 
     @Test
     void searchOperatorKeyByHashFindsKey(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
         Map<String, OperatorKey> operatorKeys = getOperatorKeys();
 
         setOperatorKeys(operatorKeys);
@@ -202,7 +207,7 @@ public class SearchServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @MethodSource("searchByClientSecretSuccess")
     void searchByClientSecretSuccess(Map<String, LegacyClientKey> clientKeys, Map<String, OperatorKey> operatorKeys, String searchString, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ADMINISTRATOR);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(clientKeys);
         setOperatorKeys(operatorKeys);

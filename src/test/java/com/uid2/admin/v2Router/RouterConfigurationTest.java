@@ -18,8 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
-
 import static org.mockito.Mockito.*;
 
 public class RouterConfigurationTest {
@@ -53,7 +51,7 @@ public class RouterConfigurationTest {
             router.setupSubRouter(vertxMock, routerMock);
 
             verify(routeMock).handler(handlerMock);
-            verify(authMiddlewareMock).handle(any(), eq(Role.ADMINISTRATOR), eq(Role.SHARING_PORTAL));
+            verify(authMiddlewareMock).handle(any(), eq(Role.MAINTAINER), eq(Role.SHARING_PORTAL));
         }
     }
 }

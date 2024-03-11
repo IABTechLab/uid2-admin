@@ -2,6 +2,7 @@ package com.uid2.admin.auth;
 
 
 import com.okta.jwt.*;
+import com.uid2.admin.AdminConst;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
@@ -16,10 +17,27 @@ public class AdminAuthMiddleware {
     private final AuthProvider authProvider;
     private final String environment;
     private final boolean isAuthDisabled;
+
+    final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     public AdminAuthMiddleware(AuthProvider authProvider, JsonObject config) {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
+        roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER)));
+        roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED)));
+        roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER)));
+    }
+
+    private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
+        final List<OktaGroup> allOktaGroups = new ArrayList<>();
+        for (String group : oktaGroups.split(",")) {
+            OktaGroup oktaGroup = OktaGroup.fromName(group.trim());
+            if (oktaGroup.equals(OktaGroup.INVALID)) {
+                throw new IllegalArgumentException("Invalid okta group name " + group);
+            }
+            allOktaGroups.add(oktaGroup);
+        }
+        return allOktaGroups;
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
@@ -27,7 +45,7 @@ public class AdminAuthMiddleware {
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }
-        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment);
+        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment, roleToOktaGroups);
         return adminAuthHandler::handle;
     }
 
@@ -35,13 +53,15 @@ public class AdminAuthMiddleware {
         private final String environment;
         private final Handler<RoutingContext> innerHandler;
         private final Set<Role> allowedRoles;
-        private final List<String> oktaRoles = List.of("developer", "developer-elevated", "infra-admin", "admin");
+        private final Map<Role, List<OktaGroup>> roleToOktaGroups;
         private final AuthProvider authProvider;
-        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles, String environment) {
+        private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles,
+                                 String environment, Map<Role, List<OktaGroup>> roleToOktaGroups) {
             this.environment = environment;
             this.innerHandler = handler;
             this.authProvider = authProvider;
             this.allowedRoles = allowedRoles;
+            this.roleToOktaGroups = roleToOktaGroups;
         }
 
         public static String extractBearerToken(String headerValue) {
@@ -58,16 +78,26 @@ public class AdminAuthMiddleware {
                 }
             }
         }
-        private boolean isAuthorizedUser(List<String> userGroups) {
-            // TODO temporary, introduce role mapping later
-            return oktaRoles.stream().anyMatch(userGroups::contains);
+        private boolean isAuthorizedUser(List<String> userAssignedGroups) {
+            for (Role role : allowedRoles) {
+                if (roleToOktaGroups.containsKey(role)) {
+                    List<OktaGroup> allowedOktaGroupsForRole = roleToOktaGroups.get(role);
+                    for (String userGroup : userAssignedGroups) {
+                        if (allowedOktaGroupsForRole.contains(OktaGroup.fromName(userGroup))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
         private boolean isAuthorizedService(List<String> scopes) {
-            if (scopes.contains("uid2.admin.ss-portal") && allowedRoles.contains(Role.SHARING_PORTAL)) {
-                return true;
-            } else if (scopes.contains("uid2.admin.secret-rotation") && allowedRoles.contains(Role.SECRET_MANAGER)) {
-                return true;
-            } else return scopes.contains("uid2.admin.site-sync") && allowedRoles.contains(Role.SECRET_MANAGER);
+            for (String scope : scopes) {
+                if (allowedRoles.contains(OktaCustomScope.fromName(scope).getRole())) {
+                    return true;
+                }
+            }
+            return false;
         }
         public void handle(RoutingContext rc) {
             // human user

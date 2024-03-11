@@ -48,7 +48,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void clientRename(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(new LegacyClientBuilder().build());
 
         post(vertx, testContext, "api/client/rename?contact=test_contact&newName=test_client1", "", response -> {
@@ -65,7 +65,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void clientRenameBlankNewName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(new LegacyClientBuilder().build());
 
         post(vertx, testContext, "api/client/rename?contact=test_contact&newName=", "", expectHttpStatus(testContext, 400));
@@ -73,14 +73,14 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void clientRenameInvalidContact(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         post(vertx, testContext, "api/client/rename?contact=test_contact&newName=testing", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientAdd(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         LegacyClientKey expectedClient = new LegacyClientBuilder().withServiceId(145).build();
         post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=999&service_id=145", "", response -> {
@@ -100,7 +100,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     public void clientAddCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         String endpoint = String.format("api/client/add?name=test_client&site_id=999&roles=%s", RequestUtil.getRolesSpec(roles));
         post(vertx, testContext, endpoint, "", response -> {
@@ -130,37 +130,37 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void clientAddUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=4", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientAddSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=1", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientAddSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/client/add?name=test_client&roles=generator&site_id=2", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientAddInvalidRole(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/client/add?name=test_client&roles=invalid&site_id=999", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientAddBlankName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/client/add?name=&roles=generator&site_id=999", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientUpdate(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(new LegacyClientBuilder().withServiceId(165).build());
 
         post(vertx, testContext, "api/client/update?contact=test_contact&site_id=999&service_id=200", "", response -> {
@@ -178,7 +178,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     public void clientUpdateCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(
                 new LegacyClientBuilder()
                         .withRoles(roles)
@@ -204,27 +204,27 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void clientUpdateUnknownClientName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         post(vertx, testContext, "api/client/update?contact=test_contact&site_id=999", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientUpdateUnknownSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(new LegacyClientBuilder().build());
         post(vertx, testContext, "api/client/update?contact=test_contact&site_id=4", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void clientUpdateSpecialSiteId1(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(new LegacyClientBuilder().build());
         post(vertx, testContext, "api/client/update?contact=test_contact&site_id=1", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void clientUpdateSpecialSiteId2(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setClientKeys(new LegacyClientBuilder().build());
         post(vertx, testContext, "api/client/update?contact=test_contact&site_id=2", "", expectHttpStatus(testContext, 400));
     }
@@ -232,7 +232,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
     @ParameterizedTest
     @MethodSource("createSiteKeyIfNoneExistsTestData")
     public void clientRolesCreatesSiteKeyIfNoneExists(Set<Role> roles, boolean siteKeyShouldBeCreatedIfNoneExists, Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.PRIVILEGED);
         setClientKeys(new LegacyClientBuilder().build());
 
         String endpoint = String.format("api/client/roles?contact=test_contact&roles=%s", RequestUtil.getRolesSpec(roles));
@@ -253,7 +253,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void updateRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.PRIVILEGED);
         setClientKeys(new LegacyClientBuilder().build());
 
         Set<Role> newRoles = Set.of(Role.SHARER, Role.MAPPER);
@@ -272,7 +272,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void updateRolesWithInvalidContact(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.PRIVILEGED);
 
         Set<Role> newRoles = Set.of(Role.SHARER, Role.MAPPER);
 
@@ -281,7 +281,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void updateRolesWithNoRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.PRIVILEGED);
         setClientKeys(new LegacyClientBuilder().build());
 
         post(vertx, testContext, "api/client/roles?contact=test_contact&roles=", "", expectHttpStatus(testContext, 400));
@@ -289,7 +289,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void updateRolesWithInvalidRoles(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.PRIVILEGED);
         setClientKeys(new LegacyClientBuilder().build());
 
         post(vertx, testContext, "api/client/roles?contact=test_contact&roles=invalid", "", expectHttpStatus(testContext, 400));
@@ -297,28 +297,28 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void listBySiteStringId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/list/test", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void listBySiteInvalidId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/list/0", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void listBySiteUnusedId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/list/100", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void listBySite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setSites(
                 new Site(666, "test2_site", true),
@@ -341,7 +341,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void getByKeyId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(
                 new LegacyClientBuilder().withKeyId("testId1").build(),
@@ -360,21 +360,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void getByContactInvalidContact(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/contact?contact=100", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void getByContactNoGivenContact(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/contact", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void getByContact(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(
                 new LegacyClientBuilder().withContact("testContact1").build(),
@@ -393,21 +393,21 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void getByKeyIdInvalidId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/keyId?keyId=100", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void getByKeyIdNoGivenId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/client/keyId", expectHttpStatus(testContext, 400));
     }
 
     @Test
     public void setContact(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(new LegacyClientBuilder().build());
 
@@ -425,7 +425,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void setContactWithExistingContact(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(
                 new LegacyClientBuilder().build(),
@@ -437,14 +437,14 @@ public class ClientKeyServiceTest extends ServiceTestBase {
 
     @Test
     public void setContactWithUnknownContact(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         post(vertx, testContext, "api/client/contact?oldContact=test_contact&newContact=test_contact1", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     public void setContactWithBlankNewContact(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setClientKeys(
                 new LegacyClientBuilder().build()

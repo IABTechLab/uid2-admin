@@ -30,12 +30,12 @@ public class PartnerConfigService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/partner_config/get").handler(
-                auth.handle(this::handlePartnerConfigGet, Role.ADMINISTRATOR));
+            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
         router.post("/api/partner_config/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.PRIVILEGED));
     }
 
     private void handlePartnerConfigGet(RoutingContext rc) {
