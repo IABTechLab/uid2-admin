@@ -599,7 +599,7 @@ public class SharingServiceTest extends ServiceTestBase {
 
 /*    @Test
     void KeysetSetNew(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.ALL);
+        fakeAuth(Role.MAINTAINER);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {
             {

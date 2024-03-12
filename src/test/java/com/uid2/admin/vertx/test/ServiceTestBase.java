@@ -101,6 +101,10 @@ public abstract class ServiceTestBase {
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
     @Mock protected KeyHasher keyHasher;
+    final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
+    static final Set<Role> CUSTOM_OKTA_SCOPE_ROLES = Arrays.stream(OktaCustomScope.values())
+        .map(OktaCustomScope::getRole)
+        .collect(Collectors.toSet());
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -134,6 +138,9 @@ public abstract class ServiceTestBase {
                 OktaGroup.ADMIN.getName()));
         config.put(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER, OktaGroup.ADMIN.getName());
         auth = new AdminAuthMiddleware(authProvider, config);
+        roleToOktaGroups.put(Role.MAINTAINER, List.of(OktaGroup.DEVELOPER));
+        roleToOktaGroups.put(Role.PRIVILEGED, List.of(OktaGroup.DEVELOPER_ELEVATED));
+        roleToOktaGroups.put(Role.SUPER_USER, List.of(OktaGroup.ADMIN));
 
         IService[] services = {createService()};
         AdminVerticle verticle = new AdminVerticle(config, authProvider, tokenRefreshHandler, services, null);
@@ -151,13 +158,26 @@ public abstract class ServiceTestBase {
         return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForAdmin + Utils.getPortOffset(), endpoint);
     }
 
-    protected void fakeAuth(Role... roles) { // TODO Update tests for okta role mapping
-        when(jwt.getClaims()).thenReturn(Map.of("groups", List.of("developer", "developer-elevated", "infra-admin", "admin"), "environment", "local"));
+    protected void fakeAuth(Role role) {
+        if (CUSTOM_OKTA_SCOPE_ROLES.contains(role)) {
+            String group = Arrays.stream(OktaCustomScope.values())
+                .filter(scope -> scope.getRole() == role)
+                .findFirst().orElse(OktaCustomScope.INVALID)
+                .getName();
+            doAnswer((invocationOnMock -> {
+                ((RoutingContext) invocationOnMock.getArgument(0)).request().headers().add("Authorization", "bearer token");
+                ((RoutingContext) invocationOnMock.getArgument(0)).next();
+                return null;
+            })).when(tokenRefreshHandler).handle(any());
+            when(jwt.getClaims()).thenReturn(Map.of("scp", Collections.singletonList(group), "environment", "local"));
+        } else {
+            List<String> groups = roleToOktaGroups.getOrDefault(role, List.of(OktaGroup.INVALID))
+                .stream()
+                .map(OktaGroup::toString)
+                .collect(Collectors.toList());
+            when(jwt.getClaims()).thenReturn(Map.of("groups", groups, "environment", "local"));
+        }
     }
-    protected void fakeAuth(List<String> roles) { // TODO Update tests for okta role mapping
-        when(jwt.getClaims()).thenReturn(Map.of("groups", roles, "environment", "local"));
-    }
-
 
     protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);

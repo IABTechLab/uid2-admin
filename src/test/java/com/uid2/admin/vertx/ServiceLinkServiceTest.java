@@ -495,7 +495,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
     @Test
     void deleteServiceLink_oneServiceLinkExists_succeeds(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.PRIVILEGED)));
@@ -517,7 +517,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
     @Test
     void deleteServiceLink_multipleServiceLinksExist_correctServiceLinkDeleted(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER)));
@@ -541,7 +541,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
     @Test
     void deleteServiceLink_invalidLinkId_returnsError(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER)));
@@ -564,7 +564,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
     @Test
     void deleteServiceLink_invalidServiceId_returnsError(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         setSites(new Site(123, "name1", false));
         setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER)));

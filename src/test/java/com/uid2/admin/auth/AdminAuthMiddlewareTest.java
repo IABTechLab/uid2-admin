@@ -53,7 +53,7 @@ public class AdminAuthMiddlewareTest {
     public void setup() {
         mocks = MockitoAnnotations.openMocks(this);
         final JsonObject config = new JsonObject();
-        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER, String.join(",", OktaGroup.DEVELOPER.getName(),
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER, String.join(", ", OktaGroup.DEVELOPER.getName(),
                 OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
         config.put(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER_ELEVATED.getName(),
                 OktaGroup.ADMIN.getName()));

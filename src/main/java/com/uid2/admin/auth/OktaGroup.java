@@ -25,4 +25,9 @@ public enum OktaGroup {
             .findFirst()
             .orElse(INVALID);
     }
+
+    @Override
+    public String toString() {
+        return this.name;
+    }
 }

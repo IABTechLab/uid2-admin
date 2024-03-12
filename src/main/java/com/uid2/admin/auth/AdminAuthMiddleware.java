@@ -31,7 +31,11 @@ public class AdminAuthMiddleware {
     private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
         final List<OktaGroup> allOktaGroups = new ArrayList<>();
         for (String group : oktaGroups.split(",")) {
-            allOktaGroups.add(OktaGroup.fromName(group));
+            OktaGroup oktaGroup = OktaGroup.fromName(group.trim());
+            if (oktaGroup.equals(OktaGroup.INVALID)) {
+                throw new IllegalArgumentException("Invalid okta group name " + group);
+            }
+            allOktaGroups.add(oktaGroup);
         }
         return allOktaGroups;
     }
@@ -78,9 +82,10 @@ public class AdminAuthMiddleware {
             for (Role role : allowedRoles) {
                 if (roleToOktaGroups.containsKey(role)) {
                     List<OktaGroup> allowedOktaGroupsForRole = roleToOktaGroups.get(role);
-                    if (userAssignedGroups.stream().anyMatch(
-                            userGroup -> allowedOktaGroupsForRole.contains(OktaGroup.fromName(userGroup)))) {
-                        return true;
+                    for (String userGroup : userAssignedGroups) {
+                        if (allowedOktaGroupsForRole.contains(OktaGroup.fromName(userGroup))) {
+                            return true;
+                        }
                     }
                 }
             }
