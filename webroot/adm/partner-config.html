@@ -39,15 +39,10 @@
         $(outputText).val('');
         $(errorDiv).text('');
 
-        authHeader = "Bearer " + window.__uid2_admin_token;
-
         $.ajax({
             type: 'GET',
             url: '/api/partner_config/get',
             dataType: 'text',
-            headers: {
-                "Authorization": authHeader
-            },
             success: function (text) {
                 var pretty = JSON.stringify(JSON.parse(text),null,2);
                 $(outputText).val(pretty);
@@ -71,15 +66,11 @@
         $(outputDiv).text('');
         $(errorDiv).text('');
 
-        authHeader = "Bearer " + window.__uid2_admin_token;
 
         $.ajax({
             type: 'POST',
             url: '/api/partner_config/update',
             dataType: 'text',
-            headers: {
-                "Authorization": authHeader
-            },
             contentType: 'application/json',
             data: jsonStr,
             success: function (text) {
