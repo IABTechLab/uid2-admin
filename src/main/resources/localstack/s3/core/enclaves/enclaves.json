@@ -8,7 +8,19 @@
   {
     "name" : "Publisher Enclave - Azure CC",
     "protocol" : "azure-cc",
-    "identifier" : "AzureCC001",
+    "identifier" : "AzureCC124",
+    "created" : 1622081000
+  },
+  {
+    "name" : "Publisher Enclave - AWS Nitro",
+    "protocol" : "aws-nitro",
+    "identifier" : "AWSNitro124",
+    "created" : 1622081000
+  },
+  {
+    "name" : "Publisher Enclave - AWS Nitro (Debug)",
+    "protocol" : "aws-nitro",
+    "identifier" : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "created" : 1622081000
   }
 ]
