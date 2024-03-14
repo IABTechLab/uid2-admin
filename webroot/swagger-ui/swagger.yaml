@@ -1,0 +1,643 @@
+---
+openapi: 3.0.0
+info:
+  title: Admin API
+  version: 4.5.4-8f846ab080
+tags:
+  - name: Site
+    description: Operations for Sites
+    externalDocs:
+      description: Find out more
+      url: https://github.com/IABTechLab/uid2-shared/blob/main/src/main/java/com/uid2/shared/model/Site.java
+  - name: Client Key
+    description: Operations for Client API keys
+  - name: Operator Key
+    description: Operations for Operator keys
+  - name: Client Side Keypair Management
+    description: Operations for Client Side Keypair Management
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ClientKey:
+      type: object
+      properties:
+        key:
+          type: string
+        key_hash:
+          type: string
+        key_salt:
+          type: string
+        secret:
+          type: string
+        name:
+          type: string
+        contact:
+          type: string
+        created:
+          type: integer
+          format: int64
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+        site_id:
+          type: integer
+          format: int32
+        disabled:
+          type: boolean
+        service_id:
+          type: integer
+          format: int32
+        key_id:
+          type: string
+    Role:
+      type: string
+      enum: [  GENERATOR,
+               MAPPER,
+               ID_READER,
+               SHARER,
+               OPERATOR,
+               OPTOUT,
+               OPTOUT_SERVICE,
+               CLIENTKEY_ISSUER,
+               OPERATOR_MANAGER,
+               SECRET_MANAGER,
+               ADMINISTRATOR,
+               SHARING_PORTAL,
+               PRIVATE_SITE_REFRESHER, UNKNOWN ] # Replace with actual role values
+    Site:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        domain_names:
+          type: array
+          items:
+            type: string
+        clientTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientType'
+        visible:
+          type: boolean
+        created:
+          type: integer
+          format: int64
+    ClientType:
+      type: string
+      enum: [ DSP, ADVERTISER, DATA_PROVIDER, PUBLISHER ]
+    ClientSideKeypair:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+        publicKey:
+          type: string
+        privateKey:
+          type: string
+        siteId:
+          type: integer
+        contact:
+          type: string
+        created:
+          type: string
+          format: date-time
+        disabled:
+          type: boolean
+        name:
+          type: string
+security:
+  - bearerAuth: []
+############################## SITE #################################
+paths:
+  "/api/site/list":
+    get:
+      summary: Fetch a list of sites
+      tags:
+        - Site
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+  "/api/site/{siteId}":
+    get:
+      summary: Get information about a specific site
+      tags:
+        - Site
+      parameters:
+        - name: siteId
+          in: path
+          description: ID of the site
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+  "/api/site/add":
+    post:
+      summary: Add a new site
+      tags:
+        - Site
+      parameters:
+        - name: name
+          in: query
+          description: Name of the site
+          required: true
+          schema:
+            type: string
+        - name: types
+          in: query
+          description: Client types
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ClientType'
+        - name: description
+          in: query
+          description: Description of the site
+          required: false
+          schema:
+            type: string
+        - name: domain_names
+          in: query
+          description: Domains of the site
+          required: false
+          schema:
+            type: string
+        - name: enabled
+          in: query
+          description: Enable site
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+########################### CLIENT KEY ##############################
+  "/api/client/add":
+    post:
+      summary: Adds a new client key
+      operationId: addClientKey
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: name
+          required: true
+          description: Name of the client key
+          schema:
+            type: string
+        - in: query
+          name: roles
+          required: true
+          description: Roles for the client key
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Role'
+        - in: query
+          name: site_id
+          required: true
+          description: Site ID for the client key
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Client key added successfully
+        '400':
+          description: Bad request, parameters are missing or incorrect
+        '500':
+          description: Internal server error
+  "/api/client/metadata":
+    get:
+      summary: Get client keys metadata
+      operationId: getClientMetadata
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/rewrite_metadata":
+    post:
+      summary: Rewrite client keys metadata
+      operationId: rewriteClientMetadata
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/list":
+    get:
+      summary: Get list of all client keys
+      operationId: getClientList
+      tags:
+        - Client Key
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/list/{siteId}":
+    get:
+      summary: Get list of client keys by site ID
+      operationId: getClientListBySite
+      tags:
+        - Client Key
+      parameters:
+        - in: path
+          name: siteId
+          required: true
+          description: Site ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/keyId":
+    get:
+      summary: Get client key by key ID
+      operationId: getClientByKeyId
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: keyId
+          required: true
+          description: Key ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Bad request, unable to parse keyId
+        '404':
+          description: Not found, unable to find key
+        '500':
+          description: Internal server error
+  "/api/client/contact":
+    get:
+      summary: Get client key by contact
+      operationId: getClientByContact
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Bad request, unable to parse contact
+        '404':
+          description: Not found, unable to find key
+        '500':
+          description: Internal server error
+    post:
+      summary: Update client contact
+      operationId: updateClientContact
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: oldContact
+          required: true
+          description: Old Contact
+          schema:
+            type: string
+        - in: query
+          name: newContact
+          required: true
+          description: New Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/reveal":
+    get:
+      summary: Reveal client key
+      operationId: revealClientKey
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  "/api/client/del":
+    post:
+      summary: Delete a client
+      operationId: deleteClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/update":
+    post:
+      summary: Update a client
+      operationId: updateClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+        - in: query
+          name: site_id
+          required: true
+          description: Site Id
+          schema:
+            type: integer
+        - in: query
+          name: service_id
+          required: false
+          description: Service Id
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/disable":
+    post:
+      summary: Disable a client
+      operationId: disableClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/enable":
+    post:
+      summary: Enable a client
+      operationId: enableClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server errors
+  "/api/client/roles":
+    post:
+      summary: Update client key roles
+      operationId: updateClientRoles
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+        - in: query
+          name: roles
+          required: true
+          description: Roles for the client key
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+  "/api/client/rename":
+    post:
+      summary: Rename a client
+      operationId: renameClient
+      tags:
+        - Client Key
+      parameters:
+        - in: query
+          name: contact
+          required: true
+          description: Contact
+          schema:
+            type: string
+        - in: query
+          name: newName
+          required: true
+          description: New Client Key Name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '500':
+          description: Internal server error
+###################### CLIENT SIDE KEY PAIR #########################
+  /api/client_side_keypairs/add:
+    post:
+      summary: Add a new keypair (Requires- Administrator, Sharing Portal)
+      tags:
+        - Client Side Keypair Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                site_id:
+                  required: true
+                  type: integer
+                contact:
+                  type: string
+                disabled:
+                  type: boolean
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSideKeypair'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+
+  /api/client_side_keypairs/update:
+    post:
+      summary: Update an existing keypair (Requires- Administrator)
+      tags:
+        - Client Side Keypair Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subscription_id:
+                  required: true
+                  type: string
+                contact:
+                  type: string
+                disabled:
+                  type: boolean
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSideKeypair'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+
+  /api/client_side_keypairs/list:
+    get:
+      summary: List all keypairs (Requires- Administrator)
+      tags:
+        - Client Side Keypair Management
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientSideKeypair'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+
+  /api/client_side_keypairs/{subscriptionId}:
+    get:
+      summary: Get keypair by Subscription ID (Requires Administrator)
+      tags:
+        - Client Side Keypair Management
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSideKeypair'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
