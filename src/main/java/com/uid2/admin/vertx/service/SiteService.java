@@ -82,7 +82,7 @@ public class SiteService implements IService {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
             }
-        }, Role.MAINTAINER));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteUpdate(ctx);
