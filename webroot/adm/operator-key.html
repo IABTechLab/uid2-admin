@@ -101,7 +101,7 @@
             const operatorName = $('#operatorName').val();
             var encodedOperatorName = encodeURIComponent(operatorName);
             var url = '/api/operator/disable?name=' + encodedOperatorName;
-            
+             
             if (!validateOperatorName(encodedOperatorName)) return;
 
             const confirmationMessage = `Disabling an operator key will keep the private operators running, but will eventually cause the operator to stop serving client requests.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${operatorName}?`;
