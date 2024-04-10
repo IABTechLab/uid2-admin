@@ -15,6 +15,5 @@ services:
     healthcheck:
       test: awslocal s3api wait bucket-exists --bucket test-core-bucket
         && awslocal s3api wait bucket-exists --bucket test-snowflake-bucket
-        && awslocal s3api wait bucket-exists --bucket test-optout-bucket
       interval: 5s
       timeout: 5s
