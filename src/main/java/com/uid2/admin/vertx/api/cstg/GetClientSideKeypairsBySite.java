@@ -27,7 +27,7 @@ public class GetClientSideKeypairsBySite implements IRouteProvider {
 
     @Path("/sites/:siteId/client-side-keypairs")
     @Method(ApiMethod.GET)
-    @Roles({Role.MAINTAINER, Role.SHARING_PORTAL})
+    @Roles({Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT})
     public Handler<RoutingContext> getHandler() {
         return UrlParameterProviders.provideSiteId(this::handleGetClientSideKeys);
     }
