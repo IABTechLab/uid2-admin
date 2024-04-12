@@ -2,6 +2,7 @@
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
+    <link href="/css/style.css" rel="stylesheet" />
 </head>
 <body>
 <h1>UID2 Admin - Client Key Management</h1>
@@ -39,6 +40,9 @@
 </ul>
 
 <h3>Add Key</h3>
+{% if ADD_CLIENT_KEY_MESSAGE %}
+<p class="message">{{ ADD_CLIENT_KEY_MESSAGE }}</p>
+{% endif %}
 <form id="addKeyForm">
     <label for="addClientName">Name:</label>
     <input type="text" id="addClientName" name="addClientName">
