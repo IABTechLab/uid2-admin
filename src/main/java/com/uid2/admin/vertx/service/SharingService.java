@@ -52,7 +52,7 @@ public class SharingService implements IService {
     public void setupRoutes(Router router) {
         if(!enableKeysets) return;
         router.get("/api/sharing/lists").handler(
-            auth.handle(this::handleListAllAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
+            auth.handle(this::handleListAllAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT)
         );
         router.get("/api/sharing/list/:siteId").handler(
             auth.handle(this::handleListAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
