@@ -1,7 +1,0 @@
-fs:
-  skip-dirs:
-    - target/
-    - .idea/
-  skip-files:
-    - trivy-secret.yaml
-    - src/main/resources/localstack/kms/seed.yaml
