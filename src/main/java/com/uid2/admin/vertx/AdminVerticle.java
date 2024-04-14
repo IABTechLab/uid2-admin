@@ -10,6 +10,8 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.common.template.TemplateEngine;
+import io.vertx.ext.web.templ.pebble.PebbleTemplateEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
@@ -62,10 +64,21 @@ public class AdminVerticle extends AbstractVerticle {
         final AuthenticationHandler oktaHandler = this.authProvider.createAuthHandler(vertx, router.route("/oauth2-callback"));
 
         router.route().handler(BodyHandler.create());
-        router.route().handler(StaticHandler.create("webroot"));
+        router.get("/").handler(StaticHandler.create("webroot"));
+        router.get("/js/*").handler(StaticHandler.create("webroot/js"));
+        router.get("/css/*").handler(StaticHandler.create("webroot/css"));
+
+        final TemplateEngine engine = PebbleTemplateEngine.create(vertx, "html");
+        final TemplateHandler templateHandler = TemplateHandler.create(engine, "webroot/adm/", TemplateHandler.DEFAULT_CONTENT_TYPE);
 
         router.route("/login").handler(oktaHandler);
-        router.route("/adm/*").handler(oktaHandler);
+        router.get("/adm/*").handler(oktaHandler)
+                .handler(ctx -> {
+                    ctx.put("ADD_CLIENT_KEY_MESSAGE", config.getString("add_client_key_message"));
+                    ctx.put("ADD_SITE_MESSAGE", config.getString("add_site_message"));
+                    ctx.next();
+                })
+                .handler(templateHandler);
         router.route("/api/*").handler(tokenRefreshHandler);
 
         router.get("/login").handler(new RedirectToRootHandler(false));

@@ -2,6 +2,7 @@
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
+    <link href="/css/style.css" rel="stylesheet" />
 </head>
 <body>
 <h1>UID2 Admin - Site Management</h1>
@@ -45,7 +46,12 @@
 
 <ul>
     <li class="ro-cki" style="display: none"><a href="#" id="doList">List Sites</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Site</a></li>
+    <li class="ro-cki" style="display: none">
+        {% if ADD_SITE_MESSAGE %}
+        <p class="message">{{ ADD_SITE_MESSAGE }}</p>
+        {% endif %}
+        <a href="#" id="doAdd">Add Site</a>
+    </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetDescription">Set Description</a></li>
