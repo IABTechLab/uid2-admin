@@ -53,6 +53,7 @@ public class SiteServiceTest extends ServiceTestBase {
         assertEquals(expectedSite.getName(), actualSite.getString("name"));
         assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
         assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
+        assertEquals(expectedSite.getAppNames(), actualSite.getJsonArray("app_names").stream().collect(Collectors.toSet()));
         assertEquals(expectedSite.getCreated(), actualSite.getLong("created"));
     }
 
@@ -77,6 +78,7 @@ public class SiteServiceTest extends ServiceTestBase {
         assertEquals(expectedSite.getName(), actualSite.getString("name"));
         assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
         assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
+        assertEquals(expectedSite.getAppNames(), actualSite.getJsonArray("app_names").stream().collect(Collectors.toSet()));
     }
 
     @Test
@@ -101,6 +103,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
         };
         setSites(sites);
 
@@ -123,6 +126,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
         };
         setSites(sites);
 
@@ -131,6 +135,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new LegacyClientKey("UID2-C-L-12-ck222222", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12, "UID2-C-L-12-ck222"),
                 new LegacyClientKey("UID2-C-L-11-ck333333", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11, "UID2-C-L-11-ck333"),
                 new LegacyClientKey("UID2-C-L-13-ck444444", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13, "UID2-C-L-13-ck444"),
+                new LegacyClientKey("UID2-C-L-13-ck444444", "ckh5", "cks5", "cs5", "c5", Instant.MIN, Set.of(Role.SHARER), 15, "UID2-C-L-13-ck555"),
         };
         setClientKeys(clientKeys);
 
@@ -157,6 +162,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
         };
         setSites(sites);
 
@@ -176,6 +182,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
         };
         setSites(sites);
 
@@ -196,6 +203,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
         };
         setSites(sites);
 
@@ -229,6 +237,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
         };
         setSites(sites);
 
@@ -237,6 +246,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new LegacyClientKey("UID2-C-L-12-ck222222", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12, "UID2-C-L-12-ck222"),
                 new LegacyClientKey("UID2-C-L-11-ck333333", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11, "UID2-C-L-11-ck333"),
                 new LegacyClientKey("UID2-C-L-13-ck444444", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13, "UID2-C-L-13-ck444"),
+                new LegacyClientKey("UID2-C-L-13-ck555555", "ckh5", "cks5", "cs5", "c5", Instant.MIN, Set.of(Role.SHARER), 15, "UID2-C-L-13-ck555"),
         };
         setClientKeys(clientKeys);
 
@@ -694,5 +704,159 @@ public class SiteServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    void appNameNoSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
 
+    @Test
+    void appNameMissingSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names?id=123", "", response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("site not found", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameInvalidSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names?id=2", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify a valid site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameBadSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names?id=asdf", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("unable to parse site id For input string: \"asdf\"", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameNoDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites(new Site(123, "name", true));
+        JsonObject reqBody = new JsonObject();
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameters: app_names", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameEmptyNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+        JsonObject reqBody = new JsonObject();
+        reqBody.put("app_names", new JsonArray());
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameDuplicateAppName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc");
+        names.add("abc");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("duplicate app_names not permitted", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameMultipleAppName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc1");
+        names.add("abc2");
+        names.add("abc3");
+        names.add("abc4");
+        names.add("abc5");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            s.setAppNames(Set.of("abc1", "abc2", "abc3", "abc4", "abc5"));
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithAppNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name", true, Set.of("qwerty.com")));
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc1");
+        names.add("abc2");
+        names.add("abc3");
+        names.add("abc4");
+        names.add("abc5");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            Site expected = new Site(124, "test_name", true, null, null, Set.of("abc1", "abc2", "abc3", "abc4", "abc5"));
+            checkSiteResponse(expected, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithDuplicateAppNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc1");
+        names.add("abc1");
+        names.add("abc2");
+        names.add("abc3");
+        names.add("abc4");
+        names.add("abc5");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("duplicate app_names not permitted", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
 }

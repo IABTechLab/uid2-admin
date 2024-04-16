@@ -17,8 +17,7 @@ and re-initialize your localstack by running `docker-compose restart`.
 
 ### Authentication and Authorization
 
-When running locally, Okta OAuth is disabled and users are logged in as *test.user@unifiedid.com* via the 
-`is_auth_disabled` flag. The user has all the rights available.
+When running locally, set the `is_auth_disabled` flag to true. It disables Okta OAuth and users are logged in as *test.user@unifiedid.com*. The user has all the rights available.
 
 If you want to test with Okta OAuth, set the `is_auth_disabled` flag to `false`, and fill in the `okta_client_secret` with the value under "Okta localhost deployment" in 1Password.
 

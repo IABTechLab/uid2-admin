@@ -83,6 +83,11 @@ public class SiteService implements IService {
                 this.handleSiteDomains(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        router.post("/api/site/app_names").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteAppNames(ctx);
+            }
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteUpdate(ctx);
@@ -127,12 +132,16 @@ public class SiteService implements IService {
         JsonArray domainNamesJa = new JsonArray();
         site.getDomainNames().forEach(domainNamesJa::add);
 
+        JsonArray appNamesJa = new JsonArray();
+        site.getAppNames().forEach(appNamesJa::add);
+
         jo.put("id", site.getId());
         jo.put("name", site.getName());
         jo.put("description", site.getDescription());
         jo.put("enabled", site.isEnabled());
         jo.put("clientTypes", site.getClientTypes());
         jo.put("domain_names", domainNamesJa);
+        jo.put("app_names", appNamesJa);
         jo.put("visible", site.isVisible());
         jo.put("created", site.getCreated());
 
@@ -197,6 +206,15 @@ public class SiteService implements IService {
                 }
             }
 
+            List<String> normalizedAppNames = new ArrayList<>();
+            if (body != null) {
+                JsonArray appNamesJa = body.getJsonArray("app_names");
+                if (appNamesJa != null) {
+                    normalizedAppNames = getNormalizedAppNames(rc, appNamesJa);
+                    if (normalizedAppNames == null) return;
+                }
+            }
+
             boolean enabled = false;
             List<String> enabledFlags = rc.queryParam("enabled");
             if (!enabledFlags.isEmpty()) {
@@ -220,7 +238,7 @@ public class SiteService implements IService {
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
 
-            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), true);
+            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), new HashSet<>(normalizedAppNames), true);
             // add site to the array
             sites.add(newSite);
 
@@ -330,6 +348,38 @@ public class SiteService implements IService {
         }
     }
 
+    private void handleSiteAppNames(RoutingContext rc) {
+        try {
+            // refresh manually
+            siteProvider.loadContent();
+
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+
+            JsonObject body = rc.body().asJsonObject();
+            JsonArray appNamesJa = body.getJsonArray("app_names");
+            if (appNamesJa == null) {
+                ResponseUtil.error(rc, 400, "required parameters: app_names");
+                return;
+            }
+            List<String> normalizedAppNames = getNormalizedAppNames(rc, appNamesJa);
+            if (normalizedAppNames == null) return;
+
+            existingSite.setAppNames(new HashSet<>(normalizedAppNames));
+
+            final List<Site> sites = this.siteProvider.getAllSites()
+                    .stream().sorted(Comparator.comparingInt(Site::getId))
+                    .collect(Collectors.toList());
+
+            storeWriter.upload(sites, null);
+            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "set site app_names failed", e);
+        }
+    }
+
     private void handleSiteUpdate(RoutingContext rc) {
         try {
             // refresh manually
@@ -387,6 +437,23 @@ public class SiteService implements IService {
             return null;
         }
         return normalizedDomainNames;
+    }
+
+    private static List<String> getNormalizedAppNames(RoutingContext rc, JsonArray appNamesJa) {
+        List<String> appNames = appNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
+
+        List<String> normalizedAppNames = new ArrayList<>();
+        for (String appName : appNames) {
+            String normalizedAppName = appName.toLowerCase();
+            normalizedAppNames.add(normalizedAppName);
+        }
+
+        boolean containsDuplicates = normalizedAppNames.stream().distinct().count() < normalizedAppNames.size();
+        if (containsDuplicates) {
+            ResponseUtil.error(rc, 400, "duplicate app_names not permitted");
+            return null;
+        }
+        return normalizedAppNames;
     }
 
     public static String getTopLevelDomainName(String origin) throws MalformedURLException {

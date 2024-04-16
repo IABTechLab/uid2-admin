@@ -51,6 +51,7 @@
     "id": 1001,
     "name": "Snowflake",
     "enabled": false,
-    "visible": true
+    "visible": true,
+    "app_names": ["abc"]
   }
 ]
