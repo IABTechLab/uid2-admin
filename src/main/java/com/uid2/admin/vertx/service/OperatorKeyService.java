@@ -70,7 +70,7 @@ public class OperatorKeyService implements IService {
         router.get("/api/operator/metadata").handler(
             auth.handle(this::handleOperatorMetadata, Role.MAINTAINER));
         router.get("/api/operator/list").handler(
-            auth.handle(this::handleOperatorList, Role.MAINTAINER));
+            auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get("/api/operator/reveal").handler(
             auth.handle(this::handleOperatorReveal, Role.MAINTAINER));
 
