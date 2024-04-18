@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.legacy.ILegacyClientKeyProvider;
@@ -206,7 +207,7 @@ public class SiteService implements IService {
                 }
             }
 
-            List<String> normalizedAppNames = new ArrayList<>();
+            Set<String> normalizedAppNames = new HashSet<>();
             if (body != null) {
                 JsonArray appNamesJa = body.getJsonArray("app_names");
                 if (appNamesJa != null) {
@@ -238,7 +239,7 @@ public class SiteService implements IService {
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
 
-            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), new HashSet<>(normalizedAppNames), true);
+            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), normalizedAppNames, true);
             // add site to the array
             sites.add(newSite);
 
@@ -265,15 +266,9 @@ public class SiteService implements IService {
                 return;
             }
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
             existingSite.setClientTypes(types);
 
-            storeWriter.upload(sites, null);
-
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -336,13 +331,7 @@ public class SiteService implements IService {
 
             existingSite.setDomainNames(new HashSet<>(normalizedDomainNames));
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
-            storeWriter.upload(sites, null);
-
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "set site domain_names failed", e);
         }
@@ -364,17 +353,12 @@ public class SiteService implements IService {
                 ResponseUtil.error(rc, 400, "required parameters: app_names");
                 return;
             }
-            List<String> normalizedAppNames = getNormalizedAppNames(rc, appNamesJa);
+            Set<String> normalizedAppNames = getNormalizedAppNames(rc, appNamesJa);
             if (normalizedAppNames == null) return;
 
-            existingSite.setAppNames(new HashSet<>(normalizedAppNames));
+            existingSite.setAppNames(normalizedAppNames);
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
-            storeWriter.upload(sites, null);
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "set site app_names failed", e);
         }
@@ -405,13 +389,7 @@ public class SiteService implements IService {
                 }
             }
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
-            storeWriter.upload(sites, null);
-
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -439,21 +417,15 @@ public class SiteService implements IService {
         return normalizedDomainNames;
     }
 
-    private static List<String> getNormalizedAppNames(RoutingContext rc, JsonArray appNamesJa) {
+    private static Set<String> getNormalizedAppNames(RoutingContext rc, JsonArray appNamesJa) {
         List<String> appNames = appNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
 
-        List<String> normalizedAppNames = new ArrayList<>();
-        for (String appName : appNames) {
-            String normalizedAppName = appName.toLowerCase();
-            normalizedAppNames.add(normalizedAppName);
-        }
-
-        boolean containsDuplicates = normalizedAppNames.stream().distinct().count() < normalizedAppNames.size();
+        boolean containsDuplicates = appNames.stream().distinct().count() < appNames.size();
         if (containsDuplicates) {
             ResponseUtil.error(rc, 400, "duplicate app_names not permitted");
             return null;
         }
-        return normalizedAppNames;
+        return new HashSet<>(appNames);
     }
 
     public static String getTopLevelDomainName(String origin) throws MalformedURLException {
@@ -475,5 +447,14 @@ public class SiteService implements IService {
             }
         }
         throw new MalformedURLException();
+    }
+
+    private void uploadSiteToStoreWriterAndWriteExistingSiteToResponse(Site existingSite, RoutingContext rc) throws Exception {
+        final List<Site> sites = this.siteProvider.getAllSites()
+                .stream().sorted(Comparator.comparingInt(Site::getId))
+                .collect(Collectors.toList());
+
+        storeWriter.upload(sites, null);
+        rc.response().end(jsonWriter.writeValueAsString(existingSite));
     }
 }

@@ -20,7 +20,8 @@
     "enabled": true,
     "clientTypes": ["PUBLISHER"],
     "visible": true,
-    "domain_names": ["example.com"]
+    "domain_names": ["example.com"],
+    "app_names": ["com.123.game.app.android", "123456789", "com.123.game.app.ios"]
   },
   {
     "id": 125,
@@ -51,7 +52,6 @@
     "id": 1001,
     "name": "Snowflake",
     "enabled": false,
-    "visible": true,
-    "app_names": ["abc"]
+    "visible": true
   }
 ]

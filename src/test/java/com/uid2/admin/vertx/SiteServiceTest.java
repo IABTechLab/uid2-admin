@@ -103,7 +103,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
-                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -126,7 +126,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
-                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -162,7 +162,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
-                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -182,7 +182,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
-                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -203,7 +203,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
-                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -237,7 +237,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
-                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("abc", "def")),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -679,7 +679,6 @@ public class SiteServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -711,6 +710,23 @@ public class SiteServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/site/app_names", "", response -> {
             assertEquals(400, response.statusCode());
             assertEquals("must specify site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameRoleUnauthorized(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAPPER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc1");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/app_names?id=123", "", response -> {
+            assertEquals(401, response.statusCode());
             testContext.completeNow();
         });
     }
