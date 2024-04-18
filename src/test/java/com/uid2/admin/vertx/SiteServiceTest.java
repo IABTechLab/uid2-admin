@@ -817,16 +817,18 @@ public class SiteServiceTest extends ServiceTestBase {
 
         JsonObject reqBody = new JsonObject();
         JsonArray names = new JsonArray();
-        names.add("abc1");
-        names.add("abc2");
-        names.add("abc3");
-        names.add("abc4");
-        names.add("abc5");
+        names.add("com.123.game.app.android");
+        names.add("com.234.game.app.android");
+        names.add("com.345.game.app.android");
+        names.add("com.456.game.app.android");
+        names.add("com.567.game.app.android");
+        names.add("com.567.Game.app.android");
+        names.add("com.567.Game.App.android");
         reqBody.put("app_names", names);
 
         post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
             assertEquals(200, response.statusCode());
-            s.setAppNames(Set.of("abc1", "abc2", "abc3", "abc4", "abc5"));
+            s.setAppNames(Set.of("com.123.game.app.android", "com.234.game.app.android", "com.345.game.app.android", "com.456.game.app.android", "com.567.game.app.android", "com.567.Game.app.android", "com.567.Game.App.android"));
             checkSiteResponse(s, response.bodyAsJsonObject());
             testContext.completeNow();
         });

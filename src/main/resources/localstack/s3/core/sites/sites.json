@@ -21,7 +21,7 @@
     "clientTypes": ["PUBLISHER"],
     "visible": true,
     "domain_names": ["example.com"],
-    "app_names": ["com.123.game.app.android", "123456789", "com.123.game.app.ios"]
+    "app_names": ["com.123.Game.App.android", "123456789", "com.123.Game.App.ios"]
   },
   {
     "id": 125,
