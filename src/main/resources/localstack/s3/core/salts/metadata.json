@@ -6,7 +6,7 @@
   "id_secret" : "HF6Qz42HBbVHINxhh191dB09BCuTWyBkNtrNicO4ZCw=",
   "salts" : [{
     "effective" : 1670796729291,
-    "expires" : 1766125493000,
+    "expires" : 0,
     "location" : "salts/salts.txt.1670796729291",
     "size" : 2
   }]
