@@ -38,6 +38,10 @@
     <label for="domainNames">Domain Names:</label>
     <input type="text" id="domainNames" name="domainNames" style="width: 500px;">
 </div>
+<div>
+    <label for="appNames">App Names:</label>
+    <input type="text" id="appNames" name="appNames" style="width: 500px;">
+</div>
 
 <br>
 <br>
@@ -57,6 +61,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doSetDescription">Set Description</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doAppNames">Set Site App Names</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetVisible">Set Visible</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetNotVisible">Set Not Visible</a></li>
 </ul>
@@ -95,7 +100,8 @@
             var url = '/api/site/add?name=' + siteName + '&types=' + types + '&description=' + description;
 
             let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames}));
+            let appNames = ($('#appNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames, app_names : appNames}));
         });
 
         $('#doDisable').on('click', function () {
@@ -132,6 +138,17 @@
             let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
 
             const payload = { domain_names: domainNames }
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
+        });
+
+        $('#doAppNames').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+            var url = '/api/site/app_names?id=' + siteId;
+
+            let appNames = ($('#appNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+
+            const payload = { app_names: appNames }
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
         });
