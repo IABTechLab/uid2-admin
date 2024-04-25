@@ -58,6 +58,7 @@
     </li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetName">Set Name</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetDescription">Set Description</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
@@ -151,6 +152,16 @@
             const payload = { app_names: appNames }
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
+        });
+
+        $('#doSetName').on('click', function () {
+            var siteId = encodeURIComponent($('#siteId').val());
+
+            var name = encodeURIComponent($('#siteName').val());
+
+            var url = '/api/site/update?id=' + siteId + '&name=' + name;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doSetDescription').on('click', function () {

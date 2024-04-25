@@ -375,6 +375,7 @@ public class SiteService implements IService {
             }
             String description = rc.queryParam("description").stream().findFirst().orElse(null);
             String visibleParam = rc.queryParam("visible").stream().findFirst().orElse(null);
+            String name = rc.queryParam("name").stream().findFirst().orElse(null);
 
             if (description != null) {
                 existingSite.setDescription(description);
@@ -387,6 +388,9 @@ public class SiteService implements IService {
                 } else {
                     ResponseUtil.error(rc, 400, "Invalid parameter for visible: " + visibleParam);
                 }
+            }
+            if(name != null) {
+                existingSite.setName(name);
             }
 
             uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);

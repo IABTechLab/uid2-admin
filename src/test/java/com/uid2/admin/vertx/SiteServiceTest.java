@@ -876,4 +876,25 @@ public class SiteServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+
+    @Test
+    void renameSiteTest(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=NewName", null, response -> {
+            assertEquals(200, response.statusCode());
+            assertEquals("NewName", response.bodyAsJsonObject().getString("name"));
+            assertEquals("NewName", sites[0].getName());
+            testContext.completeNow();
+        });
+    }
 }
