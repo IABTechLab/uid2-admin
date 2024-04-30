@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.legacy.ILegacyClientKeyProvider;
@@ -183,18 +182,7 @@ public class SiteService implements IService {
             siteProvider.loadContent();
 
             final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
-            if (name == null || name.isEmpty()) {
-                ResponseUtil.error(rc, 400, "must specify a valid site name");
-                return;
-            }
-
-            Optional<Site> existingSite = this.siteProvider.getAllSites()
-                    .stream().filter(c -> c.getName().equals(name))
-                    .findFirst();
-            if (existingSite.isPresent()) {
-                ResponseUtil.error(rc, 400, "site existed");
-                return;
-            }
+            if (validateSiteName(rc, name)) return;
 
             List<String> normalizedDomainNames = new ArrayList<>();
 
@@ -389,7 +377,8 @@ public class SiteService implements IService {
                     ResponseUtil.error(rc, 400, "Invalid parameter for visible: " + visibleParam);
                 }
             }
-            if(name != null) {
+            if (name != null) {
+                if (validateSiteName(rc, name)) return;
                 existingSite.setName(name);
             }
 
@@ -397,6 +386,22 @@ public class SiteService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private boolean validateSiteName(RoutingContext rc, String name) {
+        if (name == null || name.isEmpty()) {
+            ResponseUtil.error(rc, 400, "must specify a valid site name");
+            return true;
+        }
+
+        Optional<Site> existingSite = this.siteProvider.getAllSites()
+                .stream().filter(c -> c.getName().equals(name))
+                .findFirst();
+        if (existingSite.isPresent()) {
+            ResponseUtil.error(rc, 400, "site existed");
+            return true;
+        }
+        return false;
     }
 
     private static List<String> getNormalizedDomainNames(RoutingContext rc, JsonArray domainNamesJa) {
