@@ -182,7 +182,9 @@ public class SiteService implements IService {
             siteProvider.loadContent();
 
             final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
-            if (validateSiteName(rc, name)) return;
+            if (!validateSiteName(rc, name)) {
+                return;
+            }
 
             List<String> normalizedDomainNames = new ArrayList<>();
 
@@ -378,7 +380,9 @@ public class SiteService implements IService {
                 }
             }
             if (name != null) {
-                if (validateSiteName(rc, name)) return;
+                if (!validateSiteName(rc, name)) {
+                    return;
+                }
                 existingSite.setName(name);
             }
 
@@ -391,17 +395,17 @@ public class SiteService implements IService {
     private boolean validateSiteName(RoutingContext rc, String name) {
         if (name == null || name.isEmpty()) {
             ResponseUtil.error(rc, 400, "must specify a valid site name");
-            return true;
+            return false;
         }
 
         Optional<Site> existingSite = this.siteProvider.getAllSites()
                 .stream().filter(c -> c.getName().equals(name))
                 .findFirst();
         if (existingSite.isPresent()) {
-            ResponseUtil.error(rc, 400, "site existed");
-            return true;
+            ResponseUtil.error(rc, 400, "site with name " + name + " already exists");
+            return false;
         }
-        return false;
+        return true;
     }
 
     private static List<String> getNormalizedDomainNames(RoutingContext rc, JsonArray domainNamesJa) {
