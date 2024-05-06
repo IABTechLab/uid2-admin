@@ -876,4 +876,76 @@ public class SiteServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+
+    @Test
+    void renameSiteTest(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=NewName", null, response -> {
+            assertEquals(200, response.statusCode());
+            assertEquals("NewName", response.bodyAsJsonObject().getString("name"));
+            assertEquals("NewName", sites[0].getName());
+            // Test other sites are unaffected
+            assertEquals("site2", sites[1].getName());
+            assertEquals("site3", sites[2].getName());
+            assertEquals("site4", sites[3].getName());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void renameSiteTestInvalidName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=", null, response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify a valid site name", response.bodyAsJsonObject().getString("message"));
+            assertEquals("site1", sites[0].getName());
+            // Test other sites are unaffected
+            assertEquals("site2", sites[1].getName());
+            assertEquals("site3", sites[2].getName());
+            assertEquals("site4", sites[3].getName());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void renameSiteTestDuplicate(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=site2", null, response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("site with name site2 already exists", response.bodyAsJsonObject().getString("message"));
+            assertEquals("site1", sites[0].getName());
+            // Test other sites are unaffected
+            assertEquals("site2", sites[1].getName());
+            assertEquals("site3", sites[2].getName());
+            assertEquals("site4", sites[3].getName());
+            testContext.completeNow();
+        });
+    }
 }
