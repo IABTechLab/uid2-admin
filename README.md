@@ -7,7 +7,7 @@
 1. Run `docker-compose up`. This will create a Localstack and initialize it with everything under `./src/main/resources/localstack/`.
 2. Wait for localstack to start up and initialize. If it's not ready, the app will crash on boot. 
 3. Start the application on CLI or IntelliJ Maven configuration via `mvn clean compile exec:java -Dvertx-config-path=conf/local-config.json -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -Dlogback.configurationFile=conf/logback.xml`
-4. Once started, admin service runs on `http://localhost:8089/`
+4. Once started, admin service runs on http://localhost:8089/
 
 ### Test data
 
@@ -17,7 +17,7 @@ and re-initialize your localstack by running `docker-compose restart`.
 
 ### Authentication and Authorization
 
-When running locally, set the `is_auth_disabled` flag to true. It disables Okta OAuth and users are logged in as *test.user@unifiedid.com*. The user has all the rights available.
+When running locally, set the `is_auth_disabled` flag to `true` in [local-config.json](./conf/local-config.json). It disables Okta OAuth and users are logged in as *test.user@unifiedid.com*. The user has all the rights available.
 
 If you want to test with Okta OAuth, set the `is_auth_disabled` flag to `false`, and fill in the `okta_client_secret` with the value under "Okta localhost deployment" in 1Password.
 
