@@ -550,7 +550,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("[bad]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -568,7 +568,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad.doesntexist", response.bodyAsJsonObject().getString("message"));
+            assertEquals("[bad.doesntexist]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -678,7 +678,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("[bad]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
