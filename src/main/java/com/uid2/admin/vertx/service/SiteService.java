@@ -418,15 +418,12 @@ public class SiteService implements IService {
             try {
                 String tld = getTopLevelDomainName(domain);
                 normalizedDomainNames.add(tld);
-                LOGGER.error(tld);
             } catch (Exception e) {
-                LOGGER.error(domain);
                invalidDomainNames.add(domain);
             }
         }
 
         if (!invalidDomainNames.isEmpty()) {
-            LOGGER.error("in invalid domains");
             ResponseUtil.error(rc, 400, invalidDomainNames.toString());
             return null;
         }
