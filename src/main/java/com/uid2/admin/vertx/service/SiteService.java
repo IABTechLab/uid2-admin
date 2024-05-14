@@ -424,7 +424,7 @@ public class SiteService implements IService {
         }
 
         if (!invalidDomainNames.isEmpty()) {
-            ResponseUtil.error(rc, 400, invalidDomainNames.toString());
+            ResponseUtil.error(rc, 400, "Invalid Domain Names: " + invalidDomainNames.toString());
             return null;
         }
       
