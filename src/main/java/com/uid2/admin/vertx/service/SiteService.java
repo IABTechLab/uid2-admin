@@ -412,15 +412,22 @@ public class SiteService implements IService {
         List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
 
         List<String> normalizedDomainNames = new ArrayList<>();
+        List<String> invalidDomainNames = new ArrayList<>();
+
         for (String domain : domainNames) {
             try {
                 String tld = getTopLevelDomainName(domain);
                 normalizedDomainNames.add(tld);
             } catch (Exception e) {
-                ResponseUtil.error(rc, 400, "invalid domain name: " + domain);
-                return null;
+               invalidDomainNames.add(domain);
             }
         }
+
+        if (!invalidDomainNames.isEmpty()) {
+            ResponseUtil.error(rc, 400, "Invalid Domain Names: " + invalidDomainNames.toString());
+            return null;
+        }
+      
 
         boolean containsDuplicates = normalizedDomainNames.stream().distinct().count() < normalizedDomainNames.size();
         if (containsDuplicates) {

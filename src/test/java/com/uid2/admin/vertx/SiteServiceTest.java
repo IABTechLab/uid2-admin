@@ -550,7 +550,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Invalid Domain Names: [bad]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -568,7 +568,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad.doesntexist", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Invalid Domain Names: [bad.doesntexist]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
@@ -678,7 +678,27 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Invalid Domain Names: [bad]", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithMultipleBadDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name", true, Set.of("qwerty.com")));
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("bad");
+        names.add("bad1");
+        names.add("bad2");
+        reqBody.put("domain_names", names);
+
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("Invalid Domain Names: [bad, bad1, bad2]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
