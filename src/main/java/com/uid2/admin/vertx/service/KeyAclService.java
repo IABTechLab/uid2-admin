@@ -56,16 +56,17 @@ public class KeyAclService implements IService {
             }
         }, Role.PRIVILEGED));
 
-        router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleKeyAclReset(ctx);
-            }
-        }, Role.MAINTAINER));
-        router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleKeyAclUpdate(ctx);
-            }
-        }, Role.MAINTAINER));
+//        UID2-2758 Disable setting Key ACLs
+//        router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleKeyAclReset(ctx);
+//            }
+//        }, Role.MAINTAINER));
+//        router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleKeyAclUpdate(ctx);
+//            }
+//        }, Role.MAINTAINER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

@@ -69,6 +69,7 @@ public class KeyAclServiceTest extends ServiceTestBase {
         });
     }
 
+/** UID2-2758 Disable setting Key ACLs
     @Test
     void keyAclResetNoAclToWhitelist(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.MAINTAINER);
@@ -477,4 +478,5 @@ public class KeyAclServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+*/
 }
