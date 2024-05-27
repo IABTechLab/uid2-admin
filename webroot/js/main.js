@@ -65,6 +65,11 @@ function standardErrorCallback(err, errorDiv) {
     $(errorDiv).text("Error: " + err.status + ": " + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
 }
 
+function alertErrorCallback(err, errorDiv, alert) {
+    $(errorDiv).text("Error: " + err.status + ": " + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
+    $(alert).collapse('show');
+}
+
 function isJsonString(str) {
     try {
         JSON.parse(str);
@@ -117,7 +122,7 @@ function init() {
             header.text(header.text().replace("Env", "Prod"));
         } else if (window.location.origin.includes("integ")) {
             header.text(header.text().replace("Env", "Integ"));
-        } else if (window.location.origin.includes("localhost")) {
+        } else if (window.location.origin.includes("localhost") || (window.location.origin.includes("127.0.0.1"))) {
             header.text(header.text().replace("Env", "Local"));
         } else {
             header.text(header.text().replace("Env", ""));
