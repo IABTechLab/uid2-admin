@@ -1,51 +1,75 @@
 <html>
+
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
+
 <body>
-<h1>UID2 Env - On-call - Key and Secret Search</h1>
+    <div class="container-lg">
+        <div class="col-lg">
+            <div class="row">
+                <h1>UID2 Env - On-call - Key and Secret Search</h1>
+            </div>
+            <div class="row pt-3 pb-2">
+                <div class="col-sm">
+                    <a href="/">Back</a>
+                </div>
+            </div>
+            <div class="row py-3">
+                <div class="card card-body">
+                    <div class="row py-1">
+                        <div class="col">
+                            <h5>Search</h5>
+                        </div>
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="key">Key, Hashed Key or Secret:</label>
+                                <input type="text" class="form-control" id="key">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <a href="#" class="btn btn-primary" id="doSearch">Search</a>
+                        </div>
+                    </div>
+                    <div class="row pt-3">
+                        <div class="col">
+                            <h5>Search Results:</h5>
+                        </div>
+                    </div>
+                    <div class="row px-2">
+                        <pre id="errorOutput"></pre>
+                        <pre id="standardOutput"></pre>
+                    </div>
+                </div>
+            </div>
 
-<a href="/">Back</a>
+        </div>
+    </div>
+    <script language="JavaScript">
+        $(document).ready(function () {
+            $('#doSearch').on('click', function () {
+                var keyString = $('#key').val();
+                const url = '/api/search';
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<label for="key">Key or Hashed Key or Secret:</label>
-<input type="text" id="key" name="key" size="45">
-<a href="#" id="doSearch">Search</a>
-
-<br>
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
-</div>
-
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doSearch').on('click', function () {
-            var keyString = $('#key').val();
-            const url = '/api/search';
-
-            doApiCallWithBody('POST', url, keyString, '#standardOutput', '#errorOutput');
+                doApiCallWithBody('POST', url, keyString, '#standardOutput', '#errorOutput');
+            });
         });
-    });
 
-    $( document ).on("ajaxComplete", function() {
-        const text = $('#standardOutput').text();
-        if (text != '') {
-            const textToHighlight = $('#key').val();
-            const highlightedText = text.replaceAll(textToHighlight, '<span style="background-color: yellow;">'+textToHighlight+'</span>');
-            $('#standardOutput').html(highlightedText);
-        }
-    });
-</script>
+        $(document).on("ajaxComplete", function () {
+            const text = $('#standardOutput').text();
+            if (text != '') {
+                const textToHighlight = $('#key').val();
+                const highlightedText = text.replaceAll(textToHighlight, '<span style="background-color: yellow;">' + textToHighlight + '</span>');
+                $('#standardOutput').html(highlightedText);
+            }
+        });
+    </script>
 
 </body>
+
 </html>
