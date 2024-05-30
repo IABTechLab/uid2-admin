@@ -79,6 +79,20 @@ function isJsonString(str) {
     return true;
 }
 
+function clearFormsAndShowCollapsed(toShow) {
+    const exclude = toShow.join(',');
+    $(".form-clear").not(exclude).text("");
+    $("form").trigger("reset");
+    $('.collapse').not(exclude).collapse('hide');
+
+    setTimeout(function () {
+        toShow.forEach((regionId) => {
+            $(regionId).collapse('show');
+        })
+    }, 400);  // the collapse takes 350ms, so wait until all are done before showing them
+}
+
+
 function init() {
     $.ajax({
         type: "GET",
@@ -131,6 +145,12 @@ function init() {
         if (window.location.origin.endsWith(".eu")) {
             header.text(header.text().replace("UID2", "EUID"));
         }
+
+        $(".group").on("click", (e) => {
+            $(".group").removeClass("btn-primary").addClass("btn-secondary");
+            $("#" + e.target.id).removeClass("btn-secondary").addClass("btn-primary");
+        })
+
     });
 }
 

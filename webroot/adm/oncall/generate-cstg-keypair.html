@@ -1,353 +1,597 @@
 <html>
+
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
-
-    <style>
-        table, th, td {
-            border: 1px solid;
-            vertical-align: top;
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
+
 <body>
-<h1>UID2 Env - On-call - Generate CSTG Keypair</h1>
-
-<a href="/">Back</a>
-
-<br>
-<br>
-
-<div class="ro-adm hidden">
-    <h3>Please input the participant's name.</h3>
-    <label for="participantName">Name:</label>
-    <input type="text" id="participantName" name="participantName">
-    <a href="#" id="searchParticipant">Search</a>
-
-    <br>
-    <br>
-
-    <table id="searchTable">
-        <tr>
-            <th>Sites</th>
-            <th>CSTG Keypairs</th>
-        </tr>
-        <tr>
-            <td><pre id="siteSearchOutput"></pre></td>
-            <td><pre id="keypairSearchOutput"></pre></td>
-        </tr>
-        <tr>
-            <td id="create" colspan="2" style="text-align: center">
-                <h3>Didn't find what you were looking for?</h3>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <h3>Operations</h3>
-                <ul>
-                    <li><a href="#create" id="createSite">Create site</a></li>
-                    <li><a href="#create" id="updateSite">Update site - domain names and description</a></li>
-                </ul>
-
-                <hr>
-
-                <div id="createSite-workflow" class="hidden">
-                    <h3>Create a new site</h3>
-
-                    <label for="createSite-workflow-name">Name:</label>
-                    <input type="text" id="createSite-workflow-name" name="createSite-workflow-name">
-
-                    <br>
-
-                    <label for="createSite-workflow-domainNames">Domain Names (comma-seperated list):</label>
-                    <input type="text" id="createSite-workflow-domainNames" name="createSite-workflow-domainNames">
-
-                    <br>
-
-                    <label for="createSite-workflow-description">Description (Optional):</label>
-                    <input type="text" id="createSite-workflow-description" name="createSite-workflow-description">
-
-                    <div>
-                        <input type="checkbox" id="createSite-workflow-clientTypes-PUBLISHER" name="createSite-workflow-clientTypes[]" value="PUBLISHER">
-                        <label for="createSite-workflow-clientTypes-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.</label>
-                    </div>
-
-                    <br>
-
-                    <a href="#create" id="createSite-workflow-submit">Create</a>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </symbol>
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" style="display: none;" fill="currentColor"
+        class="bi bi-copy" viewBox="0 0 16 16">
+        <path fill-rule="evenodd"
+            d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
+    </svg>
+    <div class="container-lg">
+        <div class="col-lg">
+            <div class="row">
+                <h1>UID2 Env - On-call - Generate CSTG Keypair</h1>
+            </div>
+            <div class="row pt-3 pb-2">
+                <div class="col-sm">
+                    <a href="/">Back</a>
                 </div>
-
-                <div id="updateSite-workflow" class="hidden">
-                    <h3>Update an existing site</h3>
-
-                    <label for="updateSite-workflow-siteId">Site ID:</label>
-                    <input type="text" id="updateSite-workflow-siteId" name="updateSite-workflow-siteId">
-                    <a href="#create" id="updateSite-workflow-search">Search</a>
-                    <br>
-                    <pre id="updateSite-workflow-searchOutput"></pre>
-
-                    <br>
-
-                    <div id="updateSite-workflow-afterSearch" class="hidden">
-                        Name: <span id="updateSite-workflow-afterSearch-name"></span>
-
-                        <br>
-
-                        <label for="updateSite-workflow-afterSearch-domainNames">Domain Names (comma-seperated list):</label>
-                        <input type="text" id="updateSite-workflow-afterSearch-domainNames" name="updateSite-workflow-afterSearch-domainNames">
-
-                        <br>
-
-                        <label for="updateSite-workflow-afterSearch-description">Description (Optional):</label>
-                        <input type="text" id="updateSite-workflow-afterSearch-description" name="updateSite-workflow-afterSearch-description">
-
-                        <br>
-                        <br>
-
-                        <a href="#create" id="updateSite-workflow-submit">Update</a>
+            </div>
+            <div class="row py-3">
+                <div class="card card-body">
+                    <div class="row py-1">
+                        <div class="col">
+                            <h5>Search for existing participants:</h5>
+                        </div>
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="participantName">Participant name</label>
+                                <input type="text" class="form-control" id="participantName"
+                                    placeholder="Leave empty for all participants">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <a href="#" class="btn btn-primary" id="searchParticipant">Search</a>
+                        </div>
+                    </div>
+                    <div class="row pt-3">
+                        <div class="col">
+                            <h5>Search Results:</h5>
+                        </div>
+                    </div>
+                    <div class="row px-2 table-responsive" >
+                        <table class="table table-bordered" id="searchResultsTable">
+                            <thead>
+                                <th scope="col" class="col-1">Sites</th>
+                                <th scope="col" class="col-1">CSTG Keypairs</th>
+                            </thead>
+                            <tbody>
+                                <tr><td><pre id="siteSearchOutput"></pre>&nbsp;</td><td><pre id="keypairSearchOutput"></pre>&nbsp;</td></tr>
+                                
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </td>
-            <td>
-                <h3>Operations</h3>
-                <ul>
-                    <li><a href="#create" id="createKeypair">Create keypair</a></li>
-                </ul>
+            </div>
+            <div class="row">
+                <div class="card card-body">
+                    <div class="row pt-1">
+                        <div class="col">
+                            <div class="row">
+                                <h5>Update Operations:</h5>
+                            </div>
+                            <div class="row">
+                                <div>
+                                    Use this to create new site, update existing sites or create new key pairs.
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <button type="button" aria-controls="createSiteRegion" aria-expanded="false"
+                                        id="createSite" data-bs-parent="#siteParent" class="btn btn-secondary group"
+                                        data-bs-toggle="collapse" data-bs-target="#createSiteRegion"
+                                        role="button">Create site</button>
+                                    <button type="button" aria-controls="updateSiteRegion" aria-expanded="false"
+                                        id="updateSite" data-bs-parent="#siteParent" class="btn btn-secondary group"
+                                        data-bs-toggle="collapse" data-bs-target="#updateSiteRegion"
+                                        role="button">Update site</button>
+                                    <button type="button" aria-controls="createKeyPairRegion" aria-expanded="false"
+                                        id="createClient" data-bs-parent="#siteParent" class="btn btn-secondary group"
+                                        data-bs-toggle="collapse" data-bs-target="#createKeyPairRegion"
+                                        role="button">Create keypair</button>
+                                </div>
+                            </div>
+                            <div id="siteParent" class="col">
+                                <div class="row collapse mt-3" id="createSiteRegion" data-bs-parent="#siteParent">
+                                    <form id="createSiteForm">
+                                        <div class="card card-body">
+                                            <div class="form-group">
+                                                <h5>Create a new site</h5>
 
-                <hr>
+                                                <label for="createSite-workflow-name">Name:</label>
+                                                <input type="text" class="form-control" id="createSite-workflow-name"
+                                                    name="createSite-workflow-name">
+                                                <div class="py-2">
+                                                    <label for="createSite-workflow-domainNames">Domain Names
+                                                        (comma-separated list):</label>
+                                                    <input type="text" class="form-control"
+                                                        id="createSite-workflow-domainNames"
+                                                        name="createSite-workflow-domainNames">
 
-                <div id="createKeypair-workflow" class="hidden">
-                    <h3>Create a new CSTG keypair</h3>
+                                                </div>
+                                                <div class="py-2">
+                                                    <label for="createSite-workflow-description">Description
+                                                        (Optional):</label>
+                                                    <input type="text" id="createSite-workflow-description"
+                                                        class="form-control" name="createSite-workflow-description">
+                                                </div>
+                                                <div class="form-check py-2">
+                                                    <input type="checkbox"
+                                                        id="createSite-workflow-clientTypes-PUBLISHER"
+                                                        class="form-check-input"
+                                                        name="createSite-workflow-clientTypes[]" value="PUBLISHER">
+                                                    <label for="createSite-workflow-clientTypes-PUBLISHER">Is this
+                                                        participant a publisher?
+                                                        Only
+                                                        publishers are allowed to use CSTG.</label>
 
-                    <br>
+                                                </div>
+                                                <a href="#create" class="btn btn-primary pt-2"
+                                                    id="createSite-workflow-submit">Create</a>
 
-                    <label for="createKeypair-workflow-siteId">Site ID:</label>
-                    <input type="text" id="createKeypair-workflow-siteId" name="createKeypair-workflow-siteId">
+                                                <div class="collapse" id="createSiteOutput">
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Create Site response:</div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copySite"><img src="/css/copy.svg"
+                                                                    alt="copySite" /></button>
+                                                            <pre id="siteJira" class="form-clear"></pre>
+                                                        </div>
 
-                    <br>
+                                                    </div>
+                                                </div>
+                                                <div class="collapse pt-3" id="createSiteErrorAlert">
+                                                    <div class="alert alert-danger">
+                                                        <pre id="createSiteError"></pre>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="row collapse mt-3" id="updateSiteRegion" data-bs-parent="#siteParent">
+                                    <form id="updateSiteForm">
+                                        <div class="card card-body">
+                                            <div class="form-group">
+                                                <h5>Update an existing site</h5>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-siteId">Site ID:</label>
+                                                    <input type="text" id="updateSite-workflow-siteId"
+                                                        class="form-control" name="updateSite-workflow-siteId">
+                                                </div>
+                                                <a href="#create" id="updateSite-workflow-search"
+                                                    class="btn btn-primary">Search</a>
+                                            </div>
 
-                    <label for="createKeypair-workflow-name">Name (Optional):</label>
-                    <input type="text" id="createKeypair-workflow-name" name="createKeypair-workflow-name">
+                                            <div class="row pt-3 px-2 collapse" id="updateSite-seachOutput-NoResults">
+                                                <div class="alert alert-warning d-flex align-items-center pt-3"
+                                                    role="alert">
+                                                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img"
+                                                        aria-label="Warning:">
+                                                        <use xlink:href="#exclamation-triangle-fill" />
+                                                    </svg>
+                                                    <div>
+                                                        No site found
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row pt-3 px-2 collapse" id="updateSite-seachOutput-ErrorAlert">
+                                                <div class="alert alert-warning d-flex align-items-center pt-3"
+                                                    role="alert">
+                                                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img"
+                                                        aria-label="Warning:">
+                                                        <use xlink:href="#exclamation-triangle-fill" />
+                                                    </svg>
+                                                    <pre id="updateSite-searchOutput-ErrorDiv"></pre>
+                                                </div>
+                                            </div>
 
-                    <br>
-                    <br>
+                                            <div id="updateSite-workflow-afterSearch" class="collapse pt-3">
+                                                <label for="updateSite-workflow-afterSearch-name">Name:</label>
+                                                <input type="text" class="form-control"
+                                                    id="updateSite-workflow-afterSearch-name"
+                                                    name="updateSite-workflow-afterSearch-name" disabled readonly>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-afterSearch-domainNames">Domain
+                                                        Names
+                                                        (comma-separated list):</label>
+                                                    <input type="text" class="form-control"
+                                                        id="updateSite-workflow-afterSearch-domainNames"
+                                                        name="updateSite-workflow-afterSearch-domainNames">
 
-                    <a href="#create" id="createKeypair-workflow-submit">Create</a>
+                                                </div>
+
+
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-afterSearch-description">Description
+                                                        (Optional):</label>
+                                                    <input type="text" id="updateSite-workflow-afterSearch-description"
+                                                        class="form-control"
+                                                        name="updateSite-workflow-afterSearch-description">
+                                                </div>
+
+                                                <div class="form-check py-2">
+                                                    <input type="checkbox"
+                                                        id="updateSite-workflow-afterSearch-PUBLISHER"
+                                                        class="form-check-input"
+                                                        name="updateSite-workflow-afterSearch-clientTypes[]"
+                                                        value="PUBLISHER">
+                                                    <label for="updateSite-workflow-afterSearch-PUBLISHER">Is this
+                                                        participant a publisher?
+                                                        Only
+                                                        publishers are allowed to use CSTG.</label>
+
+                                                </div>
+
+
+                                                <a href="#update" class="btn btn-primary"
+                                                    id="updateSite-workflow-submit">Update</a>
+
+                                                <div class="collapse" id="updateSiteOutput">
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Update Site response:</div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copyUpdatedSite"><img src="/css/copy.svg"
+                                                                    alt="Copy Update Site Response" /></button>
+                                                            <pre id="siteUpdateJira" class="form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="collapse pt-3" id="updateSiteErrorAlert">
+                                                <div class="alert alert-danger">
+                                                    <pre id="updateSiteError"></pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="row collapse mt-3" id="createKeyPairRegion" data-bs-parent="#siteParent">
+                                    <form id="createKeyPairForm">
+                                        <div class="card card-body">
+                                            <div class="form-group">
+                                                <h5>Create a new CSTG Pair</h5>
+
+                                                <div class="pt-3">
+                                                    <label for="createKeypair-workflow-siteId">Site ID:</label>
+                                                    <input type="text" id="createKeypair-workflow-siteId"
+                                                        class="form-control" name="createKeypair-workflow-siteId">
+
+                                                </div>
+                                                <div class="py-3">
+                                                    <label for="createKeypair-workflow-name">Name (Optional):</label>
+                                                    <input type="text" id="createKeypair-workflow-name"
+                                                        class="form-control" name="createKeypair-workflow-name">
+                                                </div>
+                                                <a href="#create" class="btn-primary btn"
+                                                    id="createKeypair-workflow-submit">Create</a>
+
+                                                <div class="collapse" id="createKeypairOutput">
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Please copy and paste this to a private message:
+                                                        </div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copyTradeSecret"><img src="/css/copy.svg"
+                                                                    alt="Copy Trade Secret" />
+                                                            </button>
+                                                            <pre id="tradeSecretSpace" class="form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Please copy and paste this into a comment on the JIRA ticket:
+                                                        </div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copyForJira">
+                                                                <img src="/css/copy.svg" alt="Copy for Jira" />
+                                                            </button>
+                                                            <pre id="jiraSpace" class="form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                    <div class="pt-2">
+                                                        <div class="py-2">This is the output for reference. You should not need to copy this.
+                                                        </div>
+                                                        <div class="alert alert-dark">
+                                                            <pre id="fullClientOutputSpace"
+                                                                class="user-select-none form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="collapse pt-3" id="createClientErrorAlert">
+                                                <div class="alert alert-danger">
+                                                    <pre id="createClientError"></pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </td>
-        </tr>
-    </table>
-</div>
+            </div>
+        </div>
 
-<script language="JavaScript">
-    $(document).ready(() => {
-        $("#searchParticipant").on("click", () => {
-            $("#siteSearchOutput").text("");
-            $("#keypairSearchOutput").text("");
+        <script language="JavaScript">
+            $(document).ready(() => {
+                $("#searchParticipant").on("click", () => {
+                    $("#siteSearchOutput").text("");
+                    $("#keypairSearchOutput").text("");
 
-            const name = $("#participantName").val();
+                    const name = $("#participantName").val();
 
-            doApiCallWithCallback("GET", "/api/site/list", (text) => {
-                    const searchList = JSON.parse(text);
+                    doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                        const searchList = JSON.parse(text);
 
-                    const similarList = searchList.filter((site) => site.name.toLowerCase().includes(name.toLowerCase()));
-                    if (similarList.length === 0) {
-                        $("#siteSearchOutput").text("No results");
-                    } else {
-                        $("#siteSearchOutput").text(JSON.stringify(similarList, null, 2));
+                        const similarList = searchList.filter((site) => site.name.toLowerCase().includes(name.toLowerCase()));
+                        if (similarList.length === 0) {
+                            $("#siteSearchOutput").text("No results");
+                        } else {
 
-                        doApiCallWithCallback("GET", "/api/client_side_keypairs/list", (text) => {
-                            const siteIds = similarList.map((site) => site.id);
-                            const keypairs = JSON.parse(text);
-                            const filteredKeypairs = keypairs.filter((keypair) => siteIds.includes(keypair.site_id));
+                            doApiCallWithCallback("GET", "/api/client_side_keypairs/list", (text) => {
+                                const keypairs = JSON.parse(text);
 
-                            $("#keypairSearchOutput").text(JSON.stringify(filteredKeypairs, null, 2));
-                        },
-                        (err) => standardErrorCallback(err, "#keypairSearchOutput"));
+                                similarList.forEach((site)  => {
+                                    const siteId = site.id;
+                                    const siteKeyPairs = keypairs.filter((keypair) => keypair.site_id == siteId);
+                                    
+                                    $("#searchResultsTable tr:last").after(`<tr><td><pre>${JSON.stringify(site, null, 2)}</pre></td><td><pre>${JSON.stringify(siteKeyPairs, null, 2)}</pre></td></tr>`)
+                                })
+                            }, (err) => standardErrorCallback(err, "#keypairSearchOutput"));
+                        }
+                    }, (err) => standardErrorCallback(err, "#siteSearchOutput"));
+                });
+
+                $("#createSite-workflow-submit").on("click", () => {
+                    let domainNames = convertDomainNamesToArray($("#createSite-workflow-domainNames").val());
+                    if (domainNames.length === 0) {
+                        showCreateSiteError("Domain names cannot be empty");
+                        return;
                     }
-                }, (err) => standardErrorCallback(err, "#siteSearchOutput"));
-        });
 
-        $("#createSite").on("click", () => {
-            $("#createSite-workflow").show();
-            $("#updateSite-workflow").hide();
-        });
-
-        $("#createSite-workflow-submit").on("click", () => {
-            let domainNames = convertDomainNamesToArray($("#createSite-workflow-domainNames").val());
-            if (domainNames.length === 0) {
-                window.alert("Domain names cannot be empty");
-                return;
-            }
-
-            const isPublisherChecked = $("#createSite-workflow-clientTypes-PUBLISHER").is(":checked");
-            if (!isPublisherChecked) {
-                window.alert("Unable to create site - only publishers are allowed to use CSTG.");
-                return;
-            } else if (!confirm("Are you sure that this participant is a publisher? Only publishers are allowed to use CSTG.")) {
-                return;
-            }
-
-            $("#siteSearchOutput").text("");
-
-            const name = encodeURIComponent($("#createSite-workflow-name").val());
-            const description = encodeURIComponent($("#createSite-workflow-description").val());
-
-            const createSiteUrl = `/api/site/add?name=${name}&types=PUBLISHER&description=${description}`;
-
-            doApiCallWithCallback("POST", createSiteUrl, (text) => {
-                const site = JSON.parse(text);
-
-                const payload = {domain_names: domainNames};
-
-                const setDomainNamesUrl = `/api/site/domain_names?id=${site.id}`;
-
-                doApiCallWithCallback("POST", setDomainNamesUrl, (text) => {
-                    const site = JSON.parse(text);
-
-                    const alertMessage = `Created site for [${site.name}] with site ID [${site.id}]`;
-
-const outputMessage = `\
-${alertMessage}
-
---------------------------------------------------
-
-${JSON.stringify(site, null, 2)}`;
-
-                    $("#siteSearchOutput").text(outputMessage);
-                    window.alert(alertMessage);
-                }, (err) => standardErrorCallback(err, "#siteSearchOutput"), JSON.stringify(payload));
-            }, (err) => standardErrorCallback(err, "#siteSearchOutput"));
-        });
-
-        $("#updateSite").on("click", () => {
-            $("#createSite-workflow").hide();
-            $("#updateSite-workflow").show();
-        });
-
-        $("#updateSite-workflow-search").on("click", () => {
-            $("#updateSite-workflow-searchOutput").text("");
-            $("#updateSite-workflow-afterSearch").hide();
-
-            const siteId = encodeURIComponent($("#updateSite-workflow-siteId").val());
-
-            doApiCallWithCallback("GET", "/api/site/list", (text) => {
-                    const searchList = JSON.parse(text);
-
-                    const siteList = searchList.filter((site) => site.id.toString() === siteId);
-                    if (siteList.length === 0) {
-                        $("#updateSite-workflow-searchOutput").text("No results");
-                    } else {
-                        $("#updateSite-workflow-afterSearch").show();
-
-                        const site = siteList[0];
-                        $("#updateSite-workflow-afterSearch-name").text(site.name);
-                        $("#updateSite-workflow-afterSearch-domainNames").val(site.domain_names.join(","));
-                        $("#updateSite-workflow-afterSearch-description").val(site.description);
+                    const isPublisherChecked = $("#createSite-workflow-clientTypes-PUBLISHER").is(":checked");
+                    if (!isPublisherChecked) {
+                        showCreateSiteError("Unable to create site - only publishers are allowed to use CSTG.");
+                        return;
                     }
-                }, (err) => standardErrorCallback(err, "#updateSite-workflow-searchOutput"));
-        });
 
-        $("#updateSite-workflow-submit").on("click", () => {
-            $("#siteSearchOutput").text("");
+                    clearErrors();
+                    const name = encodeURIComponent($("#createSite-workflow-name").val());
+                    const description = encodeURIComponent($("#createSite-workflow-description").val());
 
-            const id = encodeURIComponent($("#updateSite-workflow-siteId").val());
-            const name = $("#updateSite-workflow-afterSearch-name").text();
-            const domainNames = convertDomainNamesToArray($("#updateSite-workflow-afterSearch-domainNames").val());
-            const description = encodeURIComponent($("#updateSite-workflow-afterSearch-description").val());
+                    const createSiteUrl = `/api/site/add?name=${name}&types=PUBLISHER&description=${description}`;
 
-            const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
-            const updateDescriptionUrl = `/api/site/update?id=${id}&description=${description}`;
-
-            const updateDomainNamesPayload = {domain_names: domainNames};
-
-            doApiCallWithCallback(
-                "POST",
-                updateDomainNamesUrl, 
-                () => doApiCallWithCallback(
-                    "POST",
-                    updateDescriptionUrl,
-                    (text) => {
+                    doApiCallWithCallback("POST", createSiteUrl, (text) => {
                         const site = JSON.parse(text);
-
-                        const alertMessage = `Updated site [${site.name}] with site ID [${site.id}]`;
-
-                        const outputMessage = `\
+                        const alertMessage = `Created site for [${site.name}] with site ID [${site.id}]`;
+                            const outputMessage = `\
 ${alertMessage}
+--------------------------------------------------
 
+${JSON.stringify(site, null, 2)}`;
+                            
+                        $("#siteJira").text(outputMessage);
+                        $("#createSiteOutput").collapse('show');
+
+                        const payload = { domain_names: domainNames };
+
+                        const setDomainNamesUrl = `/api/site/domain_names?id=${site.id}`;
+
+                        doApiCallWithCallback("POST", setDomainNamesUrl, (text) => {
+                            const site = JSON.parse(text);
+                            const alertMessage = `Created site for [${site.name}] with site ID [${site.id}]`;
+                            const outputMessage = `\
+${alertMessage}
 --------------------------------------------------
 
 ${JSON.stringify(site, null, 2)}`;
 
-                        $("#siteSearchOutput").text(outputMessage);
-                        window.alert(alertMessage);
-                    },
-                    (err) => standardErrorCallback(err, "#siteSearchOutput")
-                ),
-                (err) => standardErrorCallback(err, "#siteSearchOutput"),
-                JSON.stringify(updateDomainNamesPayload)
-            );
-        });
+                            clearFormsAndShowCollapsed(["#createSiteRegion", "#createSiteOutput"])
+                            $("#siteJira").text(outputMessage);
 
-        $("#createKeypair").on("click", () => {
-            $("#createKeypair-workflow").show();
-        });
+                        }, (err) => alertErrorCallback(err, "#createSiteError", "#createSiteErrorAlert"), JSON.stringify(payload));
+                    }, (err) => alertErrorCallback(err, "#createSiteError", "#createSiteErrorAlert"));
+                });
 
-        $("#createKeypair-workflow-submit").on("click", () => {
-            $("#keypairSearchOutput").text("");
+                $("#updateSite-workflow-search").on("click", () => {
+                    clearErrors();
+                    $("#updateSiteOutput").collapse('hide');
+                    $("#updateSite-workflow-afterSearch .form-control").val('');
 
-            const siteId = encodeURIComponent($("#createKeypair-workflow-siteId").val());
-            const name = encodeURIComponent($("#createKeypair-workflow-name").val());
+                    const siteId = encodeURIComponent($("#updateSite-workflow-siteId").val());
 
-            const payload = {"site_id": parseInt(siteId), "name": name, "disabled": false}
+                    doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                        const searchList = JSON.parse(text);
 
-            doApiCallWithCallback("POST", "/api/client_side_keypairs/add", (text) => {
-                const keypair = JSON.parse(text);
+                        const siteList = searchList.filter((site) => site.id.toString() === siteId);
+                        if (siteList.length === 0) {
+                            $("#updateSite-workflow-afterSearch").collapse('hide');
+                            $("#updateSite-seachOutput-NoResults").collapse('show');
+                        } else {
+                            $("#updateSite-workflow-afterSearch").collapse('show');
 
-                const alertMessage = `Created CSTG keypair for site ID [${keypair.site_id}]`;
+                            const site = siteList[0];
+                            $("#updateSite-workflow-afterSearch-name").val(site.name);
+                            $("#updateSite-workflow-afterSearch-domainNames").val(site.domain_names.join(","));
+                            $("#updateSite-workflow-afterSearch-description").val(site.description);
+                            $("#updateSite-workflow-afterSearch-PUBLISHER").prop('checked', false);
+                            if (site.clientTypes.includes('PUBLISHER')) {
+                                $("#updateSite-workflow-afterSearch-PUBLISHER").prop('checked', true);
+                            }
+                            currentClientTypesAfterSearch = site.clientTypes;
+                        }
+                    }, (err) => alertErrorCallback(err, "#updateSite-searchOutput-ErrorDiv", "#updateSite-seachOutput-ErrorAlert"));
+                });
 
-                const privateMessage = `\
+                $("#updateSite-workflow-submit").on("click", () => {
+                    // if publisher not set, show error
+                    const isPublisherChecked = $("#updateSite-workflow-afterSearch-PUBLISHER").is(":checked");
+                    if (!isPublisherChecked) {
+                        showUpdateSiteError("Unable to update site - only publishers are allowed to use CSTG.");
+                        return;
+                    }
+
+                    const domainNames = convertDomainNamesToArray($("#updateSite-workflow-afterSearch-domainNames").val());
+                    if (domainNames.length === 0) {
+                        showUpdateSiteError("Domain names cannot be empty");
+                        return;
+                    }
+
+                    clearErrors();
+
+                    const id = encodeURIComponent($("#updateSite-workflow-siteId").val());
+                    const name = $("#updateSite-workflow-afterSearch-name").text();
+                    const description = encodeURIComponent($("#updateSite-workflow-afterSearch-description").val());
+
+                    const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
+                    if (!currentClientTypesAfterSearch.includes('PUBLISHER') && publisherChecked) {
+                        // update the site and add publisher client type
+                        currentClientTypesAfterSearch.push('PUBLISHER');
+                        const updateClientTypesUrl = `/api/site/set-types?id=${id}&types=${currentClientTypesAfterSearch.join(",")}`;
+                        doApiCallWithCallback(
+                            "POST",
+                            updateClientTypesUrl,
+                            (text) => { }, (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert")
+                        );
+                    }
+
+                    const updateDescriptionUrl = `/api/site/update?id=${id}&description=${description}`;
+
+                    const updateDomainNamesPayload = { domain_names: domainNames };
+
+                    doApiCallWithCallback(
+                        "POST",
+                        updateDomainNamesUrl,
+                        () => doApiCallWithCallback(
+                            "POST",
+                            updateDescriptionUrl,
+                            (text) => {
+                                const site = JSON.parse(text);
+
+                                const alertMessage = `Updated site [${site.name}] with site ID [${site.id}]`;
+
+                                const outputMessage = `\
+${alertMessage}
+--------------------------------------------------
+
+${JSON.stringify(site, null, 2)}`;
+
+                                $("#siteUpdateJira").text(outputMessage);
+                                $("#updateSiteRegion").collapse('show');
+                                $("#updateSite-workflow-afterSearch").collapse('show');
+                                $("#updateSiteOutput").collapse('show');
+
+                            },
+                            (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert")
+                        ),
+                        (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert"),
+                        JSON.stringify(updateDomainNamesPayload)
+                    );
+                });
+
+
+                $("#createKeypair-workflow-submit").on("click", () => {
+                    $("#keypairSearchOutput").text("");
+
+                    const siteId = encodeURIComponent($("#createKeypair-workflow-siteId").val());
+                    const name = encodeURIComponent($("#createKeypair-workflow-name").val());
+
+                    const payload = { "site_id": parseInt(siteId), "name": name, "disabled": false }
+
+                    doApiCallWithCallback("POST", "/api/client_side_keypairs/add", (text) => {
+                        clearFormsAndShowCollapsed(["#createKeyPairRegion", "#createKeypairOutput"]);
+                        const keypair = JSON.parse(text);
+
+                        const alertMessage = `Created CSTG keypair for site ID [${keypair.site_id}]`;
+
+                        const privateMessage = `\
 Subscription ID: ${keypair.subscription_id}
 Public key: ${keypair.public_key}`;
 
-                const jiraBody = JSON.parse(JSON.stringify(keypair));
-                delete jiraBody.subscription_id;
-                delete jiraBody.public_key;
-                delete jiraBody.private_key;
 
-                const outputMessage = `\
+                        $("#tradeSecretSpace").text(privateMessage);
+                        const jiraBody = JSON.parse(JSON.stringify(keypair));
+                        delete jiraBody.subscription_id;
+                        delete jiraBody.public_key;
+                        delete jiraBody.private_key;
+
+                        const jiraMessage = `\
 ${alertMessage}
-
 --------------------------------------------------
 
-Please copy the following into a private message:
+${JSON.stringify(jiraBody, null, 2)}`;
+                        $("#jiraSpace").text(jiraMessage)
 
-${privateMessage}
-
---------------------------------------------------
-
-Please copy the following into the JIRA ticket:
-
-${JSON.stringify(jiraBody, null, 2)}
-
+                        const fullMessage = `\
+${alertMessage}
 --------------------------------------------------
 
 ${JSON.stringify(keypair, null, 2)}`;
 
-                $("#keypairSearchOutput").text(outputMessage);
-                window.alert(alertMessage);
-            }, (err) => standardErrorCallback(err, "#keypairSearchOutput"), JSON.stringify(payload));
-        });
+                        $("#fullClientOutputSpace").text(fullMessage)
 
-        const convertDomainNamesToArray = (domainNames) => {
-            return domainNames.replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-        }
-    });
-</script>
+                    }, (err) => alertErrorCallback(err, "#createClientError", "#createClientErrorAlert"), JSON.stringify(payload));
+                });
 
+                const convertDomainNamesToArray = (domainNames) => {
+                    return domainNames.replace(/\s+/g, '').split(',').filter((value, _, __) => value !== "");
+                }
+
+                var currentClientTypesAfterSearch = [];
+
+                $("#copyTradeSecret").on("click", () => {
+                    const text = $("#tradeSecretSpace").text();
+                    navigator.clipboard.writeText(text);
+                });
+                $("#copyForJira").on("click", () => {
+                    const text = $("#jiraSpace").text();
+                    navigator.clipboard.writeText(text);
+                });
+                $("#copySite").on("click", () => {
+                    const text = $("#siteJira").text();
+                    navigator.clipboard.writeText(text);
+                });
+                $("#copyUpdatedSite").on("click", () => {
+                    const text = $("#siteUpdateJira").text();
+                    navigator.clipboard.writeText(text);
+                });
+
+                const showCreateSiteError = (errorMessage) => {
+                    $("#createSiteError").text(errorMessage);
+                    $("#createSiteErrorAlert").collapse('show');
+                }
+                const showUpdateSiteError = (errorMessage) => {
+                    $("#updateSiteError").text(errorMessage);
+                    $("#updateSiteErrorAlert").collapse('show');
+                }
+
+                const clearErrors = () => {
+                    $("#createSiteErrorAlert").collapse('hide');
+                    $("#createSiteError").text("");
+
+                    $("#updateSite-seachOutput-ErrorAlert").collapse('hide');
+                    $("#updateSite-searchOutput-ErrorDiv").text("");
+
+                    $("#updateSiteErrorAlert").collapse('hide');
+                    $("#updateSiteError").text("");
+
+                    $("#createClientErrorAlert").collapse('hide');
+                    $("#createClientError").text("");
+
+                    $("#updateSite-seachOutput-NoResults").collapse('hide');
+                }
+            });
+        </script>
 </body>
+
 </html>
