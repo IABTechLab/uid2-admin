@@ -33,6 +33,20 @@
                 <div class="card card-body">
                     <div class="row py-1">
                         <div class="col">
+                            <h4>Instructions</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <ol>
+                                <li>First seach for a participant with the requested name from the Jira ticket.</li>
+                                <li>If a site exists use the Site Id to update the site if necessary.</li>
+                                <li>Use the Site Id to create a CSTG key pair if necessary.</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="row py-1">
+                        <div class="col">
                             <h5>Search for existing participants:</h5>
                         </div>
                     </div>
@@ -53,15 +67,32 @@
                             <h5>Search Results:</h5>
                         </div>
                     </div>
-                    <div class="row px-2 table-responsive" >
+                    <div class="row pt-3 px-2 collapse" id="searchSiteNoSiteFoundAlert">
+                        <div class="alert alert-warning d-flex align-items-center pt-3" role="alert">
+                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:">
+                                <use xlink:href="#exclamation-triangle-fill" />
+                            </svg>
+                            <div>
+                                No site found
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-3 px-2 collapse" id="searchSiteErrorAlert">
+                        <div class="alert alert-danger d-flex align-items-center pt-3" role="alert">
+                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:">
+                                <use xlink:href="#exclamation-triangle-fill" />
+                            </svg>
+                            <div id="searchOutputErrorDiv">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row px-2 table-responsive">
                         <table class="table table-bordered" id="searchResultsTable">
                             <thead>
                                 <th scope="col" class="col-1">Sites</th>
                                 <th scope="col" class="col-1">CSTG Keypairs</th>
                             </thead>
-                            <tbody>
-                                <tr><td><pre id="siteSearchOutput"></pre>&nbsp;</td><td><pre id="keypairSearchOutput"></pre>&nbsp;</td></tr>
-                                
+                            <tbody id="searchResultsTableBody">
                             </tbody>
                         </table>
                     </div>
@@ -74,7 +105,7 @@
                             <div class="row">
                                 <h5>Update Operations:</h5>
                             </div>
-                            <div class="row">
+                            <div class="row py-2">
                                 <div>
                                     Use this to create new site, update existing sites or create new key pairs.
                                 </div>
@@ -325,8 +356,9 @@
         <script language="JavaScript">
             $(document).ready(() => {
                 $("#searchParticipant").on("click", () => {
-                    $("#siteSearchOutput").text("");
-                    $("#keypairSearchOutput").text("");
+                    $("#searchSiteNoSiteFoundAlert").collapse('hide');
+                    $("#searchSiteErrorAlert").collapse('hide');
+                    $("#searchResultsTableBody").empty();
 
                     const name = $("#participantName").val();
 
@@ -335,21 +367,26 @@
 
                         const similarList = searchList.filter((site) => site.name.toLowerCase().includes(name.toLowerCase()));
                         if (similarList.length === 0) {
-                            $("#siteSearchOutput").text("No results");
+                            $("#searchSiteNoSiteFoundAlert").collapse('show');
                         } else {
 
                             doApiCallWithCallback("GET", "/api/client_side_keypairs/list", (text) => {
                                 const keypairs = JSON.parse(text);
 
-                                similarList.forEach((site)  => {
+                                similarList.forEach((site) => {
                                     const siteId = site.id;
                                     const siteKeyPairs = keypairs.filter((keypair) => keypair.site_id == siteId);
-                                    
-                                    $("#searchResultsTable tr:last").after(`<tr><td><pre>${JSON.stringify(site, null, 2)}</pre></td><td><pre>${JSON.stringify(siteKeyPairs, null, 2)}</pre></td></tr>`)
+                                    const rowToAdd = `<tr><td><pre>${JSON.stringify(site, null, 2)}</pre></td><td><pre>${JSON.stringify(siteKeyPairs, null, 2)}</pre></td></tr>`;
+
+                                    if ($("#searchResultsTableBody").length == 1) {
+                                        $("#searchResultsTableBody").append(rowToAdd);
+                                    } else {
+                                        $("#searchResultsTableBody tr:last").after(rowToAdd);
+                                    }
                                 })
-                            }, (err) => standardErrorCallback(err, "#keypairSearchOutput"));
+                            }, (err) => alertErrorCallback(err, "#searchOutputErrorDiv", "#searchSiteErrorAlert"));
                         }
-                    }, (err) => standardErrorCallback(err, "#siteSearchOutput"));
+                    }, (err) => alertErrorCallback(err, "#searchOutputErrorDiv", "#searchSiteErrorAlert"));
                 });
 
                 $("#createSite-workflow-submit").on("click", () => {
@@ -374,12 +411,12 @@
                     doApiCallWithCallback("POST", createSiteUrl, (text) => {
                         const site = JSON.parse(text);
                         const alertMessage = `Created site for [${site.name}] with site ID [${site.id}]`;
-                            const outputMessage = `\
+                        const outputMessage = `\
 ${alertMessage}
 --------------------------------------------------
 
 ${JSON.stringify(site, null, 2)}`;
-                            
+
                         $("#siteJira").text(outputMessage);
                         $("#createSiteOutput").collapse('show');
 
