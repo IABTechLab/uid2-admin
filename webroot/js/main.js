@@ -35,13 +35,13 @@ function doApiCallWithCallback(method, url, onSuccess, onError, body) {
 function errorCallback(err) { standardErrorCallback(err, '#errorOutput') }
 
 function standardErrorCallback(err, errorDiv, onError) {
-    if(err.getResponseHeader("REQUIRES_AUTH") == 1) {
+    if(err.getResponseHeader('REQUIRES_AUTH') == 1) {
         $('body').hide()
-        $('body').replaceWith("Unauthorized, prompting reauthentication...")
+        $('body').replaceWith('Unauthorized, prompting reauthentication...')
         $('body').show()
         $(function () {
             setTimeout(function() {
-                window.location.replace("/login");
+                window.location.replace('/login');
             }, 3000);
         });
     } else {
@@ -89,8 +89,8 @@ function init() {
 
     $(document).ready(function () {
         if (window.location.origin.endsWith('.eu')) {
-            let header = $("h1").first();
-            header.text(header.text().replace("UID2", "EUID"));
+            let header = $('h1').first();
+            header.text(header.text().replace('UID2', 'EUID'));
         }
     });
 }
