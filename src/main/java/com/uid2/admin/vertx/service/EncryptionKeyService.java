@@ -554,7 +554,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         return keyset.getKeysetId();
     }
 
-    private int getSiteId(int keysetId) throws Exception {
+    private int getSiteId(int keysetId) {
         Map<Integer, AdminKeyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
         return currentKeysets.get(keysetId).getSiteId();
     }
@@ -563,14 +563,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         throws Exception {
         final Instant now = clock.now();
 
-        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys().stream()
+        final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys();
+        final List<KeysetKey> keys = keysetKeys.stream()
                 .sorted(Comparator.comparingInt(KeysetKey::getId))
                 .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
                 .collect(Collectors.toList());
 
-
-        int maxKeyId = MaxKeyUtil.getMaxKeysetKeyId(this.keysetKeyProvider.getSnapshot().getAllKeysetKeys(),
-                this.keysetKeyProvider.getMetadata().getInteger("max_key_id"));
+        int maxKeyId = MaxKeyUtil.getMaxKeysetKeyId(keysetKeys, this.keysetKeyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<KeysetKey> addedKeys = new ArrayList<>();
 
@@ -578,7 +577,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             ++maxKeyId;
             final byte[] secret = keyGenerator.generateRandomKey(32);
             final Instant created = now;
-            final Instant activates = created.plusSeconds(activatesIn.getSeconds());
+
+            final boolean isAddingFirstKeyForKeyset = (!isDuringRotation && keysetKeys.stream().noneMatch(key -> key.getKeysetId() == keysetId));
+
+            final Instant activates = isAddingFirstKeyForKeyset ? created : created.plusSeconds(activatesIn.getSeconds());
             final Instant expires = activates.plusSeconds(expiresAfter.getSeconds());
             final KeysetKey key = new KeysetKey(maxKeyId, secret, created, activates, expires, keysetId);
             keys.add(key);
@@ -655,8 +657,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         if (!(filterKeyOverCutOffTime && duringRotation)) {
             return true;
         }
-        Duration cutoffTime = siteKeyRotationCutOffTime;
-        return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
+        return now.compareTo(key.getExpires().plus(siteKeyRotationCutOffTime.toDays(), ChronoUnit.DAYS)) < 0;
     }
 
     private void loadAllContent() throws Exception {
