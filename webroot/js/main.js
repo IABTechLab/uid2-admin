@@ -95,7 +95,7 @@ function init() {
         } else if (window.location.origin.includes("integ")) {
             header.text(header.text().replace("Env", "Integ"));
         } else if (window.location.origin.includes("localhost")) {
-            header.text(header.text().replace("Env", "Dev"));
+            header.text(header.text().replace("Env", "Local"));
         } else {
             header.text(header.text().replace("Env", ""));
         }
