@@ -19,7 +19,7 @@ function doApiCallWithCallback(method, url, onSuccess, onError, body) {
         dataType: "text",
         data : body,
         success: text => onSuccess(text),
-        error: err => onerror(err)
+        error: err => onError(err)
     });
 }
 
