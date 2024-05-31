@@ -7,13 +7,8 @@ function doApiCall(method, url, outputDiv, errorDiv, body) {
         url: url,
         dataType: "text",
         data : body,
-        success: function (text) {
-            const pretty = JSON.stringify(JSON.parse(text),null,2);
-            $(outputDiv).text(pretty);
-        },
-        error: function (err) {
-            standardErrorCallback(err, errorDiv)
-        }
+        success: text => setOutput(text, outputDiv),
+        error: err => standardErrorCallback(err, errorDiv)
     });
 }
 
@@ -23,16 +18,19 @@ function doApiCallWithCallback(method, url, onSuccess, onError, body) {
         url: url,
         dataType: "text",
         data : body,
-        success: function (text) {
-            onSuccess(text);
-        },
-        error: function (err) {
-            standardErrorCallback(err, undefined, onError);
-        }
+        success: text => onSuccess(text),
+        error: err => onerror(err)
     });
 }
 
-function errorCallback(err) { standardErrorCallback(err, "#errorOutput") }
+function setOutput(text, div) {
+    const pretty = JSON.stringify(JSON.parse(text), null, 2);
+    $(div).text(pretty);
+}
+
+function errorCallback(err) { 
+    standardErrorCallback(err, "#errorOutput") 
+}
 
 function standardErrorCallback(err, errorDiv, onError) {
     if(err.getResponseHeader("REQUIRES_AUTH") == 1) {
@@ -68,9 +66,11 @@ function init() {
         url: "/api/userinfo",
         dataType: "text",
         success: function (text) {
-            var u = JSON.parse(text);
+            const u = JSON.parse(text);
+
             $("#loginEmail").text(u.email);
             $(".authed").show();
+
             if (u.groups.findIndex(e => e === "developer" || e === "developer-elevated" || e === "infra-admin" || e === "admin") >= 0) {
                 $(".ro-cki").show();
                 $(".ro-opm").show();
@@ -81,13 +81,13 @@ function init() {
                 $(".ro-nil").show();
             }
         },
-        error: function (err) {
+        error: err => {
             // alert("Error: " + err.status + ": " + JSON.parse(err).message);
             $(".notauthed").show();
         }
     });
 
-    $(document).ready(function () {
+    $(document).ready(() => {
         const header = $("h1").first();
 
         if (window.location.origin.includes("prod")) {
