@@ -35,7 +35,7 @@
   "is_auth_disabled": true,
   "enable_keysets": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
-  "okta_client_secret": "GG6_-nvR5R_K-bwj_0qny-RBW68Bbmo0CIwQBMOBjXpgDGxjtoB8EsMaGEBD5MK7",
+  "okta_client_secret": "GET_FROM_1PASSWORD",
   "okta_issuer": "https://uid2.okta.com/",
   "okta_callback": "http://localhost:8089/oauth2-callback"
 }
