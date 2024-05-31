@@ -198,8 +198,8 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         };
         setKeysetKeys(MAX_KEY_ID, keys);
 
-        final KeysetKey key2 = keyService.addKeysetKey(keysetId);
-        assertTrue(key2.getActivates().isAfter(key2.getCreated()));
+        final KeysetKey key = keyService.addKeysetKey(keysetId);
+        assertKeyActivation(clock.now(), SITE_KEY_ACTIVATES_IN_SECONDS, SITE_KEY_EXPIRES_AFTER_SECONDS, key.getCreated(), key.getActivates(), key.getExpires());
     }
 
 
