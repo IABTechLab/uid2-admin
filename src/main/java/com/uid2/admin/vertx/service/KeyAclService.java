@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.store.writer.KeyAclStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
@@ -10,7 +11,6 @@ import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.ISiteStore;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.SiteUtil;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -23,7 +23,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.*;
 
 public class KeyAclService implements IService {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final KeyAclStoreWriter storeWriter;
     private final RotatingKeyAclProvider keyAclProvider;
@@ -31,7 +31,7 @@ public class KeyAclService implements IService {
     private final IEncryptionKeyManager keyManager;
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyAclService.class);
 
-    public KeyAclService(AuthMiddleware auth,
+    public KeyAclService(AdminAuthMiddleware auth,
                          WriteLock writeLock,
                          KeyAclStoreWriter storeWriter,
                          RotatingKeyAclProvider keyAclProvider,
@@ -48,24 +48,25 @@ public class KeyAclService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/keys_acl/list").handler(
-                auth.handle(this::handleKeyAclList, Role.CLIENTKEY_ISSUER));
+            auth.handle(this::handleKeyAclList, Role.MAINTAINER));
 
         router.post("/api/keys_acl/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.PRIVILEGED));
 
-        router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleKeyAclReset(ctx);
-            }
-        }, Role.CLIENTKEY_ISSUER));
-        router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleKeyAclUpdate(ctx);
-            }
-        }, Role.CLIENTKEY_ISSUER));
+//        UID2-2758 Disable setting Key ACLs
+//        router.post("/api/keys_acl/reset").blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleKeyAclReset(ctx);
+//            }
+//        }, Role.MAINTAINER));
+//        router.post("/api/keys_acl/update").blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleKeyAclUpdate(ctx);
+//            }
+//        }, Role.MAINTAINER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

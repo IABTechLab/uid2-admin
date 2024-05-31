@@ -3,7 +3,6 @@
   "core_s3_bucket": "test-core-bucket",
   "pre_signed_url_expiry": 1800,
   "aws_region": "test-region",
-  "admins_metadata_path": "admins/metadata.json",
   "sites_metadata_path": "sites/metadata.json",
   "clients_metadata_path": "clients/metadata.json",
   "client_side_keypairs_metadata_path": "client_side_keypairs/metadata.json",
@@ -36,6 +35,12 @@
   "enable_keysets": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
   "okta_client_secret": "GET_FROM_1PASSWORD",
-  "okta_issuer": "https://uid2.okta.com/",
-  "okta_callback": "http://localhost:8089/oauth2-callback"
+  "okta_auth_server": "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8",
+  "okta_audience": "https://api.admin.com/api",
+  "okta_callback": "http://localhost:8089/oauth2-callback",
+  "environment": "local",
+  "vertx_session_timeout": 32400000,
+  "role_okta_group_map_maintainer": "developer",
+  "role_okta_group_map_privileged": "developer",
+  "role_okta_group_map_super_user": "developer"
 }

@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.store.writer.EnclaveStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -8,7 +9,6 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EnclaveIdentifier;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -23,13 +23,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class EnclaveIdService implements IService {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final EnclaveStoreWriter storeWriter;
     private final EnclaveIdentifierProvider enclaveIdProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
 
-    public EnclaveIdService(AuthMiddleware auth,
+    public EnclaveIdService(AdminAuthMiddleware auth,
                             WriteLock writeLock,
                             EnclaveStoreWriter storeWriter,
                             EnclaveIdentifierProvider enclaveIdProvider) {
@@ -42,20 +42,20 @@ public class EnclaveIdService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/enclave/metadata").handler(
-                auth.handle(this::handleEnclaveMetadata, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleEnclaveMetadata, Role.MAINTAINER));
         router.get("/api/enclave/list").handler(
-                auth.handle(this::handleEnclaveList, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleEnclaveList, Role.MAINTAINER));
 
         router.post("/api/enclave/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveAdd(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.PRIVILEGED));
         router.post("/api/enclave/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.SUPER_USER));
     }
 
     private void handleEnclaveMetadata(RoutingContext rc) {

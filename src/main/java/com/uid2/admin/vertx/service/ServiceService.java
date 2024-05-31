@@ -1,10 +1,10 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Service;
 import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.store.reader.RotatingServiceLinkStore;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class ServiceService implements IService {
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Service>> storeWriter;
     private final RotatingServiceStore serviceProvider;
@@ -31,7 +31,7 @@ public class ServiceService implements IService {
     private final RotatingServiceLinkStore serviceLinkProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceService.class);
 
-    public ServiceService(AuthMiddleware auth,
+    public ServiceService(AdminAuthMiddleware auth,
                           WriteLock writeLock,
                           StoreWriter<Collection<Service>> storeWriter,
                           RotatingServiceStore serviceProvider,
@@ -47,23 +47,23 @@ public class ServiceService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/service/list").handler(auth.handle(this::handleServiceListAll, Role.ADMINISTRATOR));
-        router.get("/api/service/list/:service_id").handler(auth.handle(this::handleServiceList, Role.ADMINISTRATOR));
+        router.get("/api/service/list").handler(auth.handle(this::handleServiceListAll, Role.MAINTAINER, Role.METRICS_EXPORT));
+        router.get("/api/service/list/:service_id").handler(auth.handle(this::handleServiceList, Role.MAINTAINER));
         router.post("/api/service/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceAdd(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.PRIVILEGED));
         router.post("/api/service/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdate(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.PRIVILEGED));
         router.post("/api/service/delete").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleDelete(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.SUPER_USER));
     }
 
     private void handleServiceListAll(RoutingContext rc) {

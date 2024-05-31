@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -10,7 +11,6 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -37,7 +37,7 @@ public class OperatorKeyService implements IService {
             new TreeSet<>(Set.of(Role.OPERATOR, Role.OPTOUT))
     ));
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final OperatorKeyStoreWriter operatorKeyStoreWriter;
     private final RotatingOperatorKeyProvider operatorKeyProvider;
@@ -47,7 +47,7 @@ public class OperatorKeyService implements IService {
     private final String operatorKeyPrefix;
 
     public OperatorKeyService(JsonObject config,
-                              AuthMiddleware auth,
+                              AdminAuthMiddleware auth,
                               WriteLock writeLock,
                               OperatorKeyStoreWriter operatorKeyStoreWriter,
                               RotatingOperatorKeyProvider operatorKeyProvider,
@@ -68,47 +68,47 @@ public class OperatorKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/operator/metadata").handler(
-                auth.handle(this::handleOperatorMetadata, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleOperatorMetadata, Role.MAINTAINER));
         router.get("/api/operator/list").handler(
-                auth.handle(this::handleOperatorList, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get("/api/operator/reveal").handler(
-                auth.handle(this::handleOperatorReveal, Role.OPERATOR_MANAGER));
+            auth.handle(this::handleOperatorReveal, Role.MAINTAINER));
 
         router.post("/api/operator/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.MAINTAINER));
 
         router.post("/api/operator/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.SUPER_USER));
 
         router.post("/api/operator/disable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDisable(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.PRIVILEGED));
 
         router.post("/api/operator/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.MAINTAINER));
 
         router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorUpdate(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.PRIVILEGED));
 
         router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
             }
-        }, Role.OPERATOR_MANAGER));
+        }, Role.PRIVILEGED));
     }
 
     private void handleOperatorMetadata(RoutingContext rc) {

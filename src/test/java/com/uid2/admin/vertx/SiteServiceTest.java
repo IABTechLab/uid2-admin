@@ -53,6 +53,7 @@ public class SiteServiceTest extends ServiceTestBase {
         assertEquals(expectedSite.getName(), actualSite.getString("name"));
         assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
         assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
+        assertEquals(expectedSite.getAppNames(), actualSite.getJsonArray("app_names").stream().collect(Collectors.toSet()));
         assertEquals(expectedSite.getCreated(), actualSite.getLong("created"));
     }
 
@@ -77,11 +78,12 @@ public class SiteServiceTest extends ServiceTestBase {
         assertEquals(expectedSite.getName(), actualSite.getString("name"));
         assertEquals(expectedSite.isEnabled(), actualSite.getBoolean("enabled"));
         assertEquals(expectedSite.getDomainNames(), actualSite.getJsonArray("domain_names").stream().collect(Collectors.toSet()));
+        assertEquals(expectedSite.getAppNames(), actualSite.getJsonArray("app_names").stream().collect(Collectors.toSet()));
     }
 
     @Test
     void listSitesNoSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         get(vertx, testContext, "api/site/list", response -> {
             assertAll(
@@ -95,12 +97,13 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void listSitesHaveSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -116,13 +119,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void listSitesWithKeys(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -131,6 +135,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new LegacyClientKey("UID2-C-L-12-ck222222", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12, "UID2-C-L-12-ck222"),
                 new LegacyClientKey("UID2-C-L-11-ck333333", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11, "UID2-C-L-11-ck333"),
                 new LegacyClientKey("UID2-C-L-13-ck444444", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13, "UID2-C-L-13-ck444"),
+                new LegacyClientKey("UID2-C-L-13-ck444444", "ckh5", "cks5", "cs5", "c5", Instant.MIN, Set.of(Role.SHARER), 15, "UID2-C-L-13-ck555"),
         };
         setClientKeys(clientKeys);
 
@@ -150,13 +155,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithStringId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -169,13 +175,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithInvalidId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -189,13 +196,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithUnusedId(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -208,7 +216,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteNoSites(Vertx vertx, VertxTestContext testContext){
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {};
         setSites(sites);
@@ -222,13 +230,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void getSiteWithValidId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] sites = {
                 new Site(11, "site1", false),
                 new Site(12, "site2", true),
                 new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
                 new Site(14, "site3", false),
+                new Site(15, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
         };
         setSites(sites);
 
@@ -237,6 +246,7 @@ public class SiteServiceTest extends ServiceTestBase {
                 new LegacyClientKey("UID2-C-L-12-ck222222", "ckh2", "cks2", "cs2", "c2", Instant.MIN, Set.of(Role.MAPPER), 12, "UID2-C-L-12-ck222"),
                 new LegacyClientKey("UID2-C-L-11-ck333333", "ckh3", "cks3", "cs3", "c3", Instant.MIN, Set.of(Role.GENERATOR, Role.MAPPER), 11, "UID2-C-L-11-ck333"),
                 new LegacyClientKey("UID2-C-L-13-ck444444", "ckh4", "cks4", "cs4", "c4", Instant.MIN, Set.of(Role.SHARER), 13, "UID2-C-L-13-ck444"),
+                new LegacyClientKey("UID2-C-L-13-ck555555", "ckh5", "cks5", "cs5", "c5", Instant.MIN, Set.of(Role.SHARER), 15, "UID2-C-L-13-ck555"),
         };
         setClientKeys(clientKeys);
 
@@ -252,7 +262,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteNoExistingSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
         };
@@ -272,7 +282,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteExistingSites(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(7, "initial_site", false),
@@ -293,7 +303,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithTypes(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(7, "initial_site", false),
@@ -311,7 +321,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteEnabled(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
         };
@@ -330,28 +340,28 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteExistingName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/add?name=test_site", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void addSiteEmptyName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/add?name=", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void addSiteWhitespaceName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/add?name=%20", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void enableSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", false),
@@ -373,7 +383,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void disableSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
@@ -395,7 +405,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void enableSiteAlreadyEnabled(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
@@ -417,7 +427,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void setTypes(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         Site[] initialSites = {
                 new Site(3, "test_site", true),
@@ -438,28 +448,28 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void enableSiteUnknownSite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(3, "test_site", false));
         post(vertx, testContext, "api/site/enable?id=5&enabled=true", "", expectHttpStatus(testContext, 404));
     }
 
     @Test
     void enableSiteSpecialSite1(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/enable?id=1&enabled=true", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void enableSiteSpecialSite2(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/enable?id=2&enabled=true", "", expectHttpStatus(testContext, 400));
     }
 
     @Test
     void domainNameNoSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names", "", response -> {
             assertEquals(400, response.statusCode());
@@ -470,7 +480,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameMissingSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names?id=123", "", response -> {
             assertEquals(404, response.statusCode());
@@ -481,7 +491,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameInvalidSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names?id=2", "", response -> {
             assertEquals(400, response.statusCode());
@@ -492,7 +502,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameBadSiteId(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites();
         post(vertx, testContext, "api/site/domain_names?id=asdf", "", response -> {
             assertEquals(400, response.statusCode());
@@ -503,7 +513,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameNoDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         setSites(new Site(123, "name", true));
         JsonObject reqBody = new JsonObject();
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
@@ -515,7 +525,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameEmptyNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
         JsonObject reqBody = new JsonObject();
@@ -529,7 +539,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameInvalidDomainName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -540,14 +550,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Invalid Domain Names: [bad]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
 
     @Test
     void domainNameInvalidTld(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -558,14 +568,14 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/domain_names?id=123", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad.doesntexist", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Invalid Domain Names: [bad.doesntexist]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
 
     @Test
     void domainNameDuplicateDomainName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -584,7 +594,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameMultipleDomainName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true);
         setSites(s);
 
@@ -607,7 +617,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void domainNameOverWrite(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
         Site s = new Site(123, "name", true, Set.of("qwerty.com"));
         setSites(s);
 
@@ -630,7 +640,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setSites(new Site(123, "name", true, Set.of("qwerty.com")));
 
@@ -653,7 +663,7 @@ public class SiteServiceTest extends ServiceTestBase {
 
     @Test
     void addSiteWithBadDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         setSites(new Site(123, "name", true, Set.of("qwerty.com")));
 
@@ -668,15 +678,34 @@ public class SiteServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
             assertEquals(400, response.statusCode());
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
-            assertEquals("invalid domain name: bad", response.bodyAsJsonObject().getString("message"));
+            assertEquals("Invalid Domain Names: [bad]", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithMultipleBadDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name", true, Set.of("qwerty.com")));
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("bad");
+        names.add("bad1");
+        names.add("bad2");
+        reqBody.put("domain_names", names);
+
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("Invalid Domain Names: [bad, bad1, bad2]", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         });
     }
 
     @Test
     void addSiteWithDuplicateDomainNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.CLIENTKEY_ISSUER);
+        fakeAuth(Role.MAINTAINER);
 
         JsonObject reqBody = new JsonObject();
         JsonArray names = new JsonArray();
@@ -694,5 +723,249 @@ public class SiteServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    void appNameNoSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
 
+    @Test
+    void appNameRoleUnauthorized(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAPPER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc1");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/app_names?id=123", "", response -> {
+            assertEquals(401, response.statusCode());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameMissingSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names?id=123", "", response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("site not found", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameInvalidSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names?id=2", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify a valid site id", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameBadSiteId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites();
+        post(vertx, testContext, "api/site/app_names?id=asdf", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("unable to parse site id For input string: \"asdf\"", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameNoDomainNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites(new Site(123, "name", true));
+        JsonObject reqBody = new JsonObject();
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("required parameters: app_names", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameEmptyNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+        JsonObject reqBody = new JsonObject();
+        reqBody.put("app_names", new JsonArray());
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameDuplicateAppName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("abc");
+        names.add("abc");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("duplicate app_names not permitted", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void appNameMultipleAppName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        Site s = new Site(123, "name", true);
+        setSites(s);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("com.123.game.app.android");
+        names.add("com.234.game.app.android");
+        names.add("com.345.game.app.android");
+        names.add("com.456.game.app.android");
+        names.add("com.567.game.app.android");
+        names.add("com.567.Game.app.android");
+        names.add("com.567.Game.App.android");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/app_names?id=123", reqBody.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            s.setAppNames(Set.of("com.123.game.app.android", "com.234.game.app.android", "com.345.game.app.android", "com.456.game.app.android", "com.567.game.app.android", "com.567.Game.app.android", "com.567.Game.App.android"));
+            checkSiteResponse(s, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithAppNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name", true, Set.of("qwerty.com")));
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("com.123.game.app.android");
+        names.add("com.234.game.app.android");
+        names.add("com.345.game.app.android");
+        names.add("com.456.game.app.android");
+        names.add("com.567.game.app.android");
+        names.add("com.567.Game.app.android");
+        names.add("com.567.Game.App.android");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            Site expected = new Site(124, "test_name", true, null, null, Set.of("com.123.game.app.android", "com.234.game.app.android", "com.345.game.app.android", "com.456.game.app.android", "com.567.game.app.android", "com.567.Game.app.android", "com.567.Game.App.android"));
+            checkSiteResponse(expected, response.bodyAsJsonObject());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addSiteWithDuplicateAppNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject reqBody = new JsonObject();
+        JsonArray names = new JsonArray();
+        names.add("com.123.game.app.android");
+        names.add("com.234.game.app.android");
+        names.add("com.234.game.app.android");
+        reqBody.put("app_names", names);
+
+        post(vertx, testContext, "api/site/add?name=test_name&enabled=true", reqBody.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("duplicate app_names not permitted", response.bodyAsJsonObject().getString("message"));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void renameSiteTest(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=NewName", null, response -> {
+            assertEquals(200, response.statusCode());
+            assertEquals("NewName", response.bodyAsJsonObject().getString("name"));
+            assertEquals("NewName", sites[0].getName());
+            // Test other sites are unaffected
+            assertEquals("site2", sites[1].getName());
+            assertEquals("site3", sites[2].getName());
+            assertEquals("site4", sites[3].getName());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void renameSiteTestInvalidName(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=", null, response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("must specify a valid site name", response.bodyAsJsonObject().getString("message"));
+            assertEquals("site1", sites[0].getName());
+            // Test other sites are unaffected
+            assertEquals("site2", sites[1].getName());
+            assertEquals("site3", sites[2].getName());
+            assertEquals("site4", sites[3].getName());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void renameSiteTestDuplicate(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Site[] sites = {
+                new Site(11, "site1", false),
+                new Site(12, "site2", true),
+                new Site(13, "site3", false, Set.of("test1.com", "test2.net")),
+                new Site(14, "site4", false, null, Set.of("test1.com", "test2.net"), Set.of("com.123.game.app.android", "12345678")),
+        };
+        setSites(sites);
+
+        post(vertx, testContext, "api/site/update?id=11&name=site2", null, response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("site with name site2 already exists", response.bodyAsJsonObject().getString("message"));
+            assertEquals("site1", sites[0].getName());
+            // Test other sites are unaffected
+            assertEquals("site2", sites[1].getName());
+            assertEquals("site3", sites[2].getName());
+            assertEquals("site4", sites[3].getName());
+            testContext.completeNow();
+        });
+    }
 }

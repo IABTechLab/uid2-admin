@@ -1,18 +1,18 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.ext.web.Router;
 
 public class JobDispatcherService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final JobDispatcher jobDispatcher;
 
-    public JobDispatcherService(AuthMiddleware auth, JobDispatcher jobDispatcher) {
+    public JobDispatcherService(AdminAuthMiddleware auth, JobDispatcher jobDispatcher) {
         this.auth = auth;
         this.jobDispatcher = jobDispatcher;
     }
@@ -27,7 +27,7 @@ public class JobDispatcherService implements IService {
                     }
                 },
                 //can be other role
-                Role.ADMINISTRATOR, Role.SECRET_MANAGER));
+            Role.MAINTAINER));
 
         router.get("/api/job-dispatcher/job-queue").blockingHandler(auth.handle((ctx) -> {
                     try {
@@ -37,6 +37,6 @@ public class JobDispatcherService implements IService {
                     }
                 },
                 //can be other role
-                Role.ADMINISTRATOR, Role.SECRET_MANAGER));
+            Role.MAINTAINER));
     }
 }

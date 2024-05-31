@@ -1,16 +1,13 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
-import com.uid2.admin.secret.IKeysetKeyManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
-import com.uid2.admin.store.writer.AdminKeysetWriter;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -27,7 +24,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SharingService implements IService {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
 
     private final WriteLock writeLock;
     private final RotatingAdminKeysetStore keysetProvider;
@@ -37,7 +34,7 @@ public class SharingService implements IService {
 
     private final boolean enableKeysets;
 
-    public SharingService(AuthMiddleware auth,
+    public SharingService(AdminAuthMiddleware auth,
                           WriteLock writeLock,
                           RotatingAdminKeysetStore keysetProvider,
                           KeysetManager keysetManager,
@@ -55,23 +52,23 @@ public class SharingService implements IService {
     public void setupRoutes(Router router) {
         if(!enableKeysets) return;
         router.get("/api/sharing/lists").handler(
-                auth.handle(this::handleListAllAllowedSites, Role.SHARING_PORTAL)
+            auth.handle(this::handleListAllAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT)
         );
         router.get("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleListAllowedSites, Role.SHARING_PORTAL)
+            auth.handle(this::handleListAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
         );
         router.post("/api/sharing/list/:siteId").handler(
-                auth.handle(this::handleSetAllowedSites, Role.SHARING_PORTAL)
+            auth.handle(this::handleSetAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
         );
 
         router.get("/api/sharing/keysets").handler(
-                auth.handle(this::handleListAllKeysets, Role.ADMINISTRATOR)
+            auth.handle(this::handleListAllKeysets, Role.MAINTAINER)
         );
         router.post("/api/sharing/keyset").handler(
-                auth.handle(this::handleSetKeyset, Role.ADMINISTRATOR)
+            auth.handle(this::handleSetKeyset, Role.MAINTAINER)
         );
         router.get("/api/sharing/keyset/:keyset_id").handler(
-                auth.handle(this::handleListKeyset, Role.ADMINISTRATOR)
+            auth.handle(this::handleListKeyset, Role.MAINTAINER)
         );
     }
 

@@ -51,6 +51,22 @@
   },
   {
     "key": "UID2-O-L-124-cr24Bt.dYP+Wpo6NWlP7CbvwpzHn0lXS3Cst6Y+qFDK4=",
+    "name": "Publisher",
+    "contact": "Publisher",
+    "protocol": "trusted",
+    "created": 1618873215,
+    "disabled": false,
+    "roles": [
+      "OPERATOR"
+    ],
+    "site_id": 124,
+    "operator_type": "PUBLIC",
+    "key_hash": "jgl4NnuoVVuYVkWW7IUWHyL9aA5Uglzlb2c0xCAsVk09Tno2RQYIJ2nEqACGpMMarKp1uFbTAr2qKwh2q+ro6g==",
+    "key_salt": "kyrXH8X4F/SCTgw8SkWLBZSXQWBSZKgNqiQQFpJ5h04=",
+    "key_id": "UID2-O-L-124-cr24B"
+  },
+  {
+    "key": "UID2-O-L-124-gcp-operator-key",
     "name": "Publisher (Private, GCP)",
     "contact": "Publisher (Private, GCP)",
     "protocol": "gcp-oidc",
@@ -61,9 +77,9 @@
     ],
     "site_id": 124,
     "operator_type": "PRIVATE",
-    "key_hash": "jgl4NnuoVVuYVkWW7IUWHyL9aA5Uglzlb2c0xCAsVk09Tno2RQYIJ2nEqACGpMMarKp1uFbTAr2qKwh2q+ro6g==",
-    "key_salt": "kyrXH8X4F/SCTgw8SkWLBZSXQWBSZKgNqiQQFpJ5h04=",
-    "key_id": "UID2-O-L-124-cr24B"
+    "key_hash": "WygXXdIoEH7Te0bAYFh+yvIgPu0Hn8dkQih3v1lC/HNIWdCXnyd32m/p7gSPG7awpC1XOfERJjKtL+ano5gqyg==",
+    "key_salt": "a9OTKkkFsff4lgawC3aK8zG9y9AGB14dmtg+6hzA7jI=",
+    "key_id": "UID2-O-L-124-gcp-o"
   },
   {
     "key": "UID2-azure-cc-operator-key",
@@ -80,6 +96,22 @@
     "key_hash": "rtXong4ZyjwdshMNEICQv8Kd/vvX6d7PcB02AwcV3ElCnG7tXQvO+NKyqc93ObcVbwcJfZ1RPAGLjJhxdQQ55w==",
     "key_salt": "0Qw0Ln9qym9pcyQ1lT0oIB0uZ2nWhnVsGBhe8CYJ5xI=",
     "key_id": "UID2-azure"
+  },
+  {
+    "key": "UID2-O-L-124-aws-operator-key",
+    "name": "Publisher (Private, AWS)",
+    "contact": "Publisher (Private, AWS)",
+    "protocol": "aws-nitro",
+    "created": 1618873215,
+    "disabled": false,
+    "roles": [
+      "OPERATOR"
+    ],
+    "site_id": 124,
+    "operator_type": "PRIVATE",
+    "key_hash": "Ta2D1xkF8BlU+gzfgMgSkBsryYklIEiYL5MKDgjRGYYC+/IgM8LBESH62JR4J4tlKQU9RsUbd/f++moKD4o6WA==",
+    "key_salt": "9WtKvBwKJRZ9ZTQuluH1Cw8EdK1MblH7+wSFfeqFeA8=",
+    "key_id": "UID2-O-L-124-aws-o"
   },
   {
     "key": "UID2-O-L-127-pDqphU.6FuXzThQMY8YEsCA8crqvAlzyGrjcF8P6XO84=",

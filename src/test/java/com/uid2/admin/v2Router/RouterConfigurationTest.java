@@ -1,12 +1,11 @@
 package com.uid2.admin.v2Router;
 
-import com.uid2.admin.vertx.AdminVerticle;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.vertx.api.IRouteProvider;
 import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.api.cstg.GetClientSideKeypairsBySite;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Route;
@@ -19,15 +18,13 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
-
 import static org.mockito.Mockito.*;
 
 public class RouterConfigurationTest {
     @Mock
     private ClientSideKeypairService clientSideKeypairMock;
     @Mock
-    private AuthMiddleware authMiddlewareMock;
+    private AdminAuthMiddleware authMiddlewareMock;
     @Mock
     private Router routerMock;
     @Mock
@@ -54,7 +51,7 @@ public class RouterConfigurationTest {
             router.setupSubRouter(vertxMock, routerMock);
 
             verify(routeMock).handler(handlerMock);
-            verify(authMiddlewareMock).handle(any(), eq(Role.ADMINISTRATOR), eq(Role.SHARING_PORTAL));
+            verify(authMiddlewareMock).handle(any(), eq(Role.MAINTAINER), eq(Role.SHARING_PORTAL));
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IKeypairGenerator;
 import com.uid2.admin.secret.IKeypairManager;
@@ -8,7 +9,6 @@ import com.uid2.admin.store.writer.ClientSideKeypairStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.store.reader.RotatingClientSideKeypairStore;
 import com.uid2.shared.store.reader.RotatingSiteStore;
@@ -29,7 +29,7 @@ import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWit
 import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWithoutPrivateKey;
 
 public class ClientSideKeypairService implements IService, IKeypairManager {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final Clock clock;
     private final WriteLock writeLock;
     private final ClientSideKeypairStoreWriter storeWriter;
@@ -42,7 +42,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientSideKeypairService.class);
 
     public ClientSideKeypairService(JsonObject config,
-                                    AuthMiddleware auth,
+                                    AdminAuthMiddleware auth,
                                     WriteLock writeLock,
                                     ClientSideKeypairStoreWriter storeWriter,
                                     RotatingClientSideKeypairStore keypairStore,
@@ -68,16 +68,16 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             synchronized (writeLock) {
                 this.handleAddKeypair(ctx);
             }
-        }, Role.ADMINISTRATOR, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/client_side_keypairs/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdateKeypair(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.get("/api/client_side_keypairs/list").handler(
-                auth.handle(this::handleListAllKeypairs, Role.ADMINISTRATOR));
+            auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get("/api/client_side_keypairs/:subscriptionId").handler(
-                auth.handle(this::handleListKeypair, Role.ADMINISTRATOR)
+            auth.handle(this::handleListKeypair, Role.MAINTAINER)
         );
     }
 
@@ -111,7 +111,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        final JsonObject json = toJsonWithPrivateKey(newKeypair);
+        final JsonObject json = createKeypairJsonObject(toJsonWithoutPrivateKey(newKeypair));
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
@@ -172,7 +172,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        final JsonObject json = toJsonWithoutPrivateKey(newKeypair);
+        final JsonObject json = createKeypairJsonObject(toJsonWithoutPrivateKey(newKeypair));
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
@@ -183,10 +183,16 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
     private void handleListAllKeypairs(RoutingContext rc) {
         final JsonArray ja = new JsonArray();
-        this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(toJsonWithoutPrivateKey(k)));
+        this.keypairStore.getSnapshot().getAll().forEach(k -> ja.add(createKeypairJsonObject(toJsonWithoutPrivateKey(k))));
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(ja.encode());
+    }
+
+    private JsonObject createKeypairJsonObject(JsonObject jo) {
+        String siteName = this.siteProvider.getSite(jo.getInteger("site_id")).getName();
+        jo.put("site_name", siteName);
+        return jo;
     }
 
     private void handleListKeypair(RoutingContext rc) {
@@ -199,7 +205,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             return;
         }
 
-        JsonObject jo = toJsonWithPrivateKey(keypair);
+        JsonObject jo = createKeypairJsonObject(toJsonWithPrivateKey(keypair));
         rc.response()
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(jo.encode());

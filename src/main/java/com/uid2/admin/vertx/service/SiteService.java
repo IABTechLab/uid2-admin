@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.legacy.ILegacyClientKeyProvider;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.shared.model.ClientType;
@@ -12,7 +13,6 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SiteService implements IService {
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
@@ -39,7 +39,7 @@ public class SiteService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private static final Logger LOGGER = LoggerFactory.getLogger(SiteService.class);
 
-    public SiteService(AuthMiddleware auth,
+    public SiteService(AdminAuthMiddleware auth,
                        WriteLock writeLock,
                        StoreWriter<Collection<Site>> storeWriter,
                        RotatingSiteStore siteProvider,
@@ -57,37 +57,42 @@ public class SiteService implements IService {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.PRIVILEGED));
 
         router.get("/api/site/list").handler(
-                auth.handle(this::handleSiteList, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT));
         router.get("/api/site/:siteId").handler(
-                auth.handle(this::handleSiteById, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
         router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteTypesSet(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        router.post("/api/site/app_names").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteAppNames(ctx);
+            }
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteUpdate(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -127,12 +132,16 @@ public class SiteService implements IService {
         JsonArray domainNamesJa = new JsonArray();
         site.getDomainNames().forEach(domainNamesJa::add);
 
+        JsonArray appNamesJa = new JsonArray();
+        site.getAppNames().forEach(appNamesJa::add);
+
         jo.put("id", site.getId());
         jo.put("name", site.getName());
         jo.put("description", site.getDescription());
         jo.put("enabled", site.isEnabled());
         jo.put("clientTypes", site.getClientTypes());
         jo.put("domain_names", domainNamesJa);
+        jo.put("app_names", appNamesJa);
         jo.put("visible", site.isVisible());
         jo.put("created", site.getCreated());
 
@@ -173,16 +182,7 @@ public class SiteService implements IService {
             siteProvider.loadContent();
 
             final String name = rc.queryParam("name").isEmpty() ? "" : rc.queryParam("name").get(0).trim();
-            if (name == null || name.isEmpty()) {
-                ResponseUtil.error(rc, 400, "must specify a valid site name");
-                return;
-            }
-
-            Optional<Site> existingSite = this.siteProvider.getAllSites()
-                    .stream().filter(c -> c.getName().equals(name))
-                    .findFirst();
-            if (existingSite.isPresent()) {
-                ResponseUtil.error(rc, 400, "site existed");
+            if (!validateSiteName(rc, name)) {
                 return;
             }
 
@@ -194,6 +194,15 @@ public class SiteService implements IService {
                 if (domainNamesJa != null) {
                     normalizedDomainNames = getNormalizedDomainNames(rc, domainNamesJa);
                     if (normalizedDomainNames == null) return;
+                }
+            }
+
+            Set<String> normalizedAppNames = new HashSet<>();
+            if (body != null) {
+                JsonArray appNamesJa = body.getJsonArray("app_names");
+                if (appNamesJa != null) {
+                    normalizedAppNames = getNormalizedAppNames(rc, appNamesJa);
+                    if (normalizedAppNames == null) return;
                 }
             }
 
@@ -220,7 +229,7 @@ public class SiteService implements IService {
                     .collect(Collectors.toList());
             final int siteId = 1 + sites.stream().mapToInt(Site::getId).max().orElse(Const.Data.AdvertisingTokenSiteId);
 
-            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), true);
+            final Site newSite = new Site(siteId, name, description, enabled, types, new HashSet<>(normalizedDomainNames), normalizedAppNames, true);
             // add site to the array
             sites.add(newSite);
 
@@ -247,15 +256,9 @@ public class SiteService implements IService {
                 return;
             }
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
             existingSite.setClientTypes(types);
 
-            storeWriter.upload(sites, null);
-
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -318,15 +321,36 @@ public class SiteService implements IService {
 
             existingSite.setDomainNames(new HashSet<>(normalizedDomainNames));
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
-            storeWriter.upload(sites, null);
-
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "set site domain_names failed", e);
+        }
+    }
+
+    private void handleSiteAppNames(RoutingContext rc) {
+        try {
+            // refresh manually
+            siteProvider.loadContent();
+
+            final Site existingSite = RequestUtil.getSiteFromParam(rc, "id", siteProvider);
+            if (existingSite == null) {
+                return;
+            }
+
+            JsonObject body = rc.body().asJsonObject();
+            JsonArray appNamesJa = body.getJsonArray("app_names");
+            if (appNamesJa == null) {
+                ResponseUtil.error(rc, 400, "required parameters: app_names");
+                return;
+            }
+            Set<String> normalizedAppNames = getNormalizedAppNames(rc, appNamesJa);
+            if (normalizedAppNames == null) return;
+
+            existingSite.setAppNames(normalizedAppNames);
+
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "set site app_names failed", e);
         }
     }
 
@@ -341,6 +365,7 @@ public class SiteService implements IService {
             }
             String description = rc.queryParam("description").stream().findFirst().orElse(null);
             String visibleParam = rc.queryParam("visible").stream().findFirst().orElse(null);
+            String name = rc.queryParam("name").stream().findFirst().orElse(null);
 
             if (description != null) {
                 existingSite.setDescription(description);
@@ -354,32 +379,55 @@ public class SiteService implements IService {
                     ResponseUtil.error(rc, 400, "Invalid parameter for visible: " + visibleParam);
                 }
             }
+            if (name != null) {
+                if (!validateSiteName(rc, name)) {
+                    return;
+                }
+                existingSite.setName(name);
+            }
 
-            final List<Site> sites = this.siteProvider.getAllSites()
-                    .stream().sorted(Comparator.comparingInt(Site::getId))
-                    .collect(Collectors.toList());
-
-            storeWriter.upload(sites, null);
-
-            rc.response().end(jsonWriter.writeValueAsString(existingSite));
+            uploadSiteToStoreWriterAndWriteExistingSiteToResponse(existingSite, rc);
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private boolean validateSiteName(RoutingContext rc, String name) {
+        if (name == null || name.isEmpty()) {
+            ResponseUtil.error(rc, 400, "must specify a valid site name");
+            return false;
+        }
+
+        Optional<Site> existingSite = this.siteProvider.getAllSites()
+                .stream().filter(c -> c.getName().equals(name))
+                .findFirst();
+        if (existingSite.isPresent()) {
+            ResponseUtil.error(rc, 400, "site with name " + name + " already exists");
+            return false;
+        }
+        return true;
     }
 
     private static List<String> getNormalizedDomainNames(RoutingContext rc, JsonArray domainNamesJa) {
         List<String> domainNames = domainNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
 
         List<String> normalizedDomainNames = new ArrayList<>();
+        List<String> invalidDomainNames = new ArrayList<>();
+
         for (String domain : domainNames) {
             try {
                 String tld = getTopLevelDomainName(domain);
                 normalizedDomainNames.add(tld);
             } catch (Exception e) {
-                ResponseUtil.error(rc, 400, "invalid domain name: " + domain);
-                return null;
+               invalidDomainNames.add(domain);
             }
         }
+
+        if (!invalidDomainNames.isEmpty()) {
+            ResponseUtil.error(rc, 400, "Invalid Domain Names: " + invalidDomainNames.toString());
+            return null;
+        }
+      
 
         boolean containsDuplicates = normalizedDomainNames.stream().distinct().count() < normalizedDomainNames.size();
         if (containsDuplicates) {
@@ -387,6 +435,17 @@ public class SiteService implements IService {
             return null;
         }
         return normalizedDomainNames;
+    }
+
+    private static Set<String> getNormalizedAppNames(RoutingContext rc, JsonArray appNamesJa) {
+        List<String> appNames = appNamesJa.stream().map(String::valueOf).collect(Collectors.toList());
+
+        boolean containsDuplicates = appNames.stream().distinct().count() < appNames.size();
+        if (containsDuplicates) {
+            ResponseUtil.error(rc, 400, "duplicate app_names not permitted");
+            return null;
+        }
+        return new HashSet<>(appNames);
     }
 
     public static String getTopLevelDomainName(String origin) throws MalformedURLException {
@@ -408,5 +467,14 @@ public class SiteService implements IService {
             }
         }
         throw new MalformedURLException();
+    }
+
+    private void uploadSiteToStoreWriterAndWriteExistingSiteToResponse(Site existingSite, RoutingContext rc) throws Exception {
+        final List<Site> sites = this.siteProvider.getAllSites()
+                .stream().sorted(Comparator.comparingInt(Site::getId))
+                .collect(Collectors.toList());
+
+        storeWriter.upload(sites, null);
+        rc.response().end(jsonWriter.writeValueAsString(existingSite));
     }
 }

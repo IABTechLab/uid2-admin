@@ -1,5 +1,9 @@
 package com.uid2.admin.vertx.test;
 
+import com.okta.jwt.AccessTokenVerifier;
+import com.okta.jwt.IdTokenVerifier;
+import com.okta.jwt.Jwt;
+import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.*;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
@@ -9,7 +13,6 @@ import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
-import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
@@ -18,7 +21,6 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secret.KeyHashResult;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.store.ClientSideKeypairStoreSnapshot;
@@ -28,6 +30,8 @@ import com.uid2.shared.store.reader.*;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.AuthenticationHandler;
@@ -36,9 +40,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,20 +48,22 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(VertxExtension.class)
 public abstract class ServiceTestBase {
     protected AutoCloseable mocks;
     protected final JsonObject config = new JsonObject();
     protected final WriteLock writeLock = new WriteLock();
-    protected AuthMiddleware auth;
 
+    protected AdminAuthMiddleware auth;
+    @Mock private TokenRefreshHandler tokenRefreshHandler;
+    @Mock private IdTokenVerifier idTokenVerifier;
+    @Mock private AccessTokenVerifier accessTokenVerifier;
+    @Mock private Jwt jwt;
     @Mock protected AuthenticationHandler authHandler;
     @Mock protected AuthProvider authProvider;
 
-    @Mock protected FileManager fileManager;
-    @Mock protected AdminUserStoreWriter adminUserStoreWriter;
     @Mock protected StoreWriter storeWriter;
     @Mock protected LegacyClientKeyStoreWriter clientKeyStoreWriter;
     @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
@@ -78,7 +82,6 @@ public abstract class ServiceTestBase {
     @Mock protected IEncryptionKeyManager keyManager;
     @Mock protected KeysetManager keysetManager;
     @Mock protected IKeysetKeyManager keysetKeyManager;
-    @Mock protected AdminUserProvider adminUserProvider;
     @Mock protected RotatingSiteStore siteProvider;
     @Mock protected RotatingLegacyClientKeyProvider clientKeyProvider;
     @Mock protected RotatingKeyStore keyProvider;
@@ -98,6 +101,10 @@ public abstract class ServiceTestBase {
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
     @Mock protected KeyHasher keyHasher;
+    final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
+    static final Set<Role> CUSTOM_OKTA_SCOPE_ROLES = Arrays.stream(OktaCustomScope.values())
+        .map(OktaCustomScope::getRole)
+        .collect(Collectors.toSet());
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -115,9 +122,28 @@ public abstract class ServiceTestBase {
         when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
         when(keyHasher.hashKey(anyString())).thenReturn(new KeyHashResult("abcdefabcdefabcdefabcdef", "ghijklghijklghijklghijkl"));
 
-        auth = new AuthMiddleware(this.adminUserProvider);
+        when(authProvider.getAccessTokenVerifier()).thenReturn(accessTokenVerifier);
+        when(authProvider.getIdTokenVerifier()).thenReturn(idTokenVerifier);
+        doAnswer((invocationOnMock -> {
+            User user = User.create(JsonObject.of("id_token", "testIdToken"));
+            ((RoutingContext) invocationOnMock.getArgument(0)).setUser(user);
+            ((RoutingContext) invocationOnMock.getArgument(0)).next();
+            return null;
+        })).when(tokenRefreshHandler).handle(any());
+        when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
+        when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER, String.join(",", OktaGroup.DEVELOPER.getName(),
+                OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER_ELEVATED.getName(),
+                OktaGroup.ADMIN.getName()));
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER, OktaGroup.ADMIN.getName());
+        auth = new AdminAuthMiddleware(authProvider, config);
+        roleToOktaGroups.put(Role.MAINTAINER, List.of(OktaGroup.DEVELOPER));
+        roleToOktaGroups.put(Role.PRIVILEGED, List.of(OktaGroup.DEVELOPER_ELEVATED));
+        roleToOktaGroups.put(Role.SUPER_USER, List.of(OktaGroup.ADMIN));
+
         IService[] services = {createService()};
-        AdminVerticle verticle = new AdminVerticle(config, authProvider, adminUserProvider, services, null);
+        AdminVerticle verticle = new AdminVerticle(config, authProvider, tokenRefreshHandler, services, null);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
@@ -132,9 +158,25 @@ public abstract class ServiceTestBase {
         return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForAdmin + Utils.getPortOffset(), endpoint);
     }
 
-    protected void fakeAuth(Role... roles) {
-        AdminUser adminUser = new AdminUser(null, null, null, null, null, 0, new HashSet<>(Arrays.asList(roles)), false, null);
-        when(adminUserProvider.get(any())).thenReturn(adminUser);
+    protected void fakeAuth(Role role) {
+        if (CUSTOM_OKTA_SCOPE_ROLES.contains(role)) {
+            String group = Arrays.stream(OktaCustomScope.values())
+                .filter(scope -> scope.getRole() == role)
+                .findFirst().orElse(OktaCustomScope.INVALID)
+                .getName();
+            doAnswer((invocationOnMock -> {
+                ((RoutingContext) invocationOnMock.getArgument(0)).request().headers().add("Authorization", "bearer token");
+                ((RoutingContext) invocationOnMock.getArgument(0)).next();
+                return null;
+            })).when(tokenRefreshHandler).handle(any());
+            when(jwt.getClaims()).thenReturn(Map.of("scp", Collections.singletonList(group), "environment", "local"));
+        } else {
+            List<String> groups = roleToOktaGroups.getOrDefault(role, List.of(OktaGroup.INVALID))
+                .stream()
+                .map(OktaGroup::toString)
+                .collect(Collectors.toList());
+            when(jwt.getClaims()).thenReturn(Map.of("groups", groups, "environment", "local"));
+        }
     }
 
     protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
@@ -245,14 +287,6 @@ public abstract class ServiceTestBase {
 
             when(operatorKeyProvider.getOperatorKey(plaintextKey)).thenReturn(operatorKey);
             when(operatorKeyProvider.getOperatorKeyFromHash(operatorKey.getKeyHash())).thenReturn(operatorKey);
-        }
-    }
-
-    protected void setAdminUsers(AdminUser... adminUsers) {
-        when(adminUserProvider.getAll()).thenReturn(Arrays.asList(adminUsers));
-        for (AdminUser adminUser : adminUsers) {
-            when(adminUserProvider.getAdminUser(adminUser.getKey())).thenReturn(adminUser);
-            when(adminUserProvider.getAdminUserFromHash(adminUser.getKeyHash())).thenReturn(adminUser);
         }
     }
 

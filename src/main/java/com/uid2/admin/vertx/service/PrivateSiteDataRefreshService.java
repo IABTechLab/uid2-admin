@@ -1,11 +1,11 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +17,13 @@ import java.util.concurrent.CompletableFuture;
 public class PrivateSiteDataRefreshService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final JobDispatcher jobDispatcher;
     private final WriteLock writeLock;
     private final JsonObject config;
 
     public PrivateSiteDataRefreshService(
-            AuthMiddleware auth,
+            AdminAuthMiddleware auth,
             JobDispatcher jobDispatcher,
             WriteLock writeLock,
             JsonObject config) {
@@ -42,12 +42,12 @@ public class PrivateSiteDataRefreshService implements IService {
                     }
                 },
                 //can be other role
-                Role.ADMINISTRATOR, Role.SECRET_MANAGER));
+            Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
 
         router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle(
                 this::handlePrivateSiteDataGenerateNow,
                 //can be other role
-                Role.ADMINISTRATOR, Role.SECRET_MANAGER));
+            Role.PRIVILEGED));
     }
 
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {

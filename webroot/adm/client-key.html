@@ -2,6 +2,7 @@
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
+    <link href="/css/style.css" rel="stylesheet" />
 </head>
 <body>
 <h1>UID2 Env - Client Key Management</h1>
@@ -39,6 +40,9 @@
 </ul>
 
 <h3>Add Key</h3>
+{% if ADD_CLIENT_KEY_MESSAGE %}
+<p class="message">{{ ADD_CLIENT_KEY_MESSAGE }}</p>
+{% endif %}
 <form id="addKeyForm">
     <label for="addClientName">Name:</label>
     <input type="text" id="addClientName" name="addClientName">
@@ -55,10 +59,10 @@
 <label for="clientContact">Contact:</label>
 <input type="text" id="clientContact" name="clientContact">
 <ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doReveal">Reveal Client Key</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doReveal">Reveal Client Key (PRIVILEGED)</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles (PRIVILEGED)</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doSetSiteAndServiceId">
         Update Site ID and Service ID</a>
     </li>
@@ -81,27 +85,36 @@
     $(document).ready(function () {
 
         $('#searchSiteId').on('click', function () {
-            if(!$('#searchBySiteId').val()) {
+            var siteId = encodeURIComponent($('#searchBySiteId').val());
+            if (!siteId) {
                 $('#errorOutput').html("Required Parameter: site_id")
                 return;
             }
-            doApiCall('GET', '/api/client/list/' + $('#searchBySiteId').val(), '#standardOutput', '#errorOutput');
+            var url = `/api/client/list/${siteId}`;
+
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
 
         $('#searchKeyId').on('click', function () {
-            if(!$('#searchByKeyId').val()) {
+            var keyId = encodeURIComponent($('#searchByKeyId').val());
+            if (!keyId) {
                 $('#errorOutput').html("Required Parameter: key_id")
                 return;
             }
-            doApiCall('GET', '/api/client/keyId?keyId=' + $('#searchByKeyId').val(), '#standardOutput', '#errorOutput');
+            var url = `/api/client/keyId?keyId=${keyId}`;
+
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
 
         $('#searchContact').on('click', function () {
-            if(!$('#searchByContact').val()) {
+            var contact = encodeURIComponent($('#searchByContact').val());
+            if (!contact) {
                 $('#errorOutput').html("Required Parameter: contact")
                 return;
             }
-            doApiCall('GET', '/api/client/contact?contact=' + $('#searchByContact').val(), '#standardOutput', '#errorOutput');
+            var url = `/api/client/contact?contact=${contact}`;
+
+            doApiCall('GET', url, '#standardOutput', '#errorOutput');
         });
 
         $('#doMeta').on('click', function () {
@@ -173,7 +186,7 @@
         });
 
         $('#doDisable').on('click', function () {
-            const clientContact = $('#clientContact').val();
+            const clientContact = encodeURIComponent($('#clientContact').val());
             var encodedClientContact = encodeURIComponent(clientContact);
             var url = '/api/client/disable?contact=' + encodedClientContact;
     
@@ -186,7 +199,7 @@
         });
 
         $('#doEnable').on('click', function () {
-            const clientContact = $('#clientContact').val();
+            const clientContact = encodeURIComponent($('#clientContact').val());
             var encodedClientContact = encodeURIComponent(clientContact);
             var url = '/api/client/enable?contact=' + encodedClientContact;
 

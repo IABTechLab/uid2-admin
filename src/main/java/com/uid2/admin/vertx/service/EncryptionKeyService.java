@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.secret.IKeysetKeyManager;
@@ -14,7 +15,6 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.SiteUtil;
@@ -56,7 +56,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private static final String REFRESH_KEY_ROTATION_CUT_OFF_DAYS = "refresh_key_rotation_cut_off_days";
     private static final String FILTER_KEY_OVER_CUT_OFF_DAYS = "filter_key_over_cut_off_days";
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final Clock clock;
     private final WriteLock writeLock;
     private final EncryptionKeyStoreWriter storeWriter;
@@ -80,7 +80,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     private final boolean enableKeysets;
 
     public EncryptionKeyService(JsonObject config,
-                                AuthMiddleware auth,
+                                AdminAuthMiddleware auth,
                                 WriteLock writeLock,
                                 EncryptionKeyStoreWriter storeWriter,
                                 KeysetKeyStoreWriter keysetKeyStoreWriter,
@@ -123,50 +123,50 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/key/list").handler(
-                auth.handle(this::handleKeyList, Role.SECRET_MANAGER));
+            auth.handle(this::handleKeyList, Role.MAINTAINER));
 
         if(enableKeysets) {
             router.get("/api/key/list_keyset_keys").handler(
-                    auth.handle(this::handleKeysetKeyList, Role.SECRET_MANAGER));
+                auth.handle(this::handleKeysetKeyList, Role.MAINTAINER));
         }
 
         router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }, Role.PRIVILEGED));
 
         router.post("/api/key/rotate_master").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateMasterKey(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }, Role.MAINTAINER, Role.SECRET_ROTATION));
 
         router.post("/api/key/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleAddSiteKey(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }, Role.MAINTAINER));
 
         router.post("/api/key/rotate_site").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateSiteKey(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }, Role.MAINTAINER));
 
         if(enableKeysets) {
             router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
                 synchronized (writeLock) {
                     this.handleRotateKeysetKey(ctx);
                 }
-            }, Role.SECRET_MANAGER));
+            }, Role.MAINTAINER));
         }
 
         router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateAllSiteKeys(ctx);
             }
-        }, Role.SECRET_MANAGER));
+        }, Role.MAINTAINER, Role.SECRET_ROTATION));
     }
 
 
@@ -554,7 +554,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         return keyset.getKeysetId();
     }
 
-    private int getSiteId(int keysetId) throws Exception {
+    private int getSiteId(int keysetId) {
         Map<Integer, AdminKeyset> currentKeysets = keysetProvider.getSnapshot().getAllKeysets();
         return currentKeysets.get(keysetId).getSiteId();
     }
@@ -563,14 +563,13 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         throws Exception {
         final Instant now = clock.now();
 
-        final List<KeysetKey> keys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys().stream()
+        final List<KeysetKey> keysetKeys = this.keysetKeyProvider.getSnapshot().getAllKeysetKeys();
+        final List<KeysetKey> keys = keysetKeys.stream()
                 .sorted(Comparator.comparingInt(KeysetKey::getId))
                 .filter(k -> isWithinCutOffTime(k, now, isDuringRotation))
                 .collect(Collectors.toList());
 
-
-        int maxKeyId = MaxKeyUtil.getMaxKeysetKeyId(this.keysetKeyProvider.getSnapshot().getAllKeysetKeys(),
-                this.keysetKeyProvider.getMetadata().getInteger("max_key_id"));
+        int maxKeyId = MaxKeyUtil.getMaxKeysetKeyId(keysetKeys, this.keysetKeyProvider.getMetadata().getInteger("max_key_id"));
 
         final List<KeysetKey> addedKeys = new ArrayList<>();
 
@@ -578,7 +577,10 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             ++maxKeyId;
             final byte[] secret = keyGenerator.generateRandomKey(32);
             final Instant created = now;
-            final Instant activates = created.plusSeconds(activatesIn.getSeconds());
+
+            final boolean isAddingFirstKeyForKeyset = (!isDuringRotation && keysetKeys.stream().noneMatch(key -> key.getKeysetId() == keysetId));
+
+            final Instant activates = isAddingFirstKeyForKeyset ? created : created.plusSeconds(activatesIn.getSeconds());
             final Instant expires = activates.plusSeconds(expiresAfter.getSeconds());
             final KeysetKey key = new KeysetKey(maxKeyId, secret, created, activates, expires, keysetId);
             keys.add(key);
@@ -655,8 +657,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
         if (!(filterKeyOverCutOffTime && duringRotation)) {
             return true;
         }
-        Duration cutoffTime = siteKeyRotationCutOffTime;
-        return now.compareTo(key.getExpires().plus(cutoffTime.toDays(), ChronoUnit.DAYS)) < 0;
+        return now.compareTo(key.getExpires().plus(siteKeyRotationCutOffTime.toDays(), ChronoUnit.DAYS)) < 0;
     }
 
     private void loadAllContent() throws Exception {

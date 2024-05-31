@@ -1,9 +1,9 @@
 package com.uid2.admin.vertx.api;
 
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.vertx.api.annotations.Method;
 import com.uid2.admin.vertx.api.annotations.Path;
 import com.uid2.admin.vertx.api.annotations.Roles;
-import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import lombok.val;
@@ -16,9 +16,9 @@ import java.util.Set;
 public class V2Router {
     private static final Logger LOGGER = LoggerFactory.getLogger(V2Router.class);
     private final IRouteProvider[] routeProviders;
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
 
-    public V2Router(IRouteProvider[] routeProviders, AuthMiddleware auth) {
+    public V2Router(IRouteProvider[] routeProviders, AdminAuthMiddleware auth) {
         this.routeProviders = routeProviders;
         this.auth = auth;
     }

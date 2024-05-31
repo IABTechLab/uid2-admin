@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
@@ -11,7 +12,6 @@ import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHashResult;
@@ -36,7 +36,7 @@ public class ClientKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
     private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
 
-    private final AuthMiddleware auth;
+    private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
     private final LegacyClientKeyStoreWriter storeWriter;
     private final RotatingLegacyClientKeyProvider clientKeyProvider;
@@ -47,7 +47,7 @@ public class ClientKeyService implements IService {
     private final String clientKeyPrefix;
 
     public ClientKeyService(JsonObject config,
-                            AuthMiddleware auth,
+                            AdminAuthMiddleware auth,
                             WriteLock writeLock,
                             LegacyClientKeyStoreWriter storeWriter,
                             RotatingLegacyClientKeyProvider clientKeyProvider,
@@ -69,75 +69,75 @@ public class ClientKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/client/metadata").handler(
-                auth.handle(this::handleClientMetadata, Role.CLIENTKEY_ISSUER));
+            auth.handle(this::handleClientMetadata, Role.MAINTAINER));
         router.post("/api/client/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.PRIVILEGED));
 
         router.get("/api/client/list").handler(
-                auth.handle(this::handleClientList, Role.CLIENTKEY_ISSUER));
+            auth.handle(this::handleClientList, Role.MAINTAINER, Role.METRICS_EXPORT));
 
         router.get("/api/client/list/:siteId").handler(
-                auth.handle(this::handleClientListBySite, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientListBySite, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.get("/api/client/keyId").handler(
-                auth.handle(this::handleClientByKeyId, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientByKeyId, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.get("/api/client/contact").handler(
-                auth.handle(this::handleClientByContact, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientByContact, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.get("/api/client/reveal").handler(
-                auth.handle(this::handleClientReveal, Role.CLIENTKEY_ISSUER));
+            auth.handle(this::handleClientReveal, Role.PRIVILEGED));
 
         router.post("/api/client/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.post("/api/client/del").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDel(ctx);
             }
-        }, Role.ADMINISTRATOR));
+        }, Role.SUPER_USER));
 
         router.post("/api/client/update").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientUpdate(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
 
         router.post("/api/client/disable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDisable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.post("/api/client/enable").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientEnable(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
 
         router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        }, Role.PRIVILEGED, Role.SHARING_PORTAL));
 
         router.post("/api/client/contact").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientContact(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER));
+        }, Role.MAINTAINER));
 
         router.post("/api/client/rename").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
             }
-        }, Role.CLIENTKEY_ISSUER, Role.SHARING_PORTAL));
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {
@@ -447,7 +447,7 @@ public class ClientKeyService implements IService {
             // refresh manually
             clientKeyProvider.loadContent(clientKeyProvider.getMetadata());
 
-            final String contact = rc.queryParam("contact").get(0);
+            final String contact = java.net.URLDecoder.decode(rc.queryParam("contact").get(0), "UTF-8");
             Optional<LegacyClientKey> existingClient = this.clientKeyProvider.getAll()
                     .stream().filter(c -> c.getContact().equals(contact))
                     .findFirst();

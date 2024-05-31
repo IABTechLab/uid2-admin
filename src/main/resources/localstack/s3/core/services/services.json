@@ -5,7 +5,9 @@
     "name": "snowflake",
     "roles": [
       "MAPPER",
-      "SHARER"
+      "SHARER",
+      "ID_READER",
+      "GENERATOR"
     ]
   }
 ]
