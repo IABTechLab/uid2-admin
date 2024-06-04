@@ -38,7 +38,7 @@
                     <div class="row">
                         <div class="col">
                             <ol>
-                                <li>First seach for a participant with the requested name from the Jira ticket.</li>
+                                <li>Search for a participant with the requested name from the Jira ticket.</li>
                                 <li>If a site exists use the Site Id to update the site if necessary.</li>
                                 <li>Use the Site Id to create a CSTG key pair if necessary.</li>
                             </ol>
@@ -102,7 +102,7 @@
                     <div class="row pt-1">
                         <div class="col">
                             <div class="row">
-                                <h5>Update Operations:</h5>
+                                <h5>Create / Update Operations:</h5>
                             </div>
                             <div class="row py-2">
                                 <div>
@@ -360,6 +360,7 @@
 
             $(document).ready(() => {
                 $("#searchParticipant").on("click", () => {
+                    clearFormsAndShowCollapsed([]);
                     $("#searchSiteNoSiteFoundAlert").collapse('hide');
                     $("#searchSiteErrorAlert").collapse('hide');
                     $("#searchResultsTableBody").empty();
@@ -504,7 +505,7 @@ ${JSON.stringify(site, null, 2)}`;
                     const description = encodeURIComponent($("#updateSite-workflow-afterSearch-description").val());
 
                     const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
-                    if (!currentClientTypesAfterSearch.includes('PUBLISHER') && publisherChecked) {
+                    if (!currentClientTypesAfterSearch.includes('PUBLISHER') && isPublisherChecked) {
                         // update the site and add publisher client type
                         currentClientTypesAfterSearch.push('PUBLISHER');
                         const updateClientTypesUrl = `/api/site/set-types?id=${id}&types=${currentClientTypesAfterSearch.join(",")}`;

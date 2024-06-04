@@ -70,6 +70,7 @@ function clearFormsAndShowCollapsed(toShow) {
     $(".form-clear").not(exclude).text("");
     $("form").trigger("reset");
     $('.collapse').not(exclude).collapse('hide');
+    $(".group").removeClass("btn-primary").addClass("btn-secondary");
 
     setTimeout(function () {
         toShow.forEach((regionId) => {
