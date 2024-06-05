@@ -136,16 +136,14 @@
                                                 <input type="text" class="form-control" id="createSite-workflow-name"
                                                     name="createSite-workflow-name">
                                                 <div class="py-2">
-                                                    <label for="createSite-workflow-domainNames">Domain Names
-                                                        (comma-separated list):</label>
+                                                    <label for="createSite-workflow-domainNames">Domain Names (comma-separated list):</label>
                                                     <input type="text" class="form-control"
                                                         id="createSite-workflow-domainNames"
                                                         name="createSite-workflow-domainNames">
 
                                                 </div>
                                                 <div class="py-2">
-                                                    <label for="createSite-workflow-description">Description
-                                                        (Optional):</label>
+                                                    <label for="createSite-workflow-description">Description (Optional):</label>
                                                     <input type="text" id="createSite-workflow-description"
                                                         class="form-control" name="createSite-workflow-description">
                                                 </div>
@@ -154,11 +152,7 @@
                                                         id="createSite-workflow-clientTypes-PUBLISHER"
                                                         class="form-check-input"
                                                         name="createSite-workflow-clientTypes[]" value="PUBLISHER">
-                                                    <label for="createSite-workflow-clientTypes-PUBLISHER">Is this
-                                                        participant a publisher?
-                                                        Only
-                                                        publishers are allowed to use CSTG.</label>
-
+                                                    <label for="createSite-workflow-clientTypes-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.</label>
                                                 </div>
                                                 <a href="#create" class="btn btn-primary pt-2"
                                                     id="createSite-workflow-submit">Create</a>
@@ -227,19 +221,19 @@
                                                     id="updateSite-workflow-afterSearch-name"
                                                     name="updateSite-workflow-afterSearch-name" disabled readonly>
                                                 <div class="py-2">
-                                                    <label for="updateSite-workflow-afterSearch-domainNames">Domain
-                                                        Names
-                                                        (comma-separated list):</label>
+                                                    <label for="updateSite-workflow-afterSearch-domainNames">Domain Names (comma-separated list):</label>
                                                     <input type="text" class="form-control"
                                                         id="updateSite-workflow-afterSearch-domainNames"
                                                         name="updateSite-workflow-afterSearch-domainNames">
-
                                                 </div>
-
-
                                                 <div class="py-2">
-                                                    <label for="updateSite-workflow-afterSearch-description">Description
-                                                        (Optional):</label>
+                                                    <label for="updateSite-workflow-afterSearch-appNames">App Names (comma-separated list):</label>
+                                                    <input type="text" class="form-control"
+                                                        id="updateSite-workflow-afterSearch-appNames"
+                                                        name="updateSite-workflow-afterSearch-appNames">
+                                                </div>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-afterSearch-description">Description (Optional):</label>
                                                     <input type="text" id="updateSite-workflow-afterSearch-description"
                                                         class="form-control"
                                                         name="updateSite-workflow-afterSearch-description">
@@ -251,14 +245,9 @@
                                                         class="form-check-input"
                                                         name="updateSite-workflow-afterSearch-clientTypes[]"
                                                         value="PUBLISHER">
-                                                    <label for="updateSite-workflow-afterSearch-PUBLISHER">Is this
-                                                        participant a publisher?
-                                                        Only
-                                                        publishers are allowed to use CSTG.</label>
-
+                                                    <label for="updateSite-workflow-afterSearch-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.  </label>
+                                                    <div>If the participant is an Advertiser, check <a href="https://atlassian.thetradedesk.com/confluence/display/UID2/UID2+CSTG+How+to+create+a+new+client+side+keypair" target="_blank">UID2 CSTG How to create a new client side keypair</a> for details</div>
                                                 </div>
-
-
                                                 <a href="#update" class="btn btn-primary"
                                                     id="updateSite-workflow-submit">Update</a>
 
@@ -404,7 +393,7 @@
                 });
 
                 $("#createSite-workflow-submit").on("click", () => {
-                    let domainNames = convertDomainNamesToArray($("#createSite-workflow-domainNames").val());
+                    let domainNames = convertNamesToArray($("#createSite-workflow-domainNames").val());
                     if (domainNames.length === 0) {
                         showCreateSiteError("Domain names cannot be empty");
                         return;
@@ -474,6 +463,7 @@ ${JSON.stringify(site, null, 2)}`;
                             const site = siteList[0];
                             $("#updateSite-workflow-afterSearch-name").val(site.name);
                             $("#updateSite-workflow-afterSearch-domainNames").val(site.domain_names.join(","));
+                            $("#updateSite-workflow-afterSearch-appNames").val(site.app_names.join(","));
                             $("#updateSite-workflow-afterSearch-description").val(site.description);
                             $("#updateSite-workflow-afterSearch-PUBLISHER").prop('checked', false);
                             if (site.clientTypes.includes('PUBLISHER')) {
@@ -492,9 +482,10 @@ ${JSON.stringify(site, null, 2)}`;
                         return;
                     }
 
-                    const domainNames = convertDomainNamesToArray($("#updateSite-workflow-afterSearch-domainNames").val());
-                    if (domainNames.length === 0) {
-                        showUpdateSiteError("Domain names cannot be empty");
+                    const domainNames = convertNamesToArray($("#updateSite-workflow-afterSearch-domainNames").val());
+                    const appNames = convertNamesToArray($("#updateSite-workflow-afterSearch-appNames").val());
+                    if (domainNames.length === 0 && appNames.length === 0) {
+                        showUpdateSiteError("Both Domain names and App names can not be empty");
                         return;
                     }
 
@@ -505,6 +496,7 @@ ${JSON.stringify(site, null, 2)}`;
                     const description = encodeURIComponent($("#updateSite-workflow-afterSearch-description").val());
 
                     const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
+                    const updateAppNamesUrl = `/api/site/app_names?id=${id}`;
                     if (!currentClientTypesAfterSearch.includes('PUBLISHER') && isPublisherChecked) {
                         // update the site and add publisher client type
                         currentClientTypesAfterSearch.push('PUBLISHER');
@@ -519,14 +511,11 @@ ${JSON.stringify(site, null, 2)}`;
                     const updateDescriptionUrl = `/api/site/update?id=${id}&description=${description}`;
 
                     const updateDomainNamesPayload = { domain_names: domainNames };
+                    const updateAppNamesPayload = { app_names: appNames };
 
-                    doApiCallWithCallback(
-                        "POST",
-                        updateDomainNamesUrl,
-                        () => doApiCallWithCallback(
-                            "POST",
-                            updateDescriptionUrl,
-                            (text) => {
+                    doApiCallWithCallback("POST", updateDomainNamesUrl, 
+                        () => doApiCallWithCallback("POST", updateAppNamesUrl, 
+                            () => doApiCallWithCallback("POST", updateDescriptionUrl, (text) => {
                                 const site = JSON.parse(text);
 
                                 const alertMessage = `Updated site [${site.name}] with site ID [${site.id}]`;
@@ -542,12 +531,9 @@ ${JSON.stringify(site, null, 2)}`;
                                 $("#updateSite-workflow-afterSearch").collapse('show');
                                 $("#updateSiteOutput").collapse('show');
 
-                            },
-                            (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert")
-                        ),
-                        (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert"),
-                        JSON.stringify(updateDomainNamesPayload)
-                    );
+                            }, (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert")), 
+                            (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert"), JSON.stringify(updateAppNamesPayload)), 
+                        (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert"), JSON.stringify(updateDomainNamesPayload));
                 });
 
 
@@ -594,7 +580,7 @@ ${JSON.stringify(keypair, null, 2)}`;
                     }, (err) => alertErrorCallback(err, "#createClientError", "#createClientErrorAlert"), JSON.stringify(payload));
                 });
 
-                const convertDomainNamesToArray = (domainNames) => {
+                const convertNamesToArray = (domainNames) => {
                     return domainNames.replace(/\s+/g, '').split(',').filter((value, _, __) => value !== "");
                 }
 
