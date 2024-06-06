@@ -542,7 +542,7 @@ ${JSON.stringify(site, null, 2)}`;
                     $("#keypairSearchOutput").text("");
 
                     const siteId = encodeURIComponent($("#createKeypair-workflow-siteId").val());
-                    const name = encodeURIComponent($("#createKeypair-workflow-name").val());
+                    const name = $("#createKeypair-workflow-name").val();
 
                     const payload = { "site_id": parseInt(siteId), "name": name, "disabled": false }
 
