@@ -1,14 +1,15 @@
 package com.uid2.admin.managers;
 
 import com.uid2.admin.store.writer.S3KeyStoreWriter;
+import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.S3Key;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 
 public class S3KeyManager {
 
@@ -18,10 +19,13 @@ public class S3KeyManager {
     private final S3KeyStoreWriter s3KeyStoreWriter;
     private final IKeyGenerator keyGenerator;
 
+
     public S3KeyManager(RotatingS3KeyProvider s3KeyProvider, S3KeyStoreWriter s3KeyStoreWriter, IKeyGenerator keyGenerator) {
         this.s3KeyProvider = s3KeyProvider;
         this.s3KeyStoreWriter = s3KeyStoreWriter;
         this.keyGenerator = keyGenerator;
+
+
     }
 
     public S3Key generateS3Key(int siteId, long activated, long created) throws Exception {
@@ -36,7 +40,7 @@ public class S3KeyManager {
     }
 
     private String generateSecret() throws Exception {
-        // Assuming you want to generate a 32-byte key
+        // Assuming want to generate a 32-byte key
         return keyGenerator.generateRandomKeyString(32);
     }
 
@@ -74,5 +78,32 @@ public class S3KeyManager {
     public Map<Integer, S3Key> getAllS3Keys() {
         return s3KeyProvider.getAll();
     }
+
+    public boolean doesSiteHaveKeys(int siteId) {
+        Map<Integer, S3Key> allKeys = s3KeyProvider.getAll();
+        if (allKeys == null) {
+            return false;
+        }
+        return allKeys.values().stream().anyMatch(key -> key.getSiteId() == siteId);
+    }
+
+    public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
+        Set<Integer> uniqueSiteIds = new HashSet<>();
+        for (OperatorKey operatorKey : operatorKeys) {
+            uniqueSiteIds.add(operatorKey.getSiteId());
+        }
+
+        for (Integer siteId : uniqueSiteIds) {
+            if (!doesSiteHaveKeys(siteId)) {
+                for (int i = 0; i < keyCountPerSite; i++) {
+                    long created = Instant.now().getEpochSecond();
+                    long activated = created + (i * keyActivateInterval);
+                    addOrUpdateS3Key(generateS3Key(siteId, activated, created));
+                }
+            }
+        }
+    }
+
+
 
 }

@@ -199,28 +199,15 @@ public class Main {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, versionGenerator);
 
+            //need to create a folder called /s3/s3encryption_keys beforehand
             CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
             GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
             RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
             S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
-            SecureKeyGenerator S3keyGenerator = new SecureKeyGenerator();
-            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter, S3keyGenerator);
-            // Generate S3 keys for each site_id
-            Set<Integer> uniqueSiteIds = new HashSet<>();
-            for (OperatorKey operatorKey : operatorKeyProvider.getAll()) {
-                uniqueSiteIds.add(operatorKey.getSiteId());
-            }
-            // Generate 3 keys for each unique site ID with staggered activation times
-            for (Integer siteId : uniqueSiteIds) {
-                for (int i = 0; i < 3; i++) {
-                    long created = Instant.now().getEpochSecond();
-                    long activated = created + (i * 2 * 86400); // 2 days step between each key
-                    S3Key s3Key = s3KeyManager.generateS3Key(siteId, activated, created);
-                    s3KeyManager.addOrUpdateS3Key(s3Key);
-                }
-            }
+            SecureKeyGenerator s3KeyGenerator = new SecureKeyGenerator();
+            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter, s3KeyGenerator);
+            s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
             s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
-
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
