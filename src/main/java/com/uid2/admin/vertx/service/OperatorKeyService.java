@@ -267,8 +267,6 @@ public class OperatorKeyService implements IService {
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
 
-            //Generate S3 keys
-
             // respond with new key
             rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
         } catch (Exception e) {

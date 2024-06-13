@@ -123,7 +123,7 @@ public class Main {
             try {
                 adminKeysetProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")){
+                if (e.getMessage().contains("The specified key does not exist")) {
                     adminKeysetStoreWriter.upload(new HashMap<>(), null);
                     adminKeysetProvider.loadContent();
                 } else {
@@ -135,7 +135,7 @@ public class Main {
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
             RotatingKeysetKeyStore keysetKeysProvider = new RotatingKeysetKeyStore(cloudStorage, keysetKeysGlobalScope);
             KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope, enableKeysets);
-            if(enableKeysets) {
+            if (enableKeysets) {
                 try {
                     keysetKeysProvider.loadContent();
                 } catch (CloudStorageException e) {
@@ -155,7 +155,7 @@ public class Main {
             try {
                 clientSideKeypairProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     clientSideKeypairStoreWriter.upload(new HashSet<>(), null);
                     clientSideKeypairProvider.loadContent();
                 } else {
@@ -164,13 +164,13 @@ public class Main {
             }
 
             CloudPath serviceMetadataPath = new CloudPath(config.getString(Const.Config.ServiceMetadataPathProp));
-            GlobalScope serviceGlobalScope= new GlobalScope(serviceMetadataPath);
+            GlobalScope serviceGlobalScope = new GlobalScope(serviceMetadataPath);
             RotatingServiceStore serviceProvider = new RotatingServiceStore(cloudStorage, serviceGlobalScope);
             ServiceStoreWriter serviceStoreWriter = new ServiceStoreWriter(serviceProvider, fileManager, jsonWriter, versionGenerator, clock, serviceGlobalScope);
             try {
                 serviceProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     serviceStoreWriter.upload(new HashSet<>(), null);
                     serviceProvider.loadContent();
                 } else {
@@ -179,13 +179,13 @@ public class Main {
             }
 
             CloudPath serviceLinkMetadataPath = new CloudPath(config.getString(Const.Config.ServiceLinkMetadataPathProp));
-            GlobalScope serviceLinkGlobalScope= new GlobalScope(serviceLinkMetadataPath);
+            GlobalScope serviceLinkGlobalScope = new GlobalScope(serviceLinkMetadataPath);
             RotatingServiceLinkStore serviceLinkProvider = new RotatingServiceLinkStore(cloudStorage, serviceLinkGlobalScope);
             ServiceLinkStoreWriter serviceLinkStoreWriter = new ServiceLinkStoreWriter(serviceLinkProvider, fileManager, jsonWriter, versionGenerator, clock, serviceLinkGlobalScope);
             try {
                 serviceLinkProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     serviceLinkStoreWriter.upload(new HashSet<>(), null);
                     serviceLinkProvider.loadContent();
                 } else {
@@ -273,7 +273,7 @@ public class Main {
             try {
                 keysetProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")){
+                if (e.getMessage().contains("The specified key does not exist")) {
                     keysetStoreWriter.upload(new HashMap<>(), null);
                     keysetProvider.loadContent();
                 } else {
@@ -290,7 +290,7 @@ public class Main {
             The jobs are executed after because they copy data from these files locations consumed by public and private operators.
             This caused an issue because the files were empty and the job started to fail so the operators got empty files.
              */
-            if(enableKeysets) {
+            if (enableKeysets) {
                 synchronized (writeLock) {
                     //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
                     keysetProvider.loadContent();
