@@ -40,7 +40,7 @@ class S3KeyManagerTest {
 
         assertNotNull(s3Key);
         assertEquals(1, s3Key.getSiteId());
-        assertEquals(1000L, s3Key.getActivated());
+        assertEquals(1000L, s3Key.getActivates());
         assertEquals(2000L, s3Key.getCreated());
         assertEquals("randomKeyString", s3Key.getSecret());
     }
@@ -50,7 +50,7 @@ class S3KeyManagerTest {
         S3Key s3Key = new S3Key();
         s3Key.setId(1);
         s3Key.setSiteId(1);
-        s3Key.setActivated(1000L);
+        s3Key.setActivates(1000L);
         s3Key.setCreated(2000L);
         s3Key.setSecret("randomKeyString");
 
@@ -106,7 +106,7 @@ class S3KeyManagerTest {
         S3Key s3Key = new S3Key();
         s3Key.setId(1);
         s3Key.setSiteId(1);
-        s3Key.setActivated(1000L);
+        s3Key.setActivates(1000L);
         s3Key.setCreated(2000L);
         s3Key.setSecret("randomKeyString");
 

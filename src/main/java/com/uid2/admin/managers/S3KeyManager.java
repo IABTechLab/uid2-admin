@@ -28,12 +28,12 @@ public class S3KeyManager {
 
     }
 
-    public S3Key generateS3Key(int siteId, long activated, long created) throws Exception {
+    public S3Key generateS3Key(int siteId, long activates, long created) throws Exception {
         int newKeyId = getNextKeyId();
         S3Key newS3Key = new S3Key();
         newS3Key.setId(newKeyId);
         newS3Key.setSiteId(siteId);
-        newS3Key.setActivated(activated);
+        newS3Key.setActivates(activates);
         newS3Key.setCreated(created);
         newS3Key.setSecret(generateSecret());
         return newS3Key;
