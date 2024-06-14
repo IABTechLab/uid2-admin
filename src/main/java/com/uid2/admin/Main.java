@@ -199,7 +199,6 @@ public class Main {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, versionGenerator);
 
-            //need to create a folder called /s3/s3encryption_keys beforehand
             CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
             GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
             RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);

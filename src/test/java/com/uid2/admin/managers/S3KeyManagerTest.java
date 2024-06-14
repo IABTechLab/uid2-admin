@@ -36,7 +36,6 @@ class S3KeyManagerTest {
         when(keyGenerator.generateRandomKeyString(32)).thenReturn("randomKeyString");
 
         S3Key s3Key = s3KeyManager.generateS3Key(1, 1000L, 2000L);
-        System.out.println(s3Key);
 
         assertNotNull(s3Key);
         assertEquals(1, s3Key.getSiteId());
@@ -46,7 +45,7 @@ class S3KeyManagerTest {
     }
 
     @Test
-    void testAddS3Key() throws Exception {
+    void testAddS3KeyToEmpty() throws Exception {
         S3Key s3Key = new S3Key();
         s3Key.setId(1);
         s3Key.setSiteId(1);
@@ -65,6 +64,35 @@ class S3KeyManagerTest {
         Map<Integer, S3Key> capturedKeys = captor.getValue();
         assertEquals(1, capturedKeys.size());
         assertEquals(s3Key, capturedKeys.get(1));
+    }
+    @Test
+     void testAddS3KeyToExisting() throws Exception {
+        S3Key s3Key = new S3Key();
+        s3Key.setId(3);
+        s3Key.setSiteId(1);
+        s3Key.setActivates(1000L);
+        s3Key.setCreated(2000L);
+        s3Key.setSecret("randomKeyString");
+
+        Map<Integer, S3Key> existingKeys = new HashMap<>();
+        S3Key existingKey1 = new S3Key(1, 1, 500L, 1500L, "existingSecret1");
+        S3Key existingKey2 = new S3Key(2, 1, 600L, 1600L, "existingSecret2");
+        existingKeys.put(1, existingKey1);
+        existingKeys.put(2, existingKey2);
+
+        when(s3KeyProvider.getAll()).thenReturn(existingKeys);
+
+        s3KeyManager.addS3Key(s3Key);
+
+        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+        verify(s3KeyStoreWriter).upload(captor.capture(), isNull());
+
+        Map<Integer, S3Key> capturedKeys = captor.getValue();
+
+        assertEquals(3, capturedKeys.size());
+        assertEquals(existingKey1, capturedKeys.get(1));
+        assertEquals(existingKey2, capturedKeys.get(2));
+        assertEquals(s3Key, capturedKeys.get(3));
     }
 
     @Test
@@ -94,6 +122,11 @@ class S3KeyManagerTest {
     @Test
     void testGetAllS3Keys() {
         Map<Integer, S3Key> existingKeys = new HashMap<>();
+        S3Key existingKey1 = new S3Key(1, 1, 500L, 1500L, "existingSecret1");
+        S3Key existingKey2 = new S3Key(2, 1, 600L, 1600L, "existingSecret2");
+        existingKeys.put(1, existingKey1);
+        existingKeys.put(2, existingKey2);
+
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
 
         Map<Integer, S3Key> result = s3KeyManager.getAllS3Keys();

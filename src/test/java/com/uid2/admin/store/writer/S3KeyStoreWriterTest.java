@@ -33,6 +33,11 @@ public class S3KeyStoreWriterTest {
             2, new S3Key(2, 123, 1687808429, 1687808329, "S3keySecretByteHere2"),
             3, new S3Key(3, 456, 1687635529, 1687808329, "S3keySecretByteHere3")
     );
+    private final Map<Integer, S3Key> expected = Map.of(
+            1, new S3Key(1, 123, 1687635529, 1687808329, "S3keySecretByteHere1"),
+            2, new S3Key(2, 123, 1687808429, 1687808329, "S3keySecretByteHere2"),
+            3, new S3Key(3, 456, 1687635529, 1687808329, "S3keySecretByteHere3")
+    );
 
     private final String rootDir = "this-test-data-type";
     private final String metadataFileName = "test-metadata.json";
@@ -59,15 +64,6 @@ public class S3KeyStoreWriterTest {
 
         Map<Integer, S3Key> actualKeys = globalStore.getAll();
         assertThat(actualKeys).hasSize(s3Keys.size());
-        for (Map.Entry<Integer, S3Key> entry : s3Keys.entrySet()) {
-            S3Key expectedKey = entry.getValue();
-            S3Key actualKey = actualKeys.get(entry.getKey());
-            assertThat(actualKey).isNotNull();
-            assertThat(actualKey.getId()).isEqualTo(expectedKey.getId());
-            assertThat(actualKey.getSiteId()).isEqualTo(expectedKey.getSiteId());
-            assertThat(actualKey.getActivates()).isEqualTo(expectedKey.getActivates());
-            assertThat(actualKey.getCreated()).isEqualTo(expectedKey.getCreated());
-            assertThat(actualKey.getSecret()).isEqualTo(expectedKey.getSecret());
-        }
+        assertThat(actualKeys).containsAllEntriesOf(expected);
     }
 }
