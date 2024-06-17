@@ -6,7 +6,7 @@
 /* TODO - Validation */
 let siteList;
 
-function loadSitesCallback(result) {
+function loadAllSitesCallback(result) {
     //const textToHighlight = '"disabled": true';
     siteList = JSON.parse(result).map(function(item) { return { name: item.name, id: item.id } });
 
@@ -14,6 +14,23 @@ function loadSitesCallback(result) {
     //$('#participantKeysStandardOutput').html(highlightedText);
     console.log(siteList);
 };
+
+function loadSiteCallback(result) {
+    const resultJson = JSON.parse(result);
+
+    const domainNames = resultJson.domain_names.length > 0 ? resultJson.domain_names : 'none';
+    const formattedDomains = prettifyJson(JSON.stringify(domainNames));
+    $('#domainNamesStandardOutput').html(formattedDomains);
+    const appNames = resultJson.app_names.length > 0 ? resultJson.app_names : 'none';
+    const formattedApps = prettifyJson(JSON.stringify(appNames));
+    $('#appNamesStandardOutput').html(formattedApps);
+    delete resultJson.domain_names;
+    delete resultJson.app_names;
+    let formatted = JSON.stringify(resultJson);
+    formatted = prettifyJson(formatted);
+    $('#siteStandardOutput').html(formatted);
+    console.log(formatted);
+}
 
 function loadAPIKeysCallback(result) {
     const textToHighlight = '"disabled": true';
@@ -56,7 +73,7 @@ function loadOptoutWebhooksCallback(result, siteName) {
 
 $(document).ready(function () {
     const sitesUrl = '/api/site/list';
-    doApiCallWithCallback('GET', sitesUrl, loadSitesCallback, loadAPIKeysError);
+    doApiCallWithCallback('GET', sitesUrl, loadAllSitesCallback, loadAPIKeysError);
     
     $('#doSearch').on('click', function () {
         const siteSearch = Number($('#key').val());
@@ -74,7 +91,10 @@ $(document).ready(function () {
         }
 
         //const siteName = 'ttd';
-        let url = `/api/client/list/${site.id}`;
+        let url = `/api/site/${site.id}`;
+        doApiCallWithCallback('GET', url, loadSiteCallback, loadAPIKeysError);
+
+        url = `/api/client/list/${site.id}`;
         doApiCallWithCallback('GET', url, loadAPIKeysCallback, loadAPIKeysError);
 
         url = '/api/key/list';
