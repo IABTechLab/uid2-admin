@@ -203,8 +203,7 @@ public class Main {
             GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
             RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
             S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
-            SecureKeyGenerator s3KeyGenerator = new SecureKeyGenerator();
-            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter, s3KeyGenerator);
+            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
             s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
             s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
 

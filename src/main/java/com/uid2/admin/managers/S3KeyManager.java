@@ -4,6 +4,7 @@ import com.uid2.admin.store.writer.S3KeyStoreWriter;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.S3Key;
 import com.uid2.shared.secret.IKeyGenerator;
+import com.uid2.shared.secret.SecureKeyGenerator;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,26 +21,20 @@ public class S3KeyManager {
     private final IKeyGenerator keyGenerator;
 
 
-    public S3KeyManager(RotatingS3KeyProvider s3KeyProvider, S3KeyStoreWriter s3KeyStoreWriter, IKeyGenerator keyGenerator) {
+    public S3KeyManager(RotatingS3KeyProvider s3KeyProvider, S3KeyStoreWriter s3KeyStoreWriter) {
         this.s3KeyProvider = s3KeyProvider;
         this.s3KeyStoreWriter = s3KeyStoreWriter;
-        this.keyGenerator = keyGenerator;
-
+        this.keyGenerator = new SecureKeyGenerator();
 
     }
 
     public S3Key generateS3Key(int siteId, long activates, long created) throws Exception {
         int newKeyId = getNextKeyId();
-        S3Key newS3Key = new S3Key();
-        newS3Key.setId(newKeyId);
-        newS3Key.setSiteId(siteId);
-        newS3Key.setActivates(activates);
-        newS3Key.setCreated(created);
-        newS3Key.setSecret(generateSecret());
-        return newS3Key;
+        String secret = generateSecret();
+        return new S3Key(newKeyId, siteId, activates, created, secret);
     }
 
-    private String generateSecret() throws Exception {
+    String generateSecret() throws Exception {
         // Assuming want to generate a 32-byte key
         return keyGenerator.generateRandomKeyString(32);
     }

@@ -28,12 +28,12 @@ class S3KeyManagerTest {
         s3KeyProvider = mock(RotatingS3KeyProvider.class);
         s3KeyStoreWriter = mock(S3KeyStoreWriter.class);
         keyGenerator = mock(IKeyGenerator.class);
-        s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter, keyGenerator);
+        s3KeyManager = spy(new S3KeyManager(s3KeyProvider, s3KeyStoreWriter));
     }
 
     @Test
     void testGenerateS3Key() throws Exception {
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("randomKeyString");
+        doReturn("randomKeyString").when(s3KeyManager).generateSecret();
 
         S3Key s3Key = s3KeyManager.generateS3Key(1, 1000L, 2000L);
 
@@ -46,12 +46,7 @@ class S3KeyManagerTest {
 
     @Test
     void testAddS3KeyToEmpty() throws Exception {
-        S3Key s3Key = new S3Key();
-        s3Key.setId(1);
-        s3Key.setSiteId(1);
-        s3Key.setActivates(1000L);
-        s3Key.setCreated(2000L);
-        s3Key.setSecret("randomKeyString");
+        S3Key s3Key = new S3Key(1, 1, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, S3Key> existingKeys = new HashMap<>();
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
@@ -67,12 +62,7 @@ class S3KeyManagerTest {
     }
     @Test
      void testAddS3KeyToExisting() throws Exception {
-        S3Key s3Key = new S3Key();
-        s3Key.setId(3);
-        s3Key.setSiteId(1);
-        s3Key.setActivates(1000L);
-        s3Key.setCreated(2000L);
-        s3Key.setSecret("randomKeyString");
+        S3Key s3Key = new S3Key(3, 1, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, S3Key> existingKeys = new HashMap<>();
         S3Key existingKey1 = new S3Key(1, 1, 500L, 1500L, "existingSecret1");
@@ -98,7 +88,7 @@ class S3KeyManagerTest {
     @Test
     void testGetNextKeyId() {
         Map<Integer, S3Key> existingKeys = new HashMap<>();
-        existingKeys.put(1, new S3Key());
+        existingKeys.put(1, new S3Key(1, 1, 500L, 1500L, "existingSecret1"));
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
 
         int nextKeyId = s3KeyManager.getNextKeyId();
@@ -108,8 +98,7 @@ class S3KeyManagerTest {
 
     @Test
     void testGetS3Key() {
-        S3Key s3Key = new S3Key();
-        s3Key.setId(1);
+        S3Key s3Key = new S3Key(1, 1, 500L, 1500L, "existingSecret1");
         Map<Integer, S3Key> existingKeys = new HashMap<>();
         existingKeys.put(1, s3Key);
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
@@ -136,12 +125,7 @@ class S3KeyManagerTest {
 
     @Test
     void testAddOrUpdateS3Key() throws Exception {
-        S3Key s3Key = new S3Key();
-        s3Key.setId(1);
-        s3Key.setSiteId(1);
-        s3Key.setActivates(1000L);
-        s3Key.setCreated(2000L);
-        s3Key.setSecret("randomKeyString");
+        S3Key s3Key = new S3Key(1, 1, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, S3Key> existingKeys = new HashMap<>();
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
