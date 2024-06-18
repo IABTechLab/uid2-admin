@@ -206,6 +206,16 @@ public class Main {
             S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
             s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
             s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+            try {
+                s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+            } catch (CloudStorageException e) {
+                if (e.getMessage().contains("The specified key does not exist")) {
+                    s3KeyStoreWriter.upload(new HashMap<>(), null);
+                    s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+                } else {
+                    throw e;
+                }
+            }
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
