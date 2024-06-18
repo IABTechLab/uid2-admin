@@ -20,12 +20,10 @@ public class S3KeyManager {
     private final S3KeyStoreWriter s3KeyStoreWriter;
     private final IKeyGenerator keyGenerator;
 
-
     public S3KeyManager(RotatingS3KeyProvider s3KeyProvider, S3KeyStoreWriter s3KeyStoreWriter) {
         this.s3KeyProvider = s3KeyProvider;
         this.s3KeyStoreWriter = s3KeyStoreWriter;
         this.keyGenerator = new SecureKeyGenerator();
-
     }
 
     public S3Key generateS3Key(int siteId, long activates, long created) throws Exception {
@@ -56,7 +54,6 @@ public class S3KeyManager {
         s3KeyStoreWriter.upload(s3Keys, null);
     }
 
-
     protected int getNextKeyId() {
         Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
         if (s3Keys == null || s3Keys.isEmpty()) {
@@ -64,7 +61,6 @@ public class S3KeyManager {
         }
         return s3Keys.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
     }
-
 
     public S3Key getS3Key(int id) {
         return s3KeyProvider.getAll().get(id);
@@ -98,6 +94,5 @@ public class S3KeyManager {
             }
         }
     }
-
 
 }
