@@ -205,7 +205,6 @@ public class Main {
             S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
             S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
             s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
-            s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
             try {
                 s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
             } catch (CloudStorageException e) {
