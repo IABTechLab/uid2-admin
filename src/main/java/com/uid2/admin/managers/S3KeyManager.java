@@ -26,7 +26,7 @@ public class S3KeyManager {
         this.keyGenerator = new SecureKeyGenerator();
     }
 
-    public S3Key generateS3Key(int siteId, long activates, long created) throws Exception {
+    S3Key generateS3Key(int siteId, long activates, long created) throws Exception {
         int newKeyId = getNextKeyId();
         String secret = generateSecret();
         return new S3Key(newKeyId, siteId, activates, created, secret);
@@ -37,24 +37,13 @@ public class S3KeyManager {
         return keyGenerator.generateRandomKeyString(32);
     }
 
-    public void addS3Key(S3Key s3Key) throws Exception {
+    void addS3Key(S3Key s3Key) throws Exception {
         Map<Integer, S3Key> s3Keys = new HashMap<>(s3KeyProvider.getAll());
         s3Keys.put(s3Key.getId(), s3Key);
         s3KeyStoreWriter.upload(s3Keys, null);
     }
 
-    public void addOrUpdateS3Key(S3Key s3Key) throws Exception {
-        Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
-        if (s3Keys == null) {
-            s3Keys = new HashMap<>();
-        } else {
-            s3Keys = new HashMap<>(s3Keys);
-        }
-        s3Keys.put(s3Key.getId(), s3Key);
-        s3KeyStoreWriter.upload(s3Keys, null);
-    }
-
-    protected int getNextKeyId() {
+    int getNextKeyId() {
         Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
         if (s3Keys == null || s3Keys.isEmpty()) {
             return 1;
@@ -89,7 +78,7 @@ public class S3KeyManager {
                 for (int i = 0; i < keyCountPerSite; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
-                    addOrUpdateS3Key(generateS3Key(siteId, activated, created));
+                    addS3Key(generateS3Key(siteId, activated, created));
                 }
             }
         }

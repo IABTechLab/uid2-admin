@@ -130,7 +130,7 @@ class S3KeyManagerTest {
         Map<Integer, S3Key> existingKeys = new HashMap<>();
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
 
-        s3KeyManager.addOrUpdateS3Key(s3Key);
+        s3KeyManager.addS3Key(s3Key);
 
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(s3KeyStoreWriter).upload(captor.capture(), isNull());
