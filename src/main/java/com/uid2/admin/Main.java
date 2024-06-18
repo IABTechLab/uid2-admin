@@ -28,7 +28,6 @@ import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.model.S3Key;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.secret.SecureKeyGenerator;
