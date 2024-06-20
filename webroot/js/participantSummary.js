@@ -1,18 +1,13 @@
-//"plaintext_key": "UID2-C-L-999-Eaqeym.wLHGLzbuoPtVZ4WolwLyTfEo86UPuvzmYuFVg="
-//"key_hash": "4mbr0ntMNu7enP2+F/XXdhTIbcG3h2//SAx9qZvStRZS9Lf3HdPaH7F6pHWoc10tPnwyJQLWRgJrSmvFMjKe8A==",
-//"secret": "dnU70Zop7WabzK4ZHoDTwFnhN8X6/ikNsMIPElJJsro=",
-
-
-/* TODO - Validation */
 let siteList;
 
-function loadAllSitesCallback(result) {
-    //const textToHighlight = '"disabled": true';
-    siteList = JSON.parse(result).map(function(item) { return { name: item.name, id: item.id } });
+/* ***** multi-use error handler *** */
+function participantSummaryErrorHandler(err, divContainer) {
+    const errorMessage = prettifyJson(err.responseText);
+    $(divContainer).html(errorMessage).show();
+};
 
-    //const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
-    //$('#participantKeysStandardOutput').html(highlightedText);
-    console.log(siteList);
+function loadAllSitesCallback(result) {
+    siteList = JSON.parse(result).map(function(item) { return { name: item.name, id: item.id } });
 };
 
 function loadSiteCallback(result) {
@@ -29,35 +24,58 @@ function loadSiteCallback(result) {
     let formatted = JSON.stringify(resultJson);
     formatted = prettifyJson(formatted);
     $('#siteStandardOutput').html(formatted);
-    console.log(formatted);
 }
 
 function loadAPIKeysCallback(result) {
     const textToHighlight = '"disabled": true';
-    const formatted = prettifyJson(result);
+    let resultJson = JSON.parse(result);
+    resultJson = resultJson.map(function(item) { 
+        const created = new Date(item.created).toLocaleString();
+        return { ...item, created };
+    });
+    const formatted = prettifyJson(JSON.stringify(resultJson));
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
     $('#participantKeysStandardOutput').html(highlightedText);
 };
 
-/* ***** multi-use error handler *** */
-function loadAPIKeysError(result) {
-    const errorMessage = prettifyJson(result.responseText);
-    $('#participantKeysErrorOutput').html(errorMessage);
-};
-
 function loadEncryptionKeysCallback(result, siteId) {
-    // delineate disabled and expired
     const resultJson = JSON.parse(result);
-    const filteredResults = resultJson.filter(function(item) { return item.site_id === siteId });
+    let filteredResults = resultJson.filter(function(item) { return item.site_id === siteId });
+    let expirations = [];
+    let notActivated = [];
+    filteredResults = filteredResults.map(function(item) { 
+        const created = new Date(item.created).toLocaleString();
+        const activates = new Date(item.activates).toLocaleString();
+        const expires = new Date(item.expires).toLocaleString();
+        if (item.expires < Date.now()) {
+            expirations.push(`"expires": "${expires}"`);
+        }
+        if (item.activates > Date.now()) {
+            notActivated.push(`"activates": "${activates}"`);
+        }
+        return { ...item, created, activates, expires };
+     });
+
     const formatted = prettifyJson(JSON.stringify(filteredResults));
-    //const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: yellow;">' + textToHighlight + '</span>');
-    $('#encryptionKeysStandardOutput').html(formatted);
+    let highlightedText = formatted;
+    expirations.forEach(function(item) {
+        highlightedText = highlightedText.replaceAll(item, '<span style="background-color: orange;">' + item + '</span>');
+    });
+    notActivated.forEach(function(item) {
+        highlightedText = highlightedText.replaceAll(item, '<span style="background-color: yellow;">' + item + '</span>');
+    });
+    $('#encryptionKeysStandardOutput').html(highlightedText);
 };
 
 function loadOperatorKeysCallback(result, siteId) {
     const textToHighlight = '"disabled": true';
     const resultJson = JSON.parse(result);
-    const filteredResults = resultJson.filter(function(item) { return item.site_id === siteId });
+    let filteredResults = resultJson.filter(function(item) { return item.site_id === siteId });
+    filteredResults = filteredResults.map(function(item) { 
+        const created = new Date(item.created).toLocaleString();
+        return { ...item, created };
+     });
+
     const formatted = prettifyJson(JSON.stringify(filteredResults));
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
     $('#operatorKeysStandardOutput').html(highlightedText);
@@ -67,43 +85,45 @@ function loadOptoutWebhooksCallback(result, siteName) {
     const resultJson = JSON.parse(result);
     const filteredResults = resultJson.filter(function(item) { return item.name === siteName });
     const formatted = prettifyJson(JSON.stringify(filteredResults));
-    //const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: yellow;">' + textToHighlight + '</span>');
     $('#webhooksStandardOutput').html(formatted);
 };
 
 $(document).ready(function () {
     const sitesUrl = '/api/site/list';
-    doApiCallWithCallback('GET', sitesUrl, loadAllSitesCallback, loadAPIKeysError);
+    doApiCallWithCallback('GET', sitesUrl, loadAllSitesCallback, null);
     
     $('#doSearch').on('click', function () {
-        const siteSearch = Number($('#key').val());
+        $('#siteSearchErrorOutput').hide();
+        const siteSearch = $('#key').val();
         let site = null;
-        if (Number.isInteger(siteSearch)) {
-            const foundSite = siteList.find(function(item) { return item.id === siteSearch  });
+        if (Number.isInteger(Number(siteSearch))) {
+            const foundSite = siteList.find(function(item) { return item.id === Number(siteSearch) });
             site = foundSite;
         } else {
             const foundSite = siteList.find(function(item) { return item.name === siteSearch  });
             site = foundSite;
         }
         if (!site) {
-            $('#operatorKeysStandardOutput').text(`site not found: ${siteSearch}`);
+            $('#siteSearchErrorOutput').text(`site not found: ${siteSearch}`).show();
+            $('.section').hide();
             return;
         }
 
-        //const siteName = 'ttd';
         let url = `/api/site/${site.id}`;
-        doApiCallWithCallback('GET', url, loadSiteCallback, loadAPIKeysError);
+        doApiCallWithCallback('GET', url, loadSiteCallback, function(err) { participantSummaryErrorHandler(err, '#siteErrorOutput') });
 
         url = `/api/client/list/${site.id}`;
-        doApiCallWithCallback('GET', url, loadAPIKeysCallback, loadAPIKeysError);
+        doApiCallWithCallback('GET', url, loadAPIKeysCallback, function(err) { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
 
         url = '/api/key/list';
-        doApiCallWithCallback('GET', url, function(r) { loadEncryptionKeysCallback(r, site.id) }, loadAPIKeysError);
+        doApiCallWithCallback('GET', url, function(r) { loadEncryptionKeysCallback(r, site.id) }, function(err) { participantSummaryErrorHandler(err, '#encryptionKeysErrorOutput') });
 
         url = '/api/operator/list';
-        doApiCallWithCallback('GET', url, function(r) { loadOperatorKeysCallback(r, site.id) }, loadAPIKeysError);
+        doApiCallWithCallback('GET', url, function(r) { loadOperatorKeysCallback(r, site.id) }, function(err) { participantSummaryErrorHandler(err, '#operatorKeysErrorOutput') });
 
         url = '/api/partner_config/get';
-        doApiCallWithCallback('GET', url, function(r) { loadOptoutWebhooksCallback(r, site.name) }, loadAPIKeysError);
+        doApiCallWithCallback('GET', url, function(r) { loadOptoutWebhooksCallback(r, site.name) }, function(err) { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
+    
+        $('.section').show();
     });
 });
