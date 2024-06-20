@@ -11,6 +11,7 @@ import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
+import com.uid2.admin.managers.S3KeyManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
@@ -194,6 +195,23 @@ public class Main {
             RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, versionGenerator);
+
+            CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
+            GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
+            RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
+            S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
+            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
+            s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
+            try {
+                s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+            } catch (CloudStorageException e) {
+                if (e.getMessage().contains("The specified key does not exist")) {
+                    s3KeyStoreWriter.upload(new HashMap<>(), null);
+                    s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+                } else {
+                    throw e;
+                }
+            }
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
