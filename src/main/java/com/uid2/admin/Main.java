@@ -27,7 +27,6 @@ import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
-import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.secret.SecureKeyGenerator;
@@ -63,7 +62,6 @@ import io.vertx.micrometer.backends.BackendRegistries;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
