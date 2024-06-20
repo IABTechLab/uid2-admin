@@ -16,7 +16,6 @@
   "enclaves_metadata_path": "enclaves/metadata.json",
   "partners_metadata_path": "partners/metadata.json",
   "keysets_metadata_path": "keysets/metadata.json",
-  "s3_keys_metadata_path": "s3encryption_keys/metadata.json",
   "admin_keysets_metadata_path": "admin_keysets/metadata.json",
   "keyset_keys_metadata_path": "keyset_keys/metadata.json",
   "aws_access_key_id": "no access key needed for test",
@@ -43,7 +42,5 @@
   "vertx_session_timeout": 32400000,
   "role_okta_group_map_maintainer": "developer",
   "role_okta_group_map_privileged": "developer",
-  "role_okta_group_map_super_user": "developer",
-  "s3_key_activates_in_seconds": 86400,
-  "s3_key_count_per_site": 2
+  "role_okta_group_map_super_user": "developer"
 }
