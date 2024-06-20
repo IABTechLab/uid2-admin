@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class S3KeyManagerTest {
@@ -60,8 +62,9 @@ class S3KeyManagerTest {
         assertEquals(1, capturedKeys.size());
         assertEquals(s3Key, capturedKeys.get(1));
     }
+
     @Test
-     void testAddS3KeyToExisting() throws Exception {
+    void testAddS3KeyToExisting() throws Exception {
         S3Key s3Key = new S3Key(3, 1, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, S3Key> existingKeys = new HashMap<>();
@@ -124,7 +127,7 @@ class S3KeyManagerTest {
     }
 
     @Test
-    void testAddOrUpdateS3Key() throws Exception {
+    void testAddS3Key() throws Exception {
         S3Key s3Key = new S3Key(1, 1, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, S3Key> existingKeys = new HashMap<>();
@@ -138,6 +141,53 @@ class S3KeyManagerTest {
         Map<Integer, S3Key> capturedKeys = captor.getValue();
         assertEquals(1, capturedKeys.size());
         assertEquals(s3Key, capturedKeys.get(1));
+    }
+
+    @Test
+    void testGetS3KeyBySiteId() {
+        S3Key key1 = new S3Key(1, 100, 0, 0, "secret1");
+        S3Key key2 = new S3Key(2, 200, 0, 0, "secret2");
+        Map<Integer, S3Key> keys = new HashMap<>();
+        keys.put(1, key1);
+        keys.put(2, key2);
+
+        when(s3KeyProvider.getAll()).thenReturn(keys);
+
+        Optional<S3Key> result = s3KeyManager.getS3KeyBySiteId(100);
+        assertTrue(result.isPresent());
+        assertEquals(key1, result.get());
+    }
+
+    @Test
+    void testGetAllS3KeysBySiteId() {
+        S3Key key1 = new S3Key(1, 100, 0, 0, "secret1");
+        S3Key key2 = new S3Key(2, 100, 0, 0, "secret2");
+        S3Key key3 = new S3Key(3, 200, 0, 0, "secret3");
+        Map<Integer, S3Key> keys = new HashMap<>();
+        keys.put(1, key1);
+        keys.put(2, key2);
+        keys.put(3, key3);
+
+        when(s3KeyProvider.getAll()).thenReturn(keys);
+
+        List<S3Key> result = s3KeyManager.getAllS3KeysBySiteId(100);
+        assertEquals(2, result.size());
+        assertTrue(result.contains(key1));
+        assertTrue(result.contains(key2));
+    }
+
+    @Test
+    void testCreateAndAddImmediateS3Key() throws Exception {
+        when(s3KeyProvider.getAll()).thenReturn(new HashMap<>());
+        doReturn("generatedSecret").when(s3KeyManager).generateSecret();
+
+        S3Key newKey = s3KeyManager.createAndAddImmediate3Key(100);
+
+        assertNotNull(newKey);
+        assertEquals(100, newKey.getSiteId());
+        assertEquals("generatedSecret", newKey.getSecret());
+
+        verify(s3KeyStoreWriter, times(1)).upload(any(Map.class), eq(null));
     }
 }
 

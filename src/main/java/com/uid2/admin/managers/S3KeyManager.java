@@ -8,6 +8,9 @@ import com.uid2.shared.secret.SecureKeyGenerator;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import java.time.Instant;
 import java.util.*;
@@ -43,6 +46,15 @@ public class S3KeyManager {
         s3KeyStoreWriter.upload(s3Keys, null);
     }
 
+    // Method to create and add an S3 key that activates immediately for a specific site
+    public S3Key createAndAddImmediate3Key(int siteId) throws Exception {
+        int newKeyId = getNextKeyId();
+        long created = Instant.now().getEpochSecond();
+        S3Key newKey = new S3Key(newKeyId, siteId, created, created, generateSecret());
+        addS3Key(newKey);
+        return newKey;
+    }
+
     int getNextKeyId() {
         Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
         if (s3Keys == null || s3Keys.isEmpty()) {
@@ -53,6 +65,18 @@ public class S3KeyManager {
 
     public S3Key getS3Key(int id) {
         return s3KeyProvider.getAll().get(id);
+    }
+
+    public Optional<S3Key> getS3KeyBySiteId(int siteId) {
+        return s3KeyProvider.getAll().values().stream()
+                .filter(key -> key.getSiteId() == siteId)
+                .findFirst();
+    }
+
+    public List<S3Key> getAllS3KeysBySiteId(int siteId) {
+        return s3KeyProvider.getAll().values().stream()
+                .filter(key -> key.getSiteId() == siteId)
+                .collect(Collectors.toList());
     }
 
     public Map<Integer, S3Key> getAllS3Keys() {
