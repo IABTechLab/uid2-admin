@@ -213,7 +213,6 @@ public class Main {
                 }
             }
 
-
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
