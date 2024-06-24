@@ -15,10 +15,9 @@ import java.util.stream.Collectors;
 import java.time.Instant;
 import java.util.*;
 
-
 public class S3KeyManager {
 
-    private static final int PUBLIC_OPERATORS_SITE_ID = -1;
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3KeyManager.class);
 
     private final RotatingS3KeyProvider s3KeyProvider;
     private final S3KeyStoreWriter s3KeyStoreWriter;
@@ -106,7 +105,6 @@ public class S3KeyManager {
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
         }
-        uniqueSiteIds.add(PUBLIC_OPERATORS_SITE_ID);
 
         for (Integer siteId : uniqueSiteIds) {
             if (!doesSiteHaveKeys(siteId)) {
