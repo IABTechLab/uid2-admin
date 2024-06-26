@@ -207,9 +207,6 @@ public class Main {
                 if (e.getMessage().contains("The specified key does not exist")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
                     s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
-                } else if (e.getMessage().contains("AmazonS3Exception: test-core-bucket")){
-                    s3KeyStoreWriter.upload(new HashMap<>(), null);
-                    s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
                 }else{
                     throw e;
                 }
