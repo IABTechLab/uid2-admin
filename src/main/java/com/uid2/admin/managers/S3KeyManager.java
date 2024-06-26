@@ -101,19 +101,29 @@ public class S3KeyManager {
         if (keyCountPerSite <= 0) {
             throw new IllegalArgumentException("Key count per site must be greater than zero");
         }
+
         Set<Integer> uniqueSiteIds = new HashSet<>();
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
         }
 
+        System.out.println("Unique Site IDs: " + uniqueSiteIds); // Log the unique site IDs
+
         for (Integer siteId : uniqueSiteIds) {
+            System.out.println("Checking if site has keys: " + siteId); // Log the current site ID being checked
             if (!doesSiteHaveKeys(siteId)) {
+                System.out.println("Site does not have keys: " + siteId); // Log if the site does not have keys
                 for (int i = 0; i < keyCountPerSite; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
-                    addS3Key(generateS3Key(siteId, activated, created));
+                    S3Key s3Key = generateS3Key(siteId, activated, created);
+                    addS3Key(s3Key);
+                    System.out.println("Generated and added S3Key: " + s3Key); // Log the generated key
                 }
+            } else {
+                System.out.println("Site already has keys: " + siteId); // Log if the site already has keys
             }
         }
     }
+
 }
