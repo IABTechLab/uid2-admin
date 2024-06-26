@@ -101,6 +101,7 @@ public class S3KeyManager {
         if (keyCountPerSite <= 0) {
             throw new IllegalArgumentException("Key count per site must be greater than zero");
         }
+
         Set<Integer> uniqueSiteIds = new HashSet<>();
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
@@ -111,9 +112,11 @@ public class S3KeyManager {
                 for (int i = 0; i < keyCountPerSite; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
-                    addS3Key(generateS3Key(siteId, activated, created));
+                    S3Key s3Key = generateS3Key(siteId, activated, created);
+                    addS3Key(s3Key);
                 }
             }
         }
     }
+
 }

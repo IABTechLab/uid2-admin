@@ -201,17 +201,18 @@ public class Main {
             RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
             S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
             S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
-            s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
             try {
-                s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+                s3KeyProvider.loadContent();
             } catch (CloudStorageException e) {
-                if (e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("s3 get error")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
-                    s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+                    s3KeyProvider.loadContent();
                 } else {
                     throw e;
                 }
             }
+            s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
+
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
