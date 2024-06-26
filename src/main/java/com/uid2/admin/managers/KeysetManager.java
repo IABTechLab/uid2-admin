@@ -133,7 +133,7 @@ public class KeysetManager {
         return KeysetManager.getMaxKeyset(this.keysetProvider.getSnapshot().getAllKeysets()) + 1;
     }
 
-    public AdminKeyset createAndAddDefaultKeyset(Integer siteId) throws Exception{
+    private AdminKeyset createAndAddDefaultKeyset(Integer siteId) throws Exception{
         if(!enableKeysets) return null;
 
         this.keysetProvider.loadContent();

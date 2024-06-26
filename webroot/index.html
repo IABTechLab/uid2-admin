@@ -4,7 +4,7 @@
     <script src="/js/main.js"></script>
 </head>
 <body>
-<h1>UID2 Admin Site</h1>
+<h1>UID2 Env Admin Site</h1>
 
 <div class="notauthed" style="display: none">
 <a href="/login">Login</a>
@@ -17,6 +17,15 @@ Logged in as <span id="loginEmail"></span>
 <a href="/logout">Logout</a>
 <br>
 </div>
+
+<h3 class="ro-adm" style="display: none">On-call Support Workflow</h3>
+<ul>
+    <li class="ro-adm" style="display: none"><a href="/adm/oncall/generate-api-key-secret.html">Generate API Key/Secret</a></li>
+    <li class="ro-adm" style="display: none"><a href="/adm/oncall/generate-cstg-keypair.html">Generate CSTG Keypair</a></li>
+    <li class="ro-adm" style="display: none"><a href="/adm/oncall/search.html">Key and Secret Search</a></li>
+</ul>
+
+<hr>
 
 <ul>
     <li class="ro-cki ro-adm" style="display: none"><a href="/adm/site.html">Site Management</a></li>
@@ -38,7 +47,6 @@ Logged in as <span id="loginEmail"></span>
     <li class="ro-opm ro-adm" style="display: none"><a href="/adm/enclave-gcp.html">GCP Enclave ID Tool</a></li>
     <li class="ro-opm ro-adm" style="display: none"><a href="/adm/enclave-gcp-v2.html">GCP Enclave ID Tool(V2)</a></li>
     <li class="ro-adm" style="display: none"><a href="/adm/partner-config.html">OptOut Partner Management</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/search.html">Key and Secret Search</a></li>
     <li class="ro-nil" style="display: none">No Admin Permissions</li>
 </ul>
 <br/>

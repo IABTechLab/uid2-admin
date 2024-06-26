@@ -2,6 +2,7 @@ package com.uid2.admin.managers;
 
 import ch.qos.logback.classic.Logger;
 import com.uid2.admin.store.writer.S3KeyStoreWriter;
+import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.S3Key;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
@@ -9,10 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -189,5 +187,92 @@ class S3KeyManagerTest {
 
         verify(s3KeyStoreWriter, times(1)).upload(any(Map.class), eq(null));
     }
-}
 
+    @Test
+    public void testDoesSiteHaveKeys_SiteHasKeys() {
+        int siteId = 1;
+        S3Key s3Key = new S3Key(siteId, siteId, 0L, 0L, "key");
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+        allKeys.put(1, s3Key);
+
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        boolean result = s3KeyManager.doesSiteHaveKeys(siteId);
+        assertTrue(result);
+    }
+    @Test
+    public void testDoesSiteHaveKeys_SiteDoesNotHaveKeys() {
+        int siteId = 1;
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        boolean result = s3KeyManager.doesSiteHaveKeys(siteId);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testDoesSiteHaveKeys_AllKeysNull() {
+        int siteId = 1;
+
+        when(s3KeyProvider.getAll()).thenReturn(null);
+
+        boolean result = s3KeyManager.doesSiteHaveKeys(siteId);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testDoesSiteHaveKeys_MultipleKeysDifferentSiteIds() {
+        S3Key s3Key1 = new S3Key(1, 1, 0L, 0L, "key1");
+        S3Key s3Key2 = new S3Key(2, 2, 0L, 0L, "key2");
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+        allKeys.put(1, s3Key1);
+        allKeys.put(2, s3Key2);
+
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        assertTrue(s3KeyManager.doesSiteHaveKeys(1));
+        assertTrue(s3KeyManager.doesSiteHaveKeys(2));
+        assertFalse(s3KeyManager.doesSiteHaveKeys(3)); // Site ID 3 does not exist
+    }
+
+    @Test
+    public void testDoesSiteHaveKeys_SameSiteIdMultipleKeys() {
+        int siteId = 1;
+        S3Key s3Key1 = new S3Key(siteId, siteId, 0L, 0L, "key1");
+        S3Key s3Key2 = new S3Key(siteId, siteId, 0L, 0L, "key2");
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+        allKeys.put(1, s3Key1);
+        allKeys.put(2, s3Key2);
+
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        boolean result = s3KeyManager.doesSiteHaveKeys(siteId);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testDoesSiteHaveKeys_LargeNumberOfKeys() {
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+        for (int i = 1; i <= 1000; i++) {
+            S3Key s3Key = new S3Key(i, i, 0L, 0L, "key" + i);
+            allKeys.put(i, s3Key);
+        }
+
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        for (int i = 1; i <= 1000; i++) {
+            assertTrue(s3KeyManager.doesSiteHaveKeys(i));
+        }
+        assertFalse(s3KeyManager.doesSiteHaveKeys(1001)); // Site ID 1001 does not exist
+    }
+
+    @Test
+    public void testDoesSiteHaveKeys_EmptyKeys() {
+        when(s3KeyProvider.getAll()).thenReturn(new HashMap<>());
+
+        assertFalse(s3KeyManager.doesSiteHaveKeys(1));
+    }
+
+
+}

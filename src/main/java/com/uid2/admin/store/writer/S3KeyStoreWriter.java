@@ -33,7 +33,7 @@ public class S3KeyStoreWriter implements StoreWriter<Map<Integer, S3Key>> {
     public void upload(Map<Integer, S3Key> data, JsonObject extraMeta) throws Exception {
         JsonArray jsonS3Keys = new JsonArray();
         for (Map.Entry<Integer, S3Key> s3KeyEntry : data.entrySet()) {
-            jsonS3Keys.add(JsonObject.mapFrom(s3KeyEntry.getValue()));
+            jsonS3Keys.add(s3KeyEntry.getValue());
         }
         writer.upload(jsonS3Keys.encodePrettily(), extraMeta);
     }

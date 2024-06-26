@@ -1,0 +1,637 @@
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </symbol>
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" style="display: none;" fill="currentColor"
+        class="bi bi-copy" viewBox="0 0 16 16">
+        <path fill-rule="evenodd"
+            d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
+    </svg>
+    <div class="container-lg">
+        <div class="col-lg">
+            <div class="row">
+                <h1>UID2 Env - On-call - Generate CSTG Keypair</h1>
+            </div>
+            <div class="row pt-3 pb-2">
+                <div class="col-sm">
+                    <a href="/">Back</a>
+                </div>
+            </div>
+            <div class="row py-3">
+                <div class="card card-body">
+                    <div class="row py-1">
+                        <div class="col">
+                            <h4>Instructions</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <ol>
+                                <li>Search for a participant with the requested name from the Jira ticket.</li>
+                                <li>If a site exists use the Site Id to update the site if necessary.</li>
+                                <li>Use the Site Id to create a CSTG key pair if necessary.</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="row py-1">
+                        <div class="col">
+                            <h5>Search for existing participants:</h5>
+                        </div>
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="participantName">Participant name</label>
+                                <input type="text" class="form-control" id="participantName"
+                                    placeholder="Leave empty for all participants">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <a href="#" class="btn btn-primary" id="searchParticipant">Search</a>
+                        </div>
+                    </div>
+                    <div class="row pt-3">
+                        <div class="col">
+                            <h5>Search Results:</h5>
+                        </div>
+                    </div>
+                    <div class="row pt-3 px-2 collapse" id="searchSiteNoSiteFoundAlert">
+                        <div class="alert alert-warning d-flex align-items-center pt-3" role="alert">
+                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:">
+                                <use xlink:href="#exclamation-triangle-fill" />
+                            </svg>
+                            <div>
+                                No site found
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-3 px-2 collapse" id="searchSiteErrorAlert">
+                        <div class="alert alert-danger d-flex align-items-center pt-3" role="alert">
+                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:">
+                                <use xlink:href="#exclamation-triangle-fill" />
+                            </svg>
+                            <div id="searchOutputErrorDiv">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row px-2 table-responsive">
+                        <table class="table table-bordered" id="searchResultsTable">
+                            <thead>
+                                <th scope="col" class="col-1">Sites</th>
+                                <th scope="col" class="col-1">CSTG Keypairs</th>
+                            </thead>
+                            <tbody id="searchResultsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="card card-body">
+                    <div class="row pt-1">
+                        <div class="col">
+                            <div class="row">
+                                <h5>Create / Update Operations:</h5>
+                            </div>
+                            <div class="row py-2">
+                                <div>
+                                    Use this to create new site, update existing sites or create new key pairs.
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <button type="button" aria-controls="createSiteRegion" aria-expanded="false"
+                                        id="createSite" data-bs-parent="#siteParent" class="btn btn-secondary group"
+                                        data-bs-toggle="collapse" data-bs-target="#createSiteRegion"
+                                        role="button">Create site</button>
+                                    <button type="button" aria-controls="updateSiteRegion" aria-expanded="false"
+                                        id="updateSite" data-bs-parent="#siteParent" class="btn btn-secondary group"
+                                        data-bs-toggle="collapse" data-bs-target="#updateSiteRegion"
+                                        role="button">Update site</button>
+                                    <button type="button" aria-controls="createKeyPairRegion" aria-expanded="false"
+                                        id="createClient" data-bs-parent="#siteParent" class="btn btn-secondary group"
+                                        data-bs-toggle="collapse" data-bs-target="#createKeyPairRegion"
+                                        role="button">Create keypair</button>
+                                </div>
+                            </div>
+                            <div id="siteParent" class="col">
+                                <div class="row collapse mt-3" id="createSiteRegion" data-bs-parent="#siteParent">
+                                    <form id="createSiteForm">
+                                        <div class="card card-body">
+                                            <div class="form-group">
+                                                <h5>Create a new site</h5>
+
+                                                <label for="createSite-workflow-name">Name:</label>
+                                                <input type="text" class="form-control" id="createSite-workflow-name"
+                                                    name="createSite-workflow-name">
+                                                <div class="py-2">
+                                                    <label for="createSite-workflow-domainNames">Domain Names (comma-separated list):</label>
+                                                    <input type="text" class="form-control"
+                                                        id="createSite-workflow-domainNames"
+                                                        name="createSite-workflow-domainNames">
+
+                                                </div>
+                                                <div class="py-2">
+                                                    <label for="createSite-workflow-description">Description (Optional):</label>
+                                                    <input type="text" id="createSite-workflow-description"
+                                                        class="form-control" name="createSite-workflow-description">
+                                                </div>
+                                                <div class="form-check py-2">
+                                                    <input type="checkbox"
+                                                        id="createSite-workflow-clientTypes-PUBLISHER"
+                                                        class="form-check-input"
+                                                        name="createSite-workflow-clientTypes[]" value="PUBLISHER">
+                                                    <label for="createSite-workflow-clientTypes-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.</label>
+                                                    <div>If the participant is an Advertiser, check <a href="https://atlassian.thetradedesk.com/confluence/display/UID2/UID2+CSTG+How+to+create+a+new+client+side+keypair" target="_blank">UID2 CSTG How to create a new client side keypair</a> for details</div>
+                                                </div>
+                                                <a href="#create" class="btn btn-primary pt-2"
+                                                    id="createSite-workflow-submit">Create</a>
+
+                                                <div class="collapse" id="createSiteOutput">
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Create Site response:</div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copySite"><img src="/css/copy.svg"
+                                                                    alt="copySite" /></button>
+                                                            <pre id="siteJira" class="form-clear"></pre>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                                <div class="collapse pt-3" id="createSiteErrorAlert">
+                                                    <div class="alert alert-danger">
+                                                        <pre id="createSiteError"></pre>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="row collapse mt-3" id="updateSiteRegion" data-bs-parent="#siteParent">
+                                    <form id="updateSiteForm">
+                                        <div class="card card-body">
+                                            <div class="form-group">
+                                                <h5>Update an existing site</h5>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-siteId">Site ID:</label>
+                                                    <input type="text" id="updateSite-workflow-siteId"
+                                                        class="form-control" name="updateSite-workflow-siteId">
+                                                </div>
+                                                <a href="#create" id="updateSite-workflow-search"
+                                                    class="btn btn-primary">Search</a>
+                                            </div>
+
+                                            <div class="row pt-3 px-2 collapse" id="updateSite-seachOutput-NoResults">
+                                                <div class="alert alert-warning d-flex align-items-center pt-3"
+                                                    role="alert">
+                                                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img"
+                                                        aria-label="Warning:">
+                                                        <use xlink:href="#exclamation-triangle-fill" />
+                                                    </svg>
+                                                    <div>
+                                                        No site found
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row pt-3 px-2 collapse" id="updateSite-seachOutput-ErrorAlert">
+                                                <div class="alert alert-warning d-flex align-items-center pt-3"
+                                                    role="alert">
+                                                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img"
+                                                        aria-label="Warning:">
+                                                        <use xlink:href="#exclamation-triangle-fill" />
+                                                    </svg>
+                                                    <pre id="updateSite-searchOutput-ErrorDiv"></pre>
+                                                </div>
+                                            </div>
+
+                                            <div id="updateSite-workflow-afterSearch" class="collapse pt-3">
+                                                <label for="updateSite-workflow-afterSearch-name">Name:</label>
+                                                <input type="text" class="form-control"
+                                                    id="updateSite-workflow-afterSearch-name"
+                                                    name="updateSite-workflow-afterSearch-name" disabled readonly>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-afterSearch-domainNames">Domain Names (comma-separated list):</label>
+                                                    <input type="text" class="form-control"
+                                                        id="updateSite-workflow-afterSearch-domainNames"
+                                                        name="updateSite-workflow-afterSearch-domainNames">
+                                                </div>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-afterSearch-appNames">App Names (comma-separated list):</label>
+                                                    <input type="text" class="form-control"
+                                                        id="updateSite-workflow-afterSearch-appNames"
+                                                        name="updateSite-workflow-afterSearch-appNames">
+                                                </div>
+                                                <div class="py-2">
+                                                    <label for="updateSite-workflow-afterSearch-description">Description (Optional):</label>
+                                                    <input type="text" id="updateSite-workflow-afterSearch-description"
+                                                        class="form-control"
+                                                        name="updateSite-workflow-afterSearch-description">
+                                                </div>
+
+                                                <div class="form-check py-2">
+                                                    <input type="checkbox"
+                                                        id="updateSite-workflow-afterSearch-PUBLISHER"
+                                                        class="form-check-input"
+                                                        name="updateSite-workflow-afterSearch-clientTypes[]"
+                                                        value="PUBLISHER">
+                                                    <label for="updateSite-workflow-afterSearch-PUBLISHER">Is this participant a publisher? Only publishers are allowed to use CSTG.  </label>
+                                                    <div>If the participant is an Advertiser, check <a href="https://atlassian.thetradedesk.com/confluence/display/UID2/UID2+CSTG+How+to+create+a+new+client+side+keypair" target="_blank">UID2 CSTG How to create a new client side keypair</a> for details</div>
+                                                </div>
+                                                <a href="#update" class="btn btn-primary"
+                                                    id="updateSite-workflow-submit">Update</a>
+
+                                                <div class="collapse" id="updateSiteOutput">
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Update Site response:</div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copyUpdatedSite"><img src="/css/copy.svg"
+                                                                    alt="Copy Update Site Response" /></button>
+                                                            <pre id="siteUpdateJira" class="form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="collapse pt-3" id="updateSiteErrorAlert">
+                                                <div class="alert alert-danger">
+                                                    <pre id="updateSiteError"></pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="row collapse mt-3" id="createKeyPairRegion" data-bs-parent="#siteParent">
+                                    <form id="createKeyPairForm">
+                                        <div class="card card-body">
+                                            <div class="form-group">
+                                                <h5>Create a new CSTG Pair</h5>
+
+                                                <div class="pt-3">
+                                                    <label for="createKeypair-workflow-siteId">Site ID:</label>
+                                                    <input type="text" id="createKeypair-workflow-siteId"
+                                                        class="form-control" name="createKeypair-workflow-siteId">
+
+                                                </div>
+                                                <div class="py-3">
+                                                    <label for="createKeypair-workflow-name">Name (Optional):</label>
+                                                    <input type="text" id="createKeypair-workflow-name"
+                                                        class="form-control" name="createKeypair-workflow-name">
+                                                </div>
+                                                <a href="#create" class="btn-primary btn"
+                                                    id="createKeypair-workflow-submit">Create</a>
+
+                                                <div class="collapse" id="createKeypairOutput">
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Please copy and paste this to a private message:
+                                                        </div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copyTradeSecret"><img src="/css/copy.svg"
+                                                                    alt="Copy Trade Secret" />
+                                                            </button>
+                                                            <pre id="tradeSecretSpace" class="form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                    <div class="pt-2">
+                                                        <div class="py-2">Please copy and paste this into a comment on the JIRA ticket:
+                                                        </div>
+                                                        <div class="alert alert-secondary">
+                                                            <button type="button" class="btn float-end"
+                                                                id="copyForJira">
+                                                                <img src="/css/copy.svg" alt="Copy for Jira" />
+                                                            </button>
+                                                            <pre id="jiraSpace" class="form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                    <div class="pt-2">
+                                                        <div class="py-2">This is the output for reference. You should not need to copy this.
+                                                        </div>
+                                                        <div class="alert alert-dark">
+                                                            <pre id="fullClientOutputSpace"
+                                                                class="user-select-none form-clear"></pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="collapse pt-3" id="createClientErrorAlert">
+                                                <div class="alert alert-danger">
+                                                    <pre id="createClientError"></pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script language="JavaScript">
+            function setSiteId(siteId) {
+                $("#updateSite-workflow-siteId").val(siteId);
+                $("#createKeypair-workflow-siteId").val(siteId);
+            }
+
+            $(document).ready(() => {
+                $("#searchParticipant").on("click", () => {
+                    clearFormsAndShowCollapsed([]);
+                    $("#searchSiteNoSiteFoundAlert").collapse('hide');
+                    $("#searchSiteErrorAlert").collapse('hide');
+                    $("#searchResultsTableBody").empty();
+
+                    const name = $("#participantName").val();
+
+                    doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                        const searchList = JSON.parse(text);
+
+                        const similarList = searchList.filter((site) => site.name.toLowerCase().includes(name.toLowerCase()));
+                        if (similarList.length === 0) {
+                            $("#searchSiteNoSiteFoundAlert").collapse('show');
+                        } else {
+
+                            doApiCallWithCallback("GET", "/api/client_side_keypairs/list", (text) => {
+                                const keypairs = JSON.parse(text);
+
+                                similarList.forEach((site) => {
+                                    const siteId = site.id;
+                                    const siteKeyPairs = keypairs.filter((keypair) => keypair.site_id == siteId);
+                                    const siteJson = JSON.stringify(site, null, 2).replace('"id": ' + siteId, `<a href='#' siteIdData='${siteId}'>"id": ${siteId}</a>`);
+                                    const keypairJson = JSON.stringify(siteKeyPairs, null, 2).replace('"site_id": ' + siteId, `<a href='#' siteIdData='${siteId}'>"site_id": ${siteId}</a>`);
+                                    const rowToAdd = `<tr><td><pre>${siteJson}</pre></td><td><pre>${keypairJson}</pre></td></tr>`;
+
+                                    if ($("#searchResultsTableBody").length == 1) {
+                                        $("#searchResultsTableBody").append(rowToAdd);
+                                    } else {
+                                        $("#searchResultsTableBody tr:last").after(rowToAdd);
+                                    }
+                                })
+
+                                $('#searchResultsTableBody a').on("click", (e) => {
+                                const siteId =e.target.getAttribute('siteIdData');
+                                setSiteId(siteId);
+                                return false;
+                            })
+
+                            }, (err) => alertErrorCallback(err, "#searchOutputErrorDiv", "#searchSiteErrorAlert"));
+                        }
+                    }, (err) => alertErrorCallback(err, "#searchOutputErrorDiv", "#searchSiteErrorAlert"));
+                });
+
+                $("#createSite-workflow-submit").on("click", () => {
+                    let domainNames = convertNamesToArray($("#createSite-workflow-domainNames").val());
+                    if (domainNames.length === 0) {
+                        showCreateSiteError("Domain names cannot be empty");
+                        return;
+                    }
+
+                    const isPublisherChecked = $("#createSite-workflow-clientTypes-PUBLISHER").is(":checked");
+                    if (!isPublisherChecked) {
+                        showCreateSiteError("Unable to create site - only publishers are allowed to use CSTG.");
+                        return;
+                    }
+
+                    clearErrors();
+                    const name = encodeURIComponent($("#createSite-workflow-name").val());
+                    const description = encodeURIComponent($("#createSite-workflow-description").val());
+
+                    const createSiteUrl = `/api/site/add?name=${name}&types=PUBLISHER&description=${description}`;
+
+                    doApiCallWithCallback("POST", createSiteUrl, (text) => {
+                        const site = JSON.parse(text);
+                        const alertMessage = `Created site for [${site.name}] with site ID [${site.id}]`;
+                        const outputMessage = `\
+${alertMessage}
+--------------------------------------------------
+
+${JSON.stringify(site, null, 2)}`;
+
+                        $("#siteJira").text(outputMessage);
+                        $("#createSiteOutput").collapse('show');
+
+                        const payload = { domain_names: domainNames };
+
+                        const setDomainNamesUrl = `/api/site/domain_names?id=${site.id}`;
+
+                        doApiCallWithCallback("POST", setDomainNamesUrl, (text) => {
+                            const site = JSON.parse(text);
+                            const alertMessage = `Created site for [${site.name}] with site ID [${site.id}]`;
+                            const outputMessage = `\
+${alertMessage}
+--------------------------------------------------
+
+${JSON.stringify(site, null, 2)}`;
+
+                            clearFormsAndShowCollapsed(["#createSiteRegion", "#createSiteOutput"])
+                            $("#siteJira").text(outputMessage);
+
+                        }, (err) => alertErrorCallback(err, "#createSiteError", "#createSiteErrorAlert"), JSON.stringify(payload));
+                    }, (err) => alertErrorCallback(err, "#createSiteError", "#createSiteErrorAlert"));
+                });
+
+                $("#updateSite-workflow-search").on("click", () => {
+                    clearErrors();
+                    $("#updateSiteOutput").collapse('hide');
+                    $("#updateSite-workflow-afterSearch .form-control").val('');
+
+                    const siteId = encodeURIComponent($("#updateSite-workflow-siteId").val());
+
+                    doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                        const searchList = JSON.parse(text);
+
+                        const siteList = searchList.filter((site) => site.id.toString() === siteId);
+                        if (siteList.length === 0) {
+                            $("#updateSite-workflow-afterSearch").collapse('hide');
+                            $("#updateSite-seachOutput-NoResults").collapse('show');
+                        } else {
+                            $("#updateSite-workflow-afterSearch").collapse('show');
+
+                            const site = siteList[0];
+                            $("#updateSite-workflow-afterSearch-name").val(site.name);
+                            $("#updateSite-workflow-afterSearch-domainNames").val(site.domain_names.join(","));
+                            $("#updateSite-workflow-afterSearch-appNames").val(site.app_names.join(","));
+                            $("#updateSite-workflow-afterSearch-description").val(site.description);
+                            $("#updateSite-workflow-afterSearch-PUBLISHER").prop('checked', false);
+                            if (site.clientTypes.includes('PUBLISHER')) {
+                                $("#updateSite-workflow-afterSearch-PUBLISHER").prop('checked', true);
+                            }
+                            currentClientTypesAfterSearch = site.clientTypes;
+                        }
+                    }, (err) => alertErrorCallback(err, "#updateSite-searchOutput-ErrorDiv", "#updateSite-seachOutput-ErrorAlert"));
+                });
+
+                $("#updateSite-workflow-submit").on("click", () => {
+                    // if publisher not set, show error
+                    const isPublisherChecked = $("#updateSite-workflow-afterSearch-PUBLISHER").is(":checked");
+                    if (!isPublisherChecked) {
+                        showUpdateSiteError("Unable to update site - only publishers are allowed to use CSTG.");
+                        return;
+                    }
+
+                    const domainNames = convertNamesToArray($("#updateSite-workflow-afterSearch-domainNames").val());
+                    const appNames = convertNamesToArray($("#updateSite-workflow-afterSearch-appNames").val());
+                    if (domainNames.length === 0 && appNames.length === 0) {
+                        showUpdateSiteError("Both Domain names and App names can not be empty");
+                        return;
+                    }
+
+                    clearErrors();
+
+                    const id = encodeURIComponent($("#updateSite-workflow-siteId").val());
+                    const name = $("#updateSite-workflow-afterSearch-name").text();
+                    const description = encodeURIComponent($("#updateSite-workflow-afterSearch-description").val());
+
+                    const updateDomainNamesUrl = `/api/site/domain_names?id=${id}`;
+                    const updateAppNamesUrl = `/api/site/app_names?id=${id}`;
+                    if (!currentClientTypesAfterSearch.includes('PUBLISHER') && isPublisherChecked) {
+                        // update the site and add publisher client type
+                        currentClientTypesAfterSearch.push('PUBLISHER');
+                        const updateClientTypesUrl = `/api/site/set-types?id=${id}&types=${currentClientTypesAfterSearch.join(",")}`;
+                        doApiCallWithCallback(
+                            "POST",
+                            updateClientTypesUrl,
+                            (text) => { }, (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert")
+                        );
+                    }
+
+                    const updateDescriptionUrl = `/api/site/update?id=${id}&description=${description}`;
+
+                    const updateDomainNamesPayload = { domain_names: domainNames };
+                    const updateAppNamesPayload = { app_names: appNames };
+
+                    doApiCallWithCallback("POST", updateDomainNamesUrl, 
+                        () => doApiCallWithCallback("POST", updateAppNamesUrl, 
+                            () => doApiCallWithCallback("POST", updateDescriptionUrl, (text) => {
+                                const site = JSON.parse(text);
+
+                                const alertMessage = `Updated site [${site.name}] with site ID [${site.id}]`;
+
+                                const outputMessage = `\
+${alertMessage}
+--------------------------------------------------
+
+${JSON.stringify(site, null, 2)}`;
+
+                                $("#siteUpdateJira").text(outputMessage);
+                                $("#updateSiteRegion").collapse('show');
+                                $("#updateSite-workflow-afterSearch").collapse('show');
+                                $("#updateSiteOutput").collapse('show');
+
+                            }, (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert")), 
+                            (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert"), JSON.stringify(updateAppNamesPayload)), 
+                        (err) => alertErrorCallback(err, "#updateSiteError", "#updateSiteErrorAlert"), JSON.stringify(updateDomainNamesPayload));
+                });
+
+
+                $("#createKeypair-workflow-submit").on("click", () => {
+                    $("#keypairSearchOutput").text("");
+
+                    const siteId = encodeURIComponent($("#createKeypair-workflow-siteId").val());
+                    const name = $("#createKeypair-workflow-name").val();
+
+                    const payload = { "site_id": parseInt(siteId), "name": name, "disabled": false }
+
+                    doApiCallWithCallback("POST", "/api/client_side_keypairs/add", (text) => {
+                        clearFormsAndShowCollapsed(["#createKeyPairRegion", "#createKeypairOutput"]);
+                        const keypair = JSON.parse(text);
+
+                        const alertMessage = `Created CSTG keypair for site ID [${keypair.site_id}]`;
+
+                        const privateMessage = `\
+Subscription ID: ${keypair.subscription_id}
+Public key: ${keypair.public_key}`;
+
+
+                        $("#tradeSecretSpace").text(privateMessage);
+                        const jiraBody = JSON.parse(JSON.stringify(keypair));
+                        delete jiraBody.subscription_id;
+                        delete jiraBody.public_key;
+                        delete jiraBody.private_key;
+
+                        const jiraMessage = `\
+${alertMessage}
+--------------------------------------------------
+
+${JSON.stringify(jiraBody, null, 2)}`;
+                        $("#jiraSpace").text(jiraMessage)
+
+                        const fullMessage = `\
+${alertMessage}
+--------------------------------------------------
+
+${JSON.stringify(keypair, null, 2)}`;
+
+                        $("#fullClientOutputSpace").text(fullMessage)
+
+                    }, (err) => alertErrorCallback(err, "#createClientError", "#createClientErrorAlert"), JSON.stringify(payload));
+                });
+
+                const convertNamesToArray = (domainNames) => {
+                    return domainNames.replace(/\s+/g, '').split(',').filter((value, _, __) => value !== "");
+                }
+
+                var currentClientTypesAfterSearch = [];
+
+                $("#copyTradeSecret").on("click", () => {
+                    const text = $("#tradeSecretSpace").text();
+                    navigator.clipboard.writeText(text);
+                });
+                $("#copyForJira").on("click", () => {
+                    const text = $("#jiraSpace").text();
+                    navigator.clipboard.writeText(text);
+                });
+                $("#copySite").on("click", () => {
+                    const text = $("#siteJira").text();
+                    navigator.clipboard.writeText(text);
+                });
+                $("#copyUpdatedSite").on("click", () => {
+                    const text = $("#siteUpdateJira").text();
+                    navigator.clipboard.writeText(text);
+                });
+
+                const showCreateSiteError = (errorMessage) => {
+                    $("#createSiteError").text(errorMessage);
+                    $("#createSiteErrorAlert").collapse('show');
+                }
+                const showUpdateSiteError = (errorMessage) => {
+                    $("#updateSiteError").text(errorMessage);
+                    $("#updateSiteErrorAlert").collapse('show');
+                }
+
+                const clearErrors = () => {
+                    $("#createSiteErrorAlert").collapse('hide');
+                    $("#createSiteError").text("");
+
+                    $("#updateSite-seachOutput-ErrorAlert").collapse('hide');
+                    $("#updateSite-searchOutput-ErrorDiv").text("");
+
+                    $("#updateSiteErrorAlert").collapse('hide');
+                    $("#updateSiteError").text("");
+
+                    $("#createClientErrorAlert").collapse('hide');
+                    $("#createClientError").text("");
+
+                    $("#updateSite-seachOutput-NoResults").collapse('hide');
+                }
+            });
+        </script>
+    <script src="/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+
+</html>

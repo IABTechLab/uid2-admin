@@ -92,6 +92,16 @@ public class S3KeyManager {
     }
 
     public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
+        if (operatorKeys == null || operatorKeys.isEmpty()) {
+            throw new IllegalArgumentException("Operator keys collection must not be null or empty");
+        }
+        if (keyActivateInterval <= 0) {
+            throw new IllegalArgumentException("Key activate interval must be greater than zero");
+        }
+        if (keyCountPerSite <= 0) {
+            throw new IllegalArgumentException("Key count per site must be greater than zero");
+        }
+
         Set<Integer> uniqueSiteIds = new HashSet<>();
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
@@ -102,7 +112,8 @@ public class S3KeyManager {
                 for (int i = 0; i < keyCountPerSite; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
-                    addS3Key(generateS3Key(siteId, activated, created));
+                    S3Key s3Key = generateS3Key(siteId, activated, created);
+                    addS3Key(s3Key);
                 }
             }
         }
