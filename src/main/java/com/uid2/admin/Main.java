@@ -207,7 +207,7 @@ public class Main {
                 if (e.getMessage().contains("The specified key does not exist")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
                     s3KeyProvider.loadContent();
-                }else{
+                } else {
                     throw e;
                 }
             }
