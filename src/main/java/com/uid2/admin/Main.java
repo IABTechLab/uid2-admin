@@ -319,6 +319,7 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("service_link", serviceLinkProvider);
             DataStoreMetrics.addDataStoreServiceLinkEntryCount("snowflake", serviceLinkProvider, serviceProvider);
 
+
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
             CompletableFuture<Boolean> replaceSharingTypesWithSitesJobFuture = jobDispatcher.executeNextJob();
