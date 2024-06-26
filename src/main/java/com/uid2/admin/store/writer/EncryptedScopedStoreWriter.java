@@ -19,16 +19,28 @@ import java.util.Base64;
 import java.util.Map;
 
 public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedScopedStoreWriter.class);
 
-    public EncryptedScopedStoreWriter(StoreReader<Map<Integer, S3Key>> provider, FileManager fileManager,
-                                      VersionGenerator versionGenerator, Clock clock, StoreScope scope,
-                                      FileName dataFile, String dataType) {
+    private final StoreReader<Map<Integer, S3Key>> s3KeyProvider;
+
+    public EncryptedScopedStoreWriter(StoreReader<Map<Integer, S3Key>> s3KeyProvider, IMetadataVersionedStore provider,
+                                      FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
+                                      StoreScope scope, FileName dataFile, String dataType) {
         super(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+        this.s3KeyProvider = s3KeyProvider;
     }
 
+    private String constructEncryptedFileName(FileName dataFile) {
+        String originalFileName = dataFile.toString();
+        int dotIndex = originalFileName.lastIndexOf(".");
+        if (dotIndex == -1) {
+            return originalFileName + "_encrypted";
+        } else {
+            return originalFileName.substring(0, dotIndex) + "_encrypted" + originalFileName.substring(dotIndex);
+        }
+    }
+
+    //upload a file with a single S3key
     public void uploadWithEncryptionKey(String data, JsonObject extraMeta, S3Key encryptionKey) throws Exception {
-        // Encrypt data before uploading
         byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
         byte[] encryptedPayload = AesGcm.encrypt(data.getBytes(StandardCharsets.UTF_8), secret);
         JsonObject encryptedJson = new JsonObject()
@@ -36,6 +48,20 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
                 .put("encryption_version", "1.0")
                 .put("encrypted_payload", Base64.getEncoder().encodeToString(encryptedPayload));
 
+
+        String encryptedFileName = constructEncryptedFileName(super.dataFile);
         super.upload(encryptedJson.encodePrettily(), extraMeta);
+    }
+
+    @Override
+    public void upload(String data, JsonObject extraMeta) throws Exception {
+        // Upload plaintext
+        super.upload(data, extraMeta);
+
+        // Upload encrypted versions
+        Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
+        for (S3Key key : s3Keys.values()) {
+            uploadWithEncryptionKey(data, extraMeta, key);
+        }
     }
 }

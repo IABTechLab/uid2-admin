@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
@@ -27,13 +29,15 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
     private final KeysetStoreWriter globalWriter;
     private final boolean enableKeysets;
 
+
     public KeysetStoreFactory(ICloudStorage fileStreamProvider,
                               CloudPath rootMetadataPath,
                               ObjectWriter objectWriter,
                               VersionGenerator versionGenerator,
                               Clock clock,
                               FileManager fileManager,
-                              boolean enableKeysets) {
+                              boolean enableKeysets
+) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
@@ -59,6 +63,7 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
         return new RotatingKeysetProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+
     @Override
     public StoreWriter<Map<Integer, Keyset>> getWriter(Integer siteId) {
         return new KeysetStoreWriter(
@@ -70,6 +75,10 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                 new SiteScope(rootMetadataPath, siteId),
                 enableKeysets
         );
+    }
+
+    public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId, EncryptedScopedStoreWriter encryptedScopedStoreWriter) {
+        return new KeysetStoreWriter(encryptedScopedStoreWriter);
     }
 
     public RotatingKeysetProvider getGlobalReader() { return globalReader; }

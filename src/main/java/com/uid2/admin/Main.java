@@ -15,6 +15,8 @@ import com.uid2.admin.managers.S3KeyManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
+import com.uid2.admin.store.factory.KeysetStoreFactory;
+import com.uid2.admin.store.factory.StoreFactory;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.version.EpochVersionGenerator;
@@ -27,6 +29,7 @@ import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.secret.SecureKeyGenerator;
@@ -64,6 +67,7 @@ import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 
@@ -259,7 +263,7 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config,s3KeyProvider ),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider)
             };
@@ -317,7 +321,6 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("partners", partnerConfigProvider);
             DataStoreMetrics.addDataStoreMetrics("service_link", serviceLinkProvider);
             DataStoreMetrics.addDataStoreServiceLinkEntryCount("snowflake", serviceLinkProvider, serviceProvider);
-
 
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);

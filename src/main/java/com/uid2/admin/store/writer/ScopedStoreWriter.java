@@ -10,12 +10,12 @@ import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
 public class ScopedStoreWriter {
-    private final IMetadataVersionedStore provider;
-    private final FileManager fileManager;
+    final IMetadataVersionedStore provider;
+    final FileManager fileManager;
     private final VersionGenerator versionGenerator;
     private final Clock clock;
     private final StoreScope scope;
-    private final FileName dataFile;
+    final FileName dataFile;
     private final String dataType;
 
     public ScopedStoreWriter(

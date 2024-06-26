@@ -1,11 +1,15 @@
 package com.uid2.admin.store.writer;
 
+import com.azure.json.implementation.DefaultJsonWriter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.Keyset;
+import com.uid2.shared.model.S3Key;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
@@ -22,6 +26,7 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
     private final boolean enableKeysets;
     private static final Logger LOGGER = LoggerFactory.getLogger(KeysetStoreWriter.class);
 
+    // Constructor for non-encrypted writer
     public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
                              ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope,
                              boolean enableKeysets) {
@@ -30,6 +35,12 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
         String dataType = "keysets";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
         this.enableKeysets = enableKeysets;
+    }
+    // Constructor for encrypted writer
+    public KeysetStoreWriter(EncryptedScopedStoreWriter writer) {
+        this.writer = writer;
+        this.jsonWriter = new ObjectMapper().writer();
+        this.enableKeysets = true;
     }
 
     @Override
