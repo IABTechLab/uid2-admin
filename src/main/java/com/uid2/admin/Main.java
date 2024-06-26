@@ -206,7 +206,7 @@ public class Main {
             } catch (CloudStorageException e) {
                 if (e.getMessage().contains("The specified key does not exist")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
-                    s3KeyProvider.loadContent(s3KeyProvider.getMetadata());
+                    s3KeyProvider.loadContent();
                 }else{
                     throw e;
                 }
