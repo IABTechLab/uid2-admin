@@ -6,7 +6,6 @@ import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +13,6 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.concurrent.CompletableFuture;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-
 
 public class PrivateSiteDataRefreshService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
@@ -24,19 +21,16 @@ public class PrivateSiteDataRefreshService implements IService {
     private final JobDispatcher jobDispatcher;
     private final WriteLock writeLock;
     private final JsonObject config;
-    private final RotatingS3KeyProvider s3KeyProvider; // Added field
 
     public PrivateSiteDataRefreshService(
             AdminAuthMiddleware auth,
             JobDispatcher jobDispatcher,
             WriteLock writeLock,
-            JsonObject config,
-            RotatingS3KeyProvider s3KeyProvider) { // Modified constructor
+            JsonObject config) {
         this.auth = auth;
         this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;
         this.config = config;
-        this.s3KeyProvider = s3KeyProvider; // Initialize s3KeyProvider
     }
 
     @Override
