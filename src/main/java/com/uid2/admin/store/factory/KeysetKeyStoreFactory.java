@@ -20,6 +20,7 @@ import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
 
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingKeysetKeyStore globalReader;
+    private final RotatingS3KeyProvider s3KeyProvider;
     private final boolean enableKeyset;
 
     public KeysetKeyStoreFactory(
@@ -38,12 +40,14 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
             VersionGenerator versionGenerator,
             Clock clock,
             FileManager fileManager,
+            RotatingS3KeyProvider s3KeyProvider,
             boolean enableKeyset) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeysetKeyStore(fileStreamProvider, globalScope);
         this.enableKeyset = enableKeyset;
@@ -70,7 +74,7 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
     public StoreWriter<Collection<KeysetKey>> getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-
+        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,

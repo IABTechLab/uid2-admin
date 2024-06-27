@@ -31,6 +31,7 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingLegacyClientKeyProvider globalReader;
+    private final RotatingS3KeyProvider s3KeyProvider;
     private final LegacyClientKeyStoreWriter globalWriter;
 
     public ClientKeyStoreFactory(
@@ -39,12 +40,14 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
+            RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager)  {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
+        this.s3KeyProvider = s3KeyProvider;
         this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingLegacyClientKeyProvider(fileStreamProvider, globalScope);
@@ -83,8 +86,8 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("keysets", ".json"),
-                "keysets"
+                new FileName("clients", ".json"),
+                "client_keys"
         );
 
         return new LegacyClientKeyStoreWriter(encryptedWriter, objectWriter);

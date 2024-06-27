@@ -14,6 +14,7 @@ import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
@@ -29,6 +30,7 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingKeyAclProvider globalReader;
+    private final RotatingS3KeyProvider s3KeyProvider;
 
     public KeyAclStoreFactory(
             ICloudStorage fileStreamProvider,
@@ -36,6 +38,7 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
+            RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
@@ -43,6 +46,7 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeyAclProvider(fileStreamProvider, globalScope);
     }
@@ -65,7 +69,7 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-
+        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,

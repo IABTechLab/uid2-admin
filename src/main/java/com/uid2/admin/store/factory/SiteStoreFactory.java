@@ -32,6 +32,8 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     private final FileManager fileManager;
     private final RotatingSiteStore globalReader;
     private final SiteStoreWriter globalWriter;
+    private final RotatingS3KeyProvider s3KeyProvider;
+
 
     public SiteStoreFactory(
             ICloudStorage fileStreamProvider,
@@ -39,12 +41,14 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
+            RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
+        this.s3KeyProvider = s3KeyProvider;
         this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingSiteStore(fileStreamProvider, globalScope);
@@ -78,7 +82,7 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     public StoreWriter<Collection<Site>>getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-
+        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,

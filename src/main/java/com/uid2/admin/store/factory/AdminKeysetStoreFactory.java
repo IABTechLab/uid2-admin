@@ -12,6 +12,7 @@ import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.Keyset;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
@@ -30,6 +31,7 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
     private final VersionGenerator versionGenerator;
     private final Clock clock;
     private final FileManager fileManager;
+    private final RotatingS3KeyProvider s3KeyProvider;
     private final RotatingAdminKeysetStore globalReader;
 
     public AdminKeysetStoreFactory(ICloudStorage fileStreamProvider,
@@ -37,6 +39,7 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
                               ObjectWriter objectWriter,
                               VersionGenerator versionGenerator,
                               Clock clock,
+                              RotatingS3KeyProvider s3KeyProvider,
                               FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
@@ -44,6 +47,7 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingAdminKeysetStore(fileStreamProvider, globalScope);
     }
@@ -68,7 +72,7 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
     public StoreWriter<Map<Integer, AdminKeyset>>  getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-
+        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,

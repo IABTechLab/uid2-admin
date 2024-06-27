@@ -31,8 +31,8 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
     private final FileManager fileManager;
     private final RotatingKeysetProvider globalReader;
     private final KeysetStoreWriter globalWriter;
+    private final RotatingS3KeyProvider s3KeyProvider;
     private final boolean enableKeysets;
-
 
     public KeysetStoreFactory(ICloudStorage fileStreamProvider,
                               CloudPath rootMetadataPath,
@@ -40,14 +40,15 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                               VersionGenerator versionGenerator,
                               Clock clock,
                               FileManager fileManager,
-                              boolean enableKeysets
-) {
+                              RotatingS3KeyProvider s3KeyProvider,
+                              boolean enableKeysets) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeysetProvider(fileStreamProvider, globalScope);
         globalWriter = new KeysetStoreWriter(
@@ -83,7 +84,7 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-
+        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,

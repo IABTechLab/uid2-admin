@@ -13,6 +13,7 @@ import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
@@ -27,18 +28,22 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingKeyStore globalReader;
+    private final RotatingS3KeyProvider s3KeyProvider;
+
 
     public EncryptionKeyStoreFactory(
             ICloudStorage fileStreamProvider,
             CloudPath rootMetadataPath,
             VersionGenerator versionGenerator,
             Clock clock,
+            RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeyStore(fileStreamProvider, globalScope);
     }
@@ -62,7 +67,7 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
     public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-
+        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,
