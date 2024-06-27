@@ -22,9 +22,13 @@ import java.util.Map;
 public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
     private static RotatingS3KeyProvider s3KeyProvider;
+    private Integer siteId;
 
     public static void initializeS3KeyProvider(RotatingS3KeyProvider s3KeyProvider) {
         s3KeyProvider = s3KeyProvider;
+    }
+    public void setSiteId(Integer siteId) {
+        this.siteId = siteId;
     }
 
     public EncryptedScopedStoreWriter(IMetadataVersionedStore provider,
@@ -65,11 +69,27 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         // Upload plaintext
         super.upload(data, extraMeta);
 
-        // Upload encrypted versions
-        //TODO:a logics to tell which key should be used for which file
+        // Find the key with the largest identifier for the current site
+        if (siteId == null) {
+            throw new IllegalStateException("Site ID is not set.");
+        }
+
         Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
+        S3Key largestKey = null;
+
         for (S3Key key : s3Keys.values()) {
-            uploadWithEncryptionKey(data, extraMeta, key);
+            if (key.getSiteId() == siteId) {
+                if (largestKey == null || key.getId() > largestKey.getId()) {
+                    largestKey = key;
+                }
+            }
+        }
+
+        // Upload encrypted version using the largest key
+        if (largestKey != null) {
+            uploadWithEncryptionKey(data, extraMeta, largestKey);
+        } else {
+            throw new IllegalStateException("No S3 keys available for encryption for site ID: " + siteId);
         }
     }
 }

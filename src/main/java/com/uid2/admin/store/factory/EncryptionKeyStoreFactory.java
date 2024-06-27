@@ -69,8 +69,8 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("keysets", ".json"),
-                "keysets"
+                new FileName("keys", ".json"),
+                "keys"
         );
 
         return new EncryptionKeyStoreWriter(encryptedWriter);

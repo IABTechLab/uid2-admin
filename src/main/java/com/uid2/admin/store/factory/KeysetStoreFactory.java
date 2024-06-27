@@ -93,7 +93,7 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                 new FileName("keysets", ".json"),
                 "keysets"
         );
-
+        encryptedWriter.setSiteId(siteId);
         return new KeysetStoreWriter(encryptedWriter,objectWriter);
     }
 

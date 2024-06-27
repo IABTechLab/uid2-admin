@@ -137,8 +137,8 @@ public class PrivateSiteDataSyncJob extends Job {
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
-                siteStoreFactory,//encypted, add a new method
-                MultiScopeStoreWriter::areCollectionsEqual);//encyptedmultiscopedstorewriter
+                siteStoreFactory
+                MultiScopeStoreWriter::areCollectionsEqual);
         MultiScopeStoreWriter<Collection<LegacyClientKey>> clientWriter = new MultiScopeStoreWriter<>(
                 fileManager,
                 clientKeyStoreFactory,

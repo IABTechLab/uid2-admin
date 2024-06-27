@@ -18,11 +18,35 @@ public class MultiScopeStoreWriter<T> {
         this.areEqual = areEqual;
     }
 
+    //public void uploadIfChanged(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+    //    Map<Integer, T> currentState = getCurrentState(desiredState.keySet());
+    //    List<Integer> sitesToWrite = getSitesToWrite(desiredState, currentState);
+    //    write(desiredState, sitesToWrite, extraMeta);
+   // }
+
     public void uploadIfChanged(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         Map<Integer, T> currentState = getCurrentState(desiredState.keySet());
         List<Integer> sitesToWrite = getSitesToWrite(desiredState, currentState);
-        write(desiredState, sitesToWrite, extraMeta);
+
+        // Write regular files only if changed
+        writeRegular(desiredState, sitesToWrite, extraMeta);
+
+        // Always write encrypted files for all sites
+        writeEncrypted(desiredState, desiredState.keySet(), extraMeta);
     }
+
+    private void writeRegular(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
+        for (Integer siteId : sitesToWrite) {
+            factory.getWriter(siteId).upload(desiredState.get(siteId), extraMeta);
+        }
+    }
+
+    private void writeEncrypted(Map<Integer, T> desiredState, Collection<Integer> allSites, JsonObject extraMeta) throws Exception {
+        for (Integer siteId : allSites) {
+            factory.getEncryptedWriter(siteId).upload(desiredState.get(siteId), extraMeta);
+        }
+    }
+
 
     private List<Integer> getSitesToWrite(
             Map<Integer, T> desiredState,
@@ -56,6 +80,7 @@ public class MultiScopeStoreWriter<T> {
 
         }
     }
+
 
     public static <K, V> boolean areMapsEqual(Map<K, V> a, Map<K, V> b) {
         return a.size() == b.size() && a.entrySet().stream().allMatch(b.entrySet()::contains);
