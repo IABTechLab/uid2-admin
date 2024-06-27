@@ -72,7 +72,6 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
 
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
-                new RotatingS3KeyProvider(fileStreamProvider, encryptedScope),
                 getReader(siteId),
                 fileManager,
                 versionGenerator,
