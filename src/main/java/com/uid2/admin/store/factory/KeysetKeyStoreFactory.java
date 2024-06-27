@@ -1,19 +1,27 @@
 package com.uid2.admin.store.factory;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
+import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>> {
     private final ICloudStorage fileStreamProvider;
@@ -41,6 +49,7 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
         this.enableKeyset = enableKeyset;
     }
 
+
     @Override
     public RotatingKeysetKeyStore getReader(Integer siteId) {
         return new RotatingKeysetKeyStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
@@ -56,6 +65,24 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
                 new SiteScope(rootMetadataPath, siteId),
                 enableKeyset
         );
+    }
+
+    public StoreWriter<Collection<KeysetKey>> getEncryptedWriter(Integer siteId) {
+        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
+        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
+
+        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+                new RotatingS3KeyProvider(fileStreamProvider, encryptedScope),
+                getReader(siteId),
+                fileManager,
+                versionGenerator,
+                clock,
+                encryptedScope,
+                new FileName("keyset_keys", ".json"),
+                "keyset_keys"
+        );
+
+        return new KeysetKeyStoreWriter(encryptedWriter);
     }
 
     public RotatingKeysetKeyStore getGlobalReader() { return globalReader; }

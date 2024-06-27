@@ -1,5 +1,6 @@
 package com.uid2.admin.store.writer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
@@ -22,6 +23,13 @@ public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
         String dataType = "sites";
         writer = new ScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
+
+    // Constructor for encrypted writer
+    public SiteStoreWriter(EncryptedScopedStoreWriter writer,ObjectWriter jsonWriter) {
+        this.writer = writer;
+        this.jsonWriter = new ObjectMapper().writer();
+    }
+
 
     @Override
     public void upload(Collection<Site> data, JsonObject extraMeta) throws Exception {

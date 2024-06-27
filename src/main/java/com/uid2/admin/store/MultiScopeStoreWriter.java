@@ -52,6 +52,8 @@ public class MultiScopeStoreWriter<T> {
     private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
         for (Integer addedSite : sitesToWrite) {
             factory.getWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
+            factory.getEncryptedWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
+
         }
     }
 

@@ -11,6 +11,7 @@ import com.uid2.shared.store.reader.IMetadataVersionedStore;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +21,19 @@ import java.util.Map;
 
 public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
-    private final StoreReader<Map<Integer, S3Key>> s3KeyProvider;
+    private static RotatingS3KeyProvider s3KeyProvider;
 
-    public EncryptedScopedStoreWriter(StoreReader<Map<Integer, S3Key>> s3KeyProvider, IMetadataVersionedStore provider,
+    public static void initializeS3KeyProvider(RotatingS3KeyProvider s3KeyProvider) {
+        s3KeyProvider = s3KeyProvider;
+    }
+
+    public EncryptedScopedStoreWriter(IMetadataVersionedStore provider,
                                       FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
                                       StoreScope scope, FileName dataFile, String dataType) {
         super(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
-        this.s3KeyProvider = s3KeyProvider;
+        if (s3KeyProvider == null) {
+            throw new IllegalStateException("S3KeyProvider not initialized. Call initializeS3KeyProvider first.");
+        }
     }
 
     private String constructEncryptedFileName(FileName dataFile) {
@@ -59,6 +66,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         super.upload(data, extraMeta);
 
         // Upload encrypted versions
+        //TODO:a logics to tell which key should be used for which file
         Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
         for (S3Key key : s3Keys.values()) {
             uploadWithEncryptionKey(data, extraMeta, key);

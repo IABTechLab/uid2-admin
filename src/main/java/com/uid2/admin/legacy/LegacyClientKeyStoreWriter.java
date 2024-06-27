@@ -7,6 +7,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.ScopedStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.store.scope.StoreScope;
@@ -23,6 +24,10 @@ public class LegacyClientKeyStoreWriter implements StoreWriter<Collection<Legacy
         FileName dataFile = new FileName("clients", ".json");
         String dataType = "client_keys";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+    }
+    public LegacyClientKeyStoreWriter(EncryptedScopedStoreWriter writer, ObjectWriter jsonWriter) {
+        this.writer = writer;
+        this.jsonWriter = jsonWriter;
     }
 
     @Override

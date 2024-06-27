@@ -1,5 +1,6 @@
 package com.uid2.admin.store.writer;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
@@ -20,6 +21,9 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
         FileName dataFile = new FileName("keys", ".json");
         String dataType = "keys";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+    }
+    public EncryptionKeyStoreWriter(EncryptedScopedStoreWriter writer) {
+        this.writer = writer;
     }
 
     @Override

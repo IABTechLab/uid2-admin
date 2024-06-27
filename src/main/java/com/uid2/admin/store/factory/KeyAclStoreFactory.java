@@ -3,16 +3,21 @@ package com.uid2.admin.store.factory;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.KeyAclStoreWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.EncryptionKeyAcl;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
+import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Map;
 
@@ -56,6 +61,24 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
                 new SiteScope(rootMetadataPath, siteId)
         );
     }
+
+    public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId) {
+        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
+        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
+
+        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+                getReader(siteId),
+                fileManager,
+                versionGenerator,
+                clock,
+                encryptedScope,
+                new FileName("keys_acl", ".json"),
+                "keys_acl"
+        );
+
+        return new KeyAclStoreWriter(encryptedWriter);
+    }
+
 
     public RotatingKeyAclProvider getGlobalReader() {
         return globalReader;

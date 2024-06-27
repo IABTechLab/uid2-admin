@@ -6,14 +6,22 @@ import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.admin.store.writer.ClientKeyStoreWriter;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
+import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClientKey>> {
     private final ICloudStorage fileStreamProvider;
@@ -64,6 +72,24 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
                 new SiteScope(rootMetadataPath, siteId)
         );
     }
+
+    public LegacyClientKeyStoreWriter getEncryptedWriter(Integer siteId) {
+        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
+        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
+
+        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+                getReader(siteId),
+                fileManager,
+                versionGenerator,
+                clock,
+                encryptedScope,
+                new FileName("keysets", ".json"),
+                "keysets"
+        );
+
+        return new LegacyClientKeyStoreWriter(encryptedWriter, objectWriter);
+    }
+
 
     public RotatingLegacyClientKeyProvider getGlobalReader() {
         return globalReader;

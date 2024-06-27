@@ -27,6 +27,11 @@ public class AdminKeysetWriter implements StoreWriter<Map<Integer, AdminKeyset>>
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, storeScope, dataFile, dataType);
     }
 
+    public AdminKeysetWriter(EncryptedScopedStoreWriter writer, ObjectWriter jsonWriter) {
+        this.writer = writer;
+        this.jsonWriter = jsonWriter;
+    }
+
     @Override
     public void upload(Map<Integer, AdminKeyset> data, JsonObject extraMeta) throws Exception {
         JsonArray jsonKeysets = new JsonArray();

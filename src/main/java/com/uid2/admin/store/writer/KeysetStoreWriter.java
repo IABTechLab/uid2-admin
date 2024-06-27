@@ -26,7 +26,6 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
     private final boolean enableKeysets;
     private static final Logger LOGGER = LoggerFactory.getLogger(KeysetStoreWriter.class);
 
-    // Constructor for non-encrypted writer
     public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
                              ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope,
                              boolean enableKeysets) {
@@ -36,10 +35,11 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
         this.enableKeysets = enableKeysets;
     }
+
     // Constructor for encrypted writer
-    public KeysetStoreWriter(EncryptedScopedStoreWriter writer) {
+    public KeysetStoreWriter(EncryptedScopedStoreWriter writer, ObjectWriter jsonWriter) {
         this.writer = writer;
-        this.jsonWriter = new ObjectMapper().writer();
+        this.jsonWriter = jsonWriter;
         this.enableKeysets = true;
     }
 

@@ -3,18 +3,25 @@ package com.uid2.admin.store.factory;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
+import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.SiteStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
+import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
+import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     private final ICloudStorage fileStreamProvider;
@@ -67,6 +74,25 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
                 new SiteScope(rootMetadataPath, siteId)
         );
     }
+
+    public StoreWriter<Collection<Site>>getEncryptedWriter(Integer siteId) {
+        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
+        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
+
+        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+                getReader(siteId),
+                fileManager,
+                versionGenerator,
+                clock,
+                encryptedScope,
+                new FileName("sites", ".json"),
+                 "sites"
+        );
+
+        return new SiteStoreWriter(encryptedWriter, objectWriter);
+    }
+
+
 
     public RotatingSiteStore getGlobalReader() {
         return globalReader;

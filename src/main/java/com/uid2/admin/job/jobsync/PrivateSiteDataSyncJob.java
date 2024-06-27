@@ -31,6 +31,11 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
+import com.uid2.shared.model.S3Key;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.scope.StoreScope;
+import com.uid2.shared.store.CloudPath;
 
 /*
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl data type
@@ -133,7 +138,7 @@ public class PrivateSiteDataSyncJob extends Job {
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
                 siteStoreFactory,//encypted, add a new method
-                MultiScopeStoreWriter::areCollectionsEqual);
+                MultiScopeStoreWriter::areCollectionsEqual);//encyptedmultiscopedstorewriter
         MultiScopeStoreWriter<Collection<LegacyClientKey>> clientWriter = new MultiScopeStoreWriter<>(
                 fileManager,
                 clientKeyStoreFactory,
@@ -180,6 +185,7 @@ public class PrivateSiteDataSyncJob extends Job {
 
             keysetSyncJob.execute();
             keysetKeySyncJob.execute();
+
         }
     }
 }

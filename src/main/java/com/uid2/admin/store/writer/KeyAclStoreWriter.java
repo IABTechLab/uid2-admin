@@ -24,6 +24,10 @@ public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKey
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
+    public KeyAclStoreWriter(EncryptedScopedStoreWriter writer) {
+        this.writer = writer;
+    }
+
     @Override
     public void upload(Map<Integer, EncryptionKeyAcl> data, JsonObject extraMeta) throws Exception {
         // generate new acls

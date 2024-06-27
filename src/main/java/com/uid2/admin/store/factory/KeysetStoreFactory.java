@@ -3,18 +3,22 @@ package com.uid2.admin.store.factory;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
+import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.model.S3Key;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.IMetadataVersionedStore;
 import com.uid2.shared.store.reader.RotatingKeysetProvider;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
+import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Map;
 
@@ -63,7 +67,6 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
         return new RotatingKeysetProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-
     @Override
     public StoreWriter<Map<Integer, Keyset>> getWriter(Integer siteId) {
         return new KeysetStoreWriter(
@@ -76,10 +79,25 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                 enableKeysets
         );
     }
+    //encyptedWriter
+    public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
+        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
+        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
 
-    public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId, EncryptedScopedStoreWriter encryptedScopedStoreWriter) {
-        return new KeysetStoreWriter(encryptedScopedStoreWriter);
+        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+                getReader(siteId),
+                fileManager,
+                versionGenerator,
+                clock,
+                encryptedScope,
+                new FileName("keysets", ".json"),
+                "keysets"
+        );
+
+        return new KeysetStoreWriter(encryptedWriter,objectWriter);
     }
+
+
 
     public RotatingKeysetProvider getGlobalReader() { return globalReader; }
 
