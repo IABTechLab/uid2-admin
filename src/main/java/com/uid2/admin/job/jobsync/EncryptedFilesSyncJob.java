@@ -1,8 +1,12 @@
 package com.uid2.admin.job.jobsync;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.job.jobsync.acl.KeyAclSyncJob;
+import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
+import com.uid2.admin.job.jobsync.key.EncryptionKeySyncJob;
 import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
 import com.uid2.admin.job.jobsync.keyset.SiteKeysetSyncJob;
+import com.uid2.admin.job.jobsync.site.SiteSyncJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.*;
@@ -124,6 +128,8 @@ public class EncryptedFilesSyncJob extends Job {
             keyAclStoreFactory.getGlobalReader().loadContent();
             if(config.getBoolean(enableKeysetConfigProp)) {
                 keysetStoreFactory.getGlobalReader().loadContent();
+                keysetKeyStoreFactory.getGlobalReader().loadContent();
+
             }
         }
 
@@ -131,6 +137,7 @@ public class EncryptedFilesSyncJob extends Job {
         Collection<Site> globalSites = siteStoreFactory.getGlobalReader().getAllSites();
         Collection<LegacyClientKey> globalClients = clientKeyStoreFactory.getGlobalReader().getAll();
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
+        Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
 
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
@@ -150,11 +157,22 @@ public class EncryptedFilesSyncJob extends Job {
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
 
-        // Perform the encrypted sync for each data type
-        syncEncryptedData(siteWriter, globalSites, globalOperators);
-        syncEncryptedData(clientWriter, globalClients, globalOperators);
-        syncEncryptedData(encryptionKeyWriter, globalEncryptionKeys, globalOperators);
-        syncEncryptedData(keyAclWriter, globalKeyAcls, globalOperators);
+        SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
+        ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
+        EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(
+                globalEncryptionKeys,
+                globalClients,
+                globalOperators,
+                globalKeyAcls,
+                globalMaxKeyId,
+                encryptionKeyWriter
+        );
+        KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
+
+        siteSyncJob.execute();
+        clientSyncJob.execute();
+        encryptionKeySyncJob.execute();
+        keyAclSyncJob.execute();
 
         if(config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
