@@ -84,7 +84,6 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,
@@ -92,7 +91,8 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                 clock,
                 encryptedScope,
                 new FileName("keysets", ".json"),
-                "keysets"
+                "keysets",
+                s3KeyProvider
         );
         encryptedWriter.setSiteId(siteId);
         return new KeysetStoreWriter(encryptedWriter,objectWriter);

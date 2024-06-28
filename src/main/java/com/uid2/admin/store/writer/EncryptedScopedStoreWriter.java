@@ -21,23 +21,21 @@ import java.util.Map;
 
 public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
-    private static RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingS3KeyProvider s3KeyProvider;
     private Integer siteId;
 
-    public static void initializeS3KeyProvider(RotatingS3KeyProvider s3KeyProvider) {
-        s3KeyProvider = s3KeyProvider;
-    }
     public void setSiteId(Integer siteId) {
         this.siteId = siteId;
     }
 
     public EncryptedScopedStoreWriter(IMetadataVersionedStore provider,
                                       FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
-                                      StoreScope scope, FileName dataFile, String dataType) {
+                                      StoreScope scope, FileName dataFile, String dataType, RotatingS3KeyProvider s3KeyProvider) {
         super(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+        this.s3KeyProvider = s3KeyProvider;
     }
 
-    private String constructEncryptedFileName(FileName dataFile) {
+    String constructEncryptedFileName(FileName dataFile) {
         String originalFileName = dataFile.toString();
         int dotIndex = originalFileName.lastIndexOf(".");
         if (dotIndex == -1) {
@@ -47,7 +45,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         }
     }
 
-    //upload a file with a single S3key
+
     public void uploadWithEncryptionKey(String data, JsonObject extraMeta, S3Key encryptionKey) throws Exception {
         byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
         byte[] encryptedPayload = AesGcm.encrypt(data.getBytes(StandardCharsets.UTF_8), secret);
@@ -56,37 +54,49 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
                 .put("encryption_version", "1.0")
                 .put("encrypted_payload", Base64.getEncoder().encodeToString(encryptedPayload));
 
-
-        String encryptedFileName = constructEncryptedFileName(super.dataFile);
-        super.upload(encryptedJson.encodePrettily(), extraMeta);
+        this.upload(encryptedJson.encodePrettily(), extraMeta);
     }
 
     @Override
     public void upload(String data, JsonObject extraMeta) throws Exception {
-        // Upload plaintext
-        super.upload(data, extraMeta);
+        // Check if the data is already encrypted
+        if (isEncrypted(data)) {
+            // If it's encrypted, call the superclass upload method
+            super.upload(data, extraMeta);
+        } else {
+            // If it's not encrypted, perform encryption and then upload
+            if (siteId == null) {
+                throw new IllegalStateException("Site ID is not set.");
+            }
 
-        // Find the key with the largest identifier for the current site
-        if (siteId == null) {
-            throw new IllegalStateException("Site ID is not set.");
-        }
+            Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
+            S3Key largestKey = null;
 
-        Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
-        S3Key largestKey = null;
-
-        for (S3Key key : s3Keys.values()) {
-            if (key.getSiteId() == siteId) {
-                if (largestKey == null || key.getId() > largestKey.getId()) {
-                    largestKey = key;
+            for (S3Key key : s3Keys.values()) {
+                if (key.getSiteId() == siteId) {
+                    if (largestKey == null || key.getId() > largestKey.getId()) {
+                        largestKey = key;
+                    }
                 }
             }
-        }
 
-        // Upload encrypted version using the largest key
-        if (largestKey != null) {
-            uploadWithEncryptionKey(data, extraMeta, largestKey);
-        } else {
-            throw new IllegalStateException("No S3 keys available for encryption for site ID: " + siteId);
+            if (largestKey != null) {
+                uploadWithEncryptionKey(data, extraMeta, largestKey);
+            } else {
+                throw new IllegalStateException("No S3 keys available for encryption for site ID: " + siteId);
+            }
+        }
+    }
+
+    // Helper method to check if the data is already encrypted
+    private boolean isEncrypted(String data) {
+        try {
+            JsonObject json = new JsonObject(data);
+            return json.containsKey("key_id") &&
+                    json.containsKey("encryption_version") &&
+                    json.containsKey("encrypted_payload");
+        } catch (Exception e) {
+            return false;
         }
     }
 }

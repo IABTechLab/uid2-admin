@@ -201,7 +201,6 @@ public class Main {
             CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
             GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
             RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
-            EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
             S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
             S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
             try {

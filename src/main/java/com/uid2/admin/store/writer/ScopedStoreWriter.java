@@ -59,7 +59,11 @@ public class ScopedStoreWriter {
         fileManager.uploadFile(location, dataFile, data);
         fileManager.uploadMetadata(metadata.getJson(), dataType, scope.getMetadataPath());
 
-        provider.loadContent(provider.getMetadata());
+        //The loadContent method is trying to read and parse this data as if it were unencrypted
+        // which is causing the deserialization error for encrypted json
+
+       // provider.loadContent(provider.getMetadata());
+
     }
 
     public void upload(String data) throws Exception {

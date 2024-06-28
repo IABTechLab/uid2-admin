@@ -72,7 +72,6 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
     public StoreWriter<Map<Integer, AdminKeyset>>  getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,
@@ -80,7 +79,8 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
                 clock,
                 encryptedScope,
                 new FileName("keysets", ".json"),
-                "keysets"
+                "keysets",
+                s3KeyProvider
         );
 
         return new AdminKeysetWriter (encryptedWriter,objectWriter);

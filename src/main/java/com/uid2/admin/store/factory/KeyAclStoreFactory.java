@@ -69,7 +69,6 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,
@@ -77,7 +76,8 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
                 clock,
                 encryptedScope,
                 new FileName("keys_acl", ".json"),
-                "keys_acl"
+                "keys_acl",
+                s3KeyProvider
         );
 
         return new KeyAclStoreWriter(encryptedWriter);

@@ -67,7 +67,6 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
     public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
-        EncryptedScopedStoreWriter.initializeS3KeyProvider(s3KeyProvider);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,
@@ -75,7 +74,8 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
                 clock,
                 encryptedScope,
                 new FileName("keys", ".json"),
-                "keys"
+                "keys",
+                s3KeyProvider
         );
 
         return new EncryptionKeyStoreWriter(encryptedWriter);
