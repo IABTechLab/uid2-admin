@@ -92,6 +92,9 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
 
         return new LegacyClientKeyStoreWriter(encryptedWriter, objectWriter);
     }
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
 
     public RotatingLegacyClientKeyProvider getGlobalReader() {

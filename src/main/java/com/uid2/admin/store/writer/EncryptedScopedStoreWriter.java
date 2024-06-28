@@ -35,9 +35,6 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
                                       FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
                                       StoreScope scope, FileName dataFile, String dataType) {
         super(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
-        if (s3KeyProvider == null) {
-            throw new IllegalStateException("S3KeyProvider not initialized. Call initializeS3KeyProvider first.");
-        }
     }
 
     private String constructEncryptedFileName(FileName dataFile) {

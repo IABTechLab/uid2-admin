@@ -82,6 +82,9 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
 
         return new KeyAclStoreWriter(encryptedWriter);
     }
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
 
     public RotatingKeyAclProvider getGlobalReader() {

@@ -51,9 +51,15 @@ public class MultiScopeStoreWriter<T> {
 
     private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
         for (Integer addedSite : sitesToWrite) {
+            // Always write plain text
             factory.getWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
-            factory.getEncryptedWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
+
+            // Conditionally write encrypted text if s3provider is not null
+            if (factory.getS3Provider() != null) {
+                factory.getEncryptedWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
+            }
         }
+
     }
 
     public static <K, V> boolean areMapsEqual(Map<K, V> a, Map<K, V> b) {

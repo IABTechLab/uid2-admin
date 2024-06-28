@@ -80,6 +80,9 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
 
         return new EncryptionKeyStoreWriter(encryptedWriter);
     }
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
 
     public RotatingKeyStore getGlobalReader() {

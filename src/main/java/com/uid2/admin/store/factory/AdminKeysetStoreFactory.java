@@ -85,6 +85,9 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
 
         return new AdminKeysetWriter (encryptedWriter,objectWriter);
     }
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
 
 

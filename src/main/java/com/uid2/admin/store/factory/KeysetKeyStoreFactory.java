@@ -87,6 +87,9 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
 
         return new KeysetKeyStoreWriter(encryptedWriter);
     }
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
     public RotatingKeysetKeyStore getGlobalReader() { return globalReader; }
 }

@@ -98,6 +98,9 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
         return new KeysetStoreWriter(encryptedWriter,objectWriter);
     }
 
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
 
     public RotatingKeysetProvider getGlobalReader() { return globalReader; }

@@ -96,6 +96,9 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
         return new SiteStoreWriter(encryptedWriter, objectWriter);
     }
 
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
 
 
     public RotatingSiteStore getGlobalReader() {
