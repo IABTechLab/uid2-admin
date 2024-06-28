@@ -77,7 +77,8 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
                 encryptedScope,
                 new FileName("keys_acl", ".json"),
                 "keys_acl",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
 
         return new KeyAclStoreWriter(encryptedWriter);

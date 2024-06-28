@@ -90,7 +90,8 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
                 encryptedScope,
                 new FileName("sites", ".json"),
                  "sites",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
 
         return new SiteStoreWriter(encryptedWriter, objectWriter);

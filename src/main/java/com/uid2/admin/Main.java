@@ -138,7 +138,7 @@ public class Main {
                 try {
                     keysetKeysProvider.loadContent();
                 } catch (CloudStorageException e) {
-                    if (e.getMessage().contains("The specified key does not exist")) {
+                    if (e.getMessage().contains("s3 get error")) {
                         keysetKeyStoreWriter.upload(new HashSet<>(), 0);
                         keysetKeysProvider.loadContent();
                     } else {

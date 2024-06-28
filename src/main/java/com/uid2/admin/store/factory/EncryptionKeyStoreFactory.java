@@ -75,7 +75,8 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
                 encryptedScope,
                 new FileName("keys", ".json"),
                 "keys",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
 
         return new EncryptionKeyStoreWriter(encryptedWriter);

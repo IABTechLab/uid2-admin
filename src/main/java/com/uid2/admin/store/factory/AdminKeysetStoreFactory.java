@@ -80,7 +80,8 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
                 encryptedScope,
                 new FileName("keysets", ".json"),
                 "keysets",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
 
         return new AdminKeysetWriter (encryptedWriter,objectWriter);

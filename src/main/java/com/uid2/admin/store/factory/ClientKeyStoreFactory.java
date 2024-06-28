@@ -88,7 +88,8 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
                 encryptedScope,
                 new FileName("clients", ".json"),
                 "client_keys",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
 
         return new LegacyClientKeyStoreWriter(encryptedWriter, objectWriter);

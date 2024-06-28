@@ -82,7 +82,8 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
                 encryptedScope,
                 new FileName("keyset_keys", ".json"),
                 "keyset_keys",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
 
         return new KeysetKeyStoreWriter(encryptedWriter);

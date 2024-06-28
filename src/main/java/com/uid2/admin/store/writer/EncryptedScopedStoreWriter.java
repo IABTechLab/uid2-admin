@@ -24,15 +24,12 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
     private final RotatingS3KeyProvider s3KeyProvider;
     private Integer siteId;
 
-    public void setSiteId(Integer siteId) {
-        this.siteId = siteId;
-    }
-
     public EncryptedScopedStoreWriter(IMetadataVersionedStore provider,
                                       FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
-                                      StoreScope scope, FileName dataFile, String dataType, RotatingS3KeyProvider s3KeyProvider) {
+                                      StoreScope scope, FileName dataFile, String dataType, RotatingS3KeyProvider s3KeyProvider, Integer siteId) {
         super(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
         this.s3KeyProvider = s3KeyProvider;
+        this.siteId = siteId;
     }
 
     String constructEncryptedFileName(FileName dataFile) {

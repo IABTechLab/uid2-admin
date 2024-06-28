@@ -92,9 +92,9 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                 encryptedScope,
                 new FileName("keysets", ".json"),
                 "keysets",
-                s3KeyProvider
+                s3KeyProvider,
+                siteId
         );
-        encryptedWriter.setSiteId(siteId);
         return new KeysetStoreWriter(encryptedWriter,objectWriter);
     }
 
