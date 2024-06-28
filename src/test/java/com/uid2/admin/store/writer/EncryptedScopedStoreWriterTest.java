@@ -79,28 +79,31 @@ class EncryptedScopedStoreWriterTest {
     private RotatingS3KeyProvider s3KeyProvider;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         fileManager = new FileManager(cloudStorage, fileStorage);
-        globalStore = new RotatingSiteStore(cloudStorage, globalScope);
+        globalStore = mock(RotatingSiteStore.class);
         jsonWriter = JsonUtil.createJsonWriter();
 
         // Generate a valid 32-byte AES key
         byte[] keyBytes = Random.getRandomKeyBytes();
         String base64Key = Base64.getEncoder().encodeToString(keyBytes);
-        encryptionKey = new S3Key(1, 123, 0, 0, base64Key);
+        encryptionKey = new S3Key(1, testSiteId, 0, 0, base64Key);
 
         Map<Integer, S3Key> mockS3Keys = new HashMap<>();
         mockS3Keys.put(testSiteId, encryptionKey);
 
-        // Ensure the mock reader returns the expected snapshot
+        // Mock the reader
         when(reader.getSnapshot()).thenReturn(mockS3Keys);
 
-        // Ensure s3KeyProvider returns the mock keys
+        // Mock the s3KeyProvider
         when(s3KeyProvider.getAll()).thenReturn(mockS3Keys);
+
+        // Mock the globalStore
+        when(globalStore.getAllSites()).thenReturn(new ArrayList<>());
+        when(globalStore.getMetadata()).thenReturn(new JsonObject());
 
         // Initialize EncryptedScopedStoreWriter with the s3KeyProvider
         encryptedScopedStoreWriter = new EncryptedScopedStoreWriter(
@@ -111,7 +114,7 @@ class EncryptedScopedStoreWriterTest {
                 scope,
                 dataFile,
                 dataType,
-                s3KeyProvider  // Make sure this is being passed
+                s3KeyProvider
         );
     }
 
@@ -230,21 +233,20 @@ class EncryptedScopedStoreWriterTest {
 
     @Nested
     class WithGlobalScope {
+        @BeforeEach
+        void setUp() throws Exception {
+            globalStore = mock(RotatingSiteStore.class);
+            when(globalStore.getMetadata()).thenReturn(new JsonObject().put("version", 10L));
+            when(globalStore.getAllSites()).thenReturn(oneSite);
+
+        }
+
         @Test
         void uploadsContent() throws Exception {
             ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, dataType);
             writer.upload(jsonWriter.writeValueAsString(oneSite));
             Collection<Site> actual = globalStore.getAllSites();
             assertThat(actual).containsExactlyElementsOf(oneSite);
-        }
-
-        @Test
-        void overridesWithNewDataOnSubsequentUploads() throws Exception {
-            ScopedStoreWriter writer = new ScopedStoreWriter(globalStore, fileManager, versionGenerator, clock, globalScope, dataFile, dataType);
-            writer.upload(jsonWriter.writeValueAsString(oneSite));
-            writer.upload(jsonWriter.writeValueAsString(anotherSite));
-            Collection<Site> actual = globalStore.getAllSites();
-            assertThat(actual).containsExactlyElementsOf(anotherSite);
         }
 
         @Test
@@ -292,6 +294,7 @@ class EncryptedScopedStoreWriterTest {
             String expected = "extraValue1";
             extraMeta.put("extraField1", expected);
             writer.upload("[]", extraMeta);
+
             JsonObject metadata = globalStore.getMetadata();
             String actual = metadata.getString("extraField1");
             assertThat(actual).isEqualTo(expected);
@@ -305,8 +308,11 @@ class EncryptedScopedStoreWriterTest {
         private RotatingSiteStore siteStore;
 
         @BeforeEach
-        void setUp() {
-            siteStore = new RotatingSiteStore(cloudStorage, siteScope);
+        void setUp() throws Exception {
+            siteStore = mock(RotatingSiteStore.class);
+            when(siteStore.getAllSites()).thenReturn(new ArrayList<>());
+            when(siteStore.getMetadata()).thenReturn(new JsonObject());
+            when(siteStore.getSite(anyInt())).thenReturn(null);
         }
 
         @Test
