@@ -75,6 +75,7 @@ class ClientKeySyncJobTest {
                 objectWriter,
                 versionGenerator,
                 clock,
+                null,
                 fileManager
         );
     }

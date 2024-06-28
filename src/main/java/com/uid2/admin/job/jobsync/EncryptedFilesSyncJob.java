@@ -43,7 +43,6 @@ public class EncryptedFilesSyncJob extends Job {
         this.config = config;
         this.writeLock = writeLock;
         this.s3KeyProvider = s3KeyProvider;
-
     }
 
     @Override
@@ -53,6 +52,7 @@ public class EncryptedFilesSyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
+        //starting here just a bunch of initialization of factories, nothing actually get excuted
         ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
         FileStorage fileStorage = new TmpFileStorage();
         ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
@@ -114,13 +114,15 @@ public class EncryptedFilesSyncJob extends Job {
                 s3KeyProvider,
                 config.getBoolean(enableKeysetConfigProp));
 
-
+        //actually I can move the s3 key provider logics to here, should be having the same effects and also keeps the main file clean
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
         // Load content synchronously
+        //load a bunch of contents from all the providers we have
         synchronized (writeLock) {
+            s3KeyProvider.loadContent();
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
@@ -129,17 +131,16 @@ public class EncryptedFilesSyncJob extends Job {
             if(config.getBoolean(enableKeysetConfigProp)) {
                 keysetStoreFactory.getGlobalReader().loadContent();
                 keysetKeyStoreFactory.getGlobalReader().loadContent();
-
             }
         }
-
+        //initiate MultiScopeStoreWriters
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
         Collection<Site> globalSites = siteStoreFactory.getGlobalReader().getAllSites();
         Collection<LegacyClientKey> globalClients = clientKeyStoreFactory.getGlobalReader().getAll();
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
         Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
-
+        //multiscope store writer will be able to have the updated sitestorefactory
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
                 siteStoreFactory,
@@ -157,6 +158,7 @@ public class EncryptedFilesSyncJob extends Job {
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
 
+        //initiated all the sync jobs here
         SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
         ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
         EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(
@@ -168,12 +170,13 @@ public class EncryptedFilesSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
-
+        //here is the part that execute the code
         siteSyncJob.execute();
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
         keyAclSyncJob.execute();
 
+        //this is the same procedure as before but just put in a logic to check if its enables
         if(config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
             Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getAllKeysetKeys();
@@ -189,17 +192,9 @@ public class EncryptedFilesSyncJob extends Job {
             SiteKeysetSyncJob keysetSyncJob = new SiteKeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
             KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
 
-
-            syncEncryptedData(keysetWriter, globalKeysets, globalOperators);
-            syncEncryptedData(keysetKeyWriter, globalKeysetKeys, globalOperators);
+            keysetSyncJob.execute();
+            keysetKeySyncJob.execute();
         }
     }
 
-    private <T> void syncEncryptedData(MultiScopeStoreWriter<T> writer, T data, Collection<OperatorKey> operators) throws Exception {
-        Map<Integer, T> desiredState = new HashMap<>();
-        for (OperatorKey operator : operators) {
-            desiredState.put(operator.getSiteId(), data);
-        }
-        writer.uploadIfChanged(desiredState, new JsonObject());
-    }
 }

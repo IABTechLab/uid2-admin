@@ -7,6 +7,5 @@ import com.uid2.shared.store.reader.StoreReader;
 public interface StoreFactory<T> {
     StoreReader<T> getReader(Integer siteId);
     StoreWriter<T> getWriter(Integer siteId);
-
     StoreWriter<T> getEncryptedWriter(Integer addedSite);
 }
