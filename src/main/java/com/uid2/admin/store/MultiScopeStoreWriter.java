@@ -1,6 +1,9 @@
 package com.uid2.admin.store;
 
+import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.factory.StoreFactory;
+import com.uid2.admin.store.writer.ScopedStoreWriter;
+import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.reader.StoreReader;
 import io.vertx.core.json.JsonObject;
 
@@ -17,11 +20,17 @@ public class MultiScopeStoreWriter<T> {
         this.factory = factory;
         this.areEqual = areEqual;
     }
-
+    
+    //up load if change for plain text files
     public void uploadIfChanged(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         Map<Integer, T> currentState = getCurrentState(desiredState.keySet());
         List<Integer> sitesToWrite = getSitesToWrite(desiredState, currentState);
         write(desiredState, sitesToWrite, extraMeta);
+    }
+    private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
+        for (Integer siteToWrite : sitesToWrite) {
+            factory.getWriter(siteToWrite).upload(desiredState.get(siteToWrite), extraMeta);
+        }
     }
 
     private List<Integer> getSitesToWrite(
@@ -32,7 +41,6 @@ public class MultiScopeStoreWriter<T> {
             if (isNewSite) {
                 return true;
             }
-
             return !this.areEqual.apply(desiredState.get(siteId), currentState.get(siteId));
         }).collect(Collectors.toList());
     }
@@ -42,27 +50,26 @@ public class MultiScopeStoreWriter<T> {
         for (Integer siteId : siteIds) {
             StoreReader<T> reader = factory.getReader(siteId);
             if (fileManager.isPresent(reader.getMetadataPath())) {
-                reader.loadContent();
-                currentState.put(siteId, reader.getAll());
+                try {
+                    reader.loadContent();
+                    currentState.put(siteId, reader.getAll());
+                } catch (Exception e) {
+                }
             }
         }
         return currentState;
     }
-
-    private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
-
-        for (Integer siteToWrite : sitesToWrite) {
-            factory.getWriter(siteToWrite).upload(desiredState.get(siteToWrite), extraMeta);
-        }
-
-        if (factory.getS3Provider() != null) {
-            // Write encrypted text for all sites in desiredState
-            for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
-                Integer siteId = entry.getKey();
-                if (siteId != null) {
-                    factory.getEncryptedWriter(siteId).upload(desiredState.get(siteId), extraMeta);
-
-                }
+    
+    //upload Encrypted for encyrpted files
+    public void uploadEncrypted(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+        writeEncrypted(desiredState, extraMeta);
+    }
+    
+    private void writeEncrypted(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+        for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
+            Integer siteId = entry.getKey();
+            if (siteId != null) {
+                factory.getEncryptedWriter(siteId).upload(desiredState.get(siteId), extraMeta);
             }
         }
     }
@@ -73,5 +80,15 @@ public class MultiScopeStoreWriter<T> {
 
     public static <T> boolean areCollectionsEqual(Collection<T> a, Collection<T> b) {
         return a.size() == b.size() && a.stream().allMatch(b::contains);
+    }
+
+    public void uploadGeneral(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+        if (factory.getS3Provider() != null) {
+            // If S3 provider is available, use encrypted upload
+            uploadEncrypted(desiredState, extraMeta);
+        } else {
+            // Otherwise, use plaintext upload
+            uploadIfChanged(desiredState, extraMeta);
+        }
     }
 }

@@ -41,6 +41,6 @@ public class KeysetKeySyncJob extends Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<KeysetKey> desiredState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
-        multiScopeStoreWriter.uploadIfChanged(desiredState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        multiScopeStoreWriter.uploadGeneral(desiredState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
     }
 }

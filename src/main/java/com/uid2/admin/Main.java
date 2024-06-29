@@ -42,7 +42,6 @@ import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
 import com.uid2.shared.store.scope.GlobalScope;
-import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.shared.vertx.VertxUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -138,7 +137,7 @@ public class Main {
                 try {
                     keysetKeysProvider.loadContent();
                 } catch (CloudStorageException e) {
-                    if (e.getMessage().contains("s3 get error")) {
+                    if (e.getMessage().contains("s3 get error") || e.getMessage().contains("The specified key does not exist")) {
                         keysetKeyStoreWriter.upload(new HashSet<>(), 0);
                         keysetKeysProvider.loadContent();
                     } else {
@@ -206,7 +205,7 @@ public class Main {
             try {
                 s3KeyProvider.loadContent();
             } catch (CloudStorageException e) {
-                if (e.getMessage().contains("s3 get error")) {
+                if (e.getMessage().contains("s3 get error") || e.getMessage().contains("The specified key does not exist")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
                     s3KeyProvider.loadContent();
                 } else {
@@ -214,7 +213,6 @@ public class Main {
                 }
             }
             s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
-            // Set the S3KeyProvider in EncryptedScopedStoreWriter
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
@@ -321,8 +319,6 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("service_link", serviceLinkProvider);
             DataStoreMetrics.addDataStoreServiceLinkEntryCount("snowflake", serviceLinkProvider, serviceProvider);
 
-
-
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
             CompletableFuture<Boolean> replaceSharingTypesWithSitesJobFuture = jobDispatcher.executeNextJob();
@@ -330,10 +326,10 @@ public class Main {
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
-            PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
-            jobDispatcher.enqueue(privateSiteDataSyncJob);
-            CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
-            privateSiteDataSyncJobFuture.get();
+           // PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
+            //jobDispatcher.enqueue(privateSiteDataSyncJob);
+            //CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
+            //privateSiteDataSyncJobFuture.get();
 
             EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
             jobDispatcher.enqueue(encryptedFilesSyncJob);

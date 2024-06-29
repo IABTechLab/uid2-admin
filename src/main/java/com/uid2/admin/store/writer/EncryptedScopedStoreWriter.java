@@ -96,4 +96,30 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
             return false;
         }
     }
+
+    public String getDecryptedContent(String encryptedContent) throws Exception {
+        JsonObject json = new JsonObject(encryptedContent);
+        int keyId = json.getInteger("key_id");
+        String encryptedPayload = json.getString("encrypted_payload");
+
+        Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
+        S3Key decryptionKey = null;
+
+        for (S3Key key : s3Keys.values()) {
+            if (key.getSiteId() == siteId && key.getId() == keyId) {
+                decryptionKey = key;
+                break;
+            }
+        }
+
+        if (decryptionKey == null) {
+            throw new IllegalStateException("No matching S3 key found for decryption for site ID: " + siteId + " and key ID: " + keyId);
+        }
+
+        byte[] secret = Base64.getDecoder().decode(decryptionKey.getSecret());
+        byte[] encryptedBytes = Base64.getDecoder().decode(encryptedPayload);
+        byte[] decryptedBytes = AesGcm.decrypt(encryptedBytes, 0, secret);
+
+        return new String(decryptedBytes, StandardCharsets.UTF_8);
+    }
 }
