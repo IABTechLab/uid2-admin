@@ -97,6 +97,7 @@ public class S3KeyManager {
     }
 
     public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
+        this.s3KeyProvider.loadContent();
         if (operatorKeys == null || operatorKeys.isEmpty()) {
             throw new IllegalArgumentException("Operator keys collection must not be null or empty");
         }
