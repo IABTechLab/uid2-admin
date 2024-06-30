@@ -327,10 +327,10 @@ public class Main {
 
             //UID2-575 set up a job dispatcher that will write private site data periodically if there is any changes
             //check job for every minute
-           // PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
-            //jobDispatcher.enqueue(privateSiteDataSyncJob);
-            //CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
-            //privateSiteDataSyncJobFuture.get();
+            PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
+            jobDispatcher.enqueue(privateSiteDataSyncJob);
+            CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
+            privateSiteDataSyncJobFuture.get();
 
             EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
             jobDispatcher.enqueue(encryptedFilesSyncJob);
