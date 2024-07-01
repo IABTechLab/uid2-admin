@@ -23,7 +23,7 @@ import com.uid2.shared.store.scope.StoreScope;
 import java.util.Collection;
 import java.util.Map;
 
-public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
+public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;

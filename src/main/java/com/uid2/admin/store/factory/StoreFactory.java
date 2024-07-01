@@ -9,7 +9,4 @@ public interface StoreFactory<T> {
 
     StoreReader<T> getReader(Integer siteId);
     StoreWriter<T> getWriter(Integer siteId);
-    StoreWriter<T> getEncryptedWriter(Integer addedSite);
-
-    RotatingS3KeyProvider getS3Provider();
 }

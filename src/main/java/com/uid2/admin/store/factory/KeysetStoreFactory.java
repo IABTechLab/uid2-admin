@@ -22,7 +22,7 @@ import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Map;
 
-public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
+public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Keyset>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
@@ -43,6 +43,7 @@ public class KeysetStoreFactory implements StoreFactory<Map<Integer, Keyset>> {
                               boolean enableKeysets) {
         this(fileStreamProvider, rootMetadataPath, objectWriter, versionGenerator, clock,  fileManager,null,enableKeysets);
     }
+
     public KeysetStoreFactory(ICloudStorage fileStreamProvider,
                               CloudPath rootMetadataPath,
                               ObjectWriter objectWriter,

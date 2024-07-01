@@ -60,7 +60,6 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                null,
                 fileManager);
 
         KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
@@ -70,7 +69,6 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                null,
                 this.enableKeysets);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
@@ -79,7 +77,6 @@ public class ReplaceSharingTypesWithSitesJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                null,
                 fileManager);
 
         this.adminKeysetGlobalReader = adminKeysetStoreFactory.getGlobalReader();

@@ -23,7 +23,7 @@ import com.uid2.shared.store.scope.StoreScope;
 import java.util.Collection;
 import java.util.Map;
 
-public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClientKey>> {
+public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<LegacyClientKey>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;

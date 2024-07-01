@@ -24,7 +24,7 @@ import com.uid2.shared.store.scope.StoreScope;
 import java.util.Collection;
 import java.util.Map;
 
-public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>> {
+public class KeysetKeyStoreFactory implements EncryptedStoreFactory<Collection<KeysetKey>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final VersionGenerator versionGenerator;

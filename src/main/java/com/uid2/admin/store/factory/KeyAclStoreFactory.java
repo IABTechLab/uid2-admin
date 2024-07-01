@@ -22,7 +22,7 @@ import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Map;
 
-public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionKeyAcl>> {
+public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, EncryptionKeyAcl>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
