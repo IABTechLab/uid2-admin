@@ -32,16 +32,6 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         this.siteId = siteId;
     }
 
-    String constructEncryptedFileName(FileName dataFile) {
-        String originalFileName = dataFile.toString();
-        int dotIndex = originalFileName.lastIndexOf(".");
-        if (dotIndex == -1) {
-            return originalFileName + "_encrypted";
-        } else {
-            return originalFileName.substring(0, dotIndex) + "_encrypted" + originalFileName.substring(dotIndex);
-        }
-    }
-
 
     public void uploadWithEncryptionKey(String data, JsonObject extraMeta, S3Key encryptionKey) throws Exception {
         byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
@@ -56,12 +46,9 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
     @Override
     public void upload(String data, JsonObject extraMeta) throws Exception {
-        // Check if the data is already encrypted
         if (isEncrypted(data)) {
-            // If it's encrypted, call the superclass upload method
             super.upload(data, extraMeta);
         } else {
-            // If it's not encrypted, perform encryption and then upload
             if (siteId == null) {
                 throw new IllegalStateException("Site ID is not set.");
             }
@@ -85,7 +72,6 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         }
     }
 
-    // Helper method to check if the data is already encrypted
     private boolean isEncrypted(String data) {
         try {
             JsonObject json = new JsonObject(data);
@@ -96,6 +82,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
             return false;
         }
     }
+
 
     public String getDecryptedContent(String encryptedContent) throws Exception {
         JsonObject json = new JsonObject(encryptedContent);
