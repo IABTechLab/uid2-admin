@@ -32,7 +32,6 @@ import java.util.Map;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 
-
 /*
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl data type
  */
@@ -111,6 +110,7 @@ public class PrivateSiteDataSyncJob extends Job {
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
+        // so that we will get a single consistent version of everything before generating private site data
         synchronized (writeLock) {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
@@ -180,7 +180,6 @@ public class PrivateSiteDataSyncJob extends Job {
 
             keysetSyncJob.execute();
             keysetKeySyncJob.execute();
-
         }
     }
 }

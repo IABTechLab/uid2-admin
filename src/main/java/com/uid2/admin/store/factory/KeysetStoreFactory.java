@@ -90,7 +90,7 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
                 enableKeysets
         );
     }
-    //encyptedWriter
+
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
         CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
         StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
@@ -111,7 +111,6 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
     public RotatingS3KeyProvider getS3Provider() {
         return this.s3KeyProvider;
     }
-
 
     public RotatingKeysetProvider getGlobalReader() { return globalReader; }
 

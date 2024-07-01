@@ -67,7 +67,6 @@ public class SiteSyncJobTest {
                 objectWriter,
                 versionGenerator,
                 clock,
-                null,
                 fileManager
         );
     }
