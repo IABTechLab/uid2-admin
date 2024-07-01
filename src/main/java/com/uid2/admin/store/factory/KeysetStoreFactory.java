@@ -19,6 +19,8 @@ import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
+import com.uid2.shared.store.scope.EncryptedScope;
+
 
 import java.util.Map;
 
@@ -92,8 +94,7 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
     }
 
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
-        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
-        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
+        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,

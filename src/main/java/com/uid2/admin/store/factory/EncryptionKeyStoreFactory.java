@@ -15,6 +15,7 @@ import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeyStore;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
@@ -74,8 +75,7 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
     }
 
     public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId) {
-        CloudPath encryptedPath = new CloudPath(rootMetadataPath.toString() + "/encryption");
-        StoreScope encryptedScope = new SiteScope(encryptedPath, siteId);
+        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
                 getReader(siteId),
                 fileManager,
