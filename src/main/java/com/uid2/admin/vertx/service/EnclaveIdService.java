@@ -96,33 +96,43 @@ public class EnclaveIdService implements IService {
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
 
             final String name = rc.queryParam("name").get(0);
+            String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
+            final String enclaveId = rc.queryParam("enclave_id").get(0);
+            long created = Instant.now().getEpochSecond();
+
             Optional<EnclaveIdentifier> existingEnclaveId = this.enclaveIdProvider.getAll()
                     .stream().filter(e -> e.getName().equals(name))
                     .findFirst();
             if (existingEnclaveId.isPresent()) {
-                ResponseUtil.error(rc, 400, "enclave existed");
+                ResponseUtil.error(rc, 400, "enclave name already exists");
                 return;
             }
 
-            String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
             if (protocol == null) {
                 ResponseUtil.error(rc, 400, "no protocol specified");
                 return;
             }
 
-            final String enclaveId = rc.queryParam("enclave_id").get(0);
             if (enclaveId == null) {
                 ResponseUtil.error(rc, 400, "enclave_id not specified");
+                return;
+            }
+
+            // create new enclave id
+            EnclaveIdentifier newEnclaveId = new EnclaveIdentifier(name, protocol, enclaveId, created);
+
+            // EnclaveIdentifier overrides the equals method and tests only protocol and enclave id
+            Optional<EnclaveIdentifier> existingProtocolAndId = this.enclaveIdProvider.getAll()
+                    .stream().filter(e -> e.equals(newEnclaveId))
+                    .findFirst();
+            if (existingProtocolAndId.isPresent()) {
+                ResponseUtil.error(rc, 400, "protocol and enclave_id already exist");
                 return;
             }
 
             List<EnclaveIdentifier> enclaveIds = this.enclaveIdProvider.getAll()
                     .stream().sorted((a, b) -> (int) (a.getCreated() - b.getCreated()))
                     .collect(Collectors.toList());
-
-            // create new enclave id
-            long created = Instant.now().getEpochSecond();
-            EnclaveIdentifier newEnclaveId = new EnclaveIdentifier(name, protocol, enclaveId, created);
 
             // add enclave id to the array
             enclaveIds.add(newEnclaveId);
