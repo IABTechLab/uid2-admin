@@ -41,6 +41,16 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
+            FileManager fileManager) {
+        this(fileStreamProvider, rootMetadataPath, objectWriter, versionGenerator, clock, null, fileManager);
+    }
+
+    public SiteStoreFactory(
+            ICloudStorage fileStreamProvider,
+            CloudPath rootMetadataPath,
+            ObjectWriter objectWriter,
+            VersionGenerator versionGenerator,
+            Clock clock,
             RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
@@ -48,11 +58,12 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
-        this.s3KeyProvider = s3KeyProvider;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
+
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
-        globalReader = new RotatingSiteStore(fileStreamProvider, globalScope);
-        globalWriter = new SiteStoreWriter(
+        this.globalReader = new RotatingSiteStore(fileStreamProvider, globalScope);
+        this.globalWriter = new SiteStoreWriter(
                 globalReader,
                 this.fileManager,
                 objectWriter,

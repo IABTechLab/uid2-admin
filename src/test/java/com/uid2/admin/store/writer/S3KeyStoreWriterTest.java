@@ -62,6 +62,7 @@ public class S3KeyStoreWriterTest {
 
         s3KeyStoreWriter.upload(s3Keys, extraMeta);
 
+
         Map<Integer, S3Key> actualKeys = globalStore.getAll();
         assertThat(actualKeys).hasSize(s3Keys.size());
         assertThat(actualKeys).containsAllEntriesOf(expected);

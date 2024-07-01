@@ -1,5 +1,6 @@
 package com.uid2.admin.store.factory;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
@@ -30,6 +31,14 @@ public class EncryptionKeyStoreFactory implements StoreFactory<Collection<Encryp
     private final RotatingKeyStore globalReader;
     private final RotatingS3KeyProvider s3KeyProvider;
 
+    public EncryptionKeyStoreFactory(
+            ICloudStorage fileStreamProvider,
+            CloudPath rootMetadataPath,
+            VersionGenerator versionGenerator,
+            Clock clock,
+            FileManager fileManager) {
+        this(fileStreamProvider, rootMetadataPath, versionGenerator, clock, null, fileManager);
+    }
 
     public EncryptionKeyStoreFactory(
             ICloudStorage fileStreamProvider,

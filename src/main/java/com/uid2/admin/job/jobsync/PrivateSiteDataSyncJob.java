@@ -31,11 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
-import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
-import com.uid2.shared.model.S3Key;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-import com.uid2.shared.store.scope.StoreScope;
-import com.uid2.shared.store.CloudPath;
+
 
 /*
  * The single job that would refresh private sites data for Site/Client/EncryptionKey/KeyAcl data type
@@ -69,7 +65,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                null,
                 fileManager);
 
         ClientKeyStoreFactory clientKeyStoreFactory = new ClientKeyStoreFactory(
@@ -78,7 +73,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                null,
                 fileManager);
 
         EncryptionKeyStoreFactory encryptionKeyStoreFactory = new EncryptionKeyStoreFactory(
@@ -86,7 +80,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 new CloudPath(config.getString(Const.Config.KeysMetadataPathProp)),
                 versionGenerator,
                 clock,
-                null,
                 fileManager);
 
         KeyAclStoreFactory keyAclStoreFactory = new KeyAclStoreFactory(
@@ -95,7 +88,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                null,
                 fileManager);
 
         KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
@@ -105,7 +97,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                null,
                 config.getBoolean(enableKeysetConfigProp));
 
         KeysetKeyStoreFactory keysetKeyStoreFactory = new KeysetKeyStoreFactory(
@@ -114,7 +105,6 @@ public class PrivateSiteDataSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                null,
                 config.getBoolean(enableKeysetConfigProp));
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));

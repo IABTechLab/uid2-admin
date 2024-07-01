@@ -38,6 +38,16 @@ public class KeyAclStoreFactory implements StoreFactory<Map<Integer, EncryptionK
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
+            FileManager fileManager) {
+        this(fileStreamProvider, rootMetadataPath, objectWriter, versionGenerator, clock, null, fileManager);
+    }
+
+    public KeyAclStoreFactory(
+            ICloudStorage fileStreamProvider,
+            CloudPath rootMetadataPath,
+            ObjectWriter objectWriter,
+            VersionGenerator versionGenerator,
+            Clock clock,
             RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;

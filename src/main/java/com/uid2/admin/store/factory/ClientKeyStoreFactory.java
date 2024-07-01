@@ -40,6 +40,16 @@ public class ClientKeyStoreFactory implements StoreFactory<Collection<LegacyClie
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
+            FileManager fileManager) {
+        this(fileStreamProvider, rootMetadataPath, objectWriter, versionGenerator, clock, null, fileManager);
+    }
+
+    public ClientKeyStoreFactory(
+            ICloudStorage fileStreamProvider,
+            CloudPath rootMetadataPath,
+            ObjectWriter objectWriter,
+            VersionGenerator versionGenerator,
+            Clock clock,
             RotatingS3KeyProvider s3KeyProvider,
             FileManager fileManager)  {
         this.fileStreamProvider = fileStreamProvider;

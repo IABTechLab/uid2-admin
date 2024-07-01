@@ -40,6 +40,16 @@ public class KeysetKeyStoreFactory implements StoreFactory<Collection<KeysetKey>
             VersionGenerator versionGenerator,
             Clock clock,
             FileManager fileManager,
+            boolean enableKeyset) {
+        this(fileStreamProvider, rootMetadataPath, versionGenerator, clock,fileManager,null, enableKeyset);
+    }
+
+    public KeysetKeyStoreFactory(
+            ICloudStorage fileStreamProvider,
+            CloudPath rootMetadataPath,
+            VersionGenerator versionGenerator,
+            Clock clock,
+            FileManager fileManager,
             RotatingS3KeyProvider s3KeyProvider,
             boolean enableKeyset) {
         this.fileStreamProvider = fileStreamProvider;

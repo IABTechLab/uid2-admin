@@ -10,12 +10,12 @@ import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
 public class ScopedStoreWriter {
-    final IMetadataVersionedStore provider;
-    final FileManager fileManager;
+    private final IMetadataVersionedStore provider;
+    private final FileManager fileManager;
     private final VersionGenerator versionGenerator;
     private final Clock clock;
     private final StoreScope scope;
-    final FileName dataFile;
+    private final FileName dataFile;
     private final String dataType;
 
     public ScopedStoreWriter(
@@ -62,7 +62,7 @@ public class ScopedStoreWriter {
         //The loadContent method is trying to read and parse this data as if it were unencrypted
         // which is causing the deserialization error for encrypted json
 
-       // provider.loadContent(provider.getMetadata());
+        //provider.loadContent(provider.getMetadata());
 
     }
 
