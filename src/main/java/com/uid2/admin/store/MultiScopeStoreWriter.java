@@ -52,11 +52,8 @@ public class MultiScopeStoreWriter<T> {
         for (Integer siteId : siteIds) {
             StoreReader<T> reader = factory.getReader(siteId);
             if (fileManager.isPresent(reader.getMetadataPath())) {
-                try {
-                    reader.loadContent();
-                    currentState.put(siteId, reader.getAll());
-                } catch (Exception e) {
-                }
+                reader.loadContent();
+                currentState.put(siteId, reader.getAll());
             }
         }
         return currentState;
