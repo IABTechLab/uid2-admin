@@ -129,7 +129,7 @@ write_files:
     [Service]
     Environment="UID2_ENCLAVE_API_TOKEN=dummy"
     Environment="UID2_ENCLAVE_IMAGE_ID=dummy"
-    Environment="GHCR_RO_ACCESS_TOKEN={{token}}"
+    Environment="GHCR_RO_ACCESS_TOKEN=<token>"
     Environment="HOME=/run/uid2"
     ExecStartPre=mkdir -p /run/uid2/.config/gcloud
     ExecStartPre=docker login ghcr.io -u gcp-uid2-docker -p \${GHCR_RO_ACCESS_TOKEN}
@@ -142,13 +142,13 @@ write_files:
   owner: root
   content: |
     {
-      "clients_metadata_path": "https://core-{{env}}.uidapi.com/clients/refresh",
-      "keys_metadata_path": "https://core-{{env}}.uidapi.com/key/refresh",
-      "keys_acl_metadata_path": "https://core-{{env}}.uidapi.com/key/acl/refresh",
-      "salts_metadata_path": "https://core-{{env}}.uidapi.com/salt/refresh",
-      "core_attest_url": "https://core-{{env}}.uidapi.com/attest",
-      "optout_metadata_path": "https://optout-{{env}}.uidapi.com/optout/refresh",
-      "optout_api_uri": "https://optout-{{env}}.uidapi.com/optout/replicate",
+      "clients_metadata_path": "https://core-<environment>.uidapi.com/clients/refresh",
+      "keys_metadata_path": "https://core-<environment>.uidapi.com/key/refresh",
+      "keys_acl_metadata_path": "https://core-<environment>.uidapi.com/key/acl/refresh",
+      "salts_metadata_path": "https://core-<environment>.uidapi.com/salt/refresh",
+      "core_attest_url": "https://core-<environment>.uidapi.com/attest",
+      "optout_metadata_path": "https://optout-<environment>.uidapi.com/optout/refresh",
+      "optout_api_uri": "https://optout-<environment>.uidapi.com/optout/replicate",
       "optout_s3_folder": "optout-v2/",
       "optout_inmem_cache": true,
       "identity_token_expires_after_seconds": 86400,
@@ -208,8 +208,8 @@ write_files:
         var fn = 'cloud-init-' + ts + '.yaml';
         var diskUri = $('#diskUri').val();
 
-        cloudInit = cloudInit.replaceAll('{{env}}', env);
-        cloudInit = cloudInit.replaceAll('{{token}}', ghcrAccessToken)
+        cloudInit = cloudInit.replaceAll('<environment>', env);
+        cloudInit = cloudInit.replaceAll('<token>', ghcrAccessToken)
         cloudInit = normalizeCloudInit(cloudInit);
 
         //var cloudInit = normalizeCloudInit($('#cloudInit').val());
