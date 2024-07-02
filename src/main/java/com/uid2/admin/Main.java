@@ -212,8 +212,6 @@ public class Main {
                     throw e;
                 }
             }
-            s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
-            s3KeyProvider.loadContent();
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
@@ -287,6 +285,11 @@ public class Main {
                 }
             }
 
+            synchronized (writeLock) {
+                s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
+                s3KeyProvider.loadContent();
+            }
+
             /*
             This if statement will:
             1. create all copy keysets to admin keysets
@@ -336,14 +339,11 @@ public class Main {
             jobDispatcher.enqueue(encryptedFilesSyncJob);
             CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
             encryptedFilesSyncJobFuture.get();
-
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);
         }
-
     }
-
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
