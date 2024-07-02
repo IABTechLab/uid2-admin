@@ -213,7 +213,6 @@ public class Main {
                 }
             }
             s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
-            Thread.sleep(8000); // Wait before checking again
             s3KeyProvider.loadContent();
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);

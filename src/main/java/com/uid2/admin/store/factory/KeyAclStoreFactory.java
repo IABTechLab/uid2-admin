@@ -5,10 +5,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
-import com.uid2.admin.store.writer.KeyAclStoreWriter;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
-import com.uid2.admin.store.writer.StoreWriter;
+import com.uid2.admin.store.writer.*;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -79,20 +76,17 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
 
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
-        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+        return new KeyAclStoreWriter(
                 getReader(siteId),
                 fileManager,
+                objectWriter,
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("keys_acl", ".json"),
-                "keys_acl",
-                s3KeyProvider,
-                siteId
+                s3KeyProvider
         );
-
-        return new KeyAclStoreWriter(encryptedWriter);
     }
+
     public RotatingS3KeyProvider getS3Provider() {
         return this.s3KeyProvider;
     }

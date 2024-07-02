@@ -74,6 +74,7 @@ public class MultiScopeStoreWriter<T> {
     }
 
     public void uploadGeneral(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+        //If the factory supports encryption and S3 key provider is provided
         if (supportsEncryption() && ((EncryptedStoreFactory<T>)factory).getS3Provider() != null) {
             uploadEncrypted(desiredState, extraMeta);
         } else {
@@ -84,7 +85,6 @@ public class MultiScopeStoreWriter<T> {
     private boolean supportsEncryption() {
         return factory instanceof EncryptedStoreFactory;
     }
-
 
     public static <K, V> boolean areMapsEqual(Map<K, V> a, Map<K, V> b) {
         return a.size() == b.size() && a.entrySet().stream().allMatch(b.entrySet()::contains);

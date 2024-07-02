@@ -7,6 +7,7 @@ import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.store.reader.RotatingKeyStore;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -22,8 +23,17 @@ public class EncryptionKeyStoreWriter implements StoreWriter<Collection<Encrypti
         String dataType = "keys";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
-    public EncryptionKeyStoreWriter(EncryptedScopedStoreWriter writer) {
-        this.writer = writer;
+
+
+    public EncryptionKeyStoreWriter(RotatingKeyStore provider,
+                                    FileManager fileManager,
+                                    VersionGenerator versionGenerator,
+                                    Clock clock,
+                                    StoreScope scope,
+                                    RotatingS3KeyProvider s3KeyProvider) {
+        FileName dataFile = new FileName("keys", ".json");
+        String dataType = "keys";
+        this.writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
     }
 
     @Override

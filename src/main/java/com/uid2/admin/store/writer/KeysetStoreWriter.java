@@ -37,8 +37,6 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
         this.enableKeysets = enableKeysets;
     }
 
-
-    // Constructor for encrypted writer
     public KeysetStoreWriter(EncryptedScopedStoreWriter writer, ObjectWriter jsonWriter) {
         this.writer = writer;
         this.jsonWriter = jsonWriter;

@@ -84,20 +84,17 @@ public class KeysetKeyStoreFactory implements EncryptedStoreFactory<Collection<K
 
     public StoreWriter<Collection<KeysetKey>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
-        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+        return new KeysetKeyStoreWriter(
                 getReader(siteId),
                 fileManager,
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("keyset_keys", ".json"),
-                "keyset_keys",
                 s3KeyProvider,
-                siteId
+                enableKeyset
         );
-
-        return new KeysetKeyStoreWriter(encryptedWriter);
     }
+
     public RotatingS3KeyProvider getS3Provider() {
         return this.s3KeyProvider;
     }

@@ -89,20 +89,17 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
 
     public LegacyClientKeyStoreWriter getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
-        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+        return new LegacyClientKeyStoreWriter(
                 getReader(siteId),
                 fileManager,
+                objectWriter,
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("clients", ".json"),
-                "client_keys",
-                s3KeyProvider,
-                siteId
+                s3KeyProvider
         );
-
-        return new LegacyClientKeyStoreWriter(encryptedWriter, objectWriter);
     }
+
     public RotatingS3KeyProvider getS3Provider() {
         return this.s3KeyProvider;
     }

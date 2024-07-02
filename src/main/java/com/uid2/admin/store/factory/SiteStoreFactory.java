@@ -91,22 +91,19 @@ public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>>
         );
     }
 
-    public StoreWriter<Collection<Site>>getEncryptedWriter(Integer siteId) {
+    public StoreWriter<Collection<Site>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
-        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+        return new SiteStoreWriter(
                 getReader(siteId),
                 fileManager,
+                objectWriter,
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("sites", ".json"),
-                 "sites",
-                s3KeyProvider,
-                siteId
+                s3KeyProvider
         );
-
-        return new SiteStoreWriter(encryptedWriter, objectWriter);
     }
+
 
     public RotatingS3KeyProvider getS3Provider() {
         return this.s3KeyProvider;

@@ -10,6 +10,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.ScopedStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
@@ -25,9 +26,17 @@ public class LegacyClientKeyStoreWriter implements StoreWriter<Collection<Legacy
         String dataType = "client_keys";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
-    public LegacyClientKeyStoreWriter(EncryptedScopedStoreWriter writer, ObjectWriter jsonWriter) {
-        this.writer = writer;
+    public LegacyClientKeyStoreWriter(RotatingLegacyClientKeyProvider provider,
+                                      FileManager fileManager,
+                                      ObjectWriter jsonWriter,
+                                      VersionGenerator versionGenerator,
+                                      Clock clock,
+                                      StoreScope scope,
+                                      RotatingS3KeyProvider s3KeyProvider) {
         this.jsonWriter = jsonWriter;
+        FileName dataFile = new FileName("clients", ".json");
+        String dataType = "client_keys";
+        this.writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
     }
 
     @Override

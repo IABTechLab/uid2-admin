@@ -76,20 +76,16 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
 
     public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
-        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
+        return new EncryptionKeyStoreWriter(
                 getReader(siteId),
                 fileManager,
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("keys", ".json"),
-                "keys",
-                s3KeyProvider,
-                siteId
+                s3KeyProvider
         );
-
-        return new EncryptionKeyStoreWriter(encryptedWriter);
     }
+
     public RotatingS3KeyProvider getS3Provider() {
         return this.s3KeyProvider;
     }
