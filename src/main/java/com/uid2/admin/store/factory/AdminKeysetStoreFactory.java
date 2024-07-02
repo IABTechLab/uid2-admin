@@ -28,11 +28,11 @@ public class AdminKeysetStoreFactory implements StoreFactory<Map<Integer, AdminK
     private final RotatingAdminKeysetStore globalReader;
 
     public AdminKeysetStoreFactory(ICloudStorage fileStreamProvider,
-                              CloudPath rootMetadataPath,
-                              ObjectWriter objectWriter,
-                              VersionGenerator versionGenerator,
-                              Clock clock,
-                              FileManager fileManager) {
+                                   CloudPath rootMetadataPath,
+                                   ObjectWriter objectWriter,
+                                   VersionGenerator versionGenerator,
+                                   Clock clock,
+                                   FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;

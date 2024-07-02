@@ -23,6 +23,7 @@ public class ClientKeyStoreWriter implements StoreWriter<Collection<ClientKey>> 
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
+
     @Override
     public void upload(Collection<ClientKey> data, JsonObject extraMeta) throws Exception {
         writer.upload(jsonWriter.writeValueAsString(data), extraMeta);

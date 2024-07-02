@@ -35,6 +35,6 @@ public class KeyAclSyncJob extends Job {
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(
                 globalOperators,
                 globalAcls);
-        multiScopeStoreWriter.uploadIfChanged(desiredState, null);
+        multiScopeStoreWriter.uploadGeneral(desiredState, null);
     }
 }

@@ -30,6 +30,6 @@ public class SiteSyncJob extends Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<Site> desiredState = PrivateSiteUtil.getSites(globalSites, globalOperators);
-        multiScopeStoreWriter.uploadIfChanged(desiredState, null);
+        multiScopeStoreWriter.uploadGeneral(desiredState, null);
     }
 }
