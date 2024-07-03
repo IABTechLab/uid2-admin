@@ -187,5 +187,4 @@ public class EncryptedFilesSyncJob extends Job {
             keysetKeySyncJob.execute();
         }
     }
-
 }

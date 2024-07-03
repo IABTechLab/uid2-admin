@@ -31,6 +31,6 @@ public class ClientKeySyncJob extends Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<LegacyClientKey> desiredState = PrivateSiteUtil.getClientKeys(globalOperators, globalClientKeys);
-        multiScopeStoreWriter.uploadGeneral(desiredState, null);
+        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
     }
 }

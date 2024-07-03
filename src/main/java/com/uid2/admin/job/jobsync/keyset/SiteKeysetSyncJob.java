@@ -32,6 +32,6 @@ public class SiteKeysetSyncJob extends Job {
     @Override
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, Keyset>> desiredState = PrivateSiteUtil.getKeysetForEachSite(globalOperators, globalKeysets);
-        multiScopeStoreWriter.uploadGeneral(desiredState, null);
+        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
     }
 }
