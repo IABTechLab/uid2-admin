@@ -95,9 +95,30 @@ public class EnclaveIdService implements IService {
             // refresh manually
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
-            String protocol = RequestUtil.validateOperatorProtocol(rc.queryParam("protocol").get(0));
-            final String enclaveId = rc.queryParam("enclave_id").get(0);
+            final String name = rc.queryParam("name").stream().findFirst().orElse(null);
+            if (name == null || name == "") {
+                ResponseUtil.error(rc, 400, "no name specified");
+                return;
+            }
+
+            final String protocolString = rc.queryParam("protocol").stream().findFirst().orElse(null);
+            if (protocolString == null || protocolString == "") {
+                ResponseUtil.error(rc, 400, "no protocol specified");
+                return;
+            }
+
+            String protocol = RequestUtil.validateOperatorProtocol(protocolString);
+            if (protocol == null) {
+                ResponseUtil.error(rc, 400, "invalid protocol specified");
+                return;
+            }
+
+            final String enclaveId = rc.queryParam("enclave_id").stream().findFirst().orElse(null);
+            if (enclaveId == null || enclaveId == "") {
+                ResponseUtil.error(rc, 400, "enclave_id not specified");
+                return;
+            }
+
             long created = Instant.now().getEpochSecond();
 
             Optional<EnclaveIdentifier> existingEnclaveId = this.enclaveIdProvider.getAll()
@@ -105,16 +126,6 @@ public class EnclaveIdService implements IService {
                     .findFirst();
             if (existingEnclaveId.isPresent()) {
                 ResponseUtil.error(rc, 400, "enclave name already exists");
-                return;
-            }
-
-            if (protocol == null) {
-                ResponseUtil.error(rc, 400, "no protocol specified");
-                return;
-            }
-
-            if (enclaveId == null) {
-                ResponseUtil.error(rc, 400, "enclave_id not specified");
                 return;
             }
 
@@ -152,7 +163,12 @@ public class EnclaveIdService implements IService {
             // refresh manually
             enclaveIdProvider.loadContent(enclaveIdProvider.getMetadata());
 
-            final String name = rc.queryParam("name").get(0);
+            final String name = rc.queryParam("name").stream().findFirst().orElse(null);
+            if (name == null || name == "") {
+                ResponseUtil.error(rc, 400, "no name specified");
+                return;
+            }
+
             Optional<EnclaveIdentifier> existingEnclaveId = this.enclaveIdProvider.getAll()
                     .stream().filter(e -> e.getName().equals(name))
                     .findFirst();
