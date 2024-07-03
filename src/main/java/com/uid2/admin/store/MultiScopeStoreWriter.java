@@ -77,7 +77,7 @@ public class MultiScopeStoreWriter<T> {
         }
     }
 
-    //private Set<Integer> getPublicSiteIds(Collection<OperatorKey> operators) {
+    // private Set<Integer> getPublicSiteIds(Collection<OperatorKey> operators) {
     //    return operators.stream()
     //            .filter(o -> o.getOperatorType() == OperatorType.PUBLIC && o.getSiteId() != null)
     //            .map(OperatorKey::getSiteId)

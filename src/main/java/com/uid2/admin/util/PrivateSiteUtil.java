@@ -230,6 +230,33 @@ public final class PrivateSiteUtil {
         return result;
     }
 
+    public static PrivateSiteDataMap<Site> getPublicSites(
+            Collection<Site> sites,
+            Collection<OperatorKey> operators) {
+        final PrivateSiteDataMap<Site> result = getPublicSitesMap(operators);
+
+        sites.forEach(s -> {
+            result.forEach((publicSiteId, publicSiteData) -> {
+                publicSiteData.add(s);
+            });
+        });
+
+        return result;
+    }
+
+    private static <T> PrivateSiteDataMap<T> getPublicSitesMap(Collection<OperatorKey> operators) {
+        PrivateSiteDataMap<T> result = new PrivateSiteDataMap<>();
+        operators.forEach(o -> {
+            // TODO: Should we check if site is disabled?
+            if (o.getOperatorType() == OperatorType.PUBLIC
+                    && o.getSiteId() != null && !result.containsKey(o.getSiteId())) {
+                result.put(o.getSiteId(), new HashSet<>());
+            }
+        });
+        return result;
+    }
+
+
     private static boolean isSpecialSite(int siteId) {
         return siteId == Const.Data.RefreshKeySiteId
                 || siteId == Const.Data.MasterKeySiteId
