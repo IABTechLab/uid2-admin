@@ -12,9 +12,11 @@ import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.KeysetKey;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
@@ -64,10 +66,13 @@ public class KeysetKeyStoreFactory implements EncryptedStoreFactory<Collection<K
         this.enableKeyset = enableKeyset;
     }
 
-
     @Override
     public RotatingKeysetKeyStore getReader(Integer siteId) {
         return new RotatingKeysetKeyStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
+    }
+
+    public RotatingKeysetKeyStore getEncryptedReader(Integer siteId) {
+        return new RotatingKeysetKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
     }
 
     @Override
@@ -85,7 +90,7 @@ public class KeysetKeyStoreFactory implements EncryptedStoreFactory<Collection<K
     public StoreWriter<Collection<KeysetKey>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         return new KeysetKeyStoreWriter(
-                getReader(siteId),
+                getEncryptedReader(siteId),
                 fileManager,
                 versionGenerator,
                 clock,

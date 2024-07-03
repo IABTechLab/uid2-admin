@@ -6,22 +6,22 @@ import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
+import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.S3Key;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.store.reader.RotatingKeysetProvider;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.reader.*;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
 import com.uid2.shared.store.scope.EncryptedScope;
 
 
+import java.util.Collection;
 import java.util.Map;
 
 public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Keyset>> {
@@ -80,6 +80,10 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
         return new RotatingKeysetProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+    public StoreReader<Map<Integer, Keyset>> getEncryptedReader(Integer siteId) {
+        return new RotatingKeysetProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    }
+
     @Override
     public StoreWriter<Map<Integer, Keyset>> getWriter(Integer siteId) {
         return new KeysetStoreWriter(
@@ -95,18 +99,16 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
 
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
-        EncryptedScopedStoreWriter encryptedWriter = new EncryptedScopedStoreWriter(
-                getReader(siteId),
+        return new KeysetStoreWriter(
+                getEncryptedReader(siteId),
                 fileManager,
+                objectWriter,
                 versionGenerator,
                 clock,
                 encryptedScope,
-                new FileName("keysets", ".json"),
-                "keysets",
                 s3KeyProvider,
-                siteId
+                enableKeysets
         );
-        return new KeysetStoreWriter(encryptedWriter,objectWriter);
     }
 
     public RotatingS3KeyProvider getS3Provider() {

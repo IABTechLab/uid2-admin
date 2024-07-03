@@ -4,6 +4,7 @@ import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.factory.StoreFactory;
 import com.uid2.admin.store.writer.ScopedStoreWriter;
 import com.uid2.shared.model.KeysetKey;
+
 import com.uid2.admin.store.factory.EncryptedStoreFactory;
 import com.uid2.shared.store.reader.StoreReader;
 import io.vertx.core.json.JsonObject;
@@ -75,6 +76,13 @@ public class MultiScopeStoreWriter<T> {
             }
         }
     }
+
+    //private Set<Integer> getPublicSiteIds(Collection<OperatorKey> operators) {
+    //    return operators.stream()
+    //            .filter(o -> o.getOperatorType() == OperatorType.PUBLIC && o.getSiteId() != null)
+    //            .map(OperatorKey::getSiteId)
+    //           .collect(Collectors.toSet());
+    // }
 
     private boolean supportsEncryption() {
         return factory instanceof EncryptedStoreFactory;

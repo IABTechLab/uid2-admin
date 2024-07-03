@@ -63,6 +63,9 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
         return new RotatingKeyAclProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+    public StoreReader<Map<Integer, EncryptionKeyAcl>> getEncryptedReader(Integer siteId) {
+        return new RotatingKeyAclProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    }
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getWriter(Integer siteId) {
         return new KeyAclStoreWriter(
                 getReader(siteId),
@@ -77,7 +80,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         return new KeyAclStoreWriter(
-                getReader(siteId),
+                getEncryptedReader(siteId),
                 fileManager,
                 objectWriter,
                 versionGenerator,

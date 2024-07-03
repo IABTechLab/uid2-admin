@@ -1,6 +1,7 @@
 package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
@@ -63,6 +64,11 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
         return new RotatingKeyStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+    public RotatingKeyStore getEncryptedReader(Integer siteId) {
+        return new RotatingKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    }
+
+
     @Override
     public EncryptionKeyStoreWriter getWriter(Integer siteId) {
         return new EncryptionKeyStoreWriter(
@@ -77,7 +83,7 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
     public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         return new EncryptionKeyStoreWriter(
-                getReader(siteId),
+                getEncryptedReader(siteId),
                 fileManager,
                 versionGenerator,
                 clock,

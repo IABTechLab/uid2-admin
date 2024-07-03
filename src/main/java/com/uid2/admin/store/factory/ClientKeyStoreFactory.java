@@ -14,8 +14,11 @@ import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingSiteStore;
+import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
@@ -76,6 +79,10 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
         return new RotatingLegacyClientKeyProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+    public RotatingLegacyClientKeyProvider getEncryptedReader(Integer siteId) {
+        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    }
+
     public LegacyClientKeyStoreWriter getWriter(Integer siteId) {
         return new LegacyClientKeyStoreWriter(
                 getReader(siteId),
@@ -90,7 +97,7 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
     public LegacyClientKeyStoreWriter getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         return new LegacyClientKeyStoreWriter(
-                getReader(siteId),
+                getEncryptedReader(siteId),
                 fileManager,
                 objectWriter,
                 versionGenerator,

@@ -79,6 +79,10 @@ public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>>
         return new RotatingSiteStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+    public StoreReader<Collection<Site>> getEncryptedReader(Integer siteId) {
+        return new RotatingSiteStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    }
+
     @Override
     public StoreWriter<Collection<Site>> getWriter(Integer siteId) {
         return new SiteStoreWriter(
@@ -94,7 +98,7 @@ public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>>
     public StoreWriter<Collection<Site>> getEncryptedWriter(Integer siteId) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
         return new SiteStoreWriter(
-                getReader(siteId),
+                getEncryptedReader(siteId),
                 fileManager,
                 objectWriter,
                 versionGenerator,

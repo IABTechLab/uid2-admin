@@ -26,7 +26,6 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
     private final boolean enableKeysets;
     private static final Logger LOGGER = LoggerFactory.getLogger(KeysetStoreWriter.class);
 
-
     public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
                              ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope,
                              boolean enableKeysets) {
@@ -35,12 +34,16 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
         String dataType = "keysets";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
         this.enableKeysets = enableKeysets;
-    }
 
-    public KeysetStoreWriter(EncryptedScopedStoreWriter writer, ObjectWriter jsonWriter) {
-        this.writer = writer;
+    }
+    public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
+                             ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope,
+                             RotatingS3KeyProvider s3KeyProvider, boolean enableKeysets) {
         this.jsonWriter = jsonWriter;
-        this.enableKeysets = true;
+        FileName dataFile = new FileName("keysets", ".json");
+        String dataType = "keysets";
+        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+        this.enableKeysets = enableKeysets;
     }
 
     @Override
