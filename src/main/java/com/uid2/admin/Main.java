@@ -249,7 +249,7 @@ public class Main {
 
             IService[] services = {
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
-                    new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider),
+                    new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider, clock),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
                     new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),

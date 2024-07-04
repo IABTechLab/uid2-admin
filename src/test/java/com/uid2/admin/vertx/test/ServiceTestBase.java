@@ -13,6 +13,7 @@ import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
+import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
@@ -101,6 +102,8 @@ public abstract class ServiceTestBase {
     @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock protected IKeyGenerator keyGenerator;
     @Mock protected KeyHasher keyHasher;
+    @Mock protected Clock clock;
+
     final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     static final Set<Role> CUSTOM_OKTA_SCOPE_ROLES = Arrays.stream(OktaCustomScope.values())
         .map(OktaCustomScope::getRole)

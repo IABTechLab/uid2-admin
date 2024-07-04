@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx;
 
-import ch.qos.logback.core.joran.conditional.IfAction;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.vertx.service.EnclaveIdService;
@@ -32,7 +31,7 @@ public class EnclaveIdServiceTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        return new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdentifierProvider);
+        return new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdentifierProvider, clock);
     }
 
     @Test

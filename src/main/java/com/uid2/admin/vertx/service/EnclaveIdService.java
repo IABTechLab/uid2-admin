@@ -2,6 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
+import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.writer.EnclaveStoreWriter;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
@@ -16,7 +17,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -28,15 +28,18 @@ public class EnclaveIdService implements IService {
     private final EnclaveStoreWriter storeWriter;
     private final EnclaveIdentifierProvider enclaveIdProvider;
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
+    private final Clock clock;
 
     public EnclaveIdService(AdminAuthMiddleware auth,
                             WriteLock writeLock,
                             EnclaveStoreWriter storeWriter,
-                            EnclaveIdentifierProvider enclaveIdProvider) {
+                            EnclaveIdentifierProvider enclaveIdProvider,
+                            Clock clock) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.enclaveIdProvider = enclaveIdProvider;
+        this.clock = clock;
     }
 
     @Override
@@ -119,7 +122,7 @@ public class EnclaveIdService implements IService {
                 return;
             }
 
-            long created = Instant.now().getEpochSecond();
+            long created = this.clock.getEpochSecond();
 
             Optional<EnclaveIdentifier> existingEnclaveId = this.enclaveIdProvider.getAll()
                     .stream().filter(e -> e.getName().equals(name))
