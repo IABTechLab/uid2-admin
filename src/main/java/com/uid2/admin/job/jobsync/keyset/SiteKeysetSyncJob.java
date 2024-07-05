@@ -35,8 +35,5 @@ public class SiteKeysetSyncJob extends Job {
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, Keyset>> desiredState = PrivateSiteUtil.getKeysetForEachSite(globalOperators, globalKeysets);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
-        HashMap<Integer, Map<Integer, Keyset>> desiredPublicState = PrivateSiteUtil.getPublicKeysets(globalKeysets, globalOperators);
-        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
-
     }
 }

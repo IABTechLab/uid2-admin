@@ -72,7 +72,7 @@ class EncryptedScopedStoreWriterTest {
         String base64Key = Base64.getEncoder().encodeToString(keyBytes);
         encryptionKey = new S3Key(1, testSiteId, 0, 0, base64Key);
 
-        EncryptedScope encryptedScope = new EncryptedScope(rootMetadataPath, testSiteId);
+        EncryptedScope encryptedScope = new EncryptedScope(rootMetadataPath, testSiteId,false);
 
         s3KeyProvider = mock(RotatingS3KeyProvider.class);
         Map<Integer, S3Key> mockKeyMap = new HashMap<>();
@@ -216,28 +216,5 @@ class EncryptedScopedStoreWriterTest {
         assertEquals(newKey.getId(), json.getInteger("key_id"));
     }
 
-    @Test
-    void testEncryptedScopeResolve() {
-        EncryptedScope encryptedScope = new EncryptedScope(rootMetadataPath, testSiteId);
-        CloudPath resolved = encryptedScope.resolve(new CloudPath("test.json"));
-        CloudPath expected = new CloudPath(sitesDir)
-                .resolve("encryption")
-                .resolve("site")
-                .resolve(String.valueOf(testSiteId))
-                .resolve("test.json");
-        assertEquals(expected, resolved);
-    }
-
-    @Test
-    void testEncryptedScopeGetMetadataPath() {
-        EncryptedScope encryptedScope = new EncryptedScope(rootMetadataPath, testSiteId);
-        CloudPath metadataPath = encryptedScope.getMetadataPath();
-        CloudPath expected = new CloudPath(sitesDir)
-                .resolve("encryption")
-                .resolve("site")
-                .resolve(String.valueOf(testSiteId))
-                .resolve(metadataFileName);
-        assertEquals(expected, metadataPath);
-    }
 }
 

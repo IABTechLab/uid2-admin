@@ -80,8 +80,8 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
         return new RotatingKeysetProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public StoreReader<Map<Integer, Keyset>> getEncryptedReader(Integer siteId) {
-        return new RotatingKeysetProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    public StoreReader<Map<Integer, Keyset>> getEncryptedReader(Integer siteId, boolean isPublic) {
+        return new RotatingKeysetProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic));
     }
 
     @Override
@@ -100,7 +100,7 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId, boolean isPublic) {
         StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new KeysetStoreWriter(
-                getEncryptedReader(siteId),
+                getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,

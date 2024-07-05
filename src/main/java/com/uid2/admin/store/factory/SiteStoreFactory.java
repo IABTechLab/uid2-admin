@@ -75,7 +75,7 @@ public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>>
     }
 
     public StoreReader<Collection<Site>> getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingSiteStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+        return new RotatingSiteStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic));
     }
 
     @Override

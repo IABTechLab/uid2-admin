@@ -62,7 +62,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
     }
 
     public StoreReader<Map<Integer, EncryptionKeyAcl>> getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingKeyAclProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+        return new RotatingKeyAclProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic));
     }
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getWriter(Integer siteId) {
         return new KeyAclStoreWriter(
