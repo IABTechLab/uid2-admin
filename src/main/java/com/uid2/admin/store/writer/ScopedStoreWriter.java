@@ -6,6 +6,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.store.FileName;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
@@ -37,6 +38,10 @@ public class ScopedStoreWriter {
     }
 
     public void upload(String data, JsonObject extraMeta) throws Exception {
+        upload(data, extraMeta, null);
+    }
+
+    public void upload(String data, JsonObject extraMeta, Boolean isPublic) throws Exception {
         final long generated = clock.getEpochSecond();
         boolean isFirstWrite = !fileManager.isPresent(scope.getMetadataPath());
         CloudPath location;

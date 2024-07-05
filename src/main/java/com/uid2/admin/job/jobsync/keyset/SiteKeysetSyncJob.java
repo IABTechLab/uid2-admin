@@ -1,10 +1,12 @@
 package com.uid2.admin.job.jobsync.keyset;
 
 import com.uid2.admin.job.model.Job;
+import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.model.Site;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,5 +35,8 @@ public class SiteKeysetSyncJob extends Job {
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, Keyset>> desiredState = PrivateSiteUtil.getKeysetForEachSite(globalOperators, globalKeysets);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
+        HashMap<Integer, Map<Integer, Keyset>> desiredPublicState = PrivateSiteUtil.getPublicKeysets(globalKeysets, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
+
     }
 }

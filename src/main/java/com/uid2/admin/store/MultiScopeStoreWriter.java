@@ -2,10 +2,12 @@ package com.uid2.admin.store;
 
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.factory.StoreFactory;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.ScopedStoreWriter;
 import com.uid2.shared.model.KeysetKey;
 
 import com.uid2.admin.store.factory.EncryptedStoreFactory;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.StoreReader;
 import io.vertx.core.json.JsonObject;
 
@@ -25,11 +27,14 @@ public class MultiScopeStoreWriter<T> {
 
     public void uploadWithEncryptionOrChanges(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         if (supportsEncryption() && ((EncryptedStoreFactory<T>)factory).getS3Provider() != null) {
+            //upload encrypted files and make them all site specific
             uploadEncrypted(desiredState, extraMeta);
         } else {
+            //upload plain text files
             uploadIfChanged(desiredState, extraMeta);
         }
     }
+
 
     public void uploadIfChanged(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         Map<Integer, T> currentState = getCurrentState(desiredState.keySet());
@@ -72,17 +77,20 @@ public class MultiScopeStoreWriter<T> {
         for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
             Integer siteId = entry.getKey();
             if (siteId != null) {
-                encryptedFactory.getEncryptedWriter(siteId).upload(desiredState.get(siteId), extraMeta);
+                encryptedFactory.getEncryptedWriter(siteId,false).upload(desiredState.get(siteId), extraMeta);
             }
         }
     }
 
-    // private Set<Integer> getPublicSiteIds(Collection<OperatorKey> operators) {
-    //    return operators.stream()
-    //            .filter(o -> o.getOperatorType() == OperatorType.PUBLIC && o.getSiteId() != null)
-    //            .map(OperatorKey::getSiteId)
-    //           .collect(Collectors.toSet());
-    // }
+    public void uploadPublicWithEncryption(Map<Integer, T> desiredPublicState, JsonObject extraMeta) throws Exception {
+        EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
+        for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
+            Integer siteId = entry.getKey();
+            if (siteId != null) {
+                encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
+            }
+        }
+    }
 
     private boolean supportsEncryption() {
         return factory instanceof EncryptedStoreFactory;
@@ -95,4 +103,5 @@ public class MultiScopeStoreWriter<T> {
     public static <T> boolean areCollectionsEqual(Collection<T> a, Collection<T> b) {
         return a.size() == b.size() && a.stream().allMatch(b::contains);
     }
+
 }

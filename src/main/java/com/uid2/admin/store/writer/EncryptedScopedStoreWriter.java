@@ -29,6 +29,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
                                       StoreScope scope, FileName dataFile, String dataType, RotatingS3KeyProvider s3KeyProvider, Integer siteId) {
         super(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
         this.s3KeyProvider = s3KeyProvider;
+        //site id is passed in to look up S3 key to encrypt
         this.siteId = siteId;
     }
 

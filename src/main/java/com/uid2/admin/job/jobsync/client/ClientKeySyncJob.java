@@ -6,6 +6,7 @@ import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.model.Site;
 
 import java.util.Collection;
 
@@ -32,5 +33,7 @@ public class ClientKeySyncJob extends Job {
     public void execute() throws Exception {
         PrivateSiteDataMap<LegacyClientKey> desiredState = PrivateSiteUtil.getClientKeys(globalOperators, globalClientKeys);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
+        PrivateSiteDataMap<LegacyClientKey> desiredPublicState = PrivateSiteUtil.getPublicClients(globalClientKeys,globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

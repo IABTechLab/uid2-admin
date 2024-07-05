@@ -9,8 +9,10 @@ import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.KeysetKey;
+import com.uid2.shared.model.Site;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class KeysetKeySyncJob extends Job {
@@ -42,5 +44,7 @@ public class KeysetKeySyncJob extends Job {
     public void execute() throws Exception {
         PrivateSiteDataMap<KeysetKey> desiredState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        PrivateSiteDataMap<KeysetKey> desiredPublicState = PrivateSiteUtil.getPublicKeysetKeys(globalKeysetKeys, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

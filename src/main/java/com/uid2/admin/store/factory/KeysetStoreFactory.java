@@ -97,8 +97,8 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
         );
     }
 
-    public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
+    public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId, boolean isPublic) {
+        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new KeysetStoreWriter(
                 getEncryptedReader(siteId),
                 fileManager,

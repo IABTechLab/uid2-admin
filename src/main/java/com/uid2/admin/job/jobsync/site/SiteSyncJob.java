@@ -29,7 +29,9 @@ public class SiteSyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        PrivateSiteDataMap<Site> desiredState = PrivateSiteUtil.getSites(globalSites, globalOperators);
-        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
+        PrivateSiteDataMap<Site> desiredPrivateState = PrivateSiteUtil.getSites(globalSites, globalOperators);
+        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredPrivateState, null);
+        PrivateSiteDataMap<Site> desiredPublicState = PrivateSiteUtil.getPublicSites(globalSites, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

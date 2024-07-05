@@ -79,8 +79,8 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
         return new RotatingLegacyClientKeyProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public RotatingLegacyClientKeyProvider getEncryptedReader(Integer siteId) {
-        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    public RotatingLegacyClientKeyProvider getEncryptedReader(Integer siteId, boolean isPublic) {
+        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic));
     }
 
     public LegacyClientKeyStoreWriter getWriter(Integer siteId) {
@@ -94,10 +94,10 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
         );
     }
 
-    public LegacyClientKeyStoreWriter getEncryptedWriter(Integer siteId) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
+    public LegacyClientKeyStoreWriter getEncryptedWriter(Integer siteId, boolean isPublic) {
+        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new LegacyClientKeyStoreWriter(
-                getEncryptedReader(siteId),
+                getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,

@@ -64,8 +64,8 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
         return new RotatingKeyStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public RotatingKeyStore getEncryptedReader(Integer siteId) {
-        return new RotatingKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
+    public RotatingKeyStore getEncryptedReader(Integer siteId, boolean isPublic) {
+        return new RotatingKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic));
     }
 
 
@@ -80,10 +80,10 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
         );
     }
 
-    public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
+    public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId,boolean isPublic) {
+        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new EncryptionKeyStoreWriter(
-                getEncryptedReader(siteId),
+                getEncryptedReader(siteId,isPublic),
                 fileManager,
                 versionGenerator,
                 clock,

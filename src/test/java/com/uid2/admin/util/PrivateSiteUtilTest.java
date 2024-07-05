@@ -1059,4 +1059,64 @@ public class PrivateSiteUtilTest {
             return new LegacyClientKey("key_1", "keyHash3_1", "keySalt3_1", "", "name3_1", "contact3_1", Instant.now(), roles, siteId, isDisabled, "key-id-1");
         }
     }
+
+    @Test
+    public void testGeneratePublicAndPrivateSiteData() {
+        final Site[] sites = {
+                new Site(Const.Data.AdvertisingTokenSiteId, "1", true),
+                new Site(3, "2", true),
+                new Site(4, "3", true),
+                new Site(5, "4", true)
+        };
+        final OperatorKey[] publicOperatorKeys = {
+                new OperatorKey("keyHash2", "keySalt2", "name2", "contact2", "aws-nitro", 2, false, Const.Data.AdvertisingTokenSiteId, new HashSet<>(), OperatorType.PUBLIC, "key-id-2"),
+                new OperatorKey("keyHash5", "keySalt5", "name5", "contact5", "aws-nitro", 5, false, 5, new HashSet<>(), OperatorType.PUBLIC, "key-id-5"),
+        };
+        final OperatorKey[] privateOperatorKeys = {
+                new OperatorKey("keyHash3", "keySalt3", "name3", "contact3", "aws-nitro", 3, false, 3, new HashSet<>(), OperatorType.PRIVATE, "key-id-3"),
+                new OperatorKey("keyHash4", "keySalt4", "name4", "contact4", "aws-nitro", 4, false, 4, new HashSet<>(), OperatorType.PRIVATE, "key-id-4"),
+        };
+        final List<OperatorKey> allOperatorKeys = new ArrayList<>(Arrays.asList(publicOperatorKeys));
+        allOperatorKeys.addAll(Arrays.asList(privateOperatorKeys));
+
+        // Test private sites
+        final PrivateSiteDataMap<Site> privateResult = PrivateSiteUtil.getSites(
+                Arrays.asList(sites), allOperatorKeys
+        );
+
+        final Set<Site> expectedSite3Sites = new HashSet<>();
+        expectedSite3Sites.add(sites[0]);
+        expectedSite3Sites.add(sites[1]);
+        final Set<Site> expectedSite4Sites = new HashSet<>();
+        expectedSite4Sites.add(sites[0]);
+        expectedSite4Sites.add(sites[2]);
+        final PrivateSiteDataMap<Site> expectedPrivate = new PrivateSiteDataMap<>();
+        expectedPrivate.put(3, expectedSite3Sites);
+        expectedPrivate.put(4, expectedSite4Sites);
+
+        assertEquals(expectedPrivate, privateResult);
+
+        // Test public sites
+        final PrivateSiteDataMap<Site> publicResult = PrivateSiteUtil.getPublicSites(
+                Arrays.asList(sites), allOperatorKeys
+        );
+
+        final Set<Site> expectedPublicSites = new HashSet<>(Arrays.asList(sites));
+        final PrivateSiteDataMap<Site> expectedPublic = new PrivateSiteDataMap<>();
+        expectedPublic.put(Const.Data.AdvertisingTokenSiteId, expectedPublicSites);
+        expectedPublic.put(5, expectedPublicSites);
+
+        assertEquals(expectedPublic, publicResult);
+
+        // Additional checks for public sites
+        assertEquals(2, publicResult.size());
+        assertTrue(publicResult.containsKey(Const.Data.AdvertisingTokenSiteId));
+        assertTrue(publicResult.containsKey(5));
+        assertFalse(publicResult.containsKey(3));
+        assertFalse(publicResult.containsKey(4));
+
+        publicResult.forEach((publicSiteId, publicSiteSet) -> {
+            assertEquals(4, publicSiteSet.size()); // Each public site should contain all 4 sites
+        });
+    }
 }

@@ -3,11 +3,9 @@ package com.uid2.admin.store.factory;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.*;
 import com.uid2.shared.auth.EncryptionKeyAcl;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
@@ -63,7 +61,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
         return new RotatingKeyAclProvider(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
-    public StoreReader<Map<Integer, EncryptionKeyAcl>> getEncryptedReader(Integer siteId) {
+    public StoreReader<Map<Integer, EncryptionKeyAcl>> getEncryptedReader(Integer siteId, boolean isPublic) {
         return new RotatingKeyAclProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId));
     }
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getWriter(Integer siteId) {
@@ -77,10 +75,10 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
         );
     }
 
-    public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId);
+    public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId, boolean isPublic) {
+        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new KeyAclStoreWriter(
-                getEncryptedReader(siteId),
+                getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,
