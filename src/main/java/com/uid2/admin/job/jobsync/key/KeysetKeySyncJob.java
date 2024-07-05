@@ -44,7 +44,7 @@ public class KeysetKeySyncJob extends Job {
     public void execute() throws Exception {
         PrivateSiteDataMap<KeysetKey> desiredState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
-        //PrivateSiteDataMap<KeysetKey> desiredPublicState = PrivateSiteUtil.getPublicKeysetKeys(globalKeysetKeys, globalOperators);
-        //multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
+        PrivateSiteDataMap<KeysetKey> desiredPublicState = PrivateSiteUtil.getPublicKeysetKeys(globalKeysetKeys, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }
