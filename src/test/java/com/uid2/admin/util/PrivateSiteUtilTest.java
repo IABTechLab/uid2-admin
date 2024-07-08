@@ -1097,7 +1097,7 @@ public class PrivateSiteUtilTest {
         assertEquals(expectedPrivate, privateResult);
 
         // Test public sites
-        final PrivateSiteDataMap<Site> publicResult = PrivateSiteUtil.getPublicSites(
+        final PrivateSiteDataMap<Site> publicResult = PublicSiteUtil.getPublicSites(
                 Arrays.asList(sites), allOperatorKeys
         );
 

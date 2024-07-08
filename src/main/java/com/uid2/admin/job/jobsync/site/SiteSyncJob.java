@@ -4,6 +4,7 @@ import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
+import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.Site;
 
@@ -31,7 +32,7 @@ public class SiteSyncJob extends Job {
     public void execute() throws Exception {
         PrivateSiteDataMap<Site> desiredPrivateState = PrivateSiteUtil.getSites(globalSites, globalOperators);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredPrivateState, null);
-        PrivateSiteDataMap<Site> desiredPublicState = PrivateSiteUtil.getPublicSites(globalSites, globalOperators);
+        PrivateSiteDataMap<Site> desiredPublicState = PublicSiteUtil.getPublicSites(globalSites, globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

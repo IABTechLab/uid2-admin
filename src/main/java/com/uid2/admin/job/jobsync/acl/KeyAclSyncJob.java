@@ -5,6 +5,7 @@ import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
+import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.OperatorKey;
 
@@ -35,7 +36,7 @@ public class KeyAclSyncJob extends Job {
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(globalOperators, globalAcls);
         multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPublicState = PrivateSiteUtil.getPublicKeyAcls(globalAcls,globalOperators);
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPublicState = PublicSiteUtil.getPublicKeyAcls(globalAcls,globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
 
     }
