@@ -335,10 +335,12 @@ public class Main {
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
 
-            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
-            jobDispatcher.enqueue(encryptedFilesSyncJob);
-            CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
-            encryptedFilesSyncJobFuture.get();
+            if (config.getBoolean("enable_s3_encryption")){
+                EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
+                jobDispatcher.enqueue(encryptedFilesSyncJob);
+                CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
+                encryptedFilesSyncJobFuture.get();
+            }
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);

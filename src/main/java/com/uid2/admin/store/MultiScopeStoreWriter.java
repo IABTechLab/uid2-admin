@@ -83,11 +83,14 @@ public class MultiScopeStoreWriter<T> {
     }
 
     public void uploadPublicWithEncryption(Map<Integer, T> desiredPublicState, JsonObject extraMeta) throws Exception {
-        EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
-        for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
-            Integer siteId = entry.getKey();
-            if (siteId != null) {
-                encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
+        // only encrypt public states during encrypted files sync job
+        if (supportsEncryption() && ((EncryptedStoreFactory<T>)factory).getS3Provider() != null) {
+            EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
+            for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
+                Integer siteId = entry.getKey();
+                if (siteId != null) {
+                    encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
+                }
             }
         }
     }

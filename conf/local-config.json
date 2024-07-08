@@ -34,6 +34,7 @@
   "salt_snapshot_expires_after_seconds": 180000,
   "is_auth_disabled": true,
   "enable_keysets": true,
+  "enable_s3_encryption": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
   "okta_client_secret": "GET_FROM_1PASSWORD",
   "okta_auth_server": "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8",

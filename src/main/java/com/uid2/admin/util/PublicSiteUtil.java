@@ -21,7 +21,7 @@ public class PublicSiteUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteUtil.class);
 
 
-    private static <T> PrivateSiteDataMap<T> getPublicSitesMap(Collection<OperatorKey> operators) {
+    static <T> PrivateSiteDataMap<T> getPublicSitesMap(Collection<OperatorKey> operators) {
         PrivateSiteDataMap<T> result = new PrivateSiteDataMap<>();
         operators.forEach(o -> {
             // TODO: Should we check if site is disabled?
@@ -38,10 +38,8 @@ public class PublicSiteUtil {
             Collection<OperatorKey> operators) {
         final PrivateSiteDataMap<Site> result = getPublicSitesMap(operators);
 
-        sites.forEach(s -> {
-            result.forEach((publicSiteId, publicSiteData) -> {
-                publicSiteData.add(s);
-            });
+        result.forEach((publicSiteId, publicSiteData) -> {
+            publicSiteData.addAll(sites);
         });
 
         return result;
@@ -53,12 +51,8 @@ public class PublicSiteUtil {
             Collection<OperatorKey> operators) {
         final PrivateSiteDataMap<LegacyClientKey> result = getPublicSitesMap(operators);
 
-        clients.forEach(c -> {
-            if (!c.isDisabled()) {
-                result.forEach((publicSiteId, publicSiteData) -> {
-                    publicSiteData.add(c);
-                });
-            }
+        result.forEach((publicSiteId, publicSiteData) -> {
+            publicSiteData.addAll(clients);
         });
 
         return result;
