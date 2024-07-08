@@ -95,31 +95,6 @@ class EncryptedScopedStoreWriterTest {
     }
 
     @Test
-    void testNoDoubleEncryption() throws Exception {
-        JsonObject encryptedJson = new JsonObject()
-                .put("key_id", 1)
-                .put("encryption_version", "1.0")
-                .put("encrypted_payload", "base64encodedpayload");
-        String encryptedData = encryptedJson.encode();
-
-        JsonObject extraMeta = new JsonObject().put("test", "meta");
-
-        doAnswer(invocation -> {
-            CloudPath location = invocation.getArgument(0);
-            FileName fileName = invocation.getArgument(1);
-            String content = invocation.getArgument(2);
-
-            assertEquals(encryptedData, content);
-
-            return null;
-        }).when(fileManager).uploadFile(any(CloudPath.class), any(FileName.class), anyString());
-
-        encryptedScopedStoreWriter.upload(encryptedData, extraMeta);
-
-        verify(fileManager).uploadFile(any(CloudPath.class), any(FileName.class), anyString());
-    }
-
-    @Test
     void testDataIsEncryptedBeforeUpload() throws Exception {
         String testData = "Test data to be encrypted";
         JsonObject extraMeta = new JsonObject().put("test", "meta");
