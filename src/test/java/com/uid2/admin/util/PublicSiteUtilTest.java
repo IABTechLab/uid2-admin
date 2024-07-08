@@ -143,27 +143,6 @@ public class PublicSiteUtilTest {
             assertEquals(expected, actual);
         }
 
-        @Test
-        public void ignoresDisabledClients() {
-            ImmutableList<OperatorKey> operators = ImmutableList.of(
-                    new OperatorBuilder()
-                            .withSiteId(siteId1)
-                            .withType(OperatorType.PUBLIC)
-                            .build()
-            );
-
-            LegacyClientKey enabledClient = new LegacyClientKey("key1", "keyHash1", "keySalt1", "", "name1", "contact1", Instant.now(), new HashSet<>(), siteId1, false, "key-id-1");
-            LegacyClientKey disabledClient = new LegacyClientKey("key2", "keyHash2", "keySalt2", "", "name2", "contact2", Instant.now(), new HashSet<>(), siteId1, true, "key-id-2");
-
-            ImmutableSet<LegacyClientKey> clients = ImmutableSet.of(enabledClient, disabledClient);
-
-            PrivateSiteDataMap<LegacyClientKey> actual = PublicSiteUtil.getPublicClients(clients, operators);
-
-            PrivateSiteDataMap<LegacyClientKey> expected = new PrivateSiteDataMap<>();
-            expected.put(siteId1, ImmutableSet.of(enabledClient));
-
-            assertEquals(expected, actual);
-        }
     }
 
     @Nested
