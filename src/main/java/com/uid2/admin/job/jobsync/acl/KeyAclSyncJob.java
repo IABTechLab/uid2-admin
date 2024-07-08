@@ -1,11 +1,9 @@
 package com.uid2.admin.job.jobsync.acl;
 
 import com.uid2.admin.job.model.Job;
-import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
-import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.OperatorKey;
 
@@ -34,7 +32,9 @@ public class KeyAclSyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPrivateState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(globalOperators, globalAcls);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, null);
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(
+                globalOperators,
+                globalAcls);
+        multiScopeStoreWriter.uploadIfChanged(desiredState, null);
     }
 }

@@ -6,7 +6,6 @@ import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.store.writer.EncryptionKeyStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
-import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.EncryptionKey;
@@ -45,7 +44,7 @@ public class EncryptionKeySyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        PrivateSiteDataMap<EncryptionKey> desiredPrivateState = PrivateSiteUtil.getEncryptionKeys(globalOperators, globalEncryptionKeys, globalAcls, globalClientKeys);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        PrivateSiteDataMap<EncryptionKey> desiredState = PrivateSiteUtil.getEncryptionKeys(globalOperators, globalEncryptionKeys, globalAcls, globalClientKeys);
+        multiScopeStoreWriter.uploadIfChanged(desiredState, EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
     }
 }

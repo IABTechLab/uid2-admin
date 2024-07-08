@@ -6,11 +6,9 @@ import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
 import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
-import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.KeysetKey;
-import com.uid2.shared.model.Site;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,7 +41,7 @@ public class KeysetKeySyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        PrivateSiteDataMap<KeysetKey> desiredPrivateState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        PrivateSiteDataMap<KeysetKey> desiredState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
+        multiScopeStoreWriter.uploadIfChanged(desiredState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
     }
 }
