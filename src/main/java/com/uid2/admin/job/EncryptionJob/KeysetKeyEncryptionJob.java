@@ -1,22 +1,19 @@
-package com.uid2.admin.job.jobsync.key;
+package com.uid2.admin.job.EncryptionJob;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.store.writer.KeysetKeyStoreWriter;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.KeysetKey;
-import com.uid2.shared.model.Site;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
-public class KeysetKeySyncJob extends Job {
+public class KeysetKeyEncryptionJob extends Job {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<KeysetKey> globalKeysetKeys;
     private final Map<Integer, Keyset> globalKeysets;
@@ -24,7 +21,7 @@ public class KeysetKeySyncJob extends Job {
 
     private final MultiScopeStoreWriter<Collection<KeysetKey>> multiScopeStoreWriter;
 
-    public KeysetKeySyncJob(Collection<OperatorKey> globalOperators,
+    public KeysetKeyEncryptionJob(Collection<OperatorKey> globalOperators,
                             Collection<KeysetKey> globalKeysetKeys,
                             Map<Integer, Keyset> globalKeysets,
                             Integer globalMaxKeyId,
@@ -38,12 +35,14 @@ public class KeysetKeySyncJob extends Job {
 
     @Override
     public String getId() {
-        return "global-to-site-scope-sync-keysetKeys";
+        return "s3-encryption-sync-keysetKeys";
     }
 
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<KeysetKey> desiredPrivateState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        PrivateSiteDataMap<KeysetKey> desiredPublicState = PublicSiteUtil.getPublicKeysetKeys(globalKeysetKeys, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

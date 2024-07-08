@@ -1,4 +1,4 @@
-package com.uid2.admin.job.jobsync.key;
+package com.uid2.admin.job.EncryptionJob;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.legacy.LegacyClientKey;
@@ -14,7 +14,7 @@ import com.uid2.shared.model.EncryptionKey;
 import java.util.Collection;
 import java.util.Map;
 
-public class EncryptionKeySyncJob extends Job {
+public class EncryptionKeyEncryptionJob extends Job {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<EncryptionKey> globalEncryptionKeys;
     private final Collection<LegacyClientKey> globalClientKeys;
@@ -23,7 +23,7 @@ public class EncryptionKeySyncJob extends Job {
 
     private final MultiScopeStoreWriter<Collection<EncryptionKey>> multiScopeStoreWriter;
 
-    public EncryptionKeySyncJob(
+    public EncryptionKeyEncryptionJob(
             Collection<EncryptionKey> globalEncryptionKeys,
             Collection<LegacyClientKey> globalClientKeys,
             Collection<OperatorKey> globalOperators,
@@ -40,12 +40,14 @@ public class EncryptionKeySyncJob extends Job {
 
     @Override
     public String getId() {
-        return "global-to-site-scope-sync-encryptionKeys";
+        return "s3-encryption-sync-encryptionKeys";
     }
 
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<EncryptionKey> desiredPrivateState = PrivateSiteUtil.getEncryptionKeys(globalOperators, globalEncryptionKeys, globalAcls, globalClientKeys);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        PrivateSiteDataMap<EncryptionKey> desiredPublicState = PublicSiteUtil.getPublicEncryptionKeys(globalEncryptionKeys, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

@@ -25,17 +25,6 @@ public class MultiScopeStoreWriter<T> {
         this.areEqual = areEqual;
     }
 
-    public void uploadWithEncryptionOrChanges(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
-        if (supportsEncryption() && ((EncryptedStoreFactory<T>)factory).getS3Provider() != null) {
-            //upload encrypted files and make them all site specific
-            uploadEncrypted(desiredState, extraMeta);
-        } else {
-            //upload plain text files
-            uploadIfChanged(desiredState, extraMeta);
-        }
-    }
-
-
     public void uploadIfChanged(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         Map<Integer, T> currentState = getCurrentState(desiredState.keySet());
         List<Integer> sitesToWrite = getSitesToWrite(desiredState, currentState);

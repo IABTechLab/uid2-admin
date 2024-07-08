@@ -1,24 +1,23 @@
-package com.uid2.admin.job.jobsync.keyset;
+package com.uid2.admin.job.EncryptionJob;
 
 import com.uid2.admin.job.model.Job;
-import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.model.Site;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SiteKeysetSyncJob extends Job {
+public class SiteKeysetEncryptionJob extends Job{
+
     private final Collection<OperatorKey> globalOperators;
     private final Map<Integer, Keyset> globalKeysets;
     private final MultiScopeStoreWriter<Map<Integer, Keyset>> multiScopeStoreWriter;
 
-    public SiteKeysetSyncJob(
+    public SiteKeysetEncryptionJob(
             MultiScopeStoreWriter<Map<Integer, Keyset>> multiScopeStoreWriter,
             Collection<OperatorKey> globalOperators,
             Map<Integer, Keyset> globalKeysets) {
@@ -29,12 +28,16 @@ public class SiteKeysetSyncJob extends Job {
 
     @Override
     public String getId() {
-        return "global-to-site-scope-sync-keysets";
+        return "s3-encryption-sync-keysets";
     }
 
     @Override
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, Keyset>> desiredPrivateState = PrivateSiteUtil.getKeysetForEachSite(globalOperators, globalKeysets);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, null);
+        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, null);
+        HashMap<Integer, Map<Integer, Keyset>> desiredPublicState = PublicSiteUtil.getPublicKeysets(globalKeysets,globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }
+
+

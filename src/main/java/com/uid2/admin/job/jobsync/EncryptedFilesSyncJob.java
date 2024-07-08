@@ -1,12 +1,9 @@
 package com.uid2.admin.job.jobsync;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.job.EncryptionJob.*;
 import com.uid2.admin.job.jobsync.acl.KeyAclSyncJob;
-import com.uid2.admin.job.jobsync.client.ClientKeySyncJob;
-import com.uid2.admin.job.jobsync.key.EncryptionKeySyncJob;
-import com.uid2.admin.job.jobsync.key.KeysetKeySyncJob;
-import com.uid2.admin.job.jobsync.keyset.SiteKeysetSyncJob;
-import com.uid2.admin.job.jobsync.site.SiteSyncJob;
+import com.uid2.admin.job.EncryptionJob.ClientKeyEncryptionJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.*;
@@ -152,9 +149,9 @@ public class EncryptedFilesSyncJob extends Job {
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
 
-        SiteSyncJob siteSyncJob = new SiteSyncJob(siteWriter, globalSites, globalOperators);
-        ClientKeySyncJob clientSyncJob = new ClientKeySyncJob(clientWriter, globalClients, globalOperators);
-        EncryptionKeySyncJob encryptionKeySyncJob = new EncryptionKeySyncJob(
+        SiteEncryptionJob siteEncryptionSyncJob = new SiteEncryptionJob(siteWriter, globalSites, globalOperators);
+        ClientKeyEncryptionJob clienEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators);
+        EncryptionKeyEncryptionJob encryptionKeyEncryptionSyncJob = new EncryptionKeyEncryptionJob(
                 globalEncryptionKeys,
                 globalClients,
                 globalOperators,
@@ -162,11 +159,11 @@ public class EncryptedFilesSyncJob extends Job {
                 globalMaxKeyId,
                 encryptionKeyWriter
         );
-        KeyAclSyncJob keyAclSyncJob = new KeyAclSyncJob(keyAclWriter, globalOperators, globalKeyAcls);
-        siteSyncJob.execute();
-        clientSyncJob.execute();
-        encryptionKeySyncJob.execute();
-        keyAclSyncJob.execute();
+        KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls);
+        siteEncryptionSyncJob.execute();
+        clienEncryptionSyncJob.execute();
+        encryptionKeyEncryptionSyncJob.execute();
+        keyAclEncryptionSyncJob.execute();
 
         if(config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
@@ -180,11 +177,11 @@ public class EncryptedFilesSyncJob extends Job {
                     fileManager,
                     keysetKeyStoreFactory,
                     MultiScopeStoreWriter::areCollectionsEqual);
-            SiteKeysetSyncJob keysetSyncJob = new SiteKeysetSyncJob(keysetWriter, globalOperators, globalKeysets);
-            KeysetKeySyncJob keysetKeySyncJob = new KeysetKeySyncJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
+            SiteKeysetEncryptionJob keysetEncryptionSyncJob = new SiteKeysetEncryptionJob(keysetWriter, globalOperators, globalKeysets);
+            KeysetKeyEncryptionJob keysetKeyEncryptionSyncJob = new KeysetKeyEncryptionJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
 
-            keysetSyncJob.execute();
-            keysetKeySyncJob.execute();
+            keysetEncryptionSyncJob.execute();
+            keysetKeyEncryptionSyncJob.execute();
         }
     }
 }

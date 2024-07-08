@@ -1,4 +1,4 @@
-package com.uid2.admin.job.jobsync.site;
+package com.uid2.admin.job.EncryptionJob;
 
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;
@@ -10,12 +10,12 @@ import com.uid2.shared.model.Site;
 
 import java.util.Collection;
 
-public class SiteSyncJob extends Job {
+public class SiteEncryptionJob extends Job {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<Site> globalSites;
     private final MultiScopeStoreWriter<Collection<Site>> multiScopeStoreWriter;
 
-    public SiteSyncJob(
+    public SiteEncryptionJob(
             MultiScopeStoreWriter<Collection<Site>> multiScopeStoreWriter, Collection<Site> globalSites,
             Collection<OperatorKey> globalOperators) {
         this.globalSites = globalSites;
@@ -25,12 +25,14 @@ public class SiteSyncJob extends Job {
 
     @Override
     public String getId() {
-        return "global-to-site-scope-sync-sites";
+        return "s3-encryption-sync-sites";
     }
 
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<Site> desiredPrivateState = PrivateSiteUtil.getSites(globalSites, globalOperators);
-        multiScopeStoreWriter.uploadIfChanged(desiredPrivateState, null);
+        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, null);
+        PrivateSiteDataMap<Site> desiredPublicState = PublicSiteUtil.getPublicSites(globalSites, globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }
