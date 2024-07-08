@@ -45,8 +45,8 @@ public class EncryptionKeySyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        PrivateSiteDataMap<EncryptionKey> desiredState = PrivateSiteUtil.getEncryptionKeys(globalOperators, globalEncryptionKeys, globalAcls, globalClientKeys);
-        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        PrivateSiteDataMap<EncryptionKey> desiredPrivateState = PrivateSiteUtil.getEncryptionKeys(globalOperators, globalEncryptionKeys, globalAcls, globalClientKeys);
+        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredPrivateState, EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
         PrivateSiteDataMap<EncryptionKey> desiredPublicState = PublicSiteUtil.getPublicEncryptionKeys(globalEncryptionKeys, globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
 

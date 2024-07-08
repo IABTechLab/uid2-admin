@@ -34,8 +34,8 @@ public class KeyAclSyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(globalOperators, globalAcls);
-        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredState, null);
+        HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPrivateState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(globalOperators, globalAcls);
+        multiScopeStoreWriter.uploadWithEncryptionOrChanges(desiredPrivateState, null);
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPublicState = PublicSiteUtil.getPublicKeyAcls(globalAcls,globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
 
