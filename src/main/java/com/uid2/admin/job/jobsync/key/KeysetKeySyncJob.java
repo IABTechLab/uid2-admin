@@ -11,7 +11,6 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.KeysetKey;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 public class KeysetKeySyncJob extends Job {
