@@ -33,8 +33,30 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         this.siteId = siteId;
     }
 
+    public void upload(String data, JsonObject extraMeta) throws Exception {
+        if (siteId == null) {
+            throw new IllegalStateException("Site ID is not set.");
+        }
 
-    public void uploadWithEncryptionKey(String data, JsonObject extraMeta, S3Key encryptionKey) throws Exception {
+        Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
+        S3Key largestKey = null;
+
+        for (S3Key key : s3Keys.values()) {
+            if (key.getSiteId() == siteId) {
+                if (largestKey == null || key.getId() > largestKey.getId()) {
+                    largestKey = key;
+                }
+            }
+        }
+
+        if (largestKey != null) {
+            uploadWithEncryptionKey(data, extraMeta, largestKey);
+        } else {
+            throw new IllegalStateException("No S3 keys available for encryption for site ID: " + siteId);
+        }
+    }
+
+    private void uploadWithEncryptionKey(String data, JsonObject extraMeta, S3Key encryptionKey) throws Exception {
         byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
         byte[] encryptedPayload = AesGcm.encrypt(data.getBytes(StandardCharsets.UTF_8), secret);
         JsonObject encryptedJson = new JsonObject()
@@ -42,48 +64,8 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
                 .put("encryption_version", "1.0")
                 .put("encrypted_payload", Base64.getEncoder().encodeToString(encryptedPayload));
 
-        this.upload(encryptedJson.encodePrettily(), extraMeta);
+        super.upload(encryptedJson.encodePrettily(), extraMeta);
     }
-
-    @Override
-    public void upload(String data, JsonObject extraMeta) throws Exception {
-        if (isEncrypted(data)) {
-            super.upload(data, extraMeta);
-        } else {
-            if (siteId == null) {
-                throw new IllegalStateException("Site ID is not set.");
-            }
-
-            Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
-            S3Key largestKey = null;
-
-            for (S3Key key : s3Keys.values()) {
-                if (key.getSiteId() == siteId) {
-                    if (largestKey == null || key.getId() > largestKey.getId()) {
-                        largestKey = key;
-                    }
-                }
-            }
-
-            if (largestKey != null) {
-                uploadWithEncryptionKey(data, extraMeta, largestKey);
-            } else {
-                throw new IllegalStateException("No S3 keys available for encryption for site ID: " + siteId);
-            }
-        }
-    }
-
-    private boolean isEncrypted(String data) {
-        try {
-            JsonObject json = new JsonObject(data);
-            return json.containsKey("key_id") &&
-                    json.containsKey("encryption_version") &&
-                    json.containsKey("encrypted_payload");
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
 
     public String getDecryptedContent(String encryptedContent) throws Exception {
         JsonObject json = new JsonObject(encryptedContent);
