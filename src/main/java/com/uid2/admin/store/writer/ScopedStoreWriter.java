@@ -38,10 +38,6 @@ public class ScopedStoreWriter {
     }
 
     public void upload(String data, JsonObject extraMeta) throws Exception {
-        upload(data, extraMeta, null);
-    }
-
-    public void upload(String data, JsonObject extraMeta, Boolean isPublic) throws Exception {
         final long generated = clock.getEpochSecond();
         boolean isFirstWrite = !fileManager.isPresent(scope.getMetadataPath());
         CloudPath location;
