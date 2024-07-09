@@ -260,6 +260,7 @@ public class Main {
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
+                    new EncryptedFilesSyncService(auth,jobDispatcher,writeLock,config,s3KeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider)
             };
