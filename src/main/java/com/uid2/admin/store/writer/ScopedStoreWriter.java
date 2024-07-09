@@ -63,17 +63,6 @@ public class ScopedStoreWriter {
         provider.loadContent(provider.getMetadata());
     }
 
-    private boolean isEncrypted(String data) {
-        try {
-            JsonObject json = new JsonObject(data);
-            return json.containsKey("key_id") &&
-                    json.containsKey("encryption_version") &&
-                    json.containsKey("encrypted_payload");
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     public void upload(String data) throws Exception {
         upload(data, null);
     }

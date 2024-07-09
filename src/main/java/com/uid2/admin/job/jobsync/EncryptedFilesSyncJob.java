@@ -150,7 +150,7 @@ public class EncryptedFilesSyncJob extends Job {
                 MultiScopeStoreWriter::areMapsEqual);
 
         SiteEncryptionJob siteEncryptionSyncJob = new SiteEncryptionJob(siteWriter, globalSites, globalOperators);
-        ClientKeyEncryptionJob clienEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators);
+        ClientKeyEncryptionJob clientEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators);
         EncryptionKeyEncryptionJob encryptionKeyEncryptionSyncJob = new EncryptionKeyEncryptionJob(
                 globalEncryptionKeys,
                 globalClients,
@@ -161,7 +161,7 @@ public class EncryptedFilesSyncJob extends Job {
         );
         KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls);
         siteEncryptionSyncJob.execute();
-        clienEncryptionSyncJob.execute();
+        clientEncryptionSyncJob.execute();
         encryptionKeyEncryptionSyncJob.execute();
         keyAclEncryptionSyncJob.execute();
 
