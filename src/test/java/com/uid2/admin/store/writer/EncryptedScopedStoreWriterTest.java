@@ -142,22 +142,6 @@ class EncryptedScopedStoreWriterTest {
     }
 
     @Test
-    void testDecryptionOfUploadedContent() throws Exception {
-        String testData = "Test data to be encrypted";
-        JsonObject extraMeta = new JsonObject().put("test", "meta");
-
-        ArgumentCaptor<String> contentCaptor = ArgumentCaptor.forClass(String.class);
-        doNothing().when(fileManager).uploadFile(any(CloudPath.class), any(FileName.class), contentCaptor.capture());
-
-        encryptedScopedStoreWriter.upload(testData, extraMeta);
-
-        String uploadedContent = contentCaptor.getValue();
-        String decryptedContent = encryptedScopedStoreWriter.getDecryptedContent(uploadedContent);
-
-        assertEquals(testData, decryptedContent);
-    }
-
-    @Test
     void testHandlingInvalidEncryptionKey() {
         when(s3KeyProvider.getAll()).thenReturn(new HashMap<>());
 

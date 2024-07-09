@@ -42,7 +42,7 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("keysets", ".json");
         String dataType = "keysets";
-        writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+        writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
         this.enableKeysets = enableKeysets;
     }
 

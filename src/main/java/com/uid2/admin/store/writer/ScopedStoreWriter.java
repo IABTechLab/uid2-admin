@@ -60,9 +60,7 @@ public class ScopedStoreWriter {
         fileManager.uploadFile(location, dataFile, data);
         fileManager.uploadMetadata(metadata.getJson(), dataType, scope.getMetadataPath());
 
-        if (!isEncrypted(data)) {
-            provider.loadContent(provider.getMetadata());
-        }
+        provider.loadContent(provider.getMetadata());
     }
 
     private boolean isEncrypted(String data) {
