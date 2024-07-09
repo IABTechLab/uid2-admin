@@ -137,7 +137,7 @@ public class Main {
                 try {
                     keysetKeysProvider.loadContent();
                 } catch (CloudStorageException e) {
-                    if (e.getMessage().contains("s3 get error") || e.getMessage().contains("The specified key does not exist")) {
+                    if (e.getMessage().contains("The specified key does not exist")) {
                         keysetKeyStoreWriter.upload(new HashSet<>(), 0);
                         keysetKeysProvider.loadContent();
                     } else {
@@ -205,7 +205,7 @@ public class Main {
             try {
                 s3KeyProvider.loadContent();
             } catch (CloudStorageException e) {
-                if (e.getMessage().contains("s3 get error") || e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
                     s3KeyProvider.loadContent();
                 } else {
