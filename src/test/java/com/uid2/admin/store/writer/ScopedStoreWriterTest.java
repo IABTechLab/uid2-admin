@@ -11,16 +11,13 @@ import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.store.FileName;
-import com.uid2.shared.store.reader.IMetadataVersionedStore;
 import com.uid2.shared.store.reader.RotatingSiteStore;
-import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.Collections;
