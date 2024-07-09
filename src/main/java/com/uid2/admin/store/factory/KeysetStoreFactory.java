@@ -81,7 +81,7 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
     }
 
     public StoreReader<Map<Integer, Keyset>> getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingKeysetProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic));
+        return new RotatingKeysetProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic),s3KeyProvider);
     }
 
     @Override

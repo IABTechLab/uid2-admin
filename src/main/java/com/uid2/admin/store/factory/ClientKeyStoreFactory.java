@@ -80,7 +80,7 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
     }
 
     public RotatingLegacyClientKeyProvider getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic));
+        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic),s3KeyProvider);
     }
 
     public LegacyClientKeyStoreWriter getWriter(Integer siteId) {

@@ -4,8 +4,11 @@ import com.uid2.shared.auth.AuthorizableStore;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.EncryptedScopedStoreReader;
 import com.uid2.shared.store.ScopedStoreReader;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
@@ -41,8 +44,33 @@ public class RotatingLegacyClientKeyProvider implements ILegacyClientKeyProvider
     private final AuthorizableStore<LegacyClientKey> authorizableStore;
 
     public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, StoreScope scope) {
-        this.reader = new ScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys");
+        this(fileStreamProvider, scope, null);
+    }
+
+    public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, StoreScope scope, RotatingS3KeyProvider s3KeyProvider) {
+        this.reader = createReader(fileStreamProvider, scope, s3KeyProvider);
         this.authorizableStore = new AuthorizableStore<>(LegacyClientKey.class);
+    }
+
+    private ScopedStoreReader<Collection<LegacyClientKey>> createReader(DownloadCloudStorage fileStreamProvider, StoreScope scope, RotatingS3KeyProvider s3KeyProvider) {
+        if (s3KeyProvider != null && scope instanceof EncryptedScope) {
+            EncryptedScope encryptedScope = (EncryptedScope) scope;
+            return new EncryptedScopedStoreReader<>(
+                    fileStreamProvider,
+                    encryptedScope,
+                    new LegacyClientParser(),
+                    "auth keys",
+                    encryptedScope.getId(),
+                    s3KeyProvider
+            );
+        } else {
+            return new ScopedStoreReader<>(
+                    fileStreamProvider,
+                    scope,
+                    new LegacyClientParser(),
+                    "auth keys"
+            );
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.uid2.admin.store.factory;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
@@ -72,7 +73,7 @@ public class KeysetKeyStoreFactory implements EncryptedStoreFactory<Collection<K
     }
 
     public RotatingKeysetKeyStore getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingKeysetKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic));
+        return new RotatingKeysetKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic), s3KeyProvider);
     }
 
     @Override

@@ -65,7 +65,7 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
     }
 
     public RotatingKeyStore getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic));
+        return new RotatingKeyStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic),s3KeyProvider);
     }
 
 
