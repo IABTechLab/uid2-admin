@@ -82,7 +82,6 @@ public class MultiScopeStoreWriter<T> {
 
     }
 
-
     public static <K, V> boolean areMapsEqual(Map<K, V> a, Map<K, V> b) {
         return a.size() == b.size() && a.entrySet().stream().allMatch(b.entrySet()::contains);
     }
