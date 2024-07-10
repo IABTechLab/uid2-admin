@@ -82,12 +82,17 @@ public class PublicSiteUtilTest {
                     new OperatorBuilder()
                             .withSiteId(siteId2)
                             .withType(OperatorType.PUBLIC)
+                            .build(),
+                    new OperatorBuilder()
+                            .withSiteId(siteId3)
+                            .withType(OperatorType.PUBLIC)
                             .build()
             );
 
             Set<Site> sites = ImmutableSet.of(
                     new Site(siteId1, "Site 1", true),
-                    new Site(siteId2, "Site 2", true)
+                    new Site(siteId2, "Site 2", true),
+                    new Site(siteId3, "Site 3", true)
             );
 
             PrivateSiteDataMap<Site> actual = PublicSiteUtil.getPublicSites(sites, operators);
@@ -95,11 +100,18 @@ public class PublicSiteUtilTest {
             PrivateSiteDataMap<Site> expected = new PrivateSiteDataMap<>();
             expected.put(siteId1, ImmutableSet.of(
                     new Site(siteId1, "Site 1", true),
-                    new Site(siteId2, "Site 2", true)
+                    new Site(siteId2, "Site 2", true),
+                    new Site(siteId3, "Site 3", true)
             ));
             expected.put(siteId2, ImmutableSet.of(
                     new Site(siteId1, "Site 1", true),
-                    new Site(siteId2, "Site 2", true)
+                    new Site(siteId2, "Site 2", true),
+                    new Site(siteId3, "Site 3", true)
+            ));
+            expected.put(siteId3, ImmutableSet.of(
+                    new Site(siteId1, "Site 1", true),
+                    new Site(siteId2, "Site 2", true),
+                    new Site(siteId3, "Site 3", true)
             ));
 
             assertEquals(expected, actual);

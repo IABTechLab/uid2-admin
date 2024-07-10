@@ -79,7 +79,6 @@ public class MultiScopeStoreWriter<T> {
                 encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
             }
         }
-
     }
 
     public static <K, V> boolean areMapsEqual(Map<K, V> a, Map<K, V> b) {
