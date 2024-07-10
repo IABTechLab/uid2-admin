@@ -53,16 +53,14 @@ public class EncryptedFilesSyncService implements IService {
 
     private void handleEncryptedFileSync(RoutingContext rc) {
         try {
-            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
+            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, s3KeyProvider);
             jobDispatcher.enqueue(encryptedFileSyncJob);
 
             rc.response().end("OK");
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
-
     private void handleEncryptedFileSyncNow(RoutingContext rc) {
         try {
             EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);

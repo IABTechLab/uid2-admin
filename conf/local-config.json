@@ -34,7 +34,6 @@
   "salt_snapshot_expires_after_seconds": 180000,
   "is_auth_disabled": true,
   "enable_keysets": true,
-  "enable_s3_encryption": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
   "okta_client_secret": "GET_FROM_1PASSWORD",
   "okta_auth_server": "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8",
@@ -46,5 +45,6 @@
   "role_okta_group_map_privileged": "developer",
   "role_okta_group_map_super_user": "developer",
   "s3_key_activates_in_seconds": 86400,
-  "s3_key_count_per_site": 3
+  "s3_key_count_per_site": 3,
+  "enable_s3_encryption": true
 }
