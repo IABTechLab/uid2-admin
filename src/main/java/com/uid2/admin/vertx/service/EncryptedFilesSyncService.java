@@ -3,6 +3,8 @@ package com.uid2.admin.vertx.service;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
+import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
+import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
@@ -38,17 +40,16 @@ public class EncryptedFilesSyncService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/encrypted-files/sync").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/encrypted-files/refresh").handler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
                         this.handleEncryptedFileSync(ctx);
                     }
                 },
-                //????
                 Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
 
-        router.post("/api/encrypted-files/syncNow").blockingHandler(auth.handle(
+        router.post("/api/encrypted-files/syncNow").handler(auth.handle(
                 this::handleEncryptedFileSyncNow,
-                Role.PRIVILEGED));
+                Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
     }
 
     private void handleEncryptedFileSync(RoutingContext rc) {
@@ -75,3 +76,4 @@ public class EncryptedFilesSyncService implements IService {
         }
     }
 }
+

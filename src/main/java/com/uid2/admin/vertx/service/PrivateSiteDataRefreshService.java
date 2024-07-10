@@ -2,10 +2,12 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.job.JobDispatcher;
+import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +23,19 @@ public class PrivateSiteDataRefreshService implements IService {
     private final JobDispatcher jobDispatcher;
     private final WriteLock writeLock;
     private final JsonObject config;
+    private final  RotatingS3KeyProvider s3KeyProvider;
 
     public PrivateSiteDataRefreshService(
             AdminAuthMiddleware auth,
             JobDispatcher jobDispatcher,
             WriteLock writeLock,
-            JsonObject config) {
+            JsonObject config,
+            RotatingS3KeyProvider s3KeyProvider) {
         this.auth = auth;
         this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;
         this.config = config;
+        this.s3KeyProvider = s3KeyProvider;
     }
 
     @Override
@@ -47,7 +52,7 @@ public class PrivateSiteDataRefreshService implements IService {
         router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle(
                 this::handlePrivateSiteDataGenerateNow,
                 //can be other role
-            Role.PRIVILEGED));
+                Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
     }
 
     private void handlePrivateSiteDataGenerate(RoutingContext rc) {
@@ -57,6 +62,9 @@ public class PrivateSiteDataRefreshService implements IService {
 
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
+
+            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, s3KeyProvider);
+            jobDispatcher.enqueue(encryptedFileSyncJob);
 
             rc.response().end("OK");
         } catch (Exception e) {
@@ -76,6 +84,11 @@ public class PrivateSiteDataRefreshService implements IService {
             jobDispatcher.enqueue(privateSiteDataSyncJob);
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
+
+            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
+            jobDispatcher.enqueue(encryptedFileSyncJob);
+            CompletableFuture<Boolean> encryptedFileSyncJobFuture = jobDispatcher.executeNextJob();
+            encryptedFileSyncJobFuture.get();
 
             rc.response().end("OK");
         } catch (Exception e) {
