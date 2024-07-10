@@ -91,14 +91,13 @@ public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>>
     }
 
     public StoreWriter<Collection<Site>> getEncryptedWriter(Integer siteId, boolean isPublic) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new SiteStoreWriter(
                 getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,
                 clock,
-                encryptedScope,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
                 s3KeyProvider
         );
     }

@@ -39,8 +39,8 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         }
 
         Map<Integer, S3Key> s3Keys = s3KeyProvider.getAll();
+        // S3 encryption key selection logics
         S3Key largestKey = null;
-
         for (S3Key key : s3Keys.values()) {
             if (key.getSiteId() == siteId) {
                 if (largestKey == null || key.getId() > largestKey.getId()) {
@@ -48,7 +48,6 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
                 }
             }
         }
-
         if (largestKey != null) {
             uploadWithEncryptionKey(data, extraMeta, largestKey);
         } else {

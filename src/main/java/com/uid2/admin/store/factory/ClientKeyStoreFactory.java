@@ -95,14 +95,13 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
     }
 
     public LegacyClientKeyStoreWriter getEncryptedWriter(Integer siteId, boolean isPublic) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new LegacyClientKeyStoreWriter(
                 getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,
                 clock,
-                encryptedScope,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
                 s3KeyProvider
         );
     }

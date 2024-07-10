@@ -98,14 +98,13 @@ public class KeysetStoreFactory implements EncryptedStoreFactory<Map<Integer, Ke
     }
 
     public StoreWriter<Map<Integer, Keyset>> getEncryptedWriter(Integer siteId, boolean isPublic) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new KeysetStoreWriter(
                 getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,
                 clock,
-                encryptedScope,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
                 s3KeyProvider,
                 enableKeysets
         );

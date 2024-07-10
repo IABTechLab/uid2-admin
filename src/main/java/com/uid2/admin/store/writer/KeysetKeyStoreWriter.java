@@ -8,6 +8,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -34,7 +35,7 @@ public class KeysetKeyStoreWriter implements StoreWriter<Collection<KeysetKey>> 
                                 FileManager fileManager,
                                 VersionGenerator versionGenerator,
                                 Clock clock,
-                                StoreScope scope,
+                                EncryptedScope scope,
                                 RotatingS3KeyProvider s3KeyProvider,
                                 boolean enableKeysets) {
         FileName dataFile = new FileName("keyset_keys", ".json");

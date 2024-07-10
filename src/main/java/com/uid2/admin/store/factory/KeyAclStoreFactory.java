@@ -76,14 +76,13 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
     }
 
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getEncryptedWriter(Integer siteId, boolean isPublic) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new KeyAclStoreWriter(
                 getEncryptedReader(siteId,isPublic),
                 fileManager,
                 objectWriter,
                 versionGenerator,
                 clock,
-                encryptedScope,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
                 s3KeyProvider
         );
     }

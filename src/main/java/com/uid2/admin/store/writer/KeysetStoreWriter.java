@@ -11,6 +11,7 @@ import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.model.S3Key;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -37,7 +38,7 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
 
     }
     public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
-                             ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, StoreScope scope,
+                             ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, EncryptedScope scope,
                              RotatingS3KeyProvider s3KeyProvider, boolean enableKeysets) {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("keysets", ".json");

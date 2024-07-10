@@ -89,13 +89,12 @@ public class KeysetKeyStoreFactory implements EncryptedStoreFactory<Collection<K
     }
 
     public StoreWriter<Collection<KeysetKey>> getEncryptedWriter(Integer siteId, boolean isPublic) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new KeysetKeyStoreWriter(
                 getEncryptedReader(siteId,isPublic),
                 fileManager,
                 versionGenerator,
                 clock,
-                encryptedScope,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
                 s3KeyProvider,
                 enableKeyset
         );

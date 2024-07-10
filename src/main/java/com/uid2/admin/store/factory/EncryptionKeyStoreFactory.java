@@ -81,13 +81,12 @@ public class EncryptionKeyStoreFactory implements EncryptedStoreFactory<Collecti
     }
 
     public EncryptionKeyStoreWriter getEncryptedWriter(Integer siteId,boolean isPublic) {
-        StoreScope encryptedScope = new EncryptedScope(rootMetadataPath, siteId, isPublic);
         return new EncryptionKeyStoreWriter(
                 getEncryptedReader(siteId,isPublic),
                 fileManager,
                 versionGenerator,
                 clock,
-                encryptedScope,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
                 s3KeyProvider
         );
     }

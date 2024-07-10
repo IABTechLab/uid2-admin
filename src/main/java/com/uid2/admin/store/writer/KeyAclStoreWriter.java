@@ -8,6 +8,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -30,7 +31,7 @@ public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKey
                              ObjectWriter jsonWriter,
                              VersionGenerator versionGenerator,
                              Clock clock,
-                             StoreScope scope,
+                             EncryptedScope scope,
                              RotatingS3KeyProvider s3KeyProvider) {
         FileName dataFile = new FileName("keys_acl", ".json");
         String dataType = "keys_acl";

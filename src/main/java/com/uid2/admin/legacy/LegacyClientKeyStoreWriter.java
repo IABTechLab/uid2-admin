@@ -11,6 +11,7 @@ import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
 import com.uid2.admin.store.writer.ScopedStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
@@ -31,7 +32,7 @@ public class LegacyClientKeyStoreWriter implements StoreWriter<Collection<Legacy
                                       ObjectWriter jsonWriter,
                                       VersionGenerator versionGenerator,
                                       Clock clock,
-                                      StoreScope scope,
+                                      EncryptedScope scope,
                                       RotatingS3KeyProvider s3KeyProvider) {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("clients", ".json");
