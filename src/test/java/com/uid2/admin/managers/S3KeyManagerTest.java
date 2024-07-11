@@ -274,5 +274,25 @@ class S3KeyManagerTest {
         assertFalse(s3KeyManager.doesSiteHaveKeys(1));
     }
 
+    @Test
+    void testCountKeysForSite() {
+        Map<Integer, S3Key> testKeys = new HashMap<>();
+        testKeys.put(1, new S3Key(1, 1, 1000L, 900L, "key1"));
+        testKeys.put(2, new S3Key(2, 1, 1100L, 1000L, "key2"));
+        testKeys.put(3, new S3Key(3, 2, 1200L, 1100L, "key3"));
+        testKeys.put(4, new S3Key(4, 1, 1300L, 1200L, "key4"));
+
+        when(s3KeyManager.getAllS3Keys()).thenReturn(testKeys);
+
+        int countForSite1 = s3KeyManager.countKeysForSite(1);
+        int countForSite2 = s3KeyManager.countKeysForSite(2);
+        int countForSite3 = s3KeyManager.countKeysForSite(3);
+
+        assertEquals(3, countForSite1);
+        assertEquals(1, countForSite2);
+        assertEquals(0, countForSite3);
+    }
+
+
 
 }

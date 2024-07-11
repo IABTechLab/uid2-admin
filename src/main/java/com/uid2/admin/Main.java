@@ -259,7 +259,7 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config,s3KeyProvider),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, s3KeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider)
             };

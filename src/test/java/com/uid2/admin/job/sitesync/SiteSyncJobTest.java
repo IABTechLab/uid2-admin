@@ -166,5 +166,4 @@ public class SiteSyncJobTest {
                 () -> assertThat(reader.getMetadata().getLong("version")).isEqualTo(oldVersion)
         );
     }
-
 }

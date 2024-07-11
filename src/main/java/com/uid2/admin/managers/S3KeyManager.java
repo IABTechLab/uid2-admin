@@ -91,7 +91,7 @@ public class S3KeyManager {
         return allKeys.values().stream().anyMatch(key -> key.getSiteId() == siteId);
     }
 
-    private int countKeysForSite(int siteId) {
+    int countKeysForSite(int siteId) {
         Map<Integer, S3Key> allKeys = s3KeyProvider.getAll();
         return (int) allKeys.values().stream().filter(key -> key.getSiteId() == siteId).count();
     }
