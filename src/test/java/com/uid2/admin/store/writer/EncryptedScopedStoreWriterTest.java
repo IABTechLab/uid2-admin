@@ -77,7 +77,7 @@ class EncryptedScopedStoreWriterTest {
         s3KeyProvider = mock(RotatingS3KeyProvider.class);
         Map<Integer, S3Key> mockKeyMap = new HashMap<>();
         mockKeyMap.put(testSiteId, encryptionKey);
-        when(s3KeyProvider.getAll()).thenReturn(mockKeyMap);
+        when(s3KeyProvider.getEncryptionKeyForSite(123)).thenReturn(encryptionKey);
 
 
         // Initialize EncryptedScopedStoreWriter with the s3KeyProvider
@@ -143,37 +143,12 @@ class EncryptedScopedStoreWriterTest {
 
     @Test
     void testHandlingInvalidEncryptionKey() {
-        when(s3KeyProvider.getAll()).thenReturn(new HashMap<>());
+        when(s3KeyProvider.getEncryptionKeyForSite(123)).thenReturn(null);
 
         String testData = "Test data to be encrypted";
         JsonObject extraMeta = new JsonObject().put("test", "meta");
 
         assertThrows(IllegalStateException.class, () -> encryptedScopedStoreWriter.upload(testData, extraMeta));
     }
-
-    @Test
-    void testUploadWithMultipleEncryptionKeys() throws Exception {
-        S3Key oldKey = new S3Key(1, testSiteId, 0, 0, Base64.getEncoder().encodeToString(Random.getRandomKeyBytes()));
-        S3Key newKey = new S3Key(2, testSiteId, 0, 0, Base64.getEncoder().encodeToString(Random.getRandomKeyBytes()));
-
-        Map<Integer, S3Key> mockKeyMap = new HashMap<>();
-        mockKeyMap.put(oldKey.getId(), oldKey);
-        mockKeyMap.put(newKey.getId(), newKey);
-        when(s3KeyProvider.getAll()).thenReturn(mockKeyMap);
-
-        String testData = "Test data to be encrypted";
-        JsonObject extraMeta = new JsonObject().put("test", "meta");
-
-        ArgumentCaptor<String> contentCaptor = ArgumentCaptor.forClass(String.class);
-        doNothing().when(fileManager).uploadFile(any(CloudPath.class), any(FileName.class), contentCaptor.capture());
-
-        encryptedScopedStoreWriter.upload(testData, extraMeta);
-
-        String uploadedContent = contentCaptor.getValue();
-        JsonObject json = new JsonObject(uploadedContent);
-
-        assertEquals(newKey.getId(), json.getInteger("key_id"));
-    }
-
 }
 
