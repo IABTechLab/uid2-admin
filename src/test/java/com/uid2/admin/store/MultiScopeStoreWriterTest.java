@@ -7,8 +7,6 @@ import com.uid2.admin.store.factory.EncryptedStoreFactory;
 import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.EncryptedStoreWriter;
-import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.cloud.DownloadCloudStorage;
@@ -18,15 +16,13 @@ import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
-import com.uid2.shared.store.scope.EncryptedScope;
-import com.uid2.shared.store.scope.GlobalScope;
+
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 
