@@ -65,9 +65,7 @@ public class MultiScopeStoreWriter<T> {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
         for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
             Integer siteId = entry.getKey();
-            if (siteId != null) {
-                encryptedFactory.getEncryptedWriter(siteId,false).upload(desiredState.get(siteId), extraMeta);
-            }
+            encryptedFactory.getEncryptedWriter(siteId,false).upload(desiredState.get(siteId), extraMeta);
         }
     }
 
@@ -75,9 +73,8 @@ public class MultiScopeStoreWriter<T> {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
         for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
             Integer siteId = entry.getKey();
-            if (siteId != null) {
-                encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
-            }
+            encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
+
         }
     }
 

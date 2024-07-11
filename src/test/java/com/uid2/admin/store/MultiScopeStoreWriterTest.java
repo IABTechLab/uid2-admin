@@ -3,19 +3,25 @@ package com.uid2.admin.store;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.uid2.admin.store.factory.EncryptedStoreFactory;
 import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.cloud.InMemoryStorageMock;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 
@@ -23,10 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MultiScopeStoreWriterTest {
     private InMemoryStorageMock cloudStorage;
+    private DownloadCloudStorage fileStreamProvider;
+    private StoreScope scope;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
     ObjectWriter objectWriter = JsonUtil.createJsonWriter();
     Integer scopedSiteId = 10;
     private SiteStoreFactory siteStoreFactory;
+    private RotatingS3KeyProvider s3KeyProvider;
 
     Site site = new Site(scopedSiteId, "site 1", true);
     private FileManager fileManager;
@@ -45,6 +54,7 @@ class MultiScopeStoreWriterTest {
                 versionGenerator,
                 clock,
                 fileManager);
+        s3KeyProvider = new RotatingS3KeyProvider(fileStreamProvider,scope);
     }
 
     @Test
@@ -182,6 +192,44 @@ class MultiScopeStoreWriterTest {
         void whenNotEqualReturnsFalse() {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, b)).isFalse();
         }
+    }
+
+    @Test
+    public void uploadEncryptedAddsDataToCloudStorage() throws Exception {
+        EncryptedStoreFactory<Collection<Site>> encryptedFactory = (EncryptedStoreFactory<Collection<Site>>) siteStoreFactory;
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, encryptedFactory, MultiScopeStoreWriter::areCollectionsEqual);
+
+        multiStore.uploadEncrypted(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)), null);
+
+        List<String> allFilesInCloud = cloudStorage.list("");
+        assertThat(allFilesInCloud).contains(
+                "/some/test/path/sites/site/10/metadata.json",
+                "/some/test/path/sites/site/10/sites.json"
+        );
+
+        StoreReader<Collection<Site>> reader = encryptedFactory.getReader(scopedSiteId);
+        reader.loadContent();
+        Collection<Site> scopedSites = reader.getAll();
+        assertThat(scopedSites).containsExactly(site);
+    }
+
+    @Test
+    public void uploadPublicWithEncryptionAddsDataToCloudStorage() throws Exception {
+        EncryptedStoreFactory<Collection<Site>> encryptedFactory = (EncryptedStoreFactory<Collection<Site>>) siteStoreFactory;
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, encryptedFactory, MultiScopeStoreWriter::areCollectionsEqual);
+
+        multiStore.uploadPublicWithEncryption(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)), null);
+
+        List<String> allFilesInCloud = cloudStorage.list("");
+        assertThat(allFilesInCloud).contains(
+                "/some/test/path/sites/site/10/metadata.json",
+                "/some/test/path/sites/site/10/sites.json"
+        );
+
+        StoreReader<Collection<Site>> reader = encryptedFactory.getReader(scopedSiteId);
+        reader.loadContent();
+        Collection<Site> scopedSites = reader.getAll();
+        assertThat(scopedSites).containsExactly(site);
     }
 
     class TestData {
