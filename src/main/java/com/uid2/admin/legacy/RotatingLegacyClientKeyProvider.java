@@ -49,7 +49,7 @@ public class RotatingLegacyClientKeyProvider implements ILegacyClientKeyProvider
     }
 
     public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, EncryptedScope scope, RotatingS3KeyProvider s3KeyProvider) {
-        this.reader = new EncryptedScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys", scope.getId(), s3KeyProvider);
+        this.reader = new EncryptedScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys", s3KeyProvider);
         this.authorizableStore = new AuthorizableStore<>(LegacyClientKey.class);
     }
 
