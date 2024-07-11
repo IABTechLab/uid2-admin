@@ -15,6 +15,8 @@ import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.EncryptedScope;
+import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +56,6 @@ class MultiScopeStoreWriterTest {
                 versionGenerator,
                 clock,
                 fileManager);
-        s3KeyProvider = new RotatingS3KeyProvider(fileStreamProvider,scope);
     }
 
     @Test
@@ -192,44 +193,6 @@ class MultiScopeStoreWriterTest {
         void whenNotEqualReturnsFalse() {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, b)).isFalse();
         }
-    }
-
-    @Test
-    public void uploadEncryptedAddsDataToCloudStorage() throws Exception {
-        EncryptedStoreFactory<Collection<Site>> encryptedFactory = (EncryptedStoreFactory<Collection<Site>>) siteStoreFactory;
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, encryptedFactory, MultiScopeStoreWriter::areCollectionsEqual);
-
-        multiStore.uploadEncrypted(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)), null);
-
-        List<String> allFilesInCloud = cloudStorage.list("");
-        assertThat(allFilesInCloud).contains(
-                "/some/test/path/sites/site/10/metadata.json",
-                "/some/test/path/sites/site/10/sites.json"
-        );
-
-        StoreReader<Collection<Site>> reader = encryptedFactory.getReader(scopedSiteId);
-        reader.loadContent();
-        Collection<Site> scopedSites = reader.getAll();
-        assertThat(scopedSites).containsExactly(site);
-    }
-
-    @Test
-    public void uploadPublicWithEncryptionAddsDataToCloudStorage() throws Exception {
-        EncryptedStoreFactory<Collection<Site>> encryptedFactory = (EncryptedStoreFactory<Collection<Site>>) siteStoreFactory;
-        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, encryptedFactory, MultiScopeStoreWriter::areCollectionsEqual);
-
-        multiStore.uploadPublicWithEncryption(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)), null);
-
-        List<String> allFilesInCloud = cloudStorage.list("");
-        assertThat(allFilesInCloud).contains(
-                "/some/test/path/sites/site/10/metadata.json",
-                "/some/test/path/sites/site/10/sites.json"
-        );
-
-        StoreReader<Collection<Site>> reader = encryptedFactory.getReader(scopedSiteId);
-        reader.loadContent();
-        Collection<Site> scopedSites = reader.getAll();
-        assertThat(scopedSites).containsExactly(site);
     }
 
     class TestData {

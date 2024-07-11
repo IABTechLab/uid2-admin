@@ -74,7 +74,6 @@ public class MultiScopeStoreWriter<T> {
         for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
             Integer siteId = entry.getKey();
             encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
-
         }
     }
 

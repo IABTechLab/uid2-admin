@@ -44,33 +44,11 @@ public class RotatingLegacyClientKeyProvider implements ILegacyClientKeyProvider
     private final AuthorizableStore<LegacyClientKey> authorizableStore;
 
     public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, StoreScope scope) {
-        this(fileStreamProvider, scope, null);
+        this.reader = new ScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys");
     }
 
-    public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, StoreScope scope, RotatingS3KeyProvider s3KeyProvider) {
-        this.reader = createReader(fileStreamProvider, scope, s3KeyProvider);
-        this.authorizableStore = new AuthorizableStore<>(LegacyClientKey.class);
-    }
-
-    private ScopedStoreReader<Collection<LegacyClientKey>> createReader(DownloadCloudStorage fileStreamProvider, StoreScope scope, RotatingS3KeyProvider s3KeyProvider) {
-        if (s3KeyProvider != null && scope instanceof EncryptedScope) {
-            EncryptedScope encryptedScope = (EncryptedScope) scope;
-            return new EncryptedScopedStoreReader<>(
-                    fileStreamProvider,
-                    encryptedScope,
-                    new LegacyClientParser(),
-                    "auth keys",
-                    encryptedScope.getId(),
-                    s3KeyProvider
-            );
-        } else {
-            return new ScopedStoreReader<>(
-                    fileStreamProvider,
-                    scope,
-                    new LegacyClientParser(),
-                    "auth keys"
-            );
-        }
+    public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, EncryptedScope scope, RotatingS3KeyProvider s3KeyProvider) {
+        this.reader = new EncryptedScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys", scope.getId(), s3KeyProvider);
     }
 
     @Override
