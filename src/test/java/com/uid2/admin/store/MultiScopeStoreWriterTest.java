@@ -195,6 +195,52 @@ class MultiScopeStoreWriterTest {
         }
     }
 
+    @Test
+    public void uploadEncrypted() throws Exception {
+        RotatingS3KeyProvider mockS3KeyProvider = new RotatingS3KeyProvider(fileStreamProvider, new GlobalScope(globalSiteMetadataPath)) {
+            @Override
+            public String getKey(Integer siteId) {
+                if (siteId.equals(scopedSiteId)) {
+                    return "mockEncryptionKey";
+                }
+                return null;
+            }
+        };
+
+        SiteStoreFactory encryptedSiteStoreFactory = new SiteStoreFactory(
+                cloudStorage,
+                globalSiteMetadataPath,
+                objectWriter,
+                new EpochVersionGenerator(new InstantClock()),
+                new InstantClock(),
+                mockS3KeyProvider,
+                fileManager
+        );
+
+        // Create the MultiScopeStoreWriter with the new factory
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(
+                fileManager,
+                encryptedSiteStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual
+        );
+
+        // Perform the encrypted upload
+        multiStore.uploadPrivateWithEncryption(ImmutableMap.of(scopedSiteId, ImmutableList.of(site)), null);
+
+        // Verify that the files were created in cloud storage
+        List<String> allFilesInCloud = cloudStorage.list("");
+        assertThat(allFilesInCloud).contains(
+                "/some/test/path/sites/site/10/metadata.json",
+                "/some/test/path/sites/site/10/sites.json"
+        );
+
+        // Verify the content using an encrypted reader
+        StoreReader<Collection<Site>> reader = encryptedSiteStoreFactory.getEncryptedReader(123, false);
+        reader.loadContent();
+        Collection<Site> scopedSites = reader.getAll();
+        assertThat(scopedSites).containsExactly(site);
+    }
+
     class TestData {
         private final String field1;
 
