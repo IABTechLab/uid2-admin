@@ -34,7 +34,7 @@ public class SiteKeysetEncryptionJob extends Job{
     @Override
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, Keyset>> desiredPrivateState = PrivateSiteUtil.getKeysetForEachSite(globalOperators, globalKeysets);
-        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, null);
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, null);
         HashMap<Integer, Map<Integer, Keyset>> desiredPublicState = PublicSiteUtil.getPublicKeysets(globalKeysets,globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }

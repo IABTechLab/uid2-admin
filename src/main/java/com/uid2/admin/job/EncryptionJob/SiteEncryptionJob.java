@@ -31,7 +31,7 @@ public class SiteEncryptionJob extends Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<Site> desiredPrivateState = PrivateSiteUtil.getSites(globalSites, globalOperators);
-        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, null);
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, null);
         PrivateSiteDataMap<Site> desiredPublicState = PublicSiteUtil.getPublicSites(globalSites, globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }

@@ -33,7 +33,7 @@ public class KeyAclEncryptionJob extends Job {
     @Override
     public void execute() throws Exception {
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPrivateState = PrivateSiteUtil.getEncryptionKeyAclsForEachSite(globalOperators, globalAcls);
-        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, null);
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, null);
         HashMap<Integer, Map<Integer, EncryptionKeyAcl>> desiredPublicState = PublicSiteUtil.getPublicKeyAcls(globalAcls,globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }

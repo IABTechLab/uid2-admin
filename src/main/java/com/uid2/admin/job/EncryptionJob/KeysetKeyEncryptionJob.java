@@ -41,7 +41,7 @@ public class KeysetKeyEncryptionJob extends Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<KeysetKey> desiredPrivateState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
-        multiScopeStoreWriter.uploadEncrypted(desiredPrivateState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
         PrivateSiteDataMap<KeysetKey> desiredPublicState = PublicSiteUtil.getPublicKeysetKeys(globalKeysetKeys, globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }

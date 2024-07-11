@@ -61,7 +61,7 @@ public class MultiScopeStoreWriter<T> {
         return currentState;
     }
 
-    public void uploadEncrypted(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+    public void uploadPrivateWithEncryption(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
         for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
             Integer siteId = entry.getKey();
