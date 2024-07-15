@@ -46,5 +46,4 @@
   "role_okta_group_map_super_user": "developer",
   "s3_key_activates_in_seconds": 86400,
   "s3_key_count_per_site": 3,
-  "enable_s3_encryption": true
 }
