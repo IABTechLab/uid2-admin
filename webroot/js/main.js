@@ -28,6 +28,10 @@ function setOutput(text, div) {
     $(div).text(pretty);
 }
 
+function prettifyJson(text) {
+    return JSON.stringify(JSON.parse(text), null, 2);
+}
+
 function errorCallback(err) {
     standardErrorCallback(err, "#errorOutput")
 }
