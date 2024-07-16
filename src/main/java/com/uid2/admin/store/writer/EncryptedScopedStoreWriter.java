@@ -23,6 +23,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
     private final RotatingS3KeyProvider s3KeyProvider;
     private Integer siteId;
+    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedScopedStoreWriter.class);
 
     public EncryptedScopedStoreWriter(IMetadataVersionedStore provider,
                                       FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
@@ -38,7 +39,12 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
             throw new IllegalStateException("Site ID is not set.");
         }
 
-        S3Key encryptionKey =  s3KeyProvider.getEncryptionKeyForSite(siteId);
+        S3Key encryptionKey = null;
+        try {
+             encryptionKey = s3KeyProvider.getEncryptionKeyForSite(siteId);
+        } catch (IllegalStateException e) {
+            LOGGER.error("Error: No S3 keys available for encryption for site ID: {}", siteId, e);
+        }
 
         if (encryptionKey != null) {
             uploadWithEncryptionKey(data, extraMeta, encryptionKey);
