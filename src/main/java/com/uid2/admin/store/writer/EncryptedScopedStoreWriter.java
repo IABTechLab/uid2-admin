@@ -1,6 +1,5 @@
 package com.uid2.admin.store.writer;
 
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
@@ -8,7 +7,6 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.S3Key;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
@@ -17,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Map;
 
 public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
