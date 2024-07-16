@@ -6,7 +6,6 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.store.FileName;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 

@@ -84,5 +84,4 @@ public class MultiScopeStoreWriter<T> {
     public static <T> boolean areCollectionsEqual(Collection<T> a, Collection<T> b) {
         return a.size() == b.size() && a.stream().allMatch(b::contains);
     }
-
 }

@@ -40,8 +40,7 @@ public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
     }
 
     public void upload(Collection<Site> data, JsonObject extraMeta) throws Exception {
-        String jsonData = jsonWriter.writeValueAsString(data);
-        writer.upload(jsonData, extraMeta);
+        writer.upload(jsonWriter.writeValueAsString(data), extraMeta);
     }
 
     @Override

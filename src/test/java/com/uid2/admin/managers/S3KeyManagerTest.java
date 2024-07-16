@@ -292,7 +292,4 @@ class S3KeyManagerTest {
         assertEquals(1, countForSite2);
         assertEquals(0, countForSite3);
     }
-
-
-
 }
