@@ -91,7 +91,13 @@ public class S3KeyManager {
         return allKeys.values().stream().anyMatch(key -> key.getSiteId() == siteId);
     }
 
+    int countKeysForSite(int siteId) {
+        Map<Integer, S3Key> allKeys = s3KeyProvider.getAll();
+        return (int) allKeys.values().stream().filter(key -> key.getSiteId() == siteId).count();
+    }
+
     public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
+        this.s3KeyProvider.loadContent();
         if (operatorKeys == null || operatorKeys.isEmpty()) {
             throw new IllegalArgumentException("Operator keys collection must not be null or empty");
         }
@@ -108,8 +114,10 @@ public class S3KeyManager {
         }
 
         for (Integer siteId : uniqueSiteIds) {
-            if (!doesSiteHaveKeys(siteId)) {
-                for (int i = 0; i < keyCountPerSite; i++) {
+            int currentKeyCount = countKeysForSite(siteId);
+            if (currentKeyCount < keyCountPerSite) {
+                int keysToGenerate = keyCountPerSite - currentKeyCount;
+                for (int i = 0; i < keysToGenerate; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
                     S3Key s3Key = generateS3Key(siteId, activated, created);
@@ -118,5 +126,4 @@ public class S3KeyManager {
             }
         }
     }
-
 }

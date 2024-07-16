@@ -3,30 +3,43 @@ package com.uid2.admin.store;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.uid2.admin.store.factory.EncryptedStoreFactory;
 import com.uid2.admin.store.factory.SiteStoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
+import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.cloud.InMemoryStorageMock;
+import com.uid2.shared.model.S3Key;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+
+import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
 
 class MultiScopeStoreWriterTest {
     private InMemoryStorageMock cloudStorage;
+    private DownloadCloudStorage fileStreamProvider;
+    private StoreScope scope;
     CloudPath globalSiteMetadataPath = new CloudPath("/some/test/path/sites/metadata.json");
     ObjectWriter objectWriter = JsonUtil.createJsonWriter();
     Integer scopedSiteId = 10;
     private SiteStoreFactory siteStoreFactory;
+    @Mock
+    private RotatingS3KeyProvider s3KeyProvider;
 
     Site site = new Site(scopedSiteId, "site 1", true);
     private FileManager fileManager;
@@ -38,6 +51,7 @@ class MultiScopeStoreWriterTest {
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
         fileManager = new FileManager(cloudStorage, fileStorage);
+        s3KeyProvider = mock(RotatingS3KeyProvider.class);
         siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
@@ -183,6 +197,81 @@ class MultiScopeStoreWriterTest {
             assertThat(MultiScopeStoreWriter.areCollectionsEqual(a, b)).isFalse();
         }
     }
+
+    @Test
+    public void uploadPrivateWithEncryption() throws Exception {
+        S3Key encryptionKey = new S3Key(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
+        when(s3KeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+        allKeys.put(1, encryptionKey);
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
+                cloudStorage,
+                globalSiteMetadataPath,
+                objectWriter,
+                new EpochVersionGenerator(new InstantClock()),
+                new InstantClock(),
+                s3KeyProvider,
+                fileManager
+        );
+
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(
+                fileManager,
+                siteStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual
+        );
+
+        Site privateSite = new Site(scopedSiteId, "private site", false);
+        JsonObject extraMeta = new JsonObject().put("key", "value");
+
+        multiStore.uploadPrivateWithEncryption(ImmutableMap.of(scopedSiteId, ImmutableList.of(privateSite)), extraMeta);
+
+        StoreReader<Collection<Site>> reader = ((EncryptedStoreFactory<Collection<Site>>) siteStoreFactory)
+                .getEncryptedReader(scopedSiteId, false);
+        reader.loadContent();
+        Collection<Site> sites = reader.getAll();
+        assertThat(sites).containsExactly(privateSite);
+        assertThat(reader.getMetadata().getString("key")).isEqualTo("value");
+    }
+
+    @Test
+    public void uploadPublicWithEncryption() throws Exception {
+        S3Key encryptionKey = new S3Key(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
+        when(s3KeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
+        Map<Integer, S3Key> allKeys = new HashMap<>();
+        allKeys.put(1, encryptionKey);
+        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+
+        SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
+                cloudStorage,
+                globalSiteMetadataPath,
+                objectWriter,
+                new EpochVersionGenerator(new InstantClock()),
+                new InstantClock(),
+                s3KeyProvider,
+                fileManager
+        );
+
+        MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(
+                fileManager,
+                siteStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual
+        );
+
+        Site publicSite = new Site(scopedSiteId, "public site", true);
+        JsonObject extraMeta = new JsonObject().put("key", "value");
+
+        multiStore.uploadPublicWithEncryption(ImmutableMap.of(scopedSiteId, ImmutableList.of(publicSite)), extraMeta);
+
+        StoreReader<Collection<Site>> reader = ((EncryptedStoreFactory<Collection<Site>>) siteStoreFactory)
+                .getEncryptedReader(scopedSiteId, true);
+        reader.loadContent();
+        Collection<Site> sites = reader.getAll();
+        assertThat(sites).containsExactly(publicSite);
+        assertThat(reader.getMetadata().getString("key")).isEqualTo("value");
+    }
+
 
     class TestData {
         private final String field1;

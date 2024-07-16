@@ -1,5 +1,6 @@
 package com.uid2.admin.store.writer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
@@ -7,6 +8,8 @@ import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
 
@@ -23,7 +26,19 @@ public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
         writer = new ScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, dataType);
     }
 
-    @Override
+    public SiteStoreWriter(IMetadataVersionedStore reader,
+                           FileManager fileManager,
+                           ObjectWriter jsonWriter,
+                           VersionGenerator versionGenerator,
+                           Clock clock,
+                           EncryptedScope scope,
+                           RotatingS3KeyProvider s3KeyProvider) {
+        this.jsonWriter = jsonWriter;
+        FileName dataFile = new FileName("sites", ".json");
+        String dataType = "sites";
+        this.writer = new EncryptedScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
+    }
+
     public void upload(Collection<Site> data, JsonObject extraMeta) throws Exception {
         writer.upload(jsonWriter.writeValueAsString(data), extraMeta);
     }

@@ -16,16 +16,16 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.concurrent.CompletableFuture;
 
-public class PrivateSiteDataRefreshService implements IService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
+public class EncryptedFilesSyncService implements IService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedFilesSyncService.class);
 
     private final AdminAuthMiddleware auth;
     private final JobDispatcher jobDispatcher;
     private final WriteLock writeLock;
     private final JsonObject config;
-    private final  RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingS3KeyProvider s3KeyProvider;
 
-    public PrivateSiteDataRefreshService(
+    public EncryptedFilesSyncService(
             AdminAuthMiddleware auth,
             JobDispatcher jobDispatcher,
             WriteLock writeLock,
@@ -35,56 +35,35 @@ public class PrivateSiteDataRefreshService implements IService {
         this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;
         this.config = config;
-        this.s3KeyProvider = s3KeyProvider;
+        this.s3KeyProvider =s3KeyProvider;
     }
 
     @Override
     public void setupRoutes(Router router) {
-        // this can be called by a scheduled task
-        router.post("/api/private-sites/refresh").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/encrypted-files/refresh").handler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
-                        this.handlePrivateSiteDataGenerate(ctx);
+                        this.handleEncryptedFileSync(ctx);
                     }
                 },
-                //can be other role
-            Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
+                Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
 
-        router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle(
-                this::handlePrivateSiteDataGenerateNow,
-                //can be other role
-            Role.PRIVILEGED));
+        router.post("/api/encrypted-files/syncNow").handler(auth.handle(
+                this::handleEncryptedFileSyncNow,
+                Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
     }
 
-    private void handlePrivateSiteDataGenerate(RoutingContext rc) {
+    private void handleEncryptedFileSync(RoutingContext rc) {
         try {
-            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
-            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
-
-            PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
-            jobDispatcher.enqueue(job);
-
             EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, s3KeyProvider);
             jobDispatcher.enqueue(encryptedFileSyncJob);
 
             rc.response().end("OK");
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
     }
-
-    private void handlePrivateSiteDataGenerateNow(RoutingContext rc) {
+    private void handleEncryptedFileSyncNow(RoutingContext rc) {
         try {
-            ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock);
-            jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
-            CompletableFuture<Boolean> replaceSharingTypesWithSitesJobFuture = jobDispatcher.executeNextJob();
-            replaceSharingTypesWithSitesJobFuture.get();
-
-            PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, writeLock);
-            jobDispatcher.enqueue(privateSiteDataSyncJob);
-            CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
-            privateSiteDataSyncJobFuture.get();
-
             EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
             jobDispatcher.enqueue(encryptedFileSyncJob);
             CompletableFuture<Boolean> encryptedFileSyncJobFuture = jobDispatcher.executeNextJob();
@@ -97,3 +76,4 @@ public class PrivateSiteDataRefreshService implements IService {
         }
     }
 }
+

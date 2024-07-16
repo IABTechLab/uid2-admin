@@ -6,6 +6,7 @@ import com.uid2.admin.auth.OktaAuthProvider;
 import com.uid2.admin.auth.AuthProvider;
 import com.uid2.admin.auth.TokenRefreshHandler;
 import com.uid2.admin.job.JobDispatcher;
+import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
@@ -204,15 +205,13 @@ public class Main {
             try {
                 s3KeyProvider.loadContent();
             } catch (CloudStorageException e) {
-                if (e.getMessage().contains("s3 get error")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     s3KeyStoreWriter.upload(new HashMap<>(), null);
                     s3KeyProvider.loadContent();
                 } else {
                     throw e;
                 }
             }
-            s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
-
 
             String enclaveMetadataPath = config.getString(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
             EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
@@ -260,7 +259,7 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, s3KeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider)
             };
@@ -284,6 +283,11 @@ public class Main {
                 } else {
                     throw e;
                 }
+            }
+
+            synchronized (writeLock) {
+                s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
+                s3KeyProvider.loadContent();
             }
 
             /*
@@ -331,6 +335,11 @@ public class Main {
             jobDispatcher.enqueue(privateSiteDataSyncJob);
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
+
+            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
+            jobDispatcher.enqueue(encryptedFilesSyncJob);
+            CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
+            encryptedFilesSyncJobFuture.get();
         } catch (Exception e) {
             LOGGER.error("failed to initialize admin verticle", e);
             System.exit(-1);

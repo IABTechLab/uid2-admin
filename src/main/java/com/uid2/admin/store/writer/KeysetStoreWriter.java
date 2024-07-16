@@ -1,12 +1,17 @@
 package com.uid2.admin.store.writer;
 
+import com.azure.json.implementation.DefaultJsonWriter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.Keyset;
+import com.uid2.shared.model.S3Key;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -29,6 +34,16 @@ public class KeysetStoreWriter implements StoreWriter<Map<Integer, Keyset>> {
         FileName dataFile = new FileName("keysets", ".json");
         String dataType = "keysets";
         writer = new ScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType);
+        this.enableKeysets = enableKeysets;
+
+    }
+    public KeysetStoreWriter(StoreReader<Map<Integer, Keyset>> provider, FileManager fileManager,
+                             ObjectWriter jsonWriter, VersionGenerator versionGenerator, Clock clock, EncryptedScope scope,
+                             RotatingS3KeyProvider s3KeyProvider, boolean enableKeysets) {
+        this.jsonWriter = jsonWriter;
+        FileName dataFile = new FileName("keysets", ".json");
+        String dataType = "keysets";
+        writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
         this.enableKeysets = enableKeysets;
     }
 

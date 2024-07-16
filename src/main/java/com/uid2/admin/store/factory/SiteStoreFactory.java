@@ -9,14 +9,17 @@ import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
+import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Collection;
 
-public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
+public class SiteStoreFactory implements EncryptedStoreFactory<Collection<Site>> {
     private final ICloudStorage fileStreamProvider;
     private final CloudPath rootMetadataPath;
     private final ObjectWriter objectWriter;
@@ -25,6 +28,8 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
     private final FileManager fileManager;
     private final RotatingSiteStore globalReader;
     private final SiteStoreWriter globalWriter;
+    private final RotatingS3KeyProvider s3KeyProvider;
+
 
     public SiteStoreFactory(
             ICloudStorage fileStreamProvider,
@@ -33,15 +38,28 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
             VersionGenerator versionGenerator,
             Clock clock,
             FileManager fileManager) {
+        this(fileStreamProvider, rootMetadataPath, objectWriter, versionGenerator, clock, null, fileManager);
+    }
+
+    public SiteStoreFactory(
+            ICloudStorage fileStreamProvider,
+            CloudPath rootMetadataPath,
+            ObjectWriter objectWriter,
+            VersionGenerator versionGenerator,
+            Clock clock,
+            RotatingS3KeyProvider s3KeyProvider,
+            FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
+        this.s3KeyProvider = s3KeyProvider;
+
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
-        globalReader = new RotatingSiteStore(fileStreamProvider, globalScope);
-        globalWriter = new SiteStoreWriter(
+        this.globalReader = new RotatingSiteStore(fileStreamProvider, globalScope);
+        this.globalWriter = new SiteStoreWriter(
                 globalReader,
                 this.fileManager,
                 objectWriter,
@@ -56,6 +74,10 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
         return new RotatingSiteStore(fileStreamProvider, new SiteScope(rootMetadataPath, siteId));
     }
 
+    public StoreReader<Collection<Site>> getEncryptedReader(Integer siteId, boolean isPublic) {
+        return new RotatingSiteStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic), s3KeyProvider);
+    }
+
     @Override
     public StoreWriter<Collection<Site>> getWriter(Integer siteId) {
         return new SiteStoreWriter(
@@ -67,6 +89,24 @@ public class SiteStoreFactory implements StoreFactory<Collection<Site>> {
                 new SiteScope(rootMetadataPath, siteId)
         );
     }
+
+    public StoreWriter<Collection<Site>> getEncryptedWriter(Integer siteId, boolean isPublic) {
+        return new SiteStoreWriter(
+                getEncryptedReader(siteId,isPublic),
+                fileManager,
+                objectWriter,
+                versionGenerator,
+                clock,
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
+                s3KeyProvider
+        );
+    }
+
+
+    public RotatingS3KeyProvider getS3Provider() {
+        return this.s3KeyProvider;
+    }
+
 
     public RotatingSiteStore getGlobalReader() {
         return globalReader;

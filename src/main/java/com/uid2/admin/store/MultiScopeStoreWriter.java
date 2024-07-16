@@ -1,6 +1,13 @@
 package com.uid2.admin.store;
 
+import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.factory.StoreFactory;
+import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
+import com.uid2.admin.store.writer.ScopedStoreWriter;
+import com.uid2.shared.model.KeysetKey;
+
+import com.uid2.admin.store.factory.EncryptedStoreFactory;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.StoreReader;
 import io.vertx.core.json.JsonObject;
 
@@ -24,6 +31,12 @@ public class MultiScopeStoreWriter<T> {
         write(desiredState, sitesToWrite, extraMeta);
     }
 
+    private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
+        for (Integer siteToWrite : sitesToWrite) {
+            factory.getWriter(siteToWrite).upload(desiredState.get(siteToWrite), extraMeta);
+        }
+    }
+
     private List<Integer> getSitesToWrite(
             Map<Integer, T> desiredState,
             Map<Integer, T> currentState) {
@@ -32,7 +45,6 @@ public class MultiScopeStoreWriter<T> {
             if (isNewSite) {
                 return true;
             }
-
             return !this.areEqual.apply(desiredState.get(siteId), currentState.get(siteId));
         }).collect(Collectors.toList());
     }
@@ -49,9 +61,19 @@ public class MultiScopeStoreWriter<T> {
         return currentState;
     }
 
-    private void write(Map<Integer, T> desiredState, Collection<Integer> sitesToWrite, JsonObject extraMeta) throws Exception {
-        for (Integer addedSite : sitesToWrite) {
-            factory.getWriter(addedSite).upload(desiredState.get(addedSite), extraMeta);
+    public void uploadPrivateWithEncryption(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
+        EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
+        for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
+            Integer siteId = entry.getKey();
+            encryptedFactory.getEncryptedWriter(siteId,false).upload(desiredState.get(siteId), extraMeta);
+        }
+    }
+
+    public void uploadPublicWithEncryption(Map<Integer, T> desiredPublicState, JsonObject extraMeta) throws Exception {
+        EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
+        for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
+            Integer siteId = entry.getKey();
+            encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
         }
     }
 
