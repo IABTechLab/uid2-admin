@@ -57,17 +57,6 @@ public class OperatorKeyService implements IService {
                               RotatingOperatorKeyProvider operatorKeyProvider,
                               RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator,
-                              KeyHasher keyHasher) {
-        this(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, null);
-    }
-
-    public OperatorKeyService(JsonObject config,
-                              AdminAuthMiddleware auth,
-                              WriteLock writeLock,
-                              OperatorKeyStoreWriter operatorKeyStoreWriter,
-                              RotatingOperatorKeyProvider operatorKeyProvider,
-                              RotatingSiteStore siteProvider,
-                              IKeyGenerator keyGenerator,
                               KeyHasher keyHasher,
                               S3KeyManager s3KeyManager) {
         this.auth = auth;

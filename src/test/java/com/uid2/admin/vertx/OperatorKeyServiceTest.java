@@ -268,10 +268,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Test
     public void operatorAddGeneratesS3Keys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
-        OperatorKey existingOperator = new OperatorBuilder().withSiteId(1).build();
-        setOperatorKeys(existingOperator);
 
-        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=5&roles=optout&operator_type=public", "", response -> {
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=1&roles=optout&operator_type=public", "", response -> {
             try {
                 RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 

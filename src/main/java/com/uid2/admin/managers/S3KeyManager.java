@@ -116,18 +116,19 @@ public class S3KeyManager {
         }
 
         for (Integer siteId : uniqueSiteIds) {
-            // Check if the site ID already exists in the S3 key provider
-            if (!doesSiteHaveKeys(siteId)) {
-                int keysToGenerate = keyCountPerSite;
+            // Check if the site ID already exists in the S3 key provider and has fewer than the required number of keys
+            int currentKeyCount = countKeysForSite(siteId);
+            if (currentKeyCount < keyCountPerSite) {
+                int keysToGenerate = keyCountPerSite - currentKeyCount;
                 for (int i = 0; i < keysToGenerate; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
                     S3Key s3Key = generateS3Key(siteId, activated, created);
                     addS3Key(s3Key);
                 }
-                LOGGER.info("Generated " + keysToGenerate + " keys for new site ID " + siteId);
+                LOGGER.info("Generated " + keysToGenerate + " keys for site ID " + siteId);
             } else {
-                LOGGER.info("Site ID " + siteId + " already has keys. Skipping key generation.");
+                LOGGER.info("Site ID " + siteId + " already has the required number of keys. Skipping key generation.");
             }
         }
     }
