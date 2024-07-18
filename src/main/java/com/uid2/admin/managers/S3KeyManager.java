@@ -36,7 +36,7 @@ public class S3KeyManager {
     }
 
     String generateSecret() throws Exception {
-        // Assuming want to generate a 32-byte key
+        //Generate a 32-byte key for AESGCM
         return keyGenerator.generateRandomKeyString(32);
     }
 
@@ -44,15 +44,6 @@ public class S3KeyManager {
         Map<Integer, S3Key> s3Keys = new HashMap<>(s3KeyProvider.getAll());
         s3Keys.put(s3Key.getId(), s3Key);
         s3KeyStoreWriter.upload(s3Keys, null);
-    }
-
-    // Method to create and add an S3 key that activates immediately for a specific site
-    public S3Key createAndAddImmediate3Key(int siteId) throws Exception {
-        int newKeyId = getNextKeyId();
-        long created = Instant.now().getEpochSecond();
-        S3Key newKey = new S3Key(newKeyId, siteId, created, created, generateSecret());
-        addS3Key(newKey);
-        return newKey;
     }
 
     int getNextKeyId() {
@@ -63,8 +54,17 @@ public class S3KeyManager {
         return s3Keys.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
-    public S3Key getS3Key(int id) {
-        return s3KeyProvider.getAll().get(id);
+    // Method to create and upload an S3 key that activates immediately for a specific site, for emergency rotation
+    public S3Key createAndAddImmediate3Key(int siteId) throws Exception {
+        int newKeyId = getNextKeyId();
+        long created = Instant.now().getEpochSecond();
+        S3Key newKey = new S3Key(newKeyId, siteId, created, created, generateSecret());
+        addS3Key(newKey);
+        return newKey;
+    }
+
+    public S3Key getS3KeyByKeyIdentifier(int keyIdentifier) {
+        return s3KeyProvider.getAll().get(keyIdentifier);
     }
 
     public Optional<S3Key> getS3KeyBySiteId(int siteId) {

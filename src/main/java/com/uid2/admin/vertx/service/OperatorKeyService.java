@@ -3,6 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
+import com.uid2.admin.managers.S3KeyManager;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -45,6 +46,9 @@ public class OperatorKeyService implements IService {
     private final IKeyGenerator keyGenerator;
     private final KeyHasher keyHasher;
     private final String operatorKeyPrefix;
+    private final S3KeyManager s3KeyManager;
+    private final long s3KeyActivatesInSeconds;
+    private final int s3KeyCountPerSite;
 
     public OperatorKeyService(JsonObject config,
                               AdminAuthMiddleware auth,
@@ -54,6 +58,18 @@ public class OperatorKeyService implements IService {
                               RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator,
                               KeyHasher keyHasher) {
+        this(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, null);
+    }
+
+    public OperatorKeyService(JsonObject config,
+                              AdminAuthMiddleware auth,
+                              WriteLock writeLock,
+                              OperatorKeyStoreWriter operatorKeyStoreWriter,
+                              RotatingOperatorKeyProvider operatorKeyProvider,
+                              RotatingSiteStore siteProvider,
+                              IKeyGenerator keyGenerator,
+                              KeyHasher keyHasher,
+                              S3KeyManager s3KeyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.operatorKeyStoreWriter = operatorKeyStoreWriter;
@@ -61,8 +77,11 @@ public class OperatorKeyService implements IService {
         this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
         this.keyHasher = keyHasher;
+        this.s3KeyManager = s3KeyManager;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
+        this.s3KeyActivatesInSeconds = config.getLong("s3_key_activates_in_seconds");
+        this.s3KeyCountPerSite = config.getInteger("s3_key_count_per_site");
     }
 
     @Override
@@ -266,6 +285,13 @@ public class OperatorKeyService implements IService {
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
 
+            if (s3KeyManager != null) {
+                int keysBefore = s3KeyManager.getAllS3KeysBySiteId(siteId).size();
+                s3KeyManager.generateKeysForOperators(Collections.singletonList(newOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
+                int keysAfter = s3KeyManager.getAllS3KeysBySiteId(siteId).size();
+                LOGGER.info("Site ID {}: Keys before: {}, Keys after: {}, New keys: {}", siteId, keysBefore, keysAfter, keysAfter - keysBefore);
+            }
+
             // respond with new key
             rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
         } catch (Exception e) {
@@ -372,12 +398,16 @@ public class OperatorKeyService implements IService {
                 return;
             }
 
+            boolean siteIdChanged = false;
+            int newSiteId = -1;
             if (!rc.queryParam("site_id").isEmpty()) {
                 final Site site = RequestUtil.getSiteFromParam(rc, "site_id", this.siteProvider);
                 if (site == null) {
                     ResponseUtil.error(rc, 404, "site id not found");
                     return;
                 }
+                newSiteId = site.getId();
+                siteIdChanged = existingOperator.getSiteId() != newSiteId;
                 existingOperator.setSiteId(site.getId());
             }
 
@@ -399,6 +429,14 @@ public class OperatorKeyService implements IService {
 
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
+
+            if (siteIdChanged && s3KeyManager != null) {
+                int keysBefore = s3KeyManager.getAllS3KeysBySiteId(newSiteId).size();
+                s3KeyManager.generateKeysForOperators(Collections.singletonList(existingOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
+                int keysAfter = s3KeyManager.getAllS3KeysBySiteId(newSiteId).size();
+                LOGGER.info("Site ID {}: Keys before: {}, Keys after: {}, New keys: {}",
+                        newSiteId, keysBefore, keysAfter, keysAfter - keysBefore);
+            }
 
             // return the updated client
             rc.response().end(JSON_WRITER.writeValueAsString(existingOperator));
