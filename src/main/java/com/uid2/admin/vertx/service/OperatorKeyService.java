@@ -274,9 +274,7 @@ public class OperatorKeyService implements IService {
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
 
-            if (s3KeyManager != null) {
-                s3KeyManager.generateKeysForOperators(Collections.singletonList(newOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
-            }
+            s3KeyManager.generateKeysForOperators(Collections.singletonList(newOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
 
             // respond with new key
             rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
@@ -414,7 +412,7 @@ public class OperatorKeyService implements IService {
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
 
-            if (siteIdChanged && s3KeyManager != null) {
+            if (siteIdChanged) {
                 s3KeyManager.generateKeysForOperators(Collections.singletonList(existingOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
             }
 
