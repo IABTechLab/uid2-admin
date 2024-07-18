@@ -286,10 +286,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             if (s3KeyManager != null) {
-                int keysBefore = s3KeyManager.getAllS3KeysBySiteId(siteId).size();
                 s3KeyManager.generateKeysForOperators(Collections.singletonList(newOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
-                int keysAfter = s3KeyManager.getAllS3KeysBySiteId(siteId).size();
-                LOGGER.info("Site ID {}: Keys before: {}, Keys after: {}, New keys: {}", siteId, keysBefore, keysAfter, keysAfter - keysBefore);
             }
 
             // respond with new key
@@ -399,15 +396,13 @@ public class OperatorKeyService implements IService {
             }
 
             boolean siteIdChanged = false;
-            int newSiteId = -1;
             if (!rc.queryParam("site_id").isEmpty()) {
                 final Site site = RequestUtil.getSiteFromParam(rc, "site_id", this.siteProvider);
                 if (site == null) {
                     ResponseUtil.error(rc, 404, "site id not found");
                     return;
                 }
-                newSiteId = site.getId();
-                siteIdChanged = existingOperator.getSiteId() != newSiteId;
+                siteIdChanged = true;
                 existingOperator.setSiteId(site.getId());
             }
 
@@ -431,11 +426,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             if (siteIdChanged && s3KeyManager != null) {
-                int keysBefore = s3KeyManager.getAllS3KeysBySiteId(newSiteId).size();
                 s3KeyManager.generateKeysForOperators(Collections.singletonList(existingOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
-                int keysAfter = s3KeyManager.getAllS3KeysBySiteId(newSiteId).size();
-                LOGGER.info("Site ID {}: Keys before: {}, Keys after: {}, New keys: {}",
-                        newSiteId, keysBefore, keysAfter, keysAfter - keysBefore);
             }
 
             // return the updated client
