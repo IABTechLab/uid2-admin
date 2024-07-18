@@ -292,4 +292,153 @@ class S3KeyManagerTest {
         assertEquals(1, countForSite2);
         assertEquals(0, countForSite3);
     }
+
+    @Test
+    void testGenerateKeysForOperators() throws Exception {
+        // Setup
+        Collection<OperatorKey> operatorKeys = Arrays.asList(
+                createOperatorKey("hash1", 100),
+                createOperatorKey("hash2", 100),
+                createOperatorKey("hash3", 200)
+        );
+        long keyActivateInterval = 3600; // 1 hour
+        int keyCountPerSite = 3;
+
+        Map<Integer, S3Key> existingKeys = new HashMap<>();
+        existingKeys.put(1, new S3Key(1, 100, 1000L, 900L, "existingKey1"));
+        when(s3KeyProvider.getAll()).thenReturn(existingKeys);
+
+        doReturn("generatedSecret").when(s3KeyManager).generateSecret();
+
+        // Execute
+        s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
+
+        // Verify
+        verify(s3KeyProvider, times(1)).loadContent();
+
+        ArgumentCaptor<S3Key> keyCaptor = ArgumentCaptor.forClass(S3Key.class);
+        verify(s3KeyManager, times(5)).addS3Key(keyCaptor.capture());
+
+        List<S3Key> capturedKeys = keyCaptor.getAllValues();
+        assertEquals(5, capturedKeys.size());
+
+        // Verify keys for site 100
+        List<S3Key> site100Keys = capturedKeys.stream()
+                .filter(key -> key.getSiteId() == 100)
+                .sorted(Comparator.comparingLong(S3Key::getActivates))
+                .toList();
+        assertEquals(2, site100Keys.size());
+        assertTrue(site100Keys.get(1).getActivates() - site100Keys.get(0).getActivates() >= keyActivateInterval);
+
+        // Verify keys for site 200
+        List<S3Key> site200Keys = capturedKeys.stream()
+                .filter(key -> key.getSiteId() == 200)
+                .sorted(Comparator.comparingLong(S3Key::getActivates))
+                .toList();
+        assertEquals(3, site200Keys.size());
+        assertTrue(site200Keys.get(1).getActivates() - site200Keys.get(0).getActivates() >= keyActivateInterval);
+    }
+
+    @Test
+    void testGenerateKeysForOperators_NoNewKeysNeeded() throws Exception {
+        Collection<OperatorKey> operatorKeys = Collections.singletonList(
+                createOperatorKey("hash1", 100)
+        );
+        long keyActivateInterval = 3600;
+        int keyCountPerSite = 3;
+
+        Map<Integer, S3Key> existingKeys = new HashMap<>();
+        existingKeys.put(1, new S3Key(1, 100, 1000L, 900L, "existingKey1"));
+        existingKeys.put(2, new S3Key(2, 100, 2000L, 1900L, "existingKey2"));
+        existingKeys.put(3, new S3Key(3, 100, 3000L, 2900L, "existingKey3"));
+        when(s3KeyProvider.getAll()).thenReturn(existingKeys);
+
+        s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
+
+        verify(s3KeyManager, never()).addS3Key(any());
+    }
+
+    @Test
+    void testGenerateKeysForOperators_EmptyOperatorKeys() {
+        Collection<OperatorKey> operatorKeys = Collections.emptyList();
+        long keyActivateInterval = 3600;
+        int keyCountPerSite = 3;
+
+        assertThrows(IllegalArgumentException.class, () ->
+                s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite)
+        );
+    }
+
+    @Test
+    void testGenerateKeysForOperators_InvalidKeyActivateInterval() {
+        Collection<OperatorKey> operatorKeys = Collections.singletonList(
+                createOperatorKey("hash1", 100)
+        );
+        long keyActivateInterval = 0;
+        int keyCountPerSite = 3;
+
+        assertThrows(IllegalArgumentException.class, () ->
+                s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite)
+        );
+    }
+
+    @Test
+    void testGenerateKeysForOperators_InvalidKeyCountPerSite() {
+        Collection<OperatorKey> operatorKeys = Collections.singletonList(
+                createOperatorKey("hash1", 100)
+        );
+        long keyActivateInterval = 3600;
+        int keyCountPerSite = 0;
+
+        assertThrows(IllegalArgumentException.class, () ->
+                s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite)
+        );
+    }
+
+    @Test
+    void testGenerateKeysForOperators_MultipleSitesWithVaryingExistingKeys() throws Exception {
+        Collection<OperatorKey> operatorKeys = Arrays.asList(
+                createOperatorKey("hash1", 100),
+                createOperatorKey("hash2", 200),
+                createOperatorKey("hash3", 300)
+        );
+        long keyActivateInterval = 3600;
+        int keyCountPerSite = 3;
+
+        Map<Integer, S3Key> existingKeys = new HashMap<>();
+        existingKeys.put(1, new S3Key(1, 100, 1000L, 900L, "existingKey1"));
+        existingKeys.put(2, new S3Key(2, 200, 2000L, 1900L, "existingKey2"));
+        existingKeys.put(3, new S3Key(3, 200, 3000L, 2900L, "existingKey3"));
+        when(s3KeyProvider.getAll()).thenReturn(existingKeys);
+
+        doReturn("generatedSecret").when(s3KeyManager).generateSecret();
+
+        s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
+
+        ArgumentCaptor<S3Key> keyCaptor = ArgumentCaptor.forClass(S3Key.class);
+        verify(s3KeyManager, times(6)).addS3Key(keyCaptor.capture());
+
+        List<S3Key> capturedKeys = keyCaptor.getAllValues();
+        assertEquals(6, capturedKeys.size());
+
+        assertEquals(2, capturedKeys.stream().filter(key -> key.getSiteId() == 100).count());
+        assertEquals(1, capturedKeys.stream().filter(key -> key.getSiteId() == 200).count());
+        assertEquals(3, capturedKeys.stream().filter(key -> key.getSiteId() == 300).count());
+    }
+
+    private OperatorKey createOperatorKey(String keyHash, int siteId) {
+        return new OperatorKey(
+                keyHash,
+                "salt",
+                "name",
+                "contact",
+                "protocol",
+                System.currentTimeMillis(),
+                false,
+                siteId,
+                Collections.emptySet(),
+                null,
+                "keyId"
+        );
+    }
 }

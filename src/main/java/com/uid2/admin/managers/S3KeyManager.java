@@ -109,7 +109,7 @@ public class S3KeyManager {
             throw new IllegalArgumentException("Key count per site must be greater than zero");
         }
 
-        // Sort out all the unique site IDs in operator keys collection
+        // Extract all the unique site IDs from input operator keys collection
         Set<Integer> uniqueSiteIds = new HashSet<>();
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
