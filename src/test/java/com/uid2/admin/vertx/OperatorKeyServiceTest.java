@@ -297,14 +297,9 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         OperatorKey existingOperator = new OperatorBuilder().withSiteId(1).build();
         setOperatorKeys(existingOperator);
 
-        System.out.println("Initial existing operator site ID: " + existingOperator.getSiteId());
-
         post(vertx, testContext, "api/operator/update?name=test_operator&site_id=5", "", response -> {
             try {
                 OperatorKey updatedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
-
-                System.out.println("Existing operator site ID after update: " + existingOperator.getSiteId());
-                System.out.println("Updated operator site ID: " + updatedOperator.getSiteId());
 
                 assertAll(
                         "operatorUpdateSiteIdGeneratesS3Keys",
