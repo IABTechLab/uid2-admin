@@ -63,7 +63,7 @@ public class S3KeyManager {
         return newKey;
     }
 
-    public S3Key getS3Key(int keyIdentifier) {
+    public S3Key getS3KeByKeyIdentifier(int keyIdentifier) {
         return s3KeyProvider.getAll().get(keyIdentifier);
     }
 
@@ -123,6 +123,7 @@ public class S3KeyManager {
                     S3Key s3Key = generateS3Key(siteId, activated, created);
                     addS3Key(s3Key);
                 }
+                LOGGER.info("Generating " + keysToGenerate + " keys for site ID " + siteId);
             }
         }
     }

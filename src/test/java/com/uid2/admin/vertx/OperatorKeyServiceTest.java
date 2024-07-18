@@ -31,6 +31,8 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
         this.config.put("operator_key_prefix", KEY_PREFIX);
+        this.config.put("s3_key_activates_in_seconds", 3600L);
+        this.config.put("s3_key_count_per_site", 5);
         return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher);
     }
 
