@@ -36,7 +36,7 @@ public class S3KeyManager {
     }
 
     String generateSecret() throws Exception {
-        //Generate a 32-byte key for AESGCM
+        //Generate a 32-byte key for AesGcm
         return keyGenerator.generateRandomKeyString(32);
     }
 
