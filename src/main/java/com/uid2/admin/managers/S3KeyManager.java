@@ -98,6 +98,7 @@ public class S3KeyManager {
 
     public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
         this.s3KeyProvider.loadContent();
+
         if (operatorKeys == null || operatorKeys.isEmpty()) {
             throw new IllegalArgumentException("Operator keys collection must not be null or empty");
         }
@@ -108,22 +109,25 @@ public class S3KeyManager {
             throw new IllegalArgumentException("Key count per site must be greater than zero");
         }
 
+        // Sort out all the unique site IDs in operator keys collection
         Set<Integer> uniqueSiteIds = new HashSet<>();
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
         }
 
         for (Integer siteId : uniqueSiteIds) {
-            int currentKeyCount = countKeysForSite(siteId);
-            if (currentKeyCount < keyCountPerSite) {
-                int keysToGenerate = keyCountPerSite - currentKeyCount;
+            // Check if the site ID already exists in the S3 key provider
+            if (!doesSiteHaveKeys(siteId)) {
+                int keysToGenerate = keyCountPerSite;
                 for (int i = 0; i < keysToGenerate; i++) {
                     long created = Instant.now().getEpochSecond();
                     long activated = created + (i * keyActivateInterval);
                     S3Key s3Key = generateS3Key(siteId, activated, created);
                     addS3Key(s3Key);
                 }
-                LOGGER.info("Generating " + keysToGenerate + " keys for site ID " + siteId);
+                LOGGER.info("Generated " + keysToGenerate + " keys for new site ID " + siteId);
+            } else {
+                LOGGER.info("Site ID " + siteId + " already has keys. Skipping key generation.");
             }
         }
     }
