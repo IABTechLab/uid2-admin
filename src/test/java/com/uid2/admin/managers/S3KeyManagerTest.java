@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -295,7 +296,6 @@ class S3KeyManagerTest {
 
     @Test
     void testGenerateKeysForOperators() throws Exception {
-        // Setup
         Collection<OperatorKey> operatorKeys = Arrays.asList(
                 createOperatorKey("hash1", 100),
                 createOperatorKey("hash2", 100),
@@ -310,10 +310,8 @@ class S3KeyManagerTest {
 
         doReturn("generatedSecret").when(s3KeyManager).generateSecret();
 
-        // Execute
         s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
-        // Verify
         verify(s3KeyProvider, times(1)).loadContent();
 
         ArgumentCaptor<S3Key> keyCaptor = ArgumentCaptor.forClass(S3Key.class);
@@ -322,19 +320,17 @@ class S3KeyManagerTest {
         List<S3Key> capturedKeys = keyCaptor.getAllValues();
         assertEquals(5, capturedKeys.size());
 
-        // Verify keys for site 100
         List<S3Key> site100Keys = capturedKeys.stream()
                 .filter(key -> key.getSiteId() == 100)
                 .sorted(Comparator.comparingLong(S3Key::getActivates))
-                .toList();
+                .collect(Collectors.toList());
         assertEquals(2, site100Keys.size());
         assertTrue(site100Keys.get(1).getActivates() - site100Keys.get(0).getActivates() >= keyActivateInterval);
 
-        // Verify keys for site 200
         List<S3Key> site200Keys = capturedKeys.stream()
                 .filter(key -> key.getSiteId() == 200)
                 .sorted(Comparator.comparingLong(S3Key::getActivates))
-                .toList();
+                .collect(Collectors.toList());
         assertEquals(3, site200Keys.size());
         assertTrue(site200Keys.get(1).getActivates() - site200Keys.get(0).getActivates() >= keyActivateInterval);
     }
