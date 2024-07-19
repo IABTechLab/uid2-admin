@@ -63,7 +63,7 @@ public class S3KeyManager {
         return newKey;
     }
 
-    public S3Key getS3KeByKeyIdentifier(int keyIdentifier) {
+    public S3Key getS3KeyByKeyIdentifier(int keyIdentifier) {
         return s3KeyProvider.getAll().get(keyIdentifier);
     }
 

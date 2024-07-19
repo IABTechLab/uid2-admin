@@ -69,8 +69,8 @@ public class OperatorKeyService implements IService {
         this.s3KeyManager = s3KeyManager;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
-        this.s3KeyActivatesInSeconds = config.getLong("s3_key_activates_in_seconds");
-        this.s3KeyCountPerSite = config.getInteger("s3_key_count_per_site");
+        this.s3KeyActivatesInSeconds = config.getLong("s3_key_activates_in_seconds",0L);
+        this.s3KeyCountPerSite = config.getInteger("s3_key_count_per_site",0);
     }
 
     @Override

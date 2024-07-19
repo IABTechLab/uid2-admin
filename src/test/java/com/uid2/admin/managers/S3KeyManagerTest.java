@@ -105,7 +105,7 @@ class S3KeyManagerTest {
         existingKeys.put(1, s3Key);
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
 
-        S3Key result = s3KeyManager.getS3KeByKeyIdentifier(1);
+        S3Key result = s3KeyManager.getS3KeyByKeyIdentifier(1);
 
         assertEquals(s3Key, result);
     }
