@@ -36,7 +36,7 @@ public class S3KeyManager {
     }
 
     String generateSecret() throws Exception {
-        // Assuming want to generate a 32-byte key
+        //Generate a 32-byte key for AesGcm
         return keyGenerator.generateRandomKeyString(32);
     }
 
@@ -44,15 +44,6 @@ public class S3KeyManager {
         Map<Integer, S3Key> s3Keys = new HashMap<>(s3KeyProvider.getAll());
         s3Keys.put(s3Key.getId(), s3Key);
         s3KeyStoreWriter.upload(s3Keys, null);
-    }
-
-    // Method to create and add an S3 key that activates immediately for a specific site
-    public S3Key createAndAddImmediate3Key(int siteId) throws Exception {
-        int newKeyId = getNextKeyId();
-        long created = Instant.now().getEpochSecond();
-        S3Key newKey = new S3Key(newKeyId, siteId, created, created, generateSecret());
-        addS3Key(newKey);
-        return newKey;
     }
 
     int getNextKeyId() {
@@ -63,8 +54,17 @@ public class S3KeyManager {
         return s3Keys.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
-    public S3Key getS3Key(int id) {
-        return s3KeyProvider.getAll().get(id);
+    // Method to create and upload an S3 key that activates immediately for a specific site, for emergency rotation
+    public S3Key createAndAddImmediate3Key(int siteId) throws Exception {
+        int newKeyId = getNextKeyId();
+        long created = Instant.now().getEpochSecond();
+        S3Key newKey = new S3Key(newKeyId, siteId, created, created, generateSecret());
+        addS3Key(newKey);
+        return newKey;
+    }
+
+    public S3Key getS3KeyByKeyIdentifier(int keyIdentifier) {
+        return s3KeyProvider.getAll().get(keyIdentifier);
     }
 
     public Optional<S3Key> getS3KeyBySiteId(int siteId) {
@@ -98,6 +98,7 @@ public class S3KeyManager {
 
     public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
         this.s3KeyProvider.loadContent();
+
         if (operatorKeys == null || operatorKeys.isEmpty()) {
             throw new IllegalArgumentException("Operator keys collection must not be null or empty");
         }
@@ -108,12 +109,14 @@ public class S3KeyManager {
             throw new IllegalArgumentException("Key count per site must be greater than zero");
         }
 
+        // Extract all the unique site IDs from input operator keys collection
         Set<Integer> uniqueSiteIds = new HashSet<>();
         for (OperatorKey operatorKey : operatorKeys) {
             uniqueSiteIds.add(operatorKey.getSiteId());
         }
 
         for (Integer siteId : uniqueSiteIds) {
+            // Check if the site ID already exists in the S3 key provider and has fewer than the required number of keys
             int currentKeyCount = countKeysForSite(siteId);
             if (currentKeyCount < keyCountPerSite) {
                 int keysToGenerate = keyCountPerSite - currentKeyCount;
@@ -123,6 +126,9 @@ public class S3KeyManager {
                     S3Key s3Key = generateS3Key(siteId, activated, created);
                     addS3Key(s3Key);
                 }
+                LOGGER.info("Generated " + keysToGenerate + " keys for site ID " + siteId);
+            } else {
+                LOGGER.info("Site ID " + siteId + " already has the required number of keys. Skipping key generation.");
             }
         }
     }
