@@ -40,7 +40,7 @@ public class RouterConfigurationTest {
         MockitoAnnotations.openMocks(this);
         when(routerMock.route(anyString())).thenReturn(routeMock);
         when(subrouterMock.route(any(), anyString())).thenReturn(routeMock);
-        when(authMiddlewareMock.handle(any(), any())).thenReturn(handlerMock);
+        when(authMiddlewareMock.handle(any(), any(Role[].class))).thenReturn(handlerMock);
     }
     @Test
     public void WhenANonBlockingRouteProviderIsUsed_ItIsRegisteredCorrectly() {
