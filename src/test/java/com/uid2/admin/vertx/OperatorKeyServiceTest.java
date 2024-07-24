@@ -3,6 +3,7 @@ package com.uid2.admin.vertx;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.RevealedKey;
+import com.uid2.admin.managers.S3KeyManager;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -15,11 +16,14 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 public class OperatorKeyServiceTest extends ServiceTestBase {
@@ -27,16 +31,20 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     private static final String KEY_PREFIX = "UID2-O-L-";
     private static final String EXPECTED_OPERATOR_KEY_HASH = "abcdefabcdefabcdefabcdef";
     private static final String EXPECTED_OPERATOR_KEY_SALT = "ghijklghijklghijklghijkl";
+    private S3KeyManager s3KeyManager;
 
     @Override
     protected IService createService() {
         this.config.put("operator_key_prefix", KEY_PREFIX);
-        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher);
+        this.config.put("s3_key_activates_in_seconds", 3600L);
+        this.config.put("s3_key_count_per_site", 5);
+        this.s3KeyManager = Mockito.mock(S3KeyManager.class);
+        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, s3KeyManager);
     }
 
     @BeforeEach
     public void setup() {
-        setSites(new Site(5, "test_site", true));
+        setSites(new Site(1, "original_site", true), new Site(5, "new_site", true));
     }
 
     @Test
@@ -257,6 +265,84 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/operator/roles?name=test_operator", "", expectHttpStatus(testContext, 400));
     }
 
+    @Test
+    public void operatorAddGeneratesS3Keys(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=1&roles=optout&operator_type=public", "", response -> {
+            try {
+                RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
+
+                assertAll(
+                        "operatorAddGeneratesS3Keys",
+                        () -> assertEquals(200, response.statusCode()),
+                        () -> assertNotNull(revealedOperator.getAuthorizable()),
+                        () -> verify(s3KeyManager).generateKeysForOperators(
+                                argThat(collection -> collection.size() == 1 && collection.iterator().next().getName().equals("test_operator")),
+                                eq(3600L),
+                                eq(5)
+                        )
+                );
+                testContext.completeNow();
+            } catch (Exception e) {
+                testContext.failNow(e);
+            }
+        });
+    }
+
+    @Test
+    public void operatorUpdateSiteIdGeneratesS3Keys(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        OperatorKey existingOperator = new OperatorBuilder().withSiteId(1).build();
+        setOperatorKeys(existingOperator);
+
+        post(vertx, testContext, "api/operator/update?name=test_operator&site_id=5", "", response -> {
+            try {
+                OperatorKey updatedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
+
+                assertAll(
+                        "operatorUpdateSiteIdGeneratesS3Keys",
+                        () -> assertEquals(200, response.statusCode()),
+                        () -> assertEquals(5, updatedOperator.getSiteId()),
+                        () -> assertNotEquals(1, updatedOperator.getSiteId()),
+                        () -> verify(s3KeyManager).generateKeysForOperators(
+                                argThat(collection -> collection.size() == 1 && collection.iterator().next().getName().equals("test_operator")),
+                                eq(3600L),
+                                eq(5)
+                        )
+                );
+                testContext.completeNow();
+            } catch (Exception e) {
+                testContext.failNow(e);
+            }
+        });
+    }
+
+    @Test
+    public void operatorUpdateWithoutSiteIdChangeDoesNotGenerateS3Keys(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        OperatorKey existingOperator = new OperatorBuilder().build();
+        setOperatorKeys(existingOperator);
+
+        post(vertx, testContext, "api/operator/update?name=test_operator&operator_type=public", "", response -> {
+            try {
+                OperatorKey updatedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
+
+                assertAll(
+                        "operatorUpdateWithoutSiteIdChangeDoesNotGenerateS3Keys",
+                        () -> assertEquals(200, response.statusCode()),
+                        () -> assertEquals(existingOperator.getSiteId(), updatedOperator.getSiteId()),
+                        () -> verify(s3KeyManager, never()).generateKeysForOperators(any(), anyLong(), anyInt())
+                );
+                testContext.completeNow();
+            } catch (Exception e) {
+                testContext.failNow(e);
+            }
+        });
+    }
+
     private static void assertAddedOperatorKeyEquals(OperatorKey expected, OperatorKey actual) {
         assertThat(actual)
                 .usingRecursiveComparison()
@@ -294,6 +380,11 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
 
         public OperatorKey build() {
             return operator;
+        }
+
+        public OperatorBuilder withSiteId(int siteId) {
+            this.operator.setSiteId(siteId);
+            return this;
         }
     }
 }
