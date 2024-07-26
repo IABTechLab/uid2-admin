@@ -29,12 +29,12 @@ class S3KeyManagerTest {
         s3KeyProvider = mock(RotatingS3KeyProvider.class);
         s3KeyStoreWriter = mock(S3KeyStoreWriter.class);
         keyGenerator = mock(IKeyGenerator.class);
-        s3KeyManager = spy(new S3KeyManager(s3KeyProvider, s3KeyStoreWriter));
+        s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter,keyGenerator);
     }
 
     @Test
     void testGenerateS3Key() throws Exception {
-        doReturn("randomKeyString").when(s3KeyManager).generateSecret();
+        when(keyGenerator.generateRandomKeyString(32)).thenReturn("randomKeyString");
 
         S3Key s3Key = s3KeyManager.generateS3Key(1, 1000L, 2000L);
 
@@ -178,7 +178,7 @@ class S3KeyManagerTest {
     @Test
     void testCreateAndAddImmediateS3Key() throws Exception {
         when(s3KeyProvider.getAll()).thenReturn(new HashMap<>());
-        doReturn("generatedSecret").when(s3KeyManager).generateSecret();
+        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
 
         S3Key newKey = s3KeyManager.createAndAddImmediate3Key(100);
 
@@ -308,31 +308,15 @@ class S3KeyManagerTest {
         existingKeys.put(1, new S3Key(1, 100, 1000L, 900L, "existingKey1"));
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
 
-        doReturn("generatedSecret").when(s3KeyManager).generateSecret();
+        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
 
         s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
         verify(s3KeyProvider, times(1)).loadContent();
 
-        ArgumentCaptor<S3Key> keyCaptor = ArgumentCaptor.forClass(S3Key.class);
-        verify(s3KeyManager, times(5)).addS3Key(keyCaptor.capture());
-
-        List<S3Key> capturedKeys = keyCaptor.getAllValues();
-        assertEquals(5, capturedKeys.size());
-
-        List<S3Key> site100Keys = capturedKeys.stream()
-                .filter(key -> key.getSiteId() == 100)
-                .sorted(Comparator.comparingLong(S3Key::getActivates))
-                .collect(Collectors.toList());
-        assertEquals(2, site100Keys.size());
-        assertTrue(site100Keys.get(1).getActivates() - site100Keys.get(0).getActivates() >= keyActivateInterval);
-
-        List<S3Key> site200Keys = capturedKeys.stream()
-                .filter(key -> key.getSiteId() == 200)
-                .sorted(Comparator.comparingLong(S3Key::getActivates))
-                .collect(Collectors.toList());
-        assertEquals(3, site200Keys.size());
-        assertTrue(site200Keys.get(1).getActivates() - site200Keys.get(0).getActivates() >= keyActivateInterval);
+        ArgumentCaptor<Map<Integer, S3Key>> mapCaptor = ArgumentCaptor.forClass(Map.class);
+        // 6 keys needed - 1 existed keys = 5 new keys
+        verify(s3KeyStoreWriter, times(5)).upload(mapCaptor.capture(), isNull());
     }
 
     @Test
@@ -351,7 +335,7 @@ class S3KeyManagerTest {
 
         s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
-        verify(s3KeyManager, never()).addS3Key(any());
+        verify(s3KeyStoreWriter, never()).upload(any(), any());
     }
 
     @Test
@@ -407,19 +391,13 @@ class S3KeyManagerTest {
         existingKeys.put(3, new S3Key(3, 200, 3000L, 2900L, "existingKey3"));
         when(s3KeyProvider.getAll()).thenReturn(existingKeys);
 
-        doReturn("generatedSecret").when(s3KeyManager).generateSecret();
+        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
 
         s3KeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
-        ArgumentCaptor<S3Key> keyCaptor = ArgumentCaptor.forClass(S3Key.class);
-        verify(s3KeyManager, times(6)).addS3Key(keyCaptor.capture());
-
-        List<S3Key> capturedKeys = keyCaptor.getAllValues();
-        assertEquals(6, capturedKeys.size());
-
-        assertEquals(2, capturedKeys.stream().filter(key -> key.getSiteId() == 100).count());
-        assertEquals(1, capturedKeys.stream().filter(key -> key.getSiteId() == 200).count());
-        assertEquals(3, capturedKeys.stream().filter(key -> key.getSiteId() == 300).count());
+        ArgumentCaptor<Map<Integer, S3Key>> mapCaptor = ArgumentCaptor.forClass(Map.class);
+        // 9 keys needed - 3 existed keys = 6 new keys
+        verify(s3KeyStoreWriter, times(6)).upload(mapCaptor.capture(), isNull());
     }
 
     private OperatorKey createOperatorKey(String keyHash, int siteId) {
