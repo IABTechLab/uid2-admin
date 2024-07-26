@@ -283,7 +283,7 @@ class S3KeyManagerTest {
         testKeys.put(3, new S3Key(3, 2, 1200L, 1100L, "key3"));
         testKeys.put(4, new S3Key(4, 1, 1300L, 1200L, "key4"));
 
-        when(s3KeyManager.getAllS3Keys()).thenReturn(testKeys);
+        when(s3KeyProvider.getAll()).thenReturn(testKeys);
 
         int countForSite1 = s3KeyManager.countKeysForSite(1);
         int countForSite2 = s3KeyManager.countKeysForSite(2);

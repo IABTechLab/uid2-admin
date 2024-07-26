@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-admin</artifactId>
-    <version>5.11.0</version>
+    <version>5.11.1-alpha-83-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,10 +14,10 @@
         <vertx-maven-plugin.version>1.0.22</vertx-maven-plugin.version>
         <vertx.verticle>com.uid2.admin.vertx.AdminVerticle</vertx.verticle>
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
-        <micrometer.version>1.1.0</micrometer.version>
-        <junit-jupiter.version>5.7.0</junit-jupiter.version>
+        <micrometer.version>1.12.2</micrometer.version>
+        <junit-jupiter.version>5.10.3</junit-jupiter.version>
         <uid2-shared.version>7.16.0</uid2-shared.version>
-        <okta-jwt.version>0.5.8</okta-jwt.version>
+        <okta-jwt.version>0.5.9</okta-jwt.version>
         <image.version>${project.version}</image.version>
     </properties>
     <repositories>
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>32.1.2-jre</version>
+            <version>33.2.1-jre</version>
         </dependency>
         <dependency>
             <groupId>com.uid2</groupId>
@@ -87,17 +87,17 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.14.2</version>
+            <version>2.17.2</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.12</version>
+            <version>1.5.6</version>
         </dependency>
         <dependency>
             <groupId>com.github.loki4j</groupId>
             <artifactId>loki-logback-appender</artifactId>
-            <version>1.2.0</version>
+            <version>1.5.2</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -108,7 +108,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <version>3.7.7</version>
+            <version>5.2.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -126,13 +126,13 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.23.1</version>
+            <version>3.26.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.instancio</groupId>
             <artifactId>instancio-junit</artifactId>
-            <version>2.11.0</version>
+            <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -154,10 +154,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.12.1</version>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>21</source>
+                    <target>21</target>
+                    <release>21</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -209,7 +210,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>0.8.12</version>
                 <executions>
                     <execution>
                         <goals>
