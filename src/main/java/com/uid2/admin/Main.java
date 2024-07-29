@@ -201,7 +201,8 @@ public class Main {
             GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
             RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
             S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
-            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter);
+            IKeyGenerator keyGenerator = new SecureKeyGenerator();
+            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter,keyGenerator);
             try {
                 s3KeyProvider.loadContent();
             } catch (CloudStorageException e) {
@@ -231,7 +232,6 @@ public class Main {
             AdminAuthMiddleware auth = new AdminAuthMiddleware(authProvider, config);
             TokenRefreshHandler tokenRefreshHandler = new TokenRefreshHandler(authProvider.getIdTokenVerifier(), config);
             WriteLock writeLock = new WriteLock();
-            IKeyGenerator keyGenerator = new SecureKeyGenerator();
             KeyHasher keyHasher = new KeyHasher();
             IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
             ISaltRotation saltRotation = new SaltRotation(config, keyGenerator);

@@ -23,10 +23,10 @@ public class S3KeyManager {
     private final S3KeyStoreWriter s3KeyStoreWriter;
     private final IKeyGenerator keyGenerator;
 
-    public S3KeyManager(RotatingS3KeyProvider s3KeyProvider, S3KeyStoreWriter s3KeyStoreWriter) {
+    public S3KeyManager(RotatingS3KeyProvider s3KeyProvider, S3KeyStoreWriter s3KeyStoreWriter, IKeyGenerator keyGenerator) {
         this.s3KeyProvider = s3KeyProvider;
         this.s3KeyStoreWriter = s3KeyStoreWriter;
-        this.keyGenerator = new SecureKeyGenerator();
+        this.keyGenerator = keyGenerator;
     }
 
     S3Key generateS3Key(int siteId, long activates, long created) throws Exception {
