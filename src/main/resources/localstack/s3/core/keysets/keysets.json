@@ -89,5 +89,23 @@
     "created" : 1617149276,
     "enabled" : true,
     "default" : true
+  },
+  {
+    "keyset_id": 1001,
+    "site_id": 1000,
+    "name" : "Legacy Site keyset",
+    "allowed_sites" : null,
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true
+  },
+  {
+    "keyset_id": 62,
+    "site_id": 126,
+    "name": "test",
+    "allowed_sites": null,
+    "created": 1694064967,
+    "enabled": true,
+    "default": true
   }
 ]

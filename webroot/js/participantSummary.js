@@ -7,7 +7,7 @@ function participantSummaryErrorHandler(err, divContainer) {
 };
 
 function loadAllSitesCallback(result) {
-    siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id } });
+    siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id, clientTypes: item.clientTypes } });
 };
 
 function loadSiteCallback(result) {
@@ -88,6 +88,31 @@ function loadOptoutWebhooksCallback(result, siteName) {
     $('#webhooksStandardOutput').html(formatted);
 };
 
+function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
+    const resultJson = JSON.parse(result);
+    resultJson.forEach(obj => {
+        // Keysets where allowed_types include any of the clientTypes that belows to the site
+        obj.allowed_types = obj.allowed_types.map(item => {
+            return clientTypes.includes(item) ? `<span style="background-color: orange;">${item}</span>` : item;
+        });
+        // Keysets where allowed_sites include the leaked site. As it's an integer object, change it to a placeholder and replace later.
+        if (obj.allowed_sites) {
+            obj.allowed_sites = obj.allowed_sites.map(item => {
+                return item === siteId ? "<allowed_sites_matched>" : item;
+            });
+        }
+    });
+    const formatted = prettifyJson(JSON.stringify(resultJson));
+    let highlightedText = formatted;
+    // Highlight ketsets where allowed_sites is set to null
+    highlightedText = highlightedText.replaceAll(`"allowed_sites": null`, '<span style="background-color: orange;">' + `"allowed_sites": null` + '</span>');
+    // Highlight keysets where allowed_sites include the leaked site
+    highlightedText = highlightedText.replaceAll(`"<allowed_sites_matched>"`, `<span style="background-color: orange;">${siteId}</span>`);
+    // Highlight keysets belonging to the leaked site itself
+    highlightedText = highlightedText.replaceAll(`"site_id": ${siteId}`, '<span style="background-color: orange;">' + `"site_id": ${siteId}` + '</span>');
+    $('#relatedKeysetsStandardOutput').html(highlightedText);
+};
+
 $(document).ready(() => {
     const sitesUrl = '/api/site/list';
     doApiCallWithCallback('GET', sitesUrl, loadAllSitesCallback, null);
@@ -123,7 +148,9 @@ $(document).ready(() => {
 
         url = '/api/partner_config/get';
         doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
-    
+
+        url = `/api/sharing/keysets/related?site_id=${site.id}&client_types=${site.clientTypes}`;
+        doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
         $('.section').show();
     });
 });
