@@ -2,6 +2,7 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -10,6 +11,7 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
+import com.uid2.shared.model.Site;
 import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.reader.RotatingSiteStore;
 import io.vertx.core.http.HttpHeaders;
@@ -179,16 +181,14 @@ public class SharingService implements IService {
             }
 
             // Get value for client type
-            Set<ClientType> clientTypes = new HashSet<>();
-            if (!rc.queryParam("client_types").isEmpty()) {
-                clientTypes = getTypes(rc.queryParam("client_types").get(0));
-            }
+            Set<ClientType> clientTypes = this.siteProvider.getSite(siteId).getClientTypes();
 
-            // Check if the key has a ID_READER role
-            boolean isIdReaderRole = false;
-            if (rc.queryParam("is_id_reader_role").get(0).equals("true")) {
-                isIdReaderRole = true;
-            };
+//            // Check if the key has a ID_READER role
+            boolean isIdReaderRole = true;
+//            if (rc.queryParam("is_id_reader_role").get(0).equals("true")) {
+//                isIdReaderRole = true;
+//            };
+
 
             // Get the keyset ids that need to be rotated
             final JsonArray ja = new JsonArray();
