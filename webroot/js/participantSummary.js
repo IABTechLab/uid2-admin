@@ -149,7 +149,7 @@ $(document).ready(() => {
         url = '/api/partner_config/get';
         doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
 
-        url = `/api/sharing/keysets/related?site_id=${site.id}&client_types=${site.clientTypes}`;
+        url = `/api/sharing/keysets/related?site_id=${site.id}`;
         doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
         $('.section').show();
     });

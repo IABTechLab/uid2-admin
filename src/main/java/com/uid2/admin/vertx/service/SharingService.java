@@ -179,10 +179,7 @@ public class SharingService implements IService {
             }
 
             // Get value for client type
-            Set<ClientType> clientTypes = new HashSet<>();
-            if (!rc.queryParam("client_types").isEmpty()) {
-                clientTypes = getTypes(rc.queryParam("client_types").get(0));
-            }
+            Set<ClientType> clientTypes = this.siteProvider.getSite(siteId).getClientTypes();
 
 //            // Check if the key has a ID_READER role
             boolean isIdReaderRole = true;
