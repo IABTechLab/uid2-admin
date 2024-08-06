@@ -92,10 +92,14 @@ function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
     const resultJson = JSON.parse(result);
     resultJson.forEach(obj => {
         // Keysets where allowed_types include any of the clientTypes that belows to the site
+        console.log(obj.allowed_types);
         obj.allowed_types = obj.allowed_types.map(item => {
-            return clientTypes.includes(item) ? `<span style="background-color: orange;">${item}</span>` : item;
+            return clientTypes.includes(item) ? `<allowed_types_${item}>` : item;
         });
+        console.log(obj.allowed_types);
+
         // Keysets where allowed_sites include the leaked site. As it's an integer object, change it to a placeholder and replace later.
+        console.log("kat");
         if (obj.allowed_sites) {
             obj.allowed_sites = obj.allowed_sites.map(item => {
                 return item === siteId ? "<allowed_sites_matched>" : item;
@@ -106,6 +110,11 @@ function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
     let highlightedText = formatted;
     // Highlight ketsets where allowed_sites is set to null
     highlightedText = highlightedText.replaceAll(`"allowed_sites": null`, '<span style="background-color: orange;">' + `"allowed_sites": null` + '</span>');
+    // Highlight keysets where allowed_types include the site client_types
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_DSP>"`, `<span style="background-color: orange;">"DSP"</span>`);
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_ADVERTISER>"`, `<span style="background-color: orange;">"ADVERTISER"</span>`);
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_DATA_PROVIDER>"`, `<span style="background-color: orange;">"DATA_PROVIDER"</span>`);
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_PUBLISHER>"`, `<span style="background-color: orange;">"PUBLISHER"</span>`);
     // Highlight keysets where allowed_sites include the leaked site
     highlightedText = highlightedText.replaceAll(`"<allowed_sites_matched>"`, `<span style="background-color: orange;">${siteId}</span>`);
     // Highlight keysets belonging to the leaked site itself
