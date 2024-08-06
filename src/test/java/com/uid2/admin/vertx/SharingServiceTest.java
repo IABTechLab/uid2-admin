@@ -1259,11 +1259,10 @@ public class SharingServiceTest extends ServiceTestBase {
     @Test
     void RelatedKeysetSetsWithClientTypes(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
-        when(clock.getEpochSecond()).thenReturn(1722938135L);
 
-        AdminKeyset adminKeyset1 = new AdminKeyset(3, 5, "test", Set.of(4,6,7), clock.getEpochSecond(),true, true, new HashSet<>(Arrays.asList(ClientType.DSP, ClientType.PUBLISHER)));
-        AdminKeyset adminKeyset2 = new AdminKeyset(4, 7, "test", Set.of(12), clock.getEpochSecond(),true, true, new HashSet<>(Arrays.asList(ClientType.DSP)));
-        AdminKeyset adminKeyset3 = new AdminKeyset(5, 4, "test", Set.of(5), clock.getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset1 = new AdminKeyset(3, 5, "test", Set.of(4,6,7), Instant.now().getEpochSecond(),true, true, new HashSet<>(Arrays.asList(ClientType.DSP, ClientType.PUBLISHER)));
+        AdminKeyset adminKeyset2 = new AdminKeyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(),true, true, new HashSet<>(Arrays.asList(ClientType.DSP)));
+        AdminKeyset adminKeyset3 = new AdminKeyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, new HashSet<>());
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(3, adminKeyset1);
@@ -1296,11 +1295,10 @@ public class SharingServiceTest extends ServiceTestBase {
     @Test
     void RelatedKeysetSetsWithAllowedSites(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
-        when(clock.getEpochSecond()).thenReturn(1722938135L);
 
-        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4,8), clock.getEpochSecond(),true, true, new HashSet<>());
-        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5,8), clock.getEpochSecond(),true, true, new HashSet<>());
-        AdminKeyset adminKeyset3 = new AdminKeyset(5, 3, "test", Set.of(6), clock.getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4,8), Instant.now().getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5,8), Instant.now().getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset3 = new AdminKeyset(5, 3, "test", Set.of(6), Instant.now().getEpochSecond(),true, true, new HashSet<>());
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(3, adminKeyset1);
@@ -1333,11 +1331,10 @@ public class SharingServiceTest extends ServiceTestBase {
     @Test
     void RelatedKeysetSetsWithSameSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
-        when(clock.getEpochSecond()).thenReturn(1722938135L);
 
-        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), clock.getEpochSecond(),true, true, new HashSet<>());
-        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5), clock.getEpochSecond(),true, true, new HashSet<>());
-        AdminKeyset adminKeyset3 = new AdminKeyset(5, 8, "test", Set.of(6), clock.getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), Instant.now().getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset3 = new AdminKeyset(5, 8, "test", Set.of(6), Instant.now().getEpochSecond(),true, true, new HashSet<>());
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(3, adminKeyset1);
@@ -1370,11 +1367,10 @@ public class SharingServiceTest extends ServiceTestBase {
     @Test
     void RelatedKeysetSetsWithAllowSiteNull(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
-        when(clock.getEpochSecond()).thenReturn(1722938135L);
 
-        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), clock.getEpochSecond(),true, true, new HashSet<>());
-        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5), clock.getEpochSecond(),true, true, new HashSet<>());
-        AdminKeyset adminKeyset3 = new AdminKeyset(5, 3, "test", null, clock.getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), Instant.now().getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5), Instant.now().getEpochSecond(),true, true, new HashSet<>());
+        AdminKeyset adminKeyset3 = new AdminKeyset(5, 3, "test", null, Instant.now().getEpochSecond(),true, true, new HashSet<>());
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
             put(3, adminKeyset1);
