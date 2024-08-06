@@ -251,7 +251,7 @@ public class Main {
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider, clock),
                     encryptionKeyService,
                     new KeyAclService(auth, writeLock, keyAclStoreWriter, keyAclProvider, siteProvider, encryptionKeyService),
-                    new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets),
+                    new SharingService(auth, writeLock, adminKeysetProvider, keysetManager, siteProvider, enableKeysets, clientKeyProvider),
                     clientSideKeypairService,
                     new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider, serviceLinkProvider),
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),

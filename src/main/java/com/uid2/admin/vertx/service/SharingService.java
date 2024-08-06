@@ -2,6 +2,8 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.WriteLock;
@@ -33,6 +35,7 @@ public class SharingService implements IService {
     private final RotatingAdminKeysetStore keysetProvider;
     private final RotatingSiteStore siteProvider;
     private final KeysetManager keysetManager;
+    private final RotatingLegacyClientKeyProvider clientKeyProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     private final boolean enableKeysets;
@@ -42,13 +45,15 @@ public class SharingService implements IService {
                           RotatingAdminKeysetStore keysetProvider,
                           KeysetManager keysetManager,
                           RotatingSiteStore siteProvider,
-                          boolean enableKeyset) {
+                          boolean enableKeyset,
+                          RotatingLegacyClientKeyProvider clientKeyProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.keysetProvider = keysetProvider;
         this.keysetManager = keysetManager;
         this.siteProvider = siteProvider;
         this.enableKeysets = enableKeyset;
+        this.clientKeyProvider = clientKeyProvider;
     }
 
     @Override
@@ -181,12 +186,13 @@ public class SharingService implements IService {
             // Get value for client type
             Set<ClientType> clientTypes = this.siteProvider.getSite(siteId).getClientTypes();
 
-//            // Check if the key has a ID_READER role
-            boolean isIdReaderRole = true;
-//            if (rc.queryParam("is_id_reader_role").get(0).equals("true")) {
-//                isIdReaderRole = true;
-//            };
-
+            // Check if this site has any cleint key that has an ID_READER role
+            boolean isIdReaderRole = false;
+            for (LegacyClientKey c : this.clientKeyProvider.getAll()) {
+                if (c.getRoles().contains("ID_READER")) {
+                    isIdReaderRole = true;
+                }
+            }
 
             // Get the keyset ids that need to be rotated
             final JsonArray ja = new JsonArray();
