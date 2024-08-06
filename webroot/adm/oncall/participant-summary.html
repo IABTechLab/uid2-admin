@@ -86,10 +86,10 @@
                     <div class="col section">
                         <h5>Participant Related Keysets</h5>
                         <div><b>A keyset is related to the participant if it matches below criteria:</b><br>
-                        a. Keysets where allowed_types include any of the clientTypes that you noted down earlier<br>
-                        b. If leaked key was an ID_READER, we want to rotate the keysets where allowed_sites is set to null<br>
-                        c. Keysets where allowed_sites include the leaked site<br>
-                        d. Keysets belonging to the leaked site itself<br></div>
+                            a. Keysets where allowed_types include any of the clientTypes of the site<br>
+                            b. If this participant has a client key with ID_READER role, we want to rotate all the keysets where allowed_sites is set to null<br>
+                            c. Keysets where allowed_sites include the leaked site<br>
+                            d. Keysets belonging to the leaked site itself<br></div>
                         <pre class="errorDiv" id="relatedKeysetsErrorOutput"></pre>
                         <pre id="relatedKeysetsStandardOutput"></pre>
 

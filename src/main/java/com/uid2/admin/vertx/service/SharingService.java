@@ -183,10 +183,10 @@ public class SharingService implements IService {
                 return;
             }
 
-            // Get value for client type
+            // Get value for client type from the backend
             Set<ClientType> clientTypes = this.siteProvider.getSite(siteId).getClientTypes();
 
-            // Check if this site has any cleint key that has an ID_READER role
+            // Check if this site has any client key that has an ID_READER role
             boolean isIdReaderRole = false;
             for (LegacyClientKey c : this.clientKeyProvider.getAll()) {
                 if (c.getRoles().contains(Role.ID_READER)) {
@@ -199,10 +199,10 @@ public class SharingService implements IService {
             Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
             for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
                 // The keysets meet any of the below conditions ALL need to be rotated:
-                // a. Keysets where allowed_types include any of the clientTypes that you noted down earlier
-                // b. If leaked key was an ID_READER, we want to rotate the keysets where allowed_sites is set to null
+                // a. Keysets where allowed_types include any of the clientTypes of the site
+                // b. If this participant has a client key with ID_READER role, we want to rotate all the keysets where allowed_sites is set to null
                 // c. Keysets where allowed_sites include the leaked site
-                // d. Keysets belonging to the leaked site itself (can also get these keysets by putting down the "Site id" and click "List All Keysets By Site Id")
+                // d. Keysets belonging to the leaked site itself
                 if (containsAny(keyset.getValue().getAllowedTypes(), clientTypes) ||
                         isIdReaderRole && keyset.getValue().getAllowedSites() == null ||
                         keyset.getValue().getAllowedSites() != null && keyset.getValue().getAllowedSites().contains(siteId) ||
