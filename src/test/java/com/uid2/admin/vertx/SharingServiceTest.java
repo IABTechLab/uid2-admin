@@ -51,14 +51,6 @@ public class SharingServiceTest extends ServiceTestBase {
                 .collect(Collectors.toSet());
         assertEquals(keyset.getAllowedTypes(), actualSet);
     }
-
-    private void compareKeysetsIdToResult(Set<AdminKeyset> expectedKeysets, JsonArray actualList) {
-        assertNotNull(actualList);
-        Set<AdminKeyset> actualSet = actualList.stream()
-                .map(s -> (AdminKeyset) s)
-                .collect(Collectors.toSet());
-        assertEquals(true, actualSet.contains(expectedKeysets));
-    }
     
     private void mockSiteExistence(Integer... sites){
         for(Integer site : sites) {
