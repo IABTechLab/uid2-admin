@@ -189,7 +189,7 @@ public class SharingService implements IService {
             // Check if this site has any cleint key that has an ID_READER role
             boolean isIdReaderRole = false;
             for (LegacyClientKey c : this.clientKeyProvider.getAll()) {
-                if (c.getRoles().contains("ID_READER")) {
+                if (c.getRoles().contains(Role.ID_READER)) {
                     isIdReaderRole = true;
                 }
             }
