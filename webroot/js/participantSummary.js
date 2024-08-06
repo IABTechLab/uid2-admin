@@ -10,6 +10,16 @@ function loadAllSitesCallback(result) {
     siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id, clientTypes: item.clientTypes } });
 };
 
+function rotateKeysetsCallback(result, keyset_id) {
+    const resultJson = JSON.parse(result);
+    const formatted = prettifyJson(JSON.stringify(resultJson));
+    $('#rotateKeysetsStandardOutput').append(`keyset_id: ${keyset_id} rotated: <br>${formatted}<br>`);
+}
+
+function rotateKeysetsErrorHandler(err, keyset_id) {
+    $('#rotateKeysetsErrorOutput').append(`keyset_id: ${keyset_id} rotation failed: <br>${err}<br>`);
+}
+
 function loadSiteCallback(result) {
     const resultJson = JSON.parse(result);
 
@@ -92,14 +102,11 @@ function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
     const resultJson = JSON.parse(result);
     resultJson.forEach(obj => {
         // Keysets where allowed_types include any of the clientTypes that belows to the site
-        console.log(obj.allowed_types);
         obj.allowed_types = obj.allowed_types.map(item => {
             return clientTypes.includes(item) ? `<allowed_types_${item}>` : item;
         });
-        console.log(obj.allowed_types);
 
         // Keysets where allowed_sites include the leaked site. As it's an integer object, change it to a placeholder and replace later.
-        console.log("kat");
         if (obj.allowed_sites) {
             obj.allowed_sites = obj.allowed_sites.map(item => {
                 return item === siteId ? "<allowed_sites_matched>" : item;
@@ -165,12 +172,15 @@ $(document).ready(() => {
 
     $('#doRotateKeysets').on('click', () => {
         var keysets = $('#relatedKeysetsStandardOutput').text();
-        console.log(keysets);
         const ja = JSON.parse(keysets);
+        var rotateKeysetsMessage = '';
         ja.forEach((keyset) => {
-            var url = `/api/key/rotate_keyset_key?min_age_seconds=0&keyset_id=${keyset.keyset_id}&force=true`;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+            var url = `/api/key/rotate_keyset_key?min_age_seconds=3600&keyset_id=${keyset.keyset_id}&force=true`;
+            doApiCallWithCallback(
+                'POST',
+                url,
+                (r) => { rotateKeysetsCallback(r, keyset.keyset_id) },
+                (err) => { rotateKeysetsErrorHandler(err, '#rotateKeysetsErrorOutput') });
         });
     });
 });
