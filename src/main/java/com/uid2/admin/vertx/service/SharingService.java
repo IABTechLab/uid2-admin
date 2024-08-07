@@ -10,6 +10,7 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
+import com.uid2.shared.auth.KeysetSnapshot;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
@@ -25,8 +26,6 @@ import org.slf4j.Logger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static com.uid2.admin.vertx.RequestUtil.getTypes;
 
 public class SharingService implements IService {
     private final AdminAuthMiddleware auth;
@@ -200,6 +199,8 @@ public class SharingService implements IService {
                         isIdReaderRole && keyset.getValue().getAllowedSites() == null ||
                         keyset.getValue().getAllowedSites() != null && keyset.getValue().getAllowedSites().contains(siteId) ||
                         keyset.getValue().getSiteId() == siteId) {
+                    // TODO: We have functions below which check if a keysetkey is accessible by a client. We should move the logic of checking keyset to shared as well.
+                    // https://github.com/IABTechLab/uid2-shared/blob/19edb010c6a4d753d03c89268c238be10a8f6722/src/main/java/com/uid2/shared/auth/KeysetSnapshot.java#L13
                     ja.add(jsonFullKeyset(keyset.getValue()));
                 }
             }
