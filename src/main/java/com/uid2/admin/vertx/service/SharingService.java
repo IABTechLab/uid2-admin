@@ -161,16 +161,6 @@ public class SharingService implements IService {
         }
     }
 
-    // Method to check if one set contains any values from another set
-    private static <T> boolean containsAny(Set<T> set1, Set<T> set2) {
-        for (T element : set2) {
-            if (set1.contains(element)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void handleListAllKeysetsRelated(RoutingContext rc) {
         try {
             // Get value for site id
@@ -203,7 +193,7 @@ public class SharingService implements IService {
                 // b. If this participant has a client key with ID_READER role, we want to rotate all the keysets where allowed_sites is set to null
                 // c. Keysets where allowed_sites include the leaked site
                 // d. Keysets belonging to the leaked site itself
-                if (containsAny(keyset.getValue().getAllowedTypes(), clientTypes) ||
+                if (Collections.disjoint(keyset.getValue().getAllowedTypes(), clientTypes) ||
                         isIdReaderRole && keyset.getValue().getAllowedSites() == null ||
                         keyset.getValue().getAllowedSites() != null && keyset.getValue().getAllowedSites().contains(siteId) ||
                         keyset.getValue().getSiteId() == siteId) {
