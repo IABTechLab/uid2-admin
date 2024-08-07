@@ -165,10 +165,13 @@ public class SharingService implements IService {
         try {
             // Get value for site id
             final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
-            if (!siteIdOpt.isPresent()) return;
+            if (!siteIdOpt.isPresent()) {
+                ResponseUtil.error(rc, 400, "must specify a site id");
+                return;
+            }
             final int siteId = siteIdOpt.get();
 
-            if (siteId != Const.Data.AdvertisingTokenSiteId && !SiteUtil.isValidSiteId(siteId)) {
+            if (!SiteUtil.isValidSiteId(siteId)) {
                 ResponseUtil.error(rc, 400, "must specify a valid site id");
                 return;
             }
