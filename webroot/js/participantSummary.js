@@ -175,7 +175,7 @@ $(document).ready(() => {
         const ja = JSON.parse(keysets);
         var rotateKeysetsMessage = '';
         ja.forEach((keyset) => {
-            var url = `/api/key/rotate_keyset_key?min_age_seconds=3600&keyset_id=${keyset.keyset_id}&force=true`;
+            var url = `/api/key/rotate_keyset_key?min_age_seconds=1&keyset_id=${keyset.keyset_id}&force=true`;
             doApiCallWithCallback(
                 'POST',
                 url,
