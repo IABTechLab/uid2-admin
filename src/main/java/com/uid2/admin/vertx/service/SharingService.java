@@ -195,7 +195,7 @@ public class SharingService implements IService {
                 // b. If this participant has a client key with ID_READER role, we want to rotate all the keysets where allowed_sites is set to null
                 // c. Keysets where allowed_sites include the leaked site
                 // d. Keysets belonging to the leaked site itself
-                if (Collections.disjoint(keyset.getValue().getAllowedTypes(), clientTypes) ||
+                if (!Collections.disjoint(keyset.getValue().getAllowedTypes(), clientTypes) ||
                         isIdReaderRole && keyset.getValue().getAllowedSites() == null ||
                         keyset.getValue().getAllowedSites() != null && keyset.getValue().getAllowedSites().contains(siteId) ||
                         keyset.getValue().getSiteId() == siteId) {
