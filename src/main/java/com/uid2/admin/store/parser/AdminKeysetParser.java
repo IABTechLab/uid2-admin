@@ -6,7 +6,6 @@ import com.uid2.shared.model.ClientType;
 import com.uid2.shared.store.parser.Parser;
 import com.uid2.shared.store.parser.ParsingResult;
 import com.uid2.shared.Utils;
-import com.uid2.shared.auth.KeysetSnapshot;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

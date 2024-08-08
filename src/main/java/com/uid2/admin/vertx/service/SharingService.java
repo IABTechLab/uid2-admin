@@ -2,11 +2,15 @@ package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
+import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
+import com.uid2.shared.auth.KeysetSnapshot;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
@@ -30,6 +34,7 @@ public class SharingService implements IService {
     private final RotatingAdminKeysetStore keysetProvider;
     private final RotatingSiteStore siteProvider;
     private final KeysetManager keysetManager;
+    private final RotatingLegacyClientKeyProvider clientKeyProvider;
     private static final Logger LOGGER = LoggerFactory.getLogger(SharingService.class);
 
     private final boolean enableKeysets;
@@ -39,13 +44,15 @@ public class SharingService implements IService {
                           RotatingAdminKeysetStore keysetProvider,
                           KeysetManager keysetManager,
                           RotatingSiteStore siteProvider,
-                          boolean enableKeyset) {
+                          boolean enableKeyset,
+                          RotatingLegacyClientKeyProvider clientKeyProvider) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.keysetProvider = keysetProvider;
         this.keysetManager = keysetManager;
         this.siteProvider = siteProvider;
         this.enableKeysets = enableKeyset;
+        this.clientKeyProvider = clientKeyProvider;
     }
 
     @Override
@@ -69,6 +76,9 @@ public class SharingService implements IService {
         );
         router.get("/api/sharing/keyset/:keyset_id").handler(
             auth.handle(this::handleListKeyset, Role.MAINTAINER)
+        );
+        router.get("/api/sharing/keysets/related").handler(
+                auth.handle(this::handleListAllKeysetsRelated, Role.MAINTAINER)
         );
     }
 
@@ -147,6 +157,59 @@ public class SharingService implements IService {
             } catch (Exception e) {
                 rc.fail(500, e);
             }
+        }
+    }
+
+    private void handleListAllKeysetsRelated(RoutingContext rc) {
+        try {
+            // Get value for site id
+            final Optional<Integer> siteIdOpt = RequestUtil.getSiteId(rc, "site_id");
+            if (!siteIdOpt.isPresent()) {
+                ResponseUtil.error(rc, 400, "must specify a site id");
+                return;
+            }
+            final int siteId = siteIdOpt.get();
+
+            if (!SiteUtil.isValidSiteId(siteId)) {
+                ResponseUtil.error(rc, 400, "must specify a valid site id");
+                return;
+            }
+
+            // Get value for client type from the backend
+            Set<ClientType> clientTypes = this.siteProvider.getSite(siteId).getClientTypes();
+
+            // Check if this site has any client key that has an ID_READER role
+            boolean isIdReaderRole = false;
+            for (LegacyClientKey c : this.clientKeyProvider.getAll()) {
+                if (c.getRoles().contains(Role.ID_READER)) {
+                    isIdReaderRole = true;
+                }
+            }
+
+            // Get the keyset ids that need to be rotated
+            final JsonArray ja = new JsonArray();
+            Map<Integer, AdminKeyset> collection = this.keysetProvider.getSnapshot().getAllKeysets();
+            for (Map.Entry<Integer, AdminKeyset> keyset : collection.entrySet()) {
+                // The keysets meet any of the below conditions ALL need to be rotated:
+                // a. Keysets where allowed_types include any of the clientTypes of the site
+                // b. If this participant has a client key with ID_READER role, we want to rotate all the keysets where allowed_sites is set to null
+                // c. Keysets where allowed_sites include the leaked site
+                // d. Keysets belonging to the leaked site itself
+                if (!Collections.disjoint(keyset.getValue().getAllowedTypes(), clientTypes) ||
+                        isIdReaderRole && keyset.getValue().getAllowedSites() == null ||
+                        keyset.getValue().getAllowedSites() != null && keyset.getValue().getAllowedSites().contains(siteId) ||
+                        keyset.getValue().getSiteId() == siteId) {
+                    // TODO: We have functions below which check if a keysetkey is accessible by a client. We should move the logic of checking keyset to shared as well.
+                    // https://github.com/IABTechLab/uid2-shared/blob/19edb010c6a4d753d03c89268c238be10a8f6722/src/main/java/com/uid2/shared/auth/KeysetSnapshot.java#L13
+                    ja.add(jsonFullKeyset(keyset.getValue()));
+                }
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(ja.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
         }
     }
 

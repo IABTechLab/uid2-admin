@@ -82,6 +82,32 @@
                         <pre id="webhooksStandardOutput"></pre>
                     </div>
                 </div>
+                <div class="row px-2">
+                    <div class="col section">
+                        <h5>Participant Related Keysets</h5>
+                        <div><b>A keyset is related to the participant if it matches below criteria:</b><br>
+                            a. Keysets where allowed_types include any of the clientTypes of the site<br>
+                            b. If this participant has a client key with ID_READER role, we want to rotate all the keysets where allowed_sites is set to null<br>
+                            c. Keysets where allowed_sites include the leaked site<br>
+                            d. Keysets belonging to the leaked site itself<br></div>
+                        <pre class="errorDiv" id="relatedKeysetsErrorOutput"></pre>
+                        <pre id="relatedKeysetsStandardOutput"></pre>
+
+                        <div class="col">
+                            <a href="#" class="btn btn-primary" id="doRotateKeysets">Rotate Keysets</a>
+                            <div>
+                                Normally, keys don't become active for 24 hours when rotated, which gives participants 24 hours before they need to call sdk.refresh().
+                                However in this case, rotation will make the new keys active immediately.
+                                This means participants will not be able to decrypt newly created UID tokens until they have called sdk.refresh().
+                                Note that we recommend calling sdk.refresh() once per hour (see <a href="https://unifiedid.com/docs/getting-started/gs-faqs#where-do-i-get-the-decryption-keys">documentation</a>)
+                            </div>
+                            <div id="output">
+                                <pre id="rotateKeysetsErrorOutput"></pre>
+                                <pre id="rotateKeysetsStandardOutput"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

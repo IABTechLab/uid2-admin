@@ -460,7 +460,7 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                 .isEqualTo(expected);
     }
 
-    private static class LegacyClientBuilder {
+    public static class LegacyClientBuilder {
         private String name = "test_client";
         private String contact = "test_contact";
         private int siteId = 999;

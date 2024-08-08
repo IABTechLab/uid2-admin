@@ -7,8 +7,18 @@ function participantSummaryErrorHandler(err, divContainer) {
 };
 
 function loadAllSitesCallback(result) {
-    siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id } });
+    siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id, clientTypes: item.clientTypes } });
 };
+
+function rotateKeysetsCallback(result, keyset_id) {
+    const resultJson = JSON.parse(result);
+    const formatted = prettifyJson(JSON.stringify(resultJson));
+    $('#rotateKeysetsStandardOutput').append(`keyset_id: ${keyset_id} rotated: <br>${formatted}<br>`);
+}
+
+function rotateKeysetsErrorHandler(err, keyset_id) {
+    $('#rotateKeysetsErrorOutput').append(`keyset_id: ${keyset_id} rotation failed: <br>${err}<br>`);
+}
 
 function loadSiteCallback(result) {
     const resultJson = JSON.parse(result);
@@ -88,6 +98,37 @@ function loadOptoutWebhooksCallback(result, siteName) {
     $('#webhooksStandardOutput').html(formatted);
 };
 
+function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
+    const resultJson = JSON.parse(result);
+    resultJson.forEach(obj => {
+        // Keysets where allowed_types include any of the clientTypes that belows to the site
+        obj.allowed_types = obj.allowed_types.map(item => {
+            return clientTypes.includes(item) ? `<allowed_types_${item}>` : item;
+        });
+
+        // Keysets where allowed_sites include the leaked site. As it's an integer object, change it to a placeholder and replace later.
+        if (obj.allowed_sites) {
+            obj.allowed_sites = obj.allowed_sites.map(item => {
+                return item === siteId ? "<allowed_sites_matched>" : item;
+            });
+        }
+    });
+    const formatted = prettifyJson(JSON.stringify(resultJson));
+    let highlightedText = formatted;
+    // Highlight ketsets where allowed_sites is set to null
+    highlightedText = highlightedText.replaceAll(`"allowed_sites": null`, '<span style="background-color: orange;">' + `"allowed_sites": null` + '</span>');
+    // Highlight keysets where allowed_types include the site client_types
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_DSP>"`, `<span style="background-color: orange;">"DSP"</span>`);
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_ADVERTISER>"`, `<span style="background-color: orange;">"ADVERTISER"</span>`);
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_DATA_PROVIDER>"`, `<span style="background-color: orange;">"DATA_PROVIDER"</span>`);
+    highlightedText = highlightedText.replaceAll(`"<allowed_types_PUBLISHER>"`, `<span style="background-color: orange;">"PUBLISHER"</span>`);
+    // Highlight keysets where allowed_sites include the leaked site
+    highlightedText = highlightedText.replaceAll(`"<allowed_sites_matched>"`, `<span style="background-color: orange;">${siteId}</span>`);
+    // Highlight keysets belonging to the leaked site itself
+    highlightedText = highlightedText.replaceAll(`"site_id": ${siteId}`, '<span style="background-color: orange;">' + `"site_id": ${siteId}` + '</span>');
+    $('#relatedKeysetsStandardOutput').html(highlightedText);
+};
+
 $(document).ready(() => {
     const sitesUrl = '/api/site/list';
     doApiCallWithCallback('GET', sitesUrl, loadAllSitesCallback, null);
@@ -123,7 +164,27 @@ $(document).ready(() => {
 
         url = '/api/partner_config/get';
         doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
-    
+
+        url = `/api/sharing/keysets/related?site_id=${site.id}`;
+        doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
         $('.section').show();
+    });
+
+    $('#doRotateKeysets').on('click', () => {
+        if (!confirm("Are you sure?")) {
+            return;
+        }
+
+        var keysets = $('#relatedKeysetsStandardOutput').text();
+        const ja = JSON.parse(keysets);
+        var rotateKeysetsMessage = '';
+        ja.forEach((keyset) => {
+            var url = `/api/key/rotate_keyset_key?min_age_seconds=1&keyset_id=${keyset.keyset_id}&force=true`;
+            doApiCallWithCallback(
+                'POST',
+                url,
+                (r) => { rotateKeysetsCallback(r, keyset.keyset_id) },
+                (err) => { rotateKeysetsErrorHandler(err, '#rotateKeysetsErrorOutput') });
+        });
     });
 });
