@@ -1365,7 +1365,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void RelatedKeysetSetsWithIdReaderWithAllowSiteNull(Vertx vertx, VertxTestContext testContext) {
+    void RelatedKeysetSetsWithIdReader(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), Instant.now().getEpochSecond(),true, true, new HashSet<>());
@@ -1406,7 +1406,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void RelatedKeysetSetsWithoutIdReaderAllowSiteNull(Vertx vertx, VertxTestContext testContext) {
+    void RelatedKeysetSetsWithoutIdReader(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), Instant.now().getEpochSecond(), true, true, new HashSet<>());
