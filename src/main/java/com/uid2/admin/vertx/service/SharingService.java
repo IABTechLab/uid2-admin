@@ -10,7 +10,6 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.KeysetSnapshot;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
@@ -180,7 +179,8 @@ public class SharingService implements IService {
 
             // Check if this site has any client key that has an ID_READER role
             boolean isIdReaderRole = false;
-            for (LegacyClientKey c : this.clientKeyProvider.getAll()) {
+            List<LegacyClientKey> clientKeysForThisSite = this.clientKeyProvider.getAll().stream().filter(legacyClientKey -> legacyClientKey.getSiteId() == siteId).collect(Collectors.toList());
+            for (LegacyClientKey c : clientKeysForThisSite) {
                 if (c.getRoles().contains(Role.ID_READER)) {
                     isIdReaderRole = true;
                 }

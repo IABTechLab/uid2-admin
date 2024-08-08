@@ -1365,7 +1365,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void RelatedKeysetSetsWithAllowSiteNull(Vertx vertx, VertxTestContext testContext) {
+    void RelatedKeysetSetsWithIdReader(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), Instant.now().getEpochSecond(),true, true, new HashSet<>());
@@ -1401,6 +1401,47 @@ public class SharingServiceTest extends ServiceTestBase {
                 actualKeysetIds.add(keysetId);
             }
             assertEquals(true, actualKeysetIds.containsAll(expectedKeysetIds));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void RelatedKeysetSetsWithoutIdReader(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        AdminKeyset adminKeyset1 = new AdminKeyset(3, 1, "test", Set.of(4), Instant.now().getEpochSecond(), true, true, new HashSet<>());
+        AdminKeyset adminKeyset2 = new AdminKeyset(4, 2, "test", Set.of(5), Instant.now().getEpochSecond(), true, true, new HashSet<>());
+        AdminKeyset adminKeyset3 = new AdminKeyset(5, 3, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
+
+        Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
+            put(3, adminKeyset1);
+            put(4, adminKeyset2);
+            put(5, adminKeyset3);
+        }};
+
+        setAdminKeysets(keysets);
+        mockSiteExistence(1, 2, 3, 4, 5, 8);
+        doReturn(new Site(8, "test-name", true, null)).when(siteProvider).getSite(8);
+        setClientKeys(
+                new ClientKeyServiceTest.LegacyClientBuilder()
+                        .withRoles(new HashSet<>(Arrays.asList(Role.ID_READER)))
+                        .withSiteId(3)
+                        .build());
+
+
+        get(vertx, testContext, "/api/sharing/keysets/related?site_id=8", response -> {
+            assertEquals(200, response.statusCode());
+
+            Set<Integer> expectedKeysetIds = new HashSet<>(Arrays.asList(adminKeyset3.getKeysetId()));
+
+            Set<Integer> actualKeysetIds = new HashSet<>();
+            JsonArray responseArray = response.bodyAsJsonArray();
+            for (int i = 0; i < responseArray.size(); i++) {
+                JsonObject item = responseArray.getJsonObject(i);
+                int keysetId = item.getInteger("keyset_id");
+                actualKeysetIds.add(keysetId);
+            }
+            assertEquals(false, actualKeysetIds.containsAll(expectedKeysetIds));
             testContext.completeNow();
         });
     }
