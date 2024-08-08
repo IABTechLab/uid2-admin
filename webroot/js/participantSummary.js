@@ -171,6 +171,10 @@ $(document).ready(() => {
     });
 
     $('#doRotateKeysets').on('click', () => {
+        if (!confirm("Are you sure?")) {
+            return;
+        }
+
         var keysets = $('#relatedKeysetsStandardOutput').text();
         const ja = JSON.parse(keysets);
         var rotateKeysetsMessage = '';
