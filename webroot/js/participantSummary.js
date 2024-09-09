@@ -48,6 +48,13 @@ function loadAPIKeysCallback(result) {
     $('#participantKeysStandardOutput').html(highlightedText);
 };
 
+function loadKeyPairsCallback(result, siteId) {
+    let resultJson = JSON.parse(result);
+    let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
+    const formatted = prettifyJson(JSON.stringify(filteredResults));
+    $('#keyPairsStandardOutput').html(formatted);
+};
+
 function loadEncryptionKeysCallback(result, siteId) {
     const resultJson = JSON.parse(result);
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
@@ -155,6 +162,9 @@ $(document).ready(() => {
 
         url = `/api/client/list/${site.id}`;
         doApiCallWithCallback('GET', url, loadAPIKeysCallback, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
+
+        url = `/api/client_side_keypairs/list`;
+        doApiCallWithCallback('GET', url, (r) => { loadKeyPairsCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#keyPairsErrorOutput') });
 
         url = '/api/key/list';
         doApiCallWithCallback('GET', url, (r) => { loadEncryptionKeysCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#encryptionKeysErrorOutput') });
