@@ -1,4 +1,6 @@
 let siteList;
+const searchInput = document.querySelector('#site-search');
+searchInput.addEventListener('keyup', searchSitesAutocomplete);
 
 /* ***** multi-use error handler *** */
 function participantSummaryErrorHandler(err, divContainer) {
@@ -9,6 +11,31 @@ function participantSummaryErrorHandler(err, divContainer) {
 function loadAllSitesCallback(result) {
     siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id, clientTypes: item.clientTypes } });
 };
+
+function searchSitesAutocomplete(e) {
+    const resultsElement = document.querySelector('.search-autocomplete-results');
+    searchString = searchInput.value;
+    const options = {
+        threshold: .2,
+        minMatchCharLength: 2,
+        keys: ['id', 'name']
+    };
+    const fuse = new Fuse(siteList, options);
+    const result = fuse.search(searchString).map((site) => {
+        return `<a class="dropdown-item" href="#">${site.item.name} (${site.item.id})</a>`;
+    }) ;
+
+    let resultHtml = '';
+    for (let i = 0; i < result.length; i++) {
+        resultHtml += result[i];
+    }
+    resultsElement.innerHTML = resultHtml;
+    if (result.length > 0) { 
+        $(resultsElement).show();
+    }
+    
+    console.log(result);
+}
 
 function rotateKeysetsCallback(result, keyset_id) {
     const resultJson = JSON.parse(result);

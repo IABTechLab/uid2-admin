@@ -6,3 +6,11 @@
 .section {
     display: none;
 }
+
+.search-container {
+    display: flex;
+
+    .search-button {
+        margin-left: 16px;
+    }
+}
