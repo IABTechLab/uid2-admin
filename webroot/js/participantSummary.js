@@ -1,6 +1,14 @@
 let siteList;
+let resultsElement = document.querySelector('.search-autocomplete-results');
 const searchInput = document.querySelector('#site-search');
 searchInput.addEventListener('keyup', searchSitesAutocomplete);
+
+window.addEventListener('mouseup',function(event){
+    var dropdown = document.querySelector('.dropdown-menu');
+    if(event.target != dropdown && event.target.parentNode != dropdown){
+        $(dropdown).hide();
+    }
+});  
 
 /* ***** multi-use error handler *** */
 function participantSummaryErrorHandler(err, divContainer) {
@@ -12,8 +20,14 @@ function loadAllSitesCallback(result) {
     siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id, clientTypes: item.clientTypes } });
 };
 
+function setSearchValue(searchText) {
+    document.querySelector('#site-search').value = searchText;
+    $(resultsElement).hide();
+    $('#doSearch').click();
+}
+
 function searchSitesAutocomplete(e) {
-    const resultsElement = document.querySelector('.search-autocomplete-results');
+    
     searchString = searchInput.value;
     const options = {
         threshold: .2,
@@ -22,7 +36,7 @@ function searchSitesAutocomplete(e) {
     };
     const fuse = new Fuse(siteList, options);
     const result = fuse.search(searchString).map((site) => {
-        return `<a class="dropdown-item" href="#">${site.item.name} (${site.item.id})</a>`;
+        return `<a class="dropdown-item" href="#" onclick="setSearchValue('${site.item.name}')">${site.item.name} (${site.item.id})</a>`;
     }) ;
 
     let resultHtml = '';
@@ -32,9 +46,9 @@ function searchSitesAutocomplete(e) {
     resultsElement.innerHTML = resultHtml;
     if (result.length > 0) { 
         $(resultsElement).show();
+    } else {
+        $(resultsElement).hide();
     }
-    
-    console.log(result);
 }
 
 function rotateKeysetsCallback(result, keyset_id) {
@@ -169,7 +183,7 @@ $(document).ready(() => {
     
     $('#doSearch').on('click', () => {
         $('#siteSearchErrorOutput').hide();
-        const siteSearch = $('#key').val();
+        const siteSearch = $('#site-search').val();
         let site = null;
         if (Number.isInteger(Number(siteSearch))) {
             const foundSite = siteList.find((item) => { return item.id === Number(siteSearch) });
