@@ -1,1 +1,1 @@
-!src/resources/localstack/kms/seed.yaml
+src/main/resources/localstack/kms/seed.yaml
