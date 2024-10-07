@@ -5,7 +5,7 @@ WORKDIR /app
 EXPOSE 8089
 
 ARG JAR_NAME=uid2-admin
-ARG EXTRA_CONFIG_RENAMED
+ARG EXTRA_CONFIG
 ARG JAR_VERSION=1.0.0-SNAPSHOT
 ARG IMAGE_VERSION=1.0.0.unknownhash
 ENV JAR_NAME=${JAR_NAME}
@@ -15,7 +15,7 @@ ENV LOGBACK_CONF=${LOGBACK_CONF:-./conf/logback.xml}
 
 COPY ./target/${JAR_NAME}-${JAR_VERSION}-jar-with-dependencies.jar /app/${JAR_NAME}-${JAR_VERSION}.jar
 COPY ./target/${JAR_NAME}-${JAR_VERSION}-sources.jar /app
-COPY ./conf/default-config.json "${EXTRA_CONFIG_RENAMED}" /app/conf/
+COPY ./conf/default-config.json ${EXTRA_CONFIG} /app/conf/
 COPY ./conf/*.xml /app/conf/
 COPY ./webroot/ /app/webroot/
 
