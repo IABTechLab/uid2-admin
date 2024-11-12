@@ -38,7 +38,7 @@ class SiteEncryptionJobTest {
 
     @Test
     void testGetId() {
-        assertEquals("s3-encryption-sync-sites", siteEncryptionJob.getId());
+        assertEquals("cloud-encryption-sync-sites", siteEncryptionJob.getId());
     }
 
     @Test

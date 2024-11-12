@@ -2,7 +2,6 @@ package com.uid2.admin.job.jobsync;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.job.EncryptionJob.*;
-import com.uid2.admin.job.jobsync.acl.KeyAclSyncJob;
 import com.uid2.admin.job.EncryptionJob.ClientKeyEncryptionJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.store.*;
@@ -23,7 +22,8 @@ import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.legacy.LegacyClientKey;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.JsonObject;
 
@@ -34,12 +34,12 @@ import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 public class EncryptedFilesSyncJob extends Job {
     private final JsonObject config;
     private final WriteLock writeLock;
-    private final RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider;
 
-    public EncryptedFilesSyncJob(JsonObject config, WriteLock writeLock,RotatingS3KeyProvider s3KeyProvider) {
+    public EncryptedFilesSyncJob(JsonObject config, WriteLock writeLock, RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider) {
         this.config = config;
         this.writeLock = writeLock;
-        this.s3KeyProvider = s3KeyProvider;
+        this.RotatingCloudEncryptionKeyProvider = RotatingCloudEncryptionKeyProvider;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class EncryptedFilesSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                s3KeyProvider,
+                RotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         ClientKeyStoreFactory clientKeyStoreFactory = new ClientKeyStoreFactory(
@@ -71,7 +71,7 @@ public class EncryptedFilesSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                s3KeyProvider,
+                RotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         EncryptionKeyStoreFactory encryptionKeyStoreFactory = new EncryptionKeyStoreFactory(
@@ -79,7 +79,7 @@ public class EncryptedFilesSyncJob extends Job {
                 new CloudPath(config.getString(Const.Config.KeysMetadataPathProp)),
                 versionGenerator,
                 clock,
-                s3KeyProvider,
+                RotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         KeyAclStoreFactory keyAclStoreFactory = new KeyAclStoreFactory(
@@ -88,7 +88,7 @@ public class EncryptedFilesSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                s3KeyProvider,
+                RotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
@@ -98,7 +98,7 @@ public class EncryptedFilesSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                s3KeyProvider,
+                RotatingCloudEncryptionKeyProvider,
                 config.getBoolean(enableKeysetConfigProp));
 
         KeysetKeyStoreFactory keysetKeyStoreFactory = new KeysetKeyStoreFactory(
@@ -107,7 +107,7 @@ public class EncryptedFilesSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                s3KeyProvider,
+                RotatingCloudEncryptionKeyProvider,
                 config.getBoolean(enableKeysetConfigProp));
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
@@ -115,7 +115,7 @@ public class EncryptedFilesSyncJob extends Job {
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
         synchronized (writeLock) {
-            s3KeyProvider.loadContent();
+            RotatingCloudEncryptionKeyProvider.loadContent();
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
