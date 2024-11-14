@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vertx.version>4.5.11</vertx.version>
+        <vertx.version>4.5.3</vertx.version>
         <vertx-maven-plugin.version>1.0.22</vertx-maven-plugin.version>
         <vertx.verticle>com.uid2.admin.vertx.AdminVerticle</vertx.verticle>
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
@@ -73,6 +73,11 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-templ-pebble</artifactId>
             <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>4.1.115.Final</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
