@@ -21,7 +21,7 @@
         <image.version>${project.version}</image.version>
     </properties>
     <repositories>
-        <repository>it
+        <repository>
             <id>maven-snapshots</id>
             <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
             <layout>default</layout>
