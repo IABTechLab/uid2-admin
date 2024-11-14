@@ -40,7 +40,7 @@ public class EncryptionKeyEncryptionJob extends Job {
 
     @Override
     public String getId() {
-        return "s3-encryption-sync-encryptionKeys";
+        return "cloud-encryption-sync-encryptionKeys";
     }
 
     @Override

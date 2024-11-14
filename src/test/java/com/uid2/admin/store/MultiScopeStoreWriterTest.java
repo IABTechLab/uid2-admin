@@ -11,10 +11,10 @@ import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.cloud.InMemoryStorageMock;
-import com.uid2.shared.model.S3Key;
+import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 
 import com.uid2.shared.store.scope.StoreScope;
@@ -27,7 +27,6 @@ import org.mockito.Mock;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 class MultiScopeStoreWriterTest {
@@ -39,7 +38,7 @@ class MultiScopeStoreWriterTest {
     Integer scopedSiteId = 10;
     private SiteStoreFactory siteStoreFactory;
     @Mock
-    private RotatingS3KeyProvider s3KeyProvider;
+    private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
     Site site = new Site(scopedSiteId, "site 1", true);
     private FileManager fileManager;
@@ -51,7 +50,7 @@ class MultiScopeStoreWriterTest {
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
         fileManager = new FileManager(cloudStorage, fileStorage);
-        s3KeyProvider = mock(RotatingS3KeyProvider.class);
+        cloudEncryptionKeyProvider = mock(RotatingCloudEncryptionKeyProvider.class);
         siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
@@ -200,11 +199,11 @@ class MultiScopeStoreWriterTest {
 
     @Test
     public void uploadPrivateWithEncryption() throws Exception {
-        S3Key encryptionKey = new S3Key(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
-        when(s3KeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
-        Map<Integer, S3Key> allKeys = new HashMap<>();
+        CloudEncryptionKey encryptionKey = new CloudEncryptionKey(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
+        when(cloudEncryptionKeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
+        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, encryptionKey);
-        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
@@ -212,7 +211,7 @@ class MultiScopeStoreWriterTest {
                 objectWriter,
                 new EpochVersionGenerator(new InstantClock()),
                 new InstantClock(),
-                s3KeyProvider,
+                cloudEncryptionKeyProvider,
                 fileManager
         );
 
@@ -237,11 +236,11 @@ class MultiScopeStoreWriterTest {
 
     @Test
     public void uploadPublicWithEncryption() throws Exception {
-        S3Key encryptionKey = new S3Key(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
-        when(s3KeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
-        Map<Integer, S3Key> allKeys = new HashMap<>();
+        CloudEncryptionKey encryptionKey = new CloudEncryptionKey(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
+        when(cloudEncryptionKeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
+        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, encryptionKey);
-        when(s3KeyProvider.getAll()).thenReturn(allKeys);
+        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
@@ -249,7 +248,7 @@ class MultiScopeStoreWriterTest {
                 objectWriter,
                 new EpochVersionGenerator(new InstantClock()),
                 new InstantClock(),
-                s3KeyProvider,
+                cloudEncryptionKeyProvider,
                 fileManager
         );
 

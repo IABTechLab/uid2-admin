@@ -26,7 +26,7 @@ public class ClientKeyEncryptionJob extends Job {
 
     @Override
     public String getId() {
-        return "s3-encryption-sync-clientKeys";
+        return "cloud-encryption-sync-clientKeys";
     }
 
     @Override

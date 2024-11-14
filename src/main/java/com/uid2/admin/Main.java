@@ -13,7 +13,7 @@ import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
-import com.uid2.admin.managers.S3KeyManager;
+import com.uid2.admin.managers.CloudEncryptionKeyManager;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
@@ -197,18 +197,18 @@ public class Main {
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             OperatorKeyStoreWriter operatorKeyStoreWriter = new OperatorKeyStoreWriter(operatorKeyProvider, fileManager, jsonWriter, versionGenerator);
 
-            CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
-            GlobalScope s3KeyGlobalScope = new GlobalScope(s3KeyMetadataPath);
-            RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyGlobalScope);
-            S3KeyStoreWriter s3KeyStoreWriter = new S3KeyStoreWriter(s3KeyProvider, fileManager, jsonWriter, versionGenerator, clock, s3KeyGlobalScope);
+            CloudPath cloudEncryptionKeyMetadataPath = new CloudPath(config.getString(Const.Config.CloudEncryptionKeysMetadataPathProp));
+            GlobalScope cloudEncryptionKeyGlobalScope = new GlobalScope(cloudEncryptionKeyMetadataPath);
+            RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyGlobalScope);
+            CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter = new CloudEncryptionKeyStoreWriter(RotatingCloudEncryptionKeyProvider, fileManager, jsonWriter, versionGenerator, clock, cloudEncryptionKeyGlobalScope);
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
-            S3KeyManager s3KeyManager = new S3KeyManager(s3KeyProvider, s3KeyStoreWriter,keyGenerator);
+            CloudEncryptionKeyManager cloudEncryptionKeyManager = new CloudEncryptionKeyManager(RotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter,keyGenerator);
             try {
-                s3KeyProvider.loadContent();
+                RotatingCloudEncryptionKeyProvider.loadContent();
             } catch (CloudStorageException e) {
                 if (e.getMessage().contains("The specified key does not exist")) {
-                    s3KeyStoreWriter.upload(new HashMap<>(), null);
-                    s3KeyProvider.loadContent();
+                    cloudEncryptionKeyStoreWriter.upload(new HashMap<>(), null);
+                    RotatingCloudEncryptionKeyProvider.loadContent();
                 } else {
                     throw e;
                 }
@@ -255,11 +255,11 @@ public class Main {
                     clientSideKeypairService,
                     new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider, serviceLinkProvider),
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
-                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, s3KeyManager),
+                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, s3KeyProvider),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, RotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider)
             };
@@ -286,8 +286,8 @@ public class Main {
             }
 
             synchronized (writeLock) {
-                s3KeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("s3_key_activates_in_seconds"), config.getInteger("s3_key_count_per_site"));
-                s3KeyProvider.loadContent();
+                cloudEncryptionKeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("cloud_encryption_key_activates_in_seconds"), config.getInteger("cloud_encryption_key_count_per_site"));
+                RotatingCloudEncryptionKeyProvider.loadContent();
             }
 
             /*
@@ -336,7 +336,7 @@ public class Main {
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
 
-            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
+            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,RotatingCloudEncryptionKeyProvider);
             jobDispatcher.enqueue(encryptedFilesSyncJob);
             CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
             encryptedFilesSyncJobFuture.get();

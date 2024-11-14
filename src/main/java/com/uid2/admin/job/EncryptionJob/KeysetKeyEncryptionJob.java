@@ -35,7 +35,7 @@ public class KeysetKeyEncryptionJob extends Job {
 
     @Override
     public String getId() {
-        return "s3-encryption-sync-keysetKeys";
+        return "cloud-encryption-sync-keysetKeys";
     }
 
     @Override

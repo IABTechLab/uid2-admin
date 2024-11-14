@@ -9,12 +9,11 @@ import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.reader.RotatingKeyAclProvider;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
-import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Map;
 
@@ -26,7 +25,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingKeyAclProvider globalReader;
-    private final RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
     public KeyAclStoreFactory(
             ICloudStorage fileStreamProvider,
@@ -44,7 +43,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
-            RotatingS3KeyProvider s3KeyProvider,
+            RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider,
             FileManager fileManager) {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
@@ -52,7 +51,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
         this.versionGenerator = versionGenerator;
         this.clock = clock;
         this.fileManager = fileManager;
-        this.s3KeyProvider = s3KeyProvider;
+        this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingKeyAclProvider(fileStreamProvider, globalScope);
     }
@@ -62,7 +61,7 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
     }
 
     public StoreReader<Map<Integer, EncryptionKeyAcl>> getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingKeyAclProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic),s3KeyProvider);
+        return new RotatingKeyAclProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId,isPublic), cloudEncryptionKeyProvider);
     }
     public StoreWriter<Map<Integer, EncryptionKeyAcl>> getWriter(Integer siteId) {
         return new KeyAclStoreWriter(
@@ -83,12 +82,12 @@ public class KeyAclStoreFactory implements EncryptedStoreFactory<Map<Integer, En
                 versionGenerator,
                 clock,
                 new EncryptedScope(rootMetadataPath, siteId, isPublic),
-                s3KeyProvider
+                cloudEncryptionKeyProvider
         );
     }
 
-    public RotatingS3KeyProvider getS3Provider() {
-        return this.s3KeyProvider;
+    public RotatingCloudEncryptionKeyProvider getCloudEncryptionProvider() {
+        return this.cloudEncryptionKeyProvider;
     }
 
 

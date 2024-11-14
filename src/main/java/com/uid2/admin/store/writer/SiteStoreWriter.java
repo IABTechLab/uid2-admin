@@ -8,7 +8,7 @@ import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonObject;
@@ -32,11 +32,11 @@ public class SiteStoreWriter implements StoreWriter<Collection<Site>> {
                            VersionGenerator versionGenerator,
                            Clock clock,
                            EncryptedScope scope,
-                           RotatingS3KeyProvider s3KeyProvider) {
+                           RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider) {
         this.jsonWriter = jsonWriter;
         FileName dataFile = new FileName("sites", ".json");
         String dataType = "sites";
-        this.writer = new EncryptedScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
+        this.writer = new EncryptedScopedStoreWriter(reader, fileManager, versionGenerator, clock, scope, dataFile, dataType, cloudEncryptionKeyProvider, scope.getId());
     }
 
     public void upload(Collection<Site> data, JsonObject extraMeta) throws Exception {

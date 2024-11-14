@@ -27,7 +27,7 @@ public class KeyAclEncryptionJob extends Job {
 
     @Override
     public String getId() {
-        return "s3-encryption-sync-keyAcls";
+        return "cloud-encryption-sync-keyAcls";
     }
 
     @Override

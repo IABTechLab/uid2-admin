@@ -7,7 +7,7 @@ import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.store.reader.RotatingKeysetKeyStore;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
@@ -36,11 +36,11 @@ public class KeysetKeyStoreWriter implements StoreWriter<Collection<KeysetKey>> 
                                 VersionGenerator versionGenerator,
                                 Clock clock,
                                 EncryptedScope scope,
-                                RotatingS3KeyProvider s3KeyProvider,
+                                RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider,
                                 boolean enableKeysets) {
         FileName dataFile = new FileName("keyset_keys", ".json");
         String dataType = "keyset_keys";
-        this.writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
+        this.writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, cloudEncryptionKeyProvider, scope.getId());
         this.enableKeysets = enableKeysets;
     }
 
