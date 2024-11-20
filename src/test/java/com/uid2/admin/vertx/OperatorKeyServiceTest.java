@@ -3,7 +3,7 @@ package com.uid2.admin.vertx;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.RevealedKey;
-import com.uid2.admin.managers.S3KeyManager;
+import com.uid2.admin.managers.CloudEncryptionKeyManager;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -31,15 +31,15 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     private static final String KEY_PREFIX = "UID2-O-L-";
     private static final String EXPECTED_OPERATOR_KEY_HASH = "abcdefabcdefabcdefabcdef";
     private static final String EXPECTED_OPERATOR_KEY_SALT = "ghijklghijklghijklghijkl";
-    private S3KeyManager s3KeyManager;
+    private CloudEncryptionKeyManager cloudEncryptionKeyManager;
 
     @Override
     protected IService createService() {
         this.config.put("operator_key_prefix", KEY_PREFIX);
-        this.config.put("s3_key_activates_in_seconds", 3600L);
-        this.config.put("s3_key_count_per_site", 5);
-        this.s3KeyManager = Mockito.mock(S3KeyManager.class);
-        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, s3KeyManager);
+        this.config.put("cloud_encryption_key_activates_in_seconds", 3600L);
+        this.config.put("cloud_encryption_key_count_per_site", 5);
+        this.cloudEncryptionKeyManager = Mockito.mock(CloudEncryptionKeyManager.class);
+        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager);
     }
 
     @BeforeEach
@@ -266,7 +266,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void operatorAddGeneratesS3Keys(Vertx vertx, VertxTestContext testContext) {
+    public void operatorAddGeneratesCloudEncryptionKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         post(vertx, testContext, "api/operator/add?name=test_operator&protocol=trusted&site_id=1&roles=optout&operator_type=public", "", response -> {
@@ -274,10 +274,10 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 RevealedKey<OperatorKey> revealedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {});
 
                 assertAll(
-                        "operatorAddGeneratesS3Keys",
+                        "operatorAddGeneratesCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertNotNull(revealedOperator.getAuthorizable()),
-                        () -> verify(s3KeyManager).generateKeysForOperators(
+                        () -> verify(cloudEncryptionKeyManager).generateKeysForOperators(
                                 argThat(collection -> collection.size() == 1 && collection.iterator().next().getName().equals("test_operator")),
                                 eq(3600L),
                                 eq(5)
@@ -291,7 +291,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void operatorUpdateSiteIdGeneratesS3Keys(Vertx vertx, VertxTestContext testContext) {
+    public void operatorUpdateSiteIdGeneratesCloudEncryptionKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
         OperatorKey existingOperator = new OperatorBuilder().withSiteId(1).build();
@@ -302,11 +302,11 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 OperatorKey updatedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
 
                 assertAll(
-                        "operatorUpdateSiteIdGeneratesS3Keys",
+                        "operatorUpdateSiteIdGeneratesCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(5, updatedOperator.getSiteId()),
                         () -> assertNotEquals(1, updatedOperator.getSiteId()),
-                        () -> verify(s3KeyManager).generateKeysForOperators(
+                        () -> verify(cloudEncryptionKeyManager).generateKeysForOperators(
                                 argThat(collection -> collection.size() == 1 && collection.iterator().next().getName().equals("test_operator")),
                                 eq(3600L),
                                 eq(5)
@@ -320,7 +320,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void operatorUpdateWithoutSiteIdChangeDoesNotGenerateS3Keys(Vertx vertx, VertxTestContext testContext) {
+    public void operatorUpdateWithoutSiteIdChangeDoesNotGenerateCloudEncryptionKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
         OperatorKey existingOperator = new OperatorBuilder().build();
@@ -331,10 +331,10 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                 OperatorKey updatedOperator = OBJECT_MAPPER.readValue(response.bodyAsString(), OperatorKey.class);
 
                 assertAll(
-                        "operatorUpdateWithoutSiteIdChangeDoesNotGenerateS3Keys",
+                        "operatorUpdateWithoutSiteIdChangeDoesNotGenerateCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(existingOperator.getSiteId(), updatedOperator.getSiteId()),
-                        () -> verify(s3KeyManager, never()).generateKeysForOperators(any(), anyLong(), anyInt())
+                        () -> verify(cloudEncryptionKeyManager, never()).generateKeysForOperators(any(), anyLong(), anyInt())
                 );
                 testContext.completeNow();
             } catch (Exception e) {

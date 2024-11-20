@@ -6,26 +6,16 @@ import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.ClientKeyStoreWriter;
-import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
-import com.uid2.admin.store.writer.KeysetStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
-import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-import com.uid2.shared.store.reader.RotatingSiteStore;
-import com.uid2.shared.store.reader.StoreReader;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
-import com.uid2.shared.store.scope.StoreScope;
 
 import java.util.Collection;
-import java.util.Map;
 
 public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<LegacyClientKey>> {
     private final ICloudStorage fileStreamProvider;
@@ -35,7 +25,7 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
     private final Clock clock;
     private final FileManager fileManager;
     private final RotatingLegacyClientKeyProvider globalReader;
-    private final RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private final LegacyClientKeyStoreWriter globalWriter;
 
     public ClientKeyStoreFactory(
@@ -54,14 +44,14 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
             ObjectWriter objectWriter,
             VersionGenerator versionGenerator,
             Clock clock,
-            RotatingS3KeyProvider s3KeyProvider,
+            RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider,
             FileManager fileManager)  {
         this.fileStreamProvider = fileStreamProvider;
         this.rootMetadataPath = rootMetadataPath;
         this.objectWriter = objectWriter;
         this.versionGenerator = versionGenerator;
         this.clock = clock;
-        this.s3KeyProvider = s3KeyProvider;
+        this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
         this.fileManager = fileManager;
         GlobalScope globalScope = new GlobalScope(rootMetadataPath);
         globalReader = new RotatingLegacyClientKeyProvider(fileStreamProvider, globalScope);
@@ -80,7 +70,7 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
     }
 
     public RotatingLegacyClientKeyProvider getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic),s3KeyProvider);
+        return new RotatingLegacyClientKeyProvider(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic), cloudEncryptionKeyProvider);
     }
 
     public LegacyClientKeyStoreWriter getWriter(Integer siteId) {
@@ -102,12 +92,12 @@ public class ClientKeyStoreFactory implements EncryptedStoreFactory<Collection<L
                 versionGenerator,
                 clock,
                 new EncryptedScope(rootMetadataPath, siteId, isPublic),
-                s3KeyProvider
+                cloudEncryptionKeyProvider
         );
     }
 
-    public RotatingS3KeyProvider getS3Provider() {
-        return this.s3KeyProvider;
+    public RotatingCloudEncryptionKeyProvider getCloudEncryptionProvider() {
+        return this.cloudEncryptionKeyProvider;
     }
 
 

@@ -3,7 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
-import com.uid2.admin.managers.S3KeyManager;
+import com.uid2.admin.managers.CloudEncryptionKeyManager;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -46,9 +46,9 @@ public class OperatorKeyService implements IService {
     private final IKeyGenerator keyGenerator;
     private final KeyHasher keyHasher;
     private final String operatorKeyPrefix;
-    private final S3KeyManager s3KeyManager;
-    private final long s3KeyActivatesInSeconds;
-    private final int s3KeyCountPerSite;
+    private final CloudEncryptionKeyManager cloudEncryptionKeyManager;
+    private final long cloudEncryptionKeyActivatesInSeconds;
+    private final int cloudEncryptionKeyCountPerSite;
 
     public OperatorKeyService(JsonObject config,
                               AdminAuthMiddleware auth,
@@ -58,7 +58,7 @@ public class OperatorKeyService implements IService {
                               RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator,
                               KeyHasher keyHasher,
-                              S3KeyManager s3KeyManager) {
+                              CloudEncryptionKeyManager cloudEncryptionKeyManager) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.operatorKeyStoreWriter = operatorKeyStoreWriter;
@@ -66,11 +66,11 @@ public class OperatorKeyService implements IService {
         this.siteProvider = siteProvider;
         this.keyGenerator = keyGenerator;
         this.keyHasher = keyHasher;
-        this.s3KeyManager = s3KeyManager;
+        this.cloudEncryptionKeyManager = cloudEncryptionKeyManager;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
-        this.s3KeyActivatesInSeconds = config.getLong("s3_key_activates_in_seconds",0L);
-        this.s3KeyCountPerSite = config.getInteger("s3_key_count_per_site",0);
+        this.cloudEncryptionKeyActivatesInSeconds = config.getLong("cloud_encryption_key_activates_in_seconds",0L);
+        this.cloudEncryptionKeyCountPerSite = config.getInteger("cloud_encryption_key_count_per_site",0);
     }
 
     @Override
@@ -274,7 +274,7 @@ public class OperatorKeyService implements IService {
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
 
-            s3KeyManager.generateKeysForOperators(Collections.singletonList(newOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
+            cloudEncryptionKeyManager.generateKeysForOperators(Collections.singletonList(newOperator), cloudEncryptionKeyActivatesInSeconds, cloudEncryptionKeyCountPerSite);
 
             // respond with new key
             rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
@@ -413,7 +413,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             if (siteIdChanged) {
-                s3KeyManager.generateKeysForOperators(Collections.singletonList(existingOperator), s3KeyActivatesInSeconds, s3KeyCountPerSite);
+                cloudEncryptionKeyManager.generateKeysForOperators(Collections.singletonList(existingOperator), cloudEncryptionKeyActivatesInSeconds, cloudEncryptionKeyCountPerSite);
             }
 
             // return the updated client

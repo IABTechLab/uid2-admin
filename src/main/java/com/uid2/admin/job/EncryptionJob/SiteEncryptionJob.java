@@ -25,7 +25,7 @@ public class SiteEncryptionJob extends Job {
 
     @Override
     public String getId() {
-        return "s3-encryption-sync-sites";
+        return "cloud-encryption-sync-sites";
     }
 
     @Override

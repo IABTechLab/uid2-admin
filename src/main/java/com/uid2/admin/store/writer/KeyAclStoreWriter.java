@@ -6,7 +6,7 @@ import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.auth.EncryptionKeyAcl;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
@@ -32,10 +32,10 @@ public class KeyAclStoreWriter implements StoreWriter<Map<Integer, EncryptionKey
                              VersionGenerator versionGenerator,
                              Clock clock,
                              EncryptedScope scope,
-                             RotatingS3KeyProvider s3KeyProvider) {
+                             RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider) {
         FileName dataFile = new FileName("keys_acl", ".json");
         String dataType = "keys_acl";
-        this.writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, s3KeyProvider, scope.getId());
+        this.writer = new EncryptedScopedStoreWriter(provider, fileManager, versionGenerator, clock, scope, dataFile, dataType, cloudEncryptionKeyProvider, scope.getId());
     }
 
     @Override

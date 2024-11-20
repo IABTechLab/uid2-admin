@@ -6,7 +6,7 @@ import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.EncryptedScopedStoreReader;
 import com.uid2.shared.store.ScopedStoreReader;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.StoreScope;
@@ -48,8 +48,8 @@ public class RotatingLegacyClientKeyProvider implements ILegacyClientKeyProvider
         this.authorizableStore = new AuthorizableStore<>(LegacyClientKey.class);
     }
 
-    public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, EncryptedScope scope, RotatingS3KeyProvider s3KeyProvider) {
-        this.reader = new EncryptedScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys", s3KeyProvider);
+    public RotatingLegacyClientKeyProvider(DownloadCloudStorage fileStreamProvider, EncryptedScope scope, RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider) {
+        this.reader = new EncryptedScopedStoreReader<>(fileStreamProvider, scope, new LegacyClientParser(), "auth keys", cloudEncryptionKeyProvider);
         this.authorizableStore = new AuthorizableStore<>(LegacyClientKey.class);
     }
 

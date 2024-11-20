@@ -1,38 +1,24 @@
 package com.uid2.admin.store.writer;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.common.collect.ImmutableList;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
 import com.uid2.admin.vertx.JsonUtil;
-import com.uid2.shared.cloud.DownloadCloudStorage;
 import com.uid2.shared.cloud.InMemoryStorageMock;
-import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.encryption.Random;
-import com.uid2.shared.model.S3Key;
-import com.uid2.shared.model.Site;
+import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.EncryptedScope;
-import com.uid2.shared.store.ScopedStoreReader;
 import com.uid2.shared.store.reader.IMetadataVersionedStore;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-import com.uid2.shared.store.reader.RotatingSiteStore;
-import com.uid2.shared.store.reader.StoreReader;
-import com.uid2.shared.store.scope.GlobalScope;
-import com.uid2.shared.store.scope.SiteScope;
-import com.uid2.shared.store.scope.StoreScope;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,9 +38,9 @@ class EncryptedScopedStoreWriterTest {
     private final String dataType = "sites";
     private final FileName dataFile = new FileName("sites", ".json");
     private EncryptedScopedStoreWriter encryptedScopedStoreWriter;
-    private S3Key encryptionKey;
+    private CloudEncryptionKey encryptionKey;
     private final int testSiteId = 123;
-    private RotatingS3KeyProvider s3KeyProvider;
+    private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private IMetadataVersionedStore provider;
 
     @BeforeEach
@@ -70,17 +56,17 @@ class EncryptedScopedStoreWriterTest {
         // Generate a valid 32-byte AES key
         byte[] keyBytes = Random.getRandomKeyBytes();
         String base64Key = Base64.getEncoder().encodeToString(keyBytes);
-        encryptionKey = new S3Key(1, testSiteId, 0, 0, base64Key);
+        encryptionKey = new CloudEncryptionKey(1, testSiteId, 0, 0, base64Key);
 
         EncryptedScope encryptedScope = new EncryptedScope(rootMetadataPath, testSiteId,false);
 
-        s3KeyProvider = mock(RotatingS3KeyProvider.class);
-        Map<Integer, S3Key> mockKeyMap = new HashMap<>();
+        cloudEncryptionKeyProvider = mock(RotatingCloudEncryptionKeyProvider.class);
+        Map<Integer, CloudEncryptionKey> mockKeyMap = new HashMap<>();
         mockKeyMap.put(testSiteId, encryptionKey);
-        when(s3KeyProvider.getEncryptionKeyForSite(123)).thenReturn(encryptionKey);
+        when(cloudEncryptionKeyProvider.getEncryptionKeyForSite(123)).thenReturn(encryptionKey);
 
 
-        // Initialize EncryptedScopedStoreWriter with the s3KeyProvider
+        // Initialize EncryptedScopedStoreWriter with the cloudEncryptionKeyProvider
         encryptedScopedStoreWriter = new EncryptedScopedStoreWriter(
                 provider,
                 fileManager,
@@ -89,7 +75,7 @@ class EncryptedScopedStoreWriterTest {
                 encryptedScope,
                 dataFile,
                 dataType,
-                s3KeyProvider,
+                cloudEncryptionKeyProvider,
                 testSiteId
         );
     }
@@ -143,7 +129,7 @@ class EncryptedScopedStoreWriterTest {
 
     @Test
     void testHandlingInvalidEncryptionKey() {
-        when(s3KeyProvider.getEncryptionKeyForSite(123)).thenReturn(null);
+        when(cloudEncryptionKeyProvider.getEncryptionKeyForSite(123)).thenReturn(null);
 
         String testData = "Test data to be encrypted";
         JsonObject extraMeta = new JsonObject().put("test", "meta");

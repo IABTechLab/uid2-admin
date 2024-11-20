@@ -3,11 +3,9 @@ package com.uid2.admin.vertx.service;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
-import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
-import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,19 +21,19 @@ public class EncryptedFilesSyncService implements IService {
     private final JobDispatcher jobDispatcher;
     private final WriteLock writeLock;
     private final JsonObject config;
-    private final RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
     public EncryptedFilesSyncService(
             AdminAuthMiddleware auth,
             JobDispatcher jobDispatcher,
             WriteLock writeLock,
             JsonObject config,
-            RotatingS3KeyProvider s3KeyProvider) {
+            RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider) {
         this.auth = auth;
         this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;
         this.config = config;
-        this.s3KeyProvider =s3KeyProvider;
+        this.cloudEncryptionKeyProvider =cloudEncryptionKeyProvider;
     }
 
     @Override
@@ -54,7 +52,7 @@ public class EncryptedFilesSyncService implements IService {
 
     private void handleEncryptedFileSync(RoutingContext rc) {
         try {
-            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, s3KeyProvider);
+            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, cloudEncryptionKeyProvider);
             jobDispatcher.enqueue(encryptedFileSyncJob);
 
             rc.response().end("OK");
@@ -64,7 +62,7 @@ public class EncryptedFilesSyncService implements IService {
     }
     private void handleEncryptedFileSyncNow(RoutingContext rc) {
         try {
-            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock,s3KeyProvider);
+            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, cloudEncryptionKeyProvider);
             jobDispatcher.enqueue(encryptedFileSyncJob);
             CompletableFuture<Boolean> encryptedFileSyncJobFuture = jobDispatcher.executeNextJob();
             encryptedFileSyncJobFuture.get();
