@@ -6,6 +6,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
+import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.model.Site;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -308,6 +309,20 @@ public final class PrivateSiteUtil {
                 });
             }
         });
+        return result;
+    }
+
+    public static PrivateSiteDataMap<SaltEntry> getPrivateSaltEntries(
+            Collection<SaltEntry> globalSaltEntries,
+            Collection<OperatorKey> operators) {
+        final PrivateSiteDataMap<SaltEntry> result = getPrivateSites(operators);
+
+        globalSaltEntries.forEach(saltEntry -> {
+            result.forEach((publicSiteId, publicSiteData) -> {
+                publicSiteData.add(saltEntry);
+            });
+        });
+
         return result;
     }
 }
