@@ -26,7 +26,7 @@ public class SaltStoreWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltStoreWriter.class);
     private final RotatingSaltProvider provider;
     private final FileManager fileManager;
-    private final String saltSnapshotLocationPrefix;
+    protected final String saltSnapshotLocationPrefix;
     private final VersionGenerator versionGenerator;
 
     private final TaggableCloudStorage cloudStorage;
@@ -111,7 +111,7 @@ public class SaltStoreWriter {
         });
     }
 
-    private String getSaltSnapshotLocation(RotatingSaltProvider.SaltSnapshot snapshot) {
+    protected String getSaltSnapshotLocation(RotatingSaltProvider.SaltSnapshot snapshot) {
         return saltSnapshotLocationPrefix + snapshot.getEffective().toEpochMilli();
     }
 
@@ -130,7 +130,13 @@ public class SaltStoreWriter {
             }
         }
 
-        cloudStorage.upload(newSaltsFile.toString(), location, this.currentTags);
+        //cloudStorage.upload(newSaltsFile.toString(), location, this.currentTags);
+        this.upload(newSaltsFile.toString(), location);
+    }
+
+    protected void upload(String data, String location) throws Exception {
+        cloudStorage.upload(data, location, this.currentTags);
+
     }
 
     private void setStatusTagToCurrent(String location) throws CloudStorageException {
