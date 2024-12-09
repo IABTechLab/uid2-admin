@@ -5,6 +5,7 @@ import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.CloudEncryptionKey;
+import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
@@ -13,8 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 
+import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
+import java.util.Collection;
 
 public class EncyptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
     private StoreScope scope;
@@ -37,10 +42,18 @@ public class EncyptedSaltStoreWriter extends SaltStoreWriter implements StoreWri
     }
 
     @Override
-    protected void upload(String data, String location) throws Exception {
+    protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         if (siteId == null) {
             throw new IllegalStateException("Site ID is not set.");
         }
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (SaltEntry entry: snapshot.getAllRotatingSalts()) {
+            stringBuilder.append(entry.getId()).append(",").append(entry.getLastUpdated()).append(",").append(entry.getSalt()).append("\n");
+        }
+
+        String data = stringBuilder.toString();
 
         CloudEncryptionKey encryptionKey = null;
         try {
@@ -59,13 +72,19 @@ public class EncyptedSaltStoreWriter extends SaltStoreWriter implements StoreWri
             throw new IllegalStateException("No Cloud Encryption keys available for encryption for site ID: " + siteId);
         }
 
+        final Path newSaltsFile = Files.createTempFile("salts", ".txt");
+        try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
+            w.write(encryptedJson.encodePrettily());
+        }
 
-        super.upload(encryptedJson.encodePrettily(), location);
+        this.upload(newSaltsFile.toString(), location);
     }
 
     @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
-        super.upload((RotatingSaltProvider.SaltSnapshot) data);
+        for(RotatingSaltProvider.SaltSnapshot saltSnapshot: (Collection<RotatingSaltProvider.SaltSnapshot>) data) {
+            super.upload(saltSnapshot);
+        }
     }
 
     @Override

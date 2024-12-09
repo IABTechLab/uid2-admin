@@ -16,6 +16,7 @@ import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,12 @@ public class SaltStoreWriter {
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
 
-        final JsonObject metadata = provider.getMetadata();
+        JsonObject metadata = null;
+        try {
+            metadata = provider.getMetadata();
+        } catch (Exception e) {
+            metadata = new JsonObject();
+        }
         // bump up metadata version
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
@@ -54,9 +60,14 @@ public class SaltStoreWriter {
         final JsonArray snapshotsMetadata = new JsonArray();
         metadata.put("salts", snapshotsMetadata);
 
-        final List<RotatingSaltProvider.SaltSnapshot> snapshots = Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
-                .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                .collect(Collectors.toList());
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
+        try {
+            snapshots = Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
+                    .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            snapshots = List.of(data);
+        }
         // of the currently effective snapshots keep only the most recent one
         RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
                 .filter(snapshot -> snapshot.isEffective(now))
@@ -115,7 +126,7 @@ public class SaltStoreWriter {
         return saltSnapshotLocationPrefix + snapshot.getEffective().toEpochMilli();
     }
 
-    private void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
+    protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         // do not overwrite existing files
         if (!cloudStorage.list(location).isEmpty()) {
             // update the tags on the file to ensure it is still marked as current

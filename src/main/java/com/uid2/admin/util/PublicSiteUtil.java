@@ -10,6 +10,7 @@ import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.model.Site;
+import com.uid2.shared.store.RotatingSaltProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,10 +131,10 @@ public class PublicSiteUtil {
         return result;
     }
 
-    public static PrivateSiteDataMap<SaltEntry> getPublicSaltEntries(
-            Collection<SaltEntry> globalSaltEntries,
+    public static PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> getPublicSaltEntries(
+            Collection<RotatingSaltProvider.SaltSnapshot> globalSaltEntries,
             Collection<OperatorKey> operators) {
-        final PrivateSiteDataMap<SaltEntry> result = getPublicSitesMap(operators);
+        final PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> result = getPublicSitesMap(operators);
 
         globalSaltEntries.forEach(saltEntry -> {
             result.forEach((publicSiteId, publicSiteData) -> {
