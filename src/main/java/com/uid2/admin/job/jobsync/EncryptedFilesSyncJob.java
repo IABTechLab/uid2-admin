@@ -2,7 +2,6 @@ package com.uid2.admin.job.jobsync;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.job.EncryptionJob.*;
-import com.uid2.admin.job.EncryptionJob.ClientKeyEncryptionJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.factory.*;
@@ -17,12 +16,14 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
+import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.legacy.LegacyClientKey;
-import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
+import com.uid2.shared.store.RotatingEncryptedSaltProvider;
+import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.JsonObject;
@@ -34,12 +35,12 @@ import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 public class EncryptedFilesSyncJob extends Job {
     private final JsonObject config;
     private final WriteLock writeLock;
-    private final RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider;
+    private final RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider;
 
     public EncryptedFilesSyncJob(JsonObject config, WriteLock writeLock, RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider) {
         this.config = config;
         this.writeLock = writeLock;
-        this.RotatingCloudEncryptionKeyProvider = RotatingCloudEncryptionKeyProvider;
+        this.rotatingCloudEncryptionKeyProvider = RotatingCloudEncryptionKeyProvider;
     }
 
     @Override
@@ -49,12 +50,14 @@ public class EncryptedFilesSyncJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        ICloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
+        TaggableCloudStorage cloudStorage = CloudUtils.createStorage(config.getString(Const.Config.CoreS3BucketProp), config);
         FileStorage fileStorage = new TmpFileStorage();
         ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
         Clock clock = new InstantClock();
         VersionGenerator versionGenerator = new EpochVersionGenerator(clock);
         FileManager fileManager = new FileManager(cloudStorage, fileStorage);
+
+        RotatingSaltProvider saltProvider = new RotatingSaltProvider(cloudStorage, config.getString(Const.Config.SaltsMetadataPathProp));
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
@@ -62,7 +65,7 @@ public class EncryptedFilesSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                RotatingCloudEncryptionKeyProvider,
+                rotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         ClientKeyStoreFactory clientKeyStoreFactory = new ClientKeyStoreFactory(
@@ -71,7 +74,7 @@ public class EncryptedFilesSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                RotatingCloudEncryptionKeyProvider,
+                rotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         EncryptionKeyStoreFactory encryptionKeyStoreFactory = new EncryptionKeyStoreFactory(
@@ -79,7 +82,7 @@ public class EncryptedFilesSyncJob extends Job {
                 new CloudPath(config.getString(Const.Config.KeysMetadataPathProp)),
                 versionGenerator,
                 clock,
-                RotatingCloudEncryptionKeyProvider,
+                rotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         KeyAclStoreFactory keyAclStoreFactory = new KeyAclStoreFactory(
@@ -88,7 +91,7 @@ public class EncryptedFilesSyncJob extends Job {
                 jsonWriter,
                 versionGenerator,
                 clock,
-                RotatingCloudEncryptionKeyProvider,
+                rotatingCloudEncryptionKeyProvider,
                 fileManager);
 
         KeysetStoreFactory keysetStoreFactory = new KeysetStoreFactory(
@@ -98,7 +101,7 @@ public class EncryptedFilesSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                RotatingCloudEncryptionKeyProvider,
+                rotatingCloudEncryptionKeyProvider,
                 config.getBoolean(enableKeysetConfigProp));
 
         KeysetKeyStoreFactory keysetKeyStoreFactory = new KeysetKeyStoreFactory(
@@ -107,15 +110,24 @@ public class EncryptedFilesSyncJob extends Job {
                 versionGenerator,
                 clock,
                 fileManager,
-                RotatingCloudEncryptionKeyProvider,
+                rotatingCloudEncryptionKeyProvider,
                 config.getBoolean(enableKeysetConfigProp));
+
+        SaltStoreFactory saltStoreFactory = new SaltStoreFactory(
+                config,
+                new CloudPath(config.getString(Const.Config.SaltsMetadataPathProp)),
+                fileManager,
+                cloudStorage,
+                versionGenerator,
+                rotatingCloudEncryptionKeyProvider
+        );
 
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
 
         synchronized (writeLock) {
-            RotatingCloudEncryptionKeyProvider.loadContent();
+            rotatingCloudEncryptionKeyProvider.loadContent();
             operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
             siteStoreFactory.getGlobalReader().loadContent(siteStoreFactory.getGlobalReader().getMetadata());
             clientKeyStoreFactory.getGlobalReader().loadContent();
@@ -125,7 +137,9 @@ public class EncryptedFilesSyncJob extends Job {
                 keysetStoreFactory.getGlobalReader().loadContent();
                 keysetKeyStoreFactory.getGlobalReader().loadContent();
             }
+            saltProvider.loadContent();
         }
+
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
         Collection<Site> globalSites = siteStoreFactory.getGlobalReader().getAllSites();
         Collection<LegacyClientKey> globalClients = clientKeyStoreFactory.getGlobalReader().getAll();
@@ -148,6 +162,10 @@ public class EncryptedFilesSyncJob extends Job {
                 fileManager,
                 keyAclStoreFactory,
                 MultiScopeStoreWriter::areMapsEqual);
+        MultiScopeStoreWriter<Collection<RotatingSaltProvider.SaltSnapshot>> saltWriter = new MultiScopeStoreWriter<>(
+                fileManager,
+                saltStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
 
         SiteEncryptionJob siteEncryptionSyncJob = new SiteEncryptionJob(siteWriter, globalSites, globalOperators);
         ClientKeyEncryptionJob clientEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators);
@@ -160,10 +178,13 @@ public class EncryptedFilesSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls);
+        SaltEncryptionJob saltEncryptionJob = new SaltEncryptionJob(globalOperators, saltProvider.getSnapshots(), saltWriter);
+
         siteEncryptionSyncJob.execute();
         clientEncryptionSyncJob.execute();
         encryptionKeyEncryptionSyncJob.execute();
         keyAclEncryptionSyncJob.execute();
+        saltEncryptionJob.execute();
 
         if(config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
