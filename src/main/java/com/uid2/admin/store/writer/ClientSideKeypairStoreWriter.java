@@ -6,6 +6,7 @@ import com.uid2.admin.store.FileName;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.store.reader.RotatingClientSideKeypairStore;
+import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -17,7 +18,7 @@ public class ClientSideKeypairStoreWriter implements StoreWriter<Collection<Clie
 
     private final ScopedStoreWriter writer;
 
-    public ClientSideKeypairStoreWriter(RotatingClientSideKeypairStore store, FileManager fileManager, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
+    public ClientSideKeypairStoreWriter(StoreReader<Collection<ClientSideKeypair>> store, FileManager fileManager, VersionGenerator versionGenerator, Clock clock, StoreScope scope) {
         FileName dataFile = new FileName("client_side_keypairs", ".json");
         String dataType = "client_side_keypairs";
         writer = new ScopedStoreWriter(store, fileManager, versionGenerator, clock, scope, dataFile, dataType);

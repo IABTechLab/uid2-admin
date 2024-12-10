@@ -6,10 +6,7 @@ import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
-import com.uid2.shared.model.EncryptionKey;
-import com.uid2.shared.model.KeysetKey;
-import com.uid2.shared.model.SaltEntry;
-import com.uid2.shared.model.Site;
+import com.uid2.shared.model.*;
 import com.uid2.shared.store.RotatingSaltProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,6 +136,20 @@ public class PublicSiteUtil {
         globalSaltEntries.forEach(saltEntry -> {
             result.forEach((publicSiteId, publicSiteData) -> {
                 publicSiteData.add(saltEntry);
+            });
+        });
+
+        return result;
+    }
+
+    public static PrivateSiteDataMap<ClientSideKeypair> getPublicClientKeypairs(
+            Collection<ClientSideKeypair> globalClientSideKeypair,
+            Collection<OperatorKey> operators) {
+        final PrivateSiteDataMap<ClientSideKeypair> result = getPublicSitesMap(operators);
+
+        globalClientSideKeypair.forEach(clientSideKeypair -> {
+            result.forEach((publicSiteId, publicSiteData) -> {
+                publicSiteData.add(clientSideKeypair);
             });
         });
 

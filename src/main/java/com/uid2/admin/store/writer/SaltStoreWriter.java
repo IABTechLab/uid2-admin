@@ -141,7 +141,6 @@ public class SaltStoreWriter {
             }
         }
 
-        //cloudStorage.upload(newSaltsFile.toString(), location, this.currentTags);
         this.upload(newSaltsFile.toString(), location);
     }
 

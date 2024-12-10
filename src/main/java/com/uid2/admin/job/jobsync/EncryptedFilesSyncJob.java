@@ -17,12 +17,13 @@ import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.cloud.TaggableCloudStorage;
+import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.legacy.LegacyClientKey;
-import com.uid2.shared.store.RotatingEncryptedSaltProvider;
+import com.uid2.shared.store.EncryptedRotatingSaltProvider;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
@@ -122,6 +123,15 @@ public class EncryptedFilesSyncJob extends Job {
                 rotatingCloudEncryptionKeyProvider
         );
 
+        ClientSideKeypairStoreFactory clientSideKeypairStoreFactory = new ClientSideKeypairStoreFactory(
+                cloudStorage,
+                new CloudPath(config.getString(Const.Config.ClientSideKeypairsMetadataPathProp)),
+                versionGenerator,
+                clock,
+                rotatingCloudEncryptionKeyProvider,
+                fileManager
+        );
+
         CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
         GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
         RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
@@ -138,6 +148,7 @@ public class EncryptedFilesSyncJob extends Job {
                 keysetKeyStoreFactory.getGlobalReader().loadContent();
             }
             saltProvider.loadContent();
+            clientSideKeypairStoreFactory.getGlobalReader().loadContent();
         }
 
         Collection<OperatorKey> globalOperators = operatorKeyProvider.getAll();
@@ -146,6 +157,8 @@ public class EncryptedFilesSyncJob extends Job {
         Collection<EncryptionKey> globalEncryptionKeys = encryptionKeyStoreFactory.getGlobalReader().getSnapshot().getActiveKeySet();
         Integer globalMaxKeyId = encryptionKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
         Map<Integer, EncryptionKeyAcl> globalKeyAcls = keyAclStoreFactory.getGlobalReader().getSnapshot().getAllAcls();
+        Collection<ClientSideKeypair> globalClientSideKeypair = clientSideKeypairStoreFactory.getGlobalReader().getAll();
+
         MultiScopeStoreWriter<Collection<Site>> siteWriter = new MultiScopeStoreWriter<>(
                 fileManager,
                 siteStoreFactory,
@@ -166,6 +179,10 @@ public class EncryptedFilesSyncJob extends Job {
                 fileManager,
                 saltStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
+        MultiScopeStoreWriter<Collection<ClientSideKeypair>> clientSideKeypairWriter = new MultiScopeStoreWriter<>(
+                fileManager,
+                clientSideKeypairStoreFactory,
+                MultiScopeStoreWriter::areCollectionsEqual);
 
         SiteEncryptionJob siteEncryptionSyncJob = new SiteEncryptionJob(siteWriter, globalSites, globalOperators);
         ClientKeyEncryptionJob clientEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators);
@@ -179,12 +196,14 @@ public class EncryptedFilesSyncJob extends Job {
         );
         KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls);
         SaltEncryptionJob saltEncryptionJob = new SaltEncryptionJob(globalOperators, saltProvider.getSnapshots(), saltWriter);
+        ClientSideKeypairEncryptionJob clientSideKeypairEncryptionJob = new ClientSideKeypairEncryptionJob(globalOperators, globalClientSideKeypair, clientSideKeypairWriter);
 
         siteEncryptionSyncJob.execute();
         clientEncryptionSyncJob.execute();
         encryptionKeyEncryptionSyncJob.execute();
         keyAclEncryptionSyncJob.execute();
         saltEncryptionJob.execute();
+        clientSideKeypairEncryptionJob.execute();
 
         if(config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();

@@ -7,7 +7,7 @@ import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.Const;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.RotatingEncryptedSaltProvider;
+import com.uid2.shared.store.EncryptedRotatingSaltProvider;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
@@ -38,7 +38,7 @@ public class SaltStoreFactory implements EncryptedStoreFactory<Collection<Rotati
     @Override
     public StoreWriter<Collection<RotatingSaltProvider.SaltSnapshot>> getEncryptedWriter(Integer siteId, boolean isPublic) {
         EncryptedScope scope = new EncryptedScope(rootMetadatapath, siteId, isPublic);
-        RotatingEncryptedSaltProvider saltProvider = new RotatingEncryptedSaltProvider(taggableCloudStorage,
+        EncryptedRotatingSaltProvider saltProvider = new EncryptedRotatingSaltProvider(taggableCloudStorage,
                 scope.resolve(new CloudPath(config.getString(Const.Config.SaltsMetadataPathProp))).toString(), cloudEncryptionKeyProvider );
         return new EncyptedSaltStoreWriter(config, saltProvider, fileManager, taggableCloudStorage, versionGenerator, scope, cloudEncryptionKeyProvider, siteId);
     }
