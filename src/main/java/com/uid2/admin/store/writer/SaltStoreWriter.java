@@ -50,8 +50,12 @@ public class SaltStoreWriter {
         JsonObject metadata = null;
         try {
             metadata = provider.getMetadata();
-        } catch (Exception e) {
-            metadata = new JsonObject();
+        } catch (CloudStorageException e) {
+            if (e.getMessage().contains("The specified key does not exist")) {
+                metadata = new JsonObject();
+            } else {
+                throw e;
+            }
         }
         // bump up metadata version
         metadata.put("version", versionGenerator.getVersion());
@@ -60,12 +64,14 @@ public class SaltStoreWriter {
         final JsonArray snapshotsMetadata = new JsonArray();
         metadata.put("salts", snapshotsMetadata);
 
+        List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
         List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
-        try {
-            snapshots = Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
+
+        if (currentSnapshots != null) {
+            snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
                     .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
                     .collect(Collectors.toList());
-        } catch (Exception e) {
+        } else {
             snapshots = List.of(data);
         }
         // of the currently effective snapshots keep only the most recent one
