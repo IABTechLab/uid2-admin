@@ -54,12 +54,13 @@ public class ClientSideKeypairStoreFactory implements EncryptedStoreFactory<Coll
                 fileManager,
                 versionGenerator,
                 clock,
-                new EncryptedScope(rootMetadataPath, siteId, isPublic));
+                new EncryptedScope(rootMetadataPath, siteId, isPublic),
+                cloudEncryptionKeyProvider);
     }
 
     @Override
     public StoreReader<Collection<ClientSideKeypair>> getEncryptedReader(Integer siteId, boolean isPublic) {
-        return new RotatingClientSideKeypairStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic));
+        return new RotatingClientSideKeypairStore(fileStreamProvider, new EncryptedScope(rootMetadataPath, siteId, isPublic), cloudEncryptionKeyProvider);
     }
 
     @Override
