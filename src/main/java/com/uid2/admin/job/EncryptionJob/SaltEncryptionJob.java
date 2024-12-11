@@ -10,6 +10,7 @@ import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.RotatingSaltProvider;
 
 import java.util.Collection;
+import java.util.List;
 
 public class SaltEncryptionJob extends Job {
     private final Collection<OperatorKey> globalOperators;
@@ -32,9 +33,9 @@ public class SaltEncryptionJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> desiredPrivateState = PrivateSiteUtil.getPrivateSaltEntries(saltEntries, globalOperators);
-        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, null);
-        PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> desiredPublicState = PublicSiteUtil.getPublicSaltEntries(saltEntries, globalOperators);
-        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
+        List<Integer> desiredPrivateState = PrivateSiteUtil.getPrivateSaltSites(globalOperators);
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, saltEntries, null);
+        List<Integer> desiredPublicState = PublicSiteUtil.getPublicSaltSites(globalOperators);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, saltEntries, null);
     }
 }

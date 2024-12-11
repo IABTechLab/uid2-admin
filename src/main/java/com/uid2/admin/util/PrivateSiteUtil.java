@@ -313,17 +313,8 @@ public final class PrivateSiteUtil {
         return result;
     }
 
-    public static PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> getPrivateSaltEntries(
-            Collection<RotatingSaltProvider.SaltSnapshot> globalSaltEntries,
-            Collection<OperatorKey> operators) {
+    public static List<Integer> getPrivateSaltSites(Collection<OperatorKey> operators) {
         final PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> result = getPrivateSites(operators);
-
-        globalSaltEntries.forEach(saltEntry -> {
-            result.forEach((publicSiteId, publicSiteData) -> {
-                publicSiteData.add(saltEntry);
-            });
-        });
-
-        return result;
+        return result.keySet().stream().toList();
     }
 }

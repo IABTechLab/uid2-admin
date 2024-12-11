@@ -59,6 +59,8 @@ public class EncryptedSaltStoreWriterTest {
 
     @Captor
     private ArgumentCaptor<String> pathCaptor;
+    @Captor
+    private ArgumentCaptor<String> cloudPathCaptor;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -118,7 +120,9 @@ public class EncryptedSaltStoreWriterTest {
 
         encryptedSaltStoreWriter.upload(snapshot);
 
-        verify(taggableCloudStorage).upload(pathCaptor.capture(), any(), any());
+        verify(taggableCloudStorage).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
+        assertEquals(cloudPathCaptor.getValue(), "test/path");
+
         verifyFile(pathCaptor.getValue(), snapshot);
     }
 }

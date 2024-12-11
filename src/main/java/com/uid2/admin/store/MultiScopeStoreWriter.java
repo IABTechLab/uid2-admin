@@ -69,11 +69,25 @@ public class MultiScopeStoreWriter<T> {
         }
     }
 
+    public void uploadPrivateWithEncryption(List<Integer> siteIds, T desiredState, JsonObject extraMeta) throws Exception {
+        EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
+        for (Integer siteId : siteIds) {
+            encryptedFactory.getEncryptedWriter(siteId,false).upload(desiredState, extraMeta);
+        }
+    }
+
     public void uploadPublicWithEncryption(Map<Integer, T> desiredPublicState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
         for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
             Integer siteId = entry.getKey();
             encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
+        }
+    }
+
+    public void uploadPublicWithEncryption(List<Integer> siteIds, T desiredState, JsonObject extraMeta) throws Exception {
+        EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
+        for (Integer siteId : siteIds) {
+            encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredState, extraMeta);
         }
     }
 

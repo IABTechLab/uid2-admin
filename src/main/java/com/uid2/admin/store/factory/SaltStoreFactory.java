@@ -13,10 +13,14 @@ import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.reader.StoreReader;
 import com.uid2.shared.store.scope.EncryptedScope;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
 public class SaltStoreFactory implements EncryptedStoreFactory<Collection<RotatingSaltProvider.SaltSnapshot>> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SaltStoreFactory.class);
+
     JsonObject config;
     CloudPath rootMetadatapath;
     FileManager fileManager;
@@ -45,6 +49,7 @@ public class SaltStoreFactory implements EncryptedStoreFactory<Collection<Rotati
 
     @Override
     public StoreReader<Collection<RotatingSaltProvider.SaltSnapshot>> getEncryptedReader(Integer siteId, boolean isPublic) {
+        LOGGER.warn("getEncryptedReader called on SaltStoreFactory. This method is not implemented.");
         return null;
     }
 
@@ -55,11 +60,13 @@ public class SaltStoreFactory implements EncryptedStoreFactory<Collection<Rotati
 
     @Override
     public StoreReader<Collection<RotatingSaltProvider.SaltSnapshot>> getReader(Integer siteId) {
+        LOGGER.warn("getReader called on SaltStoreFactory. This method is not implemented.");
         return null;
     }
 
     @Override
     public StoreWriter<Collection<RotatingSaltProvider.SaltSnapshot>> getWriter(Integer siteId) {
+        LOGGER.warn("getWriter called on SaltStoreFactory. This method is not implemented.");
         return null;
     }
 }
