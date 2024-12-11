@@ -1,7 +1,6 @@
 package com.uid2.admin.store.writer;
 
 import com.uid2.admin.store.FileManager;
-import com.uid2.admin.store.writer.EncyptedSaltStoreWriter;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
@@ -108,14 +107,14 @@ public class EncryptedSaltStoreWriterTest {
 
     @Test
     public void testUploadNew() throws Exception {
-        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.now(), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 10000), 100);
+        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.now(), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 10000), 1000000);
 
         when(rotatingSaltProvider.getMetadata()).thenThrow(new CloudStorageException("The specified key does not exist: AmazonS3Exception: test-core-bucket"));
         when(rotatingSaltProvider.getSnapshots()).thenReturn(null);
 
         when(taggableCloudStorage.list(anyString())).thenReturn(new ArrayList<>());
 
-        EncyptedSaltStoreWriter encryptedSaltStoreWriter = new EncyptedSaltStoreWriter(config, rotatingSaltProvider,
+        EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
 
         encryptedSaltStoreWriter.upload(snapshot);

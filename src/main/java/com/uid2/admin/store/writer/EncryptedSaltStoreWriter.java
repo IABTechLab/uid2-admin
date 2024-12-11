@@ -21,15 +21,15 @@ import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Collection;
 
-public class EncyptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
+public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EncyptedSaltStoreWriter.class);
-    public EncyptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
-                                   TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator, StoreScope scope,
-                                   RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider, Integer siteId) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedSaltStoreWriter.class);
+    public EncryptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
+                                    TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator, StoreScope scope,
+                                    RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider, Integer siteId) {
         super(config, provider, fileManager, cloudStorage, versionGenerator);
         this.scope = scope;
         this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;

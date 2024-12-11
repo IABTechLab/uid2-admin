@@ -2,7 +2,7 @@ package com.uid2.admin.store.factory;
 
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.admin.store.writer.EncyptedSaltStoreWriter;
+import com.uid2.admin.store.writer.EncryptedSaltStoreWriter;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.shared.Const;
 import com.uid2.shared.cloud.TaggableCloudStorage;
@@ -44,7 +44,7 @@ public class SaltStoreFactory implements EncryptedStoreFactory<Collection<Rotati
         EncryptedScope scope = new EncryptedScope(rootMetadatapath, siteId, isPublic);
         EncryptedRotatingSaltProvider saltProvider = new EncryptedRotatingSaltProvider(taggableCloudStorage,
                 scope.resolve(new CloudPath(config.getString(Const.Config.SaltsMetadataPathProp))).toString(), cloudEncryptionKeyProvider );
-        return new EncyptedSaltStoreWriter(config, saltProvider, fileManager, taggableCloudStorage, versionGenerator, scope, cloudEncryptionKeyProvider, siteId);
+        return new EncryptedSaltStoreWriter(config, saltProvider, fileManager, taggableCloudStorage, versionGenerator, scope, cloudEncryptionKeyProvider, siteId);
     }
 
     @Override
