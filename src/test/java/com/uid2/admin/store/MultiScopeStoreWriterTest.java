@@ -109,6 +109,10 @@ class MultiScopeStoreWriterTest {
         reader.loadContent();
         Long oldVersion = reader.getMetadata().getLong("version");
 
+        // This test relies on our version generator returning a new timestamp, but the code can execute so fast we don't get a new version
+        // This small sleep makes this test much more stable
+        Thread.sleep(100);
+
         Site updatedSite = new Site(scopedSiteId, "site 1 updated", true);
         MultiScopeStoreWriter<Collection<Site>> multiStore = new MultiScopeStoreWriter<>(fileManager, siteStoreFactory, MultiScopeStoreWriter::areCollectionsEqual);
 
@@ -204,6 +208,7 @@ class MultiScopeStoreWriterTest {
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, encryptionKey);
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
+        when(cloudEncryptionKeyProvider.getKey(1)).thenReturn(encryptionKey);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
@@ -241,6 +246,7 @@ class MultiScopeStoreWriterTest {
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, encryptionKey);
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
+        when(cloudEncryptionKeyProvider.getKey(1)).thenReturn(encryptionKey);
 
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
