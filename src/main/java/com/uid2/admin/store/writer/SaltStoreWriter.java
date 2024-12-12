@@ -106,6 +106,10 @@ public class SaltStoreWriter {
         fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
 
         // refresh manually
+        refreshProvider();
+    }
+
+    protected void refreshProvider() throws Exception {
         provider.loadContent();
     }
 

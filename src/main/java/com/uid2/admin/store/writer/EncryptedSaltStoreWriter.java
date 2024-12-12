@@ -81,6 +81,11 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     }
 
     @Override
+    protected void refreshProvider() {
+       // we do not need to refresh the provider on encrypted writers
+    }
+
+    @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
         for(RotatingSaltProvider.SaltSnapshot saltSnapshot: (Collection<RotatingSaltProvider.SaltSnapshot>) data) {
             super.upload(saltSnapshot);
