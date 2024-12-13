@@ -30,7 +30,7 @@ public class SaltStoreWriter {
     protected final String saltSnapshotLocationPrefix;
     private final VersionGenerator versionGenerator;
 
-    private final TaggableCloudStorage cloudStorage;
+    protected final TaggableCloudStorage cloudStorage;
 
     private final Map<String, String> currentTags = Map.of("status", "current");
     private final Map<String, String> obsoleteTags = Map.of("status", "obsolete");
@@ -159,7 +159,7 @@ public class SaltStoreWriter {
 
     }
 
-    private void setStatusTagToCurrent(String location) throws CloudStorageException {
+    protected void setStatusTagToCurrent(String location) throws CloudStorageException {
         this.cloudStorage.setTags(location, this.currentTags);
     }
 

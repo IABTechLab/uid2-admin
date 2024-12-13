@@ -38,13 +38,19 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
 
     @Override
     protected java.lang.String getSaltSnapshotLocation(RotatingSaltProvider.SaltSnapshot snapshot) {
-        return scope.resolve(new CloudPath(saltSnapshotLocationPrefix + snapshot.getEffective().toEpochMilli())).toString();
+        return scope.resolve(new CloudPath("salts.txt." + snapshot.getEffective().toEpochMilli())).toString();
     }
 
     @Override
     protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         if (siteId == null) {
             throw new IllegalStateException("Site ID is not set.");
+        }
+
+        if (!cloudStorage.list(location).isEmpty()) {
+            // update the tags on the file to ensure it is still marked as current
+            this.setStatusTagToCurrent(location);
+            return;
         }
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -79,7 +85,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
 
         this.upload(newSaltsFile.toString(), location);
     }
-
+    
     @Override
     protected void refreshProvider() {
        // we do not need to refresh the provider on encrypted writers

@@ -42,8 +42,7 @@ public class SaltStoreFactory implements EncryptedStoreFactory<Collection<Rotati
     @Override
     public StoreWriter<Collection<RotatingSaltProvider.SaltSnapshot>> getEncryptedWriter(Integer siteId, boolean isPublic) {
         EncryptedScope scope = new EncryptedScope(rootMetadatapath, siteId, isPublic);
-        EncryptedRotatingSaltProvider saltProvider = new EncryptedRotatingSaltProvider(taggableCloudStorage,
-                scope.resolve(new CloudPath(config.getString(Const.Config.SaltsMetadataPathProp))).toString(), cloudEncryptionKeyProvider );
+        EncryptedRotatingSaltProvider saltProvider = new EncryptedRotatingSaltProvider(taggableCloudStorage, cloudEncryptionKeyProvider, scope);
         return new EncryptedSaltStoreWriter(config, saltProvider, fileManager, taggableCloudStorage, versionGenerator, scope, cloudEncryptionKeyProvider, siteId);
     }
 
