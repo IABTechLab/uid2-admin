@@ -31,6 +31,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         this.siteId = siteId;
     }
 
+    @Override
     public void upload(String data, JsonObject extraMeta) throws Exception {
         if (siteId == null) {
             throw new IllegalStateException("Site ID is not set.");
