@@ -6,16 +6,12 @@ import com.uid2.shared.auth.EncryptionKeyAcl;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
-import com.uid2.shared.model.EncryptionKey;
-import com.uid2.shared.model.KeysetKey;
-import com.uid2.shared.model.Site;
+import com.uid2.shared.model.*;
+import com.uid2.shared.store.RotatingSaltProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 public class PublicSiteUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteUtil.class);
@@ -123,6 +119,25 @@ public class PublicSiteUtil {
         keysetKeys.forEach(keysetKey -> {
             result.forEach((publicSiteId, publicSiteData) -> {
                 publicSiteData.add(keysetKey);
+            });
+        });
+
+        return result;
+    }
+
+    public static List<Integer> getPublicSaltSites(Collection<OperatorKey> operators) {
+        final PrivateSiteDataMap<RotatingSaltProvider.SaltSnapshot> result = getPublicSitesMap(operators);
+        return result.keySet().stream().toList();
+    }
+
+    public static PrivateSiteDataMap<ClientSideKeypair> getPublicClientKeypairs(
+            Collection<ClientSideKeypair> globalClientSideKeypair,
+            Collection<OperatorKey> operators) {
+        final PrivateSiteDataMap<ClientSideKeypair> result = getPublicSitesMap(operators);
+
+        globalClientSideKeypair.forEach(clientSideKeypair -> {
+            result.forEach((publicSiteId, publicSiteData) -> {
+                publicSiteData.add(clientSideKeypair);
             });
         });
 

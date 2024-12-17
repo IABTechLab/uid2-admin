@@ -33,7 +33,7 @@ public class ClientKeyEncryptionJob extends Job {
     public void execute() throws Exception {
         PrivateSiteDataMap<LegacyClientKey> desiredPrivateState = PrivateSiteUtil.getClientKeys(globalOperators, globalClientKeys);
         multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, null);
-        PrivateSiteDataMap<LegacyClientKey> desiredPublicState = PublicSiteUtil.getPublicClients(globalClientKeys,globalOperators);
+        PrivateSiteDataMap<LegacyClientKey> desiredPublicState = PublicSiteUtil.getPublicClients(globalClientKeys, globalOperators);
         multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
     }
 }

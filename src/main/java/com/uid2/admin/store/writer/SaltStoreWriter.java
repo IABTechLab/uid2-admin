@@ -16,6 +16,7 @@ import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +27,10 @@ public class SaltStoreWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltStoreWriter.class);
     private final RotatingSaltProvider provider;
     private final FileManager fileManager;
-    private final String saltSnapshotLocationPrefix;
+    protected final String saltSnapshotLocationPrefix;
     private final VersionGenerator versionGenerator;
 
-    private final TaggableCloudStorage cloudStorage;
+    protected final TaggableCloudStorage cloudStorage;
 
     private final Map<String, String> currentTags = Map.of("status", "current");
     private final Map<String, String> obsoleteTags = Map.of("status", "obsolete");
@@ -46,7 +47,16 @@ public class SaltStoreWriter {
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
 
-        final JsonObject metadata = provider.getMetadata();
+        JsonObject metadata = null;
+        try {
+            metadata = provider.getMetadata();
+        } catch (CloudStorageException e) {
+            if (e.getMessage().contains("The specified key does not exist")) {
+                metadata = new JsonObject();
+            } else {
+                throw e;
+            }
+        }
         // bump up metadata version
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
@@ -54,9 +64,16 @@ public class SaltStoreWriter {
         final JsonArray snapshotsMetadata = new JsonArray();
         metadata.put("salts", snapshotsMetadata);
 
-        final List<RotatingSaltProvider.SaltSnapshot> snapshots = Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
-                .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                .collect(Collectors.toList());
+        List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
+
+        if (currentSnapshots != null) {
+            snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
+                    .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
+                    .collect(Collectors.toList());
+        } else {
+            snapshots = List.of(data);
+        }
         // of the currently effective snapshots keep only the most recent one
         RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
                 .filter(snapshot -> snapshot.isEffective(now))
@@ -89,6 +106,10 @@ public class SaltStoreWriter {
         fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
 
         // refresh manually
+        refreshProvider();
+    }
+
+    protected void refreshProvider() throws Exception {
         provider.loadContent();
     }
 
@@ -111,11 +132,11 @@ public class SaltStoreWriter {
         });
     }
 
-    private String getSaltSnapshotLocation(RotatingSaltProvider.SaltSnapshot snapshot) {
+    protected String getSaltSnapshotLocation(RotatingSaltProvider.SaltSnapshot snapshot) {
         return saltSnapshotLocationPrefix + snapshot.getEffective().toEpochMilli();
     }
 
-    private void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
+    protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         // do not overwrite existing files
         if (!cloudStorage.list(location).isEmpty()) {
             // update the tags on the file to ensure it is still marked as current
@@ -130,10 +151,15 @@ public class SaltStoreWriter {
             }
         }
 
-        cloudStorage.upload(newSaltsFile.toString(), location, this.currentTags);
+        this.upload(newSaltsFile.toString(), location);
     }
 
-    private void setStatusTagToCurrent(String location) throws CloudStorageException {
+    protected void upload(String data, String location) throws Exception {
+        cloudStorage.upload(data, location, this.currentTags);
+
+    }
+
+    protected void setStatusTagToCurrent(String location) throws CloudStorageException {
         this.cloudStorage.setTags(location, this.currentTags);
     }
 
