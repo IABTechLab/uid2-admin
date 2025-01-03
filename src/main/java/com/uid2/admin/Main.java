@@ -22,6 +22,7 @@ import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
+import com.uid2.admin.vertx.Endpoints;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.api.V2RouterModule;
@@ -424,7 +425,7 @@ public class Main {
                     // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
                     .meterFilter(new PrometheusRenameFilter())
                     .meterFilter(MeterFilter.replaceTagValues(Label.HTTP_PATH.toString(),
-                            actualPath -> HTTPPathMetricFilter.filterPath(actualPath, Set.of())))
+                            actualPath -> HTTPPathMetricFilter.filterPath(actualPath, Endpoints.pathSet())))
                     // adding common labels
                     .commonTags("application", "uid2-admin");
 
