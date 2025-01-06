@@ -12,7 +12,7 @@ public enum Endpoints {
     API_CLIENT_KEYID("/api/client/keyId"),
     API_CLIENT_CONTACT("/api/client/contact"),
     API_CLIENT_REVEAL("/api/client/reveal"),
-    API_CLIENT_ADD("/api/client/list/add"),
+    API_CLIENT_ADD("/api/client/add"),
     API_CLIENT_DEL("/api/client/del"),
     API_CLIENT_UPDATE("/api/client/update"),
     API_CLIENT_DISABLE("/api/client/disable"),
