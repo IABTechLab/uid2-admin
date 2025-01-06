@@ -22,6 +22,7 @@ import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.*;
 import com.uid2.admin.vertx.AdminVerticle;
+import com.uid2.admin.vertx.Endpoints;
 import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.vertx.api.V2RouterModule;
@@ -42,6 +43,7 @@ import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
 import com.uid2.shared.store.scope.GlobalScope;
+import com.uid2.shared.util.HTTPPathMetricFilter;
 import com.uid2.shared.vertx.VertxUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -422,13 +424,8 @@ public class Main {
             prometheusRegistry.config()
                     // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
                     .meterFilter(new PrometheusRenameFilter())
-                    .meterFilter(MeterFilter.replaceTagValues(Label.HTTP_PATH.toString(), actualPath -> {
-                        try {
-                            return HttpUtils.normalizePath(actualPath).split("\\?")[0];
-                        } catch (IllegalArgumentException e) {
-                            return actualPath;
-                        }
-                    }))
+                    .meterFilter(MeterFilter.replaceTagValues(Label.HTTP_PATH.toString(),
+                            actualPath -> HTTPPathMetricFilter.filterPath(actualPath, Endpoints.pathSet())))
                     // adding common labels
                     .commonTags("application", "uid2-admin");
 
