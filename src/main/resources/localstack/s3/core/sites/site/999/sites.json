@@ -1,0 +1,18 @@
+[
+  {
+    "id" : 999,
+    "name" : "Special",
+    "description" : "A special description",
+    "enabled" : true,
+    "clientTypes" : [
+      "DSP",
+      "ADVERTISER",
+      "PUBLISHER",
+      "DATA_PROVIDER"
+    ],
+    "domain_names" : [ ],
+    "app_names" : [ ],
+    "visible" : true,
+    "created" : 0
+  }
+]

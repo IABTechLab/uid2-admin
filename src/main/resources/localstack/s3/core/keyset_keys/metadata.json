@@ -1,8 +1,8 @@
 {
-  "version" : 1,
-  "generated" : 1689093112,
+  "version" : 1736454748519,
+  "generated" : 1736454748,
   "system_key_id" : 1,
-  "max_key_id" : 0,
+  "max_key_id" : 20,
   "keyset_keys" : {
     "location" : "keyset_keys/keyset_keys.json"
   }

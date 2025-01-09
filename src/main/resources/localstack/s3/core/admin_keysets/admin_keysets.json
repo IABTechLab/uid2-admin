@@ -1,1 +1,181 @@
-[]
+[ {
+  "keyset" : {
+    "name" : "Master keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : -1,
+    "site_id" : -1,
+    "allowed_sites" : [ 999, 123, 124, 125, 126, 127 ]
+  },
+  "allowedSites" : [ 999, 123, 124, 125, 126, 127 ],
+  "created" : 1617149276,
+  "siteId" : -1,
+  "keysetId" : -1,
+  "name" : "Master keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Refresh keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : -2,
+    "site_id" : -2,
+    "allowed_sites" : [ 999, 123, 124, 125, 126, 127 ]
+  },
+  "allowedSites" : [ 999, 123, 124, 125, 126, 127 ],
+  "created" : 1617149276,
+  "siteId" : -2,
+  "keysetId" : -2,
+  "name" : "Refresh keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Fallback Publisher keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 2,
+    "site_id" : 2,
+    "allowed_sites" : [ 999, 123, 124, 125, 126, 127 ]
+  },
+  "allowedSites" : [ 999, 123, 124, 125, 126, 127 ],
+  "created" : 1617149276,
+  "siteId" : 2,
+  "keysetId" : 2,
+  "name" : "Fallback Publisher keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Special keyset",
+    "created" : 1701210253,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 999,
+    "site_id" : 999,
+    "allowed_sites" : [ 1000 ]
+  },
+  "allowedSites" : [ 1000 ],
+  "created" : 1701210253,
+  "siteId" : 999,
+  "keysetId" : 999,
+  "name" : "Special keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Legacy Site keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 1000,
+    "site_id" : 1000,
+    "allowed_sites" : [ 999 ]
+  },
+  "allowedSites" : [ 999 ],
+  "created" : 1617149276,
+  "siteId" : 1000,
+  "keysetId" : 1000,
+  "name" : "Legacy Site keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "DSP keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 123,
+    "site_id" : 123,
+    "allowed_sites" : [ ]
+  },
+  "allowedSites" : [ ],
+  "created" : 1617149276,
+  "siteId" : 123,
+  "keysetId" : 123,
+  "name" : "DSP keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Publisher keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 124,
+    "site_id" : 124,
+    "allowed_sites" : [ 123 ]
+  },
+  "allowedSites" : [ 123 ],
+  "created" : 1617149276,
+  "siteId" : 124,
+  "keysetId" : 124,
+  "name" : "Publisher keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Data Provider keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 125,
+    "site_id" : 125,
+    "allowed_sites" : [ ]
+  },
+  "allowedSites" : [ ],
+  "created" : 1617149276,
+  "siteId" : 125,
+  "keysetId" : 125,
+  "name" : "Data Provider keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "Advertiser keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 126,
+    "site_id" : 126,
+    "allowed_sites" : [ 126 ]
+  },
+  "allowedSites" : [ 126 ],
+  "created" : 1617149276,
+  "siteId" : 126,
+  "keysetId" : 126,
+  "name" : "Advertiser keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+}, {
+  "keyset" : {
+    "name" : "OptOut keyset",
+    "created" : 1617149276,
+    "enabled" : true,
+    "default" : true,
+    "keyset_id" : 127,
+    "site_id" : 127,
+    "allowed_sites" : [ ]
+  },
+  "allowedSites" : [ ],
+  "created" : 1617149276,
+  "siteId" : 127,
+  "keysetId" : 127,
+  "name" : "OptOut keyset",
+  "enabled" : true,
+  "default" : true,
+  "allowed_types" : [ ]
+} ]

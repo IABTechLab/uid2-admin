@@ -1,0 +1,21 @@
+[
+  {
+    "id" : 124,
+    "name" : "Publisher",
+    "description" : "",
+    "enabled" : true,
+    "clientTypes" : [
+      "PUBLISHER"
+    ],
+    "domain_names" : [
+      "example.com"
+    ],
+    "app_names" : [
+      "123456789",
+      "com.123.Game.App.android",
+      "com.123.Game.App.ios"
+    ],
+    "visible" : true,
+    "created" : 0
+  }
+]
