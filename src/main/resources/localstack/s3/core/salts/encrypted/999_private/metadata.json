@@ -1,0 +1,10 @@
+{
+  "version" : 1736454750981,
+  "generated" : 1736454750,
+  "salts" : [ {
+    "effective" : 1670796729291,
+    "expires" : 1766125493000,
+    "location" : "salts/encrypted/999_private/salts.txt.1670796729291",
+    "size" : 2
+  } ]
+}

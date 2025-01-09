@@ -1,0 +1,42 @@
+[
+  {
+    "key" : "LOCALbGlvbnVuZGVybGluZXdpbmRzY2FyZWRzb2Z0ZGVzZXI=",
+    "key_hash" : "OPIi+MWKNz41wzu+atsBLAtXDTLFhLWPq5mCxA3L8anX+fjKaVDAf55D98BSLAh/EFQE/xTQyo/YK5snPS8ivA==",
+    "key_salt" : "FpgbvHGqpVhi3I/b8/9HnguiycUzb2y+KsdicPpNLJI=",
+    "secret" : "c3RlZXBzcGVuZHNsb3BlZnJlcXVlbnRseWRvd2lkZWM=",
+    "name" : "Special (Legacy Key)",
+    "contact" : "Special (Legacy Key)",
+    "created" : 1701210253,
+    "roles" : [
+      "MAPPER",
+      "OPTOUT",
+      "ID_READER",
+      "GENERATOR",
+      "SHARER"
+    ],
+    "site_id" : 999,
+    "disabled" : false,
+    "service_id" : 0,
+    "key_id" : "LOCALbGlvb"
+  },
+  {
+    "key" : "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=",
+    "key_hash" : "fsSGnDxa/V9eJZ9Tas+dowwyO/X1UsC68RN9qM2xUu9ZOaKEOv9EVd7pkt3As/nE5B6TRu0PzK+IDzSQhD1+rw==",
+    "key_salt" : "jySwjjqo9O6OU01OWujBWC6xZNpBqRTk5H7K2borcFA=",
+    "secret" : "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=",
+    "name" : "Special",
+    "contact" : "Special",
+    "created" : 1701210253,
+    "roles" : [
+      "MAPPER",
+      "OPTOUT",
+      "ID_READER",
+      "GENERATOR",
+      "SHARER"
+    ],
+    "site_id" : 999,
+    "disabled" : false,
+    "service_id" : 0,
+    "key_id" : "UID2-C-L-999-fCXrM"
+  }
+]

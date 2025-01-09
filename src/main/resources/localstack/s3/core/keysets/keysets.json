@@ -1,93 +1,81 @@
-[
-  {
-    "keyset_id": -1,
-    "site_id": -1,
-    "name" : "Master keyset",
-    "allowed_sites" : [999, 123, 124, 125, 126, 127],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": -2,
-    "site_id": -2,
-    "name" : "Refresh keyset",
-    "allowed_sites" : [999, 123, 124, 125, 126, 127],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 2,
-    "site_id": 2,
-    "name" : "Fallback Publisher keyset",
-    "allowed_sites" : [999, 123, 124, 125, 126, 127],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 999,
-    "site_id": 999,
-    "name" : "Special keyset",
-    "allowed_sites" : [1000],
-    "created" : 1701210253,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 123,
-    "site_id": 123,
-    "name" : "DSP keyset",
-    "allowed_sites" : [],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-
-  },
-  {
-    "keyset_id": 124,
-    "site_id": 124,
-    "name" : "Publisher keyset",
-    "allowed_sites" : [123],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 125,
-    "site_id": 125,
-    "name" : "Data Provider keyset",
-    "allowed_sites" : [],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 126,
-    "site_id": 126,
-    "name" : "Advertiser keyset",
-    "allowed_sites" : [126],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 127,
-    "site_id": 127,
-    "name" : "OptOut keyset",
-    "allowed_sites" : [],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  },
-  {
-    "keyset_id": 1000,
-    "site_id": 1000,
-    "name" : "Legacy Site keyset",
-    "allowed_sites" : [999],
-    "created" : 1617149276,
-    "enabled" : true,
-    "default" : true
-  }
-]
+[ {
+  "name" : "Master keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : -1,
+  "site_id" : -1,
+  "allowed_sites" : [ 999, 123, 124, 125, 126, 127 ]
+}, {
+  "name" : "Refresh keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : -2,
+  "site_id" : -2,
+  "allowed_sites" : [ 999, 123, 124, 125, 126, 127 ]
+}, {
+  "name" : "Fallback Publisher keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 2,
+  "site_id" : 2,
+  "allowed_sites" : [ 999, 123, 124, 125, 126, 127 ]
+}, {
+  "name" : "Special keyset",
+  "created" : 1701210253,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 999,
+  "site_id" : 999,
+  "allowed_sites" : [ 1000 ]
+}, {
+  "name" : "Legacy Site keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 1000,
+  "site_id" : 1000,
+  "allowed_sites" : [ 999 ]
+}, {
+  "name" : "DSP keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 123,
+  "site_id" : 123,
+  "allowed_sites" : [ ]
+}, {
+  "name" : "Publisher keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 124,
+  "site_id" : 124,
+  "allowed_sites" : [ 123 ]
+}, {
+  "name" : "Data Provider keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 125,
+  "site_id" : 125,
+  "allowed_sites" : [ ]
+}, {
+  "name" : "Advertiser keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 126,
+  "site_id" : 126,
+  "allowed_sites" : [ 126 ]
+}, {
+  "name" : "OptOut keyset",
+  "created" : 1617149276,
+  "enabled" : true,
+  "default" : true,
+  "keyset_id" : 127,
+  "site_id" : 127,
+  "allowed_sites" : [ ]
+} ]
