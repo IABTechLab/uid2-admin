@@ -8,6 +8,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.common.template.TemplateEngine;
@@ -25,6 +26,7 @@ import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
+    public static final long MAX_REQUEST_BODY_SIZE = 1 << 20; // 1MB
 
     private final JsonObject config;
     private final AuthProvider authProvider;
@@ -48,7 +50,7 @@ public class AdminVerticle extends AbstractVerticle {
         final Router router = createRoutesSetup();
         final int portOffset = Utils.getPortOffset();
         final int port = Const.Port.ServicePortForAdmin + portOffset;
-        vertx.createHttpServer()
+        vertx.createHttpServer(new HttpServerOptions().setMaxFormBufferedBytes((int) MAX_REQUEST_BODY_SIZE))
                 .requestHandler(router)
                 .listen(port)
                 .onSuccess(server -> {
