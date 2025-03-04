@@ -70,7 +70,6 @@ public class SaltStoreWriter {
         final JsonArray snapshotsMetadata = new JsonArray();
         metadata.put("salts", snapshotsMetadata);
 
-        List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
         List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
 
         // of the currently effective snapshots keep only the most recent one
