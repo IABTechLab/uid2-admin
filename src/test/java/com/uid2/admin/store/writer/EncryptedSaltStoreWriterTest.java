@@ -107,20 +107,34 @@ public class EncryptedSaltStoreWriterTest {
 
     @Test
     public void testUploadNew() throws Exception {
-        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.now(), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 10000), 1000000);
+        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.ofEpochMilli(1740607938167L), Instant.ofEpochMilli(1741212738167L), 1000000);
 
         when(rotatingSaltProvider.getMetadata()).thenThrow(new CloudStorageException("The specified key does not exist: AmazonS3Exception: test-core-bucket"));
         when(rotatingSaltProvider.getSnapshots()).thenReturn(null);
 
         when(taggableCloudStorage.list(anyString())).thenReturn(new ArrayList<>());
 
+        ArgumentCaptor<JsonObject> metadataCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<CloudPath> locationCaptor = ArgumentCaptor.forClass(CloudPath.class);
+
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
 
         encryptedSaltStoreWriter.upload(snapshot);
+        verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
-        verify(taggableCloudStorage).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
-        assertEquals(cloudPathCaptor.getValue(), "test/path");
+        // Capture the metadata
+        JsonObject capturedMetadata = metadataCaptor.getValue();
+        assertEquals(1, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain exactly 1 item");
+        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(Instant.ofEpochMilli(1740694476392L), Instant.ofEpochMilli(1741299276392L), 1000000);
+        encryptedSaltStoreWriter.upload(snapshot2);
+
+        verify(fileManager,times(2)).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
+        capturedMetadata = metadataCaptor.getValue();
+        assertEquals(2, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain 2 items");
+
+        verify(taggableCloudStorage,times(3)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
 
         verifyFile(pathCaptor.getValue(), snapshot);
     }
