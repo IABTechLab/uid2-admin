@@ -18,13 +18,17 @@ import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.List;
 
 public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
+
+    private final List<RotatingSaltProvider.SaltSnapshot> previousSeenSnapshots = new ArrayList<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedSaltStoreWriter.class);
     public EncryptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
@@ -89,6 +93,16 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     @Override
     protected void refreshProvider() {
        // we do not need to refresh the provider on encrypted writers
+    }
+
+    @Override
+    protected List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
+    /*
+    Since metadata.json is overwritten during the process, we maintain a history of all snapshots seen so far.
+    On the final write, we append this history to metadata.json to ensure no snapshots are lost.
+    */
+        this.previousSeenSnapshots.add(data);
+        return this.previousSeenSnapshots;
     }
 
     @Override

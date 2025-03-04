@@ -43,6 +43,12 @@ public class SaltStoreWriter {
         this.versionGenerator = versionGenerator;
     }
 
+    protected List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
+        return Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
+                .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
+                .collect(Collectors.toList());
+     }
+
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
@@ -65,15 +71,8 @@ public class SaltStoreWriter {
         metadata.put("salts", snapshotsMetadata);
 
         List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
-        List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
 
-        if (currentSnapshots != null) {
-            snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
-                    .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                    .collect(Collectors.toList());
-        } else {
-            snapshots = List.of(data);
-        }
         // of the currently effective snapshots keep only the most recent one
         RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
                 .filter(snapshot -> snapshot.isEffective(now))
