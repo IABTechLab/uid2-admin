@@ -44,7 +44,15 @@ public class SaltStoreWriter {
     }
 
     protected List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
+        final Instant now = Instant.now();
+        List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
+                .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
+                .collect(Collectors.toList());
+        RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = currentSnapshots.stream()
+                .filter(snapshot -> snapshot.isEffective(now))
+                .reduce((a, b) -> b).orElse(null);
         return Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
+                .filter(snapshot -> newestEffectiveSnapshot == null || snapshot == newestEffectiveSnapshot)
                 .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
                 .collect(Collectors.toList());
      }
@@ -81,13 +89,6 @@ public class SaltStoreWriter {
                 LOGGER.info("Skipping expired snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires());
                 continue;
             }
-
-            if (newestEffectiveSnapshot != null && snapshot != newestEffectiveSnapshot) {
-                LOGGER.info("Skipping effective snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires()
-                        + " in favour of newer snapshot, effective=" + newestEffectiveSnapshot.getEffective() + ", expires=" + newestEffectiveSnapshot.getExpires());
-                continue;
-            }
-            newestEffectiveSnapshot = null;
 
             final String location = getSaltSnapshotLocation(snapshot);
 
