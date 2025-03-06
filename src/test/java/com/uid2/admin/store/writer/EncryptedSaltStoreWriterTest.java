@@ -96,17 +96,15 @@ public class EncryptedSaltStoreWriterTest {
 
     private void verifyFile(String filelocation, RotatingSaltProvider.SaltSnapshot snapshot) throws IOException {
         InputStream encoded = Files.newInputStream(Paths.get(filelocation));
-        String content = new String(encoded.readAllBytes(), StandardCharsets.UTF_8);
-        System.out.println(content);
-//        String contents = decryptInputStream(encoded, rotatingCloudEncryptionKeyProvider);
-//        SaltEntry[] entries = snapshot.getAllRotatingSalts();
-//        Integer idx = 0;
-//        for (String line : contents.split("\n")) {
-//            String[] entrySplit = line.split(",");
-//            assertEquals(entries[idx].getId(), Long.parseLong(entrySplit[0]));
-//            assertEquals(entries[idx].getSalt(), entrySplit[2]);
-//            idx++;
-//        }
+        String contents = decryptInputStream(encoded, rotatingCloudEncryptionKeyProvider);
+        SaltEntry[] entries = snapshot.getAllRotatingSalts();
+        Integer idx = 0;
+        for (String line : contents.split("\n")) {
+            String[] entrySplit = line.split(",");
+            assertEquals(entries[idx].getId(), Long.parseLong(entrySplit[0]));
+            assertEquals(entries[idx].getSalt(), entrySplit[2]);
+            idx++;
+        }
     }
 
     @Test
