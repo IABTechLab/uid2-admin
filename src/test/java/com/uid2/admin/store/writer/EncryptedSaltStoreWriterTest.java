@@ -10,6 +10,7 @@ import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.StoreScope;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -107,21 +109,77 @@ public class EncryptedSaltStoreWriterTest {
 
     @Test
     public void testUploadNew() throws Exception {
-        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.now(), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 10000), 1000000);
-
+        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.ofEpochMilli(1740607938167L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90002), 100);
+        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(Instant.ofEpochMilli(1740694476392L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000), 10);
         when(rotatingSaltProvider.getMetadata()).thenThrow(new CloudStorageException("The specified key does not exist: AmazonS3Exception: test-core-bucket"));
         when(rotatingSaltProvider.getSnapshots()).thenReturn(null);
 
         when(taggableCloudStorage.list(anyString())).thenReturn(new ArrayList<>());
 
+        ArgumentCaptor<JsonObject> metadataCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<CloudPath> locationCaptor = ArgumentCaptor.forClass(CloudPath.class);
+
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
 
         encryptedSaltStoreWriter.upload(snapshot);
+        verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
-        verify(taggableCloudStorage).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
-        assertEquals(cloudPathCaptor.getValue(), "test/path");
+        // Capture the metadata
+        JsonObject capturedMetadata = metadataCaptor.getValue();
+        assertEquals(1, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain exactly 1 item");
+        encryptedSaltStoreWriter.upload(snapshot2);
+
+        verify(fileManager,times(2)).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
+        capturedMetadata = metadataCaptor.getValue();
+        assertEquals(2, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain 2 items");
+
+        verify(taggableCloudStorage,times(3)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
 
         verifyFile(pathCaptor.getValue(), snapshot);
+    }
+
+    @Test
+    public void testUnencryptedAndEncryptedBehavesTheSame() throws Exception {
+        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.ofEpochMilli(1740607938167L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90000), 100);
+        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(Instant.ofEpochMilli(1740694476392L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000), 10);
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = List.of(snapshot, snapshot2);
+
+        when(rotatingSaltProvider.getMetadata()).thenThrow(new CloudStorageException("The specified key does not exist: AmazonS3Exception: test-core-bucket"));
+        when(rotatingSaltProvider.getSnapshots()).thenReturn(snapshots);
+        when(taggableCloudStorage.list(anyString())).thenReturn(new ArrayList<>());
+
+        ArgumentCaptor<JsonObject> metadataCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<CloudPath> locationCaptor = ArgumentCaptor.forClass(CloudPath.class);
+
+        SaltStoreWriter saltStoreWriter = new SaltStoreWriter(config, rotatingSaltProvider,
+                fileManager, taggableCloudStorage, versionGenerator);
+
+        saltStoreWriter.upload(snapshot);
+        verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
+
+        JsonObject capturedMetadata = metadataCaptor.getValue();
+        JsonArray saltsArray = capturedMetadata.getJsonArray("salts");
+        assertEquals(1, saltsArray.size(), "Salts array should have exactly one entry, as other is removed in newest-effective logic");
+        JsonObject salt = saltsArray.getJsonObject(0);
+        assertEquals(1740694476392L, salt.getLong("effective"), "Effective timestamp should match second entry");
+        assertEquals(10, salt.getInteger("size"), "Size should match second entries");
+
+        //Now sending snapshot2 to encrypted to verify that does the same.
+        EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
+                fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
+
+        encryptedSaltStoreWriter.upload(snapshot2);
+
+        verify(fileManager,atLeastOnce()).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
+
+        capturedMetadata = metadataCaptor.getValue();
+        saltsArray = capturedMetadata.getJsonArray("salts");
+        salt = saltsArray.getJsonObject(0);
+        assertEquals(1740694476392L, salt.getLong("effective"), "Effective timestamp should match second entry");
+        assertEquals(10, salt.getInteger("size"), "Size should match second entries");
+        verify(taggableCloudStorage,atLeastOnce()).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
     }
 }
