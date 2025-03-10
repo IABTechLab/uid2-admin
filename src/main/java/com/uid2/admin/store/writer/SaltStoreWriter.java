@@ -16,7 +16,7 @@ import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -48,23 +48,27 @@ public class SaltStoreWriter {
             throw new IllegalStateException("Snapshots cannot be null");
         }
         final Instant now = Instant.now();
-        List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
+        List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
+        snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
                 .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
                 .collect(Collectors.toList());
-        RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = currentSnapshots.stream()
+        RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
                 .filter(snapshot -> snapshot.isEffective(now))
                 .reduce((a, b) -> b).orElse(null);
-        return Stream.concat(provider.getSnapshots().stream(), Stream.of(data))
-                .filter(snapshot -> {
-                    boolean isValid = newestEffectiveSnapshot == null || snapshot == newestEffectiveSnapshot;
-                    if (!isValid) {
+
+        List<RotatingSaltProvider.SaltSnapshot> filteredSnapshots = new ArrayList<>();
+
+        for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
+            if (newestEffectiveSnapshot != null && snapshot != newestEffectiveSnapshot) {
                         LOGGER.info("Skipping effective snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires()
                                 + " in favour of newer snapshot, effective=" + newestEffectiveSnapshot.getEffective() + ", expires=" + newestEffectiveSnapshot.getExpires());
-                    }
-                    return isValid;
-                })
-                .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                .collect(Collectors.toList());
+                continue;
+            }
+            filteredSnapshots.add(snapshot);
+            newestEffectiveSnapshot = null;
+        }
+        return filteredSnapshots;
     }
 
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
