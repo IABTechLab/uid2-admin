@@ -60,6 +60,10 @@ public class SaltStoreWriter {
         List<RotatingSaltProvider.SaltSnapshot> filteredSnapshots = new ArrayList<>();
 
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
+            if (!now.isBefore(snapshot.getExpires())) {
+                LOGGER.info("Skipping expired snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires());
+                continue;
+            }
             if (newestEffectiveSnapshot != null && snapshot != newestEffectiveSnapshot) {
                         LOGGER.info("Skipping effective snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires()
                                 + " in favour of newer snapshot, effective=" + newestEffectiveSnapshot.getEffective() + ", expires=" + newestEffectiveSnapshot.getExpires());
@@ -95,13 +99,7 @@ public class SaltStoreWriter {
         List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
 
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
-            if (!now.isBefore(snapshot.getExpires())) {
-                LOGGER.info("Skipping expired snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires());
-                continue;
-            }
-
             final String location = getSaltSnapshotLocation(snapshot);
-
             final JsonObject snapshotMetadata = new JsonObject();
             snapshotMetadata.put("effective", snapshot.getEffective().toEpochMilli());
             snapshotMetadata.put("expires", snapshot.getExpires().toEpochMilli());
