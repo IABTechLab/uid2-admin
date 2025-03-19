@@ -128,21 +128,5 @@
     "key_hash": "rx3SYxt2PdnIIbhGMc0Cue3/JTk9WwyDiMMOp5WiU6pXbdkhjZ+BxgIChzMMZeLqAi/E4G5XZHMFnOe8Zzx3jg==",
     "key_salt": "0L8h9CSPfDFEHurZZ33OOogd26zSjApBTWLmYHtauC8=",
     "key_id": "UID2-O-L-127-pDqph"
-  },
-  {
-    "key": "UID2-O-L-124-xLZElr.QQ4UoUtg/1BcAw27O//HRBuxEWXv/nOQc4j6k=",
-    "key_hash": "nteJZFdETvxwYVD1ahPlATuSYWt3BHtmJqUumLQLXXCD0/rU4WnNpOeLHMVViYPKSpyTBLfYqL7ce6PHZiVPrQ==",
-    "key_salt": "+iBSy933XDw8X4j/N0ktbr7Mw4NaZvIsMF2Xdy7DQK8=",
-    "name": "dev-test-aks",
-    "contact": "dev-test-aks",
-    "protocol": "azure-cc-aks",
-    "created": 1738641691,
-    "disabled": false,
-    "site_id": 124,
-    "roles": [
-      "OPERATOR"
-    ],
-    "operator_type": "PRIVATE",
-    "key_id": "UID2-O-L-124-xLZEl"
   }
 ]

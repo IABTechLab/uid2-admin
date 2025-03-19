@@ -73,7 +73,7 @@ public class EnclaveIdServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"aws-nitro", "azure-cc", "gcp-oidc", "azure-cc-aks"})
+    @ValueSource(strings = {"aws-nitro", "azure-cc", "gcp-oidc"})
     public void enclaveId_Add_Success(String protocol, Vertx vertx, VertxTestContext vertxTestContext) {
         fakeAuth(Role.PRIVILEGED);
 
