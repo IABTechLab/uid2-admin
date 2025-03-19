@@ -7,6 +7,7 @@ import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,10 +23,68 @@ public class CloudEncryptionKeyManager {
     private final CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
     private final IKeyGenerator keyGenerator;
 
-    public CloudEncryptionKeyManager(RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider, CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter, IKeyGenerator keyGenerator) {
+    public CloudEncryptionKeyManager(
+            RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider,
+            CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter,
+            IKeyGenerator keyGenerator
+    ) {
         this.RotatingCloudEncryptionKeyProvider = RotatingCloudEncryptionKeyProvider;
         this.cloudEncryptionKeyStoreWriter = cloudEncryptionKeyStoreWriter;
         this.keyGenerator = keyGenerator;
+    }
+
+    // Ensures there are `keyCountPerSite` sites for each site corresponding of operatorKeys. If there are less - create new ones.
+    // Give all new keys for each site `activationInterval` seconds between activations, starting now
+    public void generateKeysForOperators(
+            Collection<OperatorKey> operatorKeys,
+            long activationInterval,
+            int keyCountPerSite
+    ) throws Exception {
+        this.RotatingCloudEncryptionKeyProvider.loadContent();
+
+        if (operatorKeys == null || operatorKeys.isEmpty()) {
+            throw new IllegalArgumentException("Operator keys collection must not be null or empty");
+        }
+        if (activationInterval <= 0) {
+            throw new IllegalArgumentException("Key activate interval must be greater than zero");
+        }
+        if (keyCountPerSite <= 0) {
+            throw new IllegalArgumentException("Key count per site must be greater than zero");
+        }
+
+        for (Integer siteId : uniqueSiteIdsForOperators(operatorKeys)) {
+            ensureEnoughKeysForSite(activationInterval, keyCountPerSite, siteId);
+        }
+    }
+
+    private void ensureEnoughKeysForSite(long activationInterval, int keyCountPerSite, Integer siteId) throws Exception {
+        // Check if the site ID already exists in the S3 key provider and has fewer than the required number of keys
+        int currentKeyCount = countKeysForSite(siteId);
+        if (currentKeyCount >= keyCountPerSite) {
+            LOGGER.info("Site ID {} already has the required number of keys. Skipping key generation.", siteId);
+            return;
+        }
+
+        int keysToGenerate = keyCountPerSite - currentKeyCount;
+        for (int i = 0; i < keysToGenerate; i++) {
+            addKey(activationInterval, siteId, i);
+        }
+        LOGGER.info("Generated {} keys for site ID {}", keysToGenerate, siteId);
+    }
+
+    private void addKey(long keyActivateInterval, Integer siteId, int keyIndex) throws Exception {
+        long created = Instant.now().getEpochSecond();
+        long activated = created + (keyIndex * keyActivateInterval);
+        CloudEncryptionKey cloudEncryptionKey = generateCloudEncryptionKey(siteId, activated, created);
+        addCloudEncryptionKey(cloudEncryptionKey);
+    }
+
+    private static Set<Integer> uniqueSiteIdsForOperators(Collection<OperatorKey> operatorKeys) {
+        Set<Integer> uniqueSiteIds = new HashSet<>();
+        for (OperatorKey operatorKey : operatorKeys) {
+            uniqueSiteIds.add(operatorKey.getSiteId());
+        }
+        return uniqueSiteIds;
     }
 
     CloudEncryptionKey generateCloudEncryptionKey(int siteId, long activates, long created) throws Exception {
@@ -53,8 +112,9 @@ public class CloudEncryptionKeyManager {
         return cloudEncryptionKeys.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
-    // Method to create and upload an S3 key that activates immediately for a specific site, for emergency rotation
-    public CloudEncryptionKey createAndAddImmediate3Key(int siteId) throws Exception {
+    // Used in test only
+    // Creates and uploads a CloudEncryptionKey that activates immediately for a specific sites, for emergency rotation
+    CloudEncryptionKey createAndAddImmediateCloudEncryptionKey(int siteId) throws Exception {
         int newKeyId = getNextKeyId();
         long created = Instant.now().getEpochSecond();
         CloudEncryptionKey newKey = new CloudEncryptionKey(newKeyId, siteId, created, created, generateSecret());
@@ -62,27 +122,32 @@ public class CloudEncryptionKeyManager {
         return newKey;
     }
 
-    public CloudEncryptionKey getCloudEncryptionKeyByKeyIdentifier(int keyIdentifier) {
+    // Used in test only
+    CloudEncryptionKey getCloudEncryptionKeyByKeyIdentifier(int keyIdentifier) {
         return RotatingCloudEncryptionKeyProvider.getAll().get(keyIdentifier);
     }
 
-    public Optional<CloudEncryptionKey> getCloudEncryptionKeyBySiteId(int siteId) {
+    // Used in test only
+    Optional<CloudEncryptionKey> getCloudEncryptionKeyBySiteId(int siteId) {
         return RotatingCloudEncryptionKeyProvider.getAll().values().stream()
                 .filter(key -> key.getSiteId() == siteId)
                 .findFirst();
     }
 
-    public List<CloudEncryptionKey> getAllCloudEncryptionKeysBySiteId(int siteId) {
+    // Used in test only
+    List<CloudEncryptionKey> getAllCloudEncryptionKeysBySiteId(int siteId) {
         return RotatingCloudEncryptionKeyProvider.getAll().values().stream()
                 .filter(key -> key.getSiteId() == siteId)
                 .collect(Collectors.toList());
     }
 
-    public Map<Integer, CloudEncryptionKey> getAllCloudEncryptionKeys() {
+    // Used in test only
+    Map<Integer, CloudEncryptionKey> getAllCloudEncryptionKeys() {
         return RotatingCloudEncryptionKeyProvider.getAll();
     }
 
-    public boolean doesSiteHaveKeys(int siteId) {
+    // Used in test only
+    boolean doesSiteHaveKeys(int siteId) {
         Map<Integer, CloudEncryptionKey> allKeys = RotatingCloudEncryptionKeyProvider.getAll();
         if (allKeys == null) {
             return false;
@@ -93,42 +158,5 @@ public class CloudEncryptionKeyManager {
     int countKeysForSite(int siteId) {
         Map<Integer, CloudEncryptionKey> allKeys = RotatingCloudEncryptionKeyProvider.getAll();
         return (int) allKeys.values().stream().filter(key -> key.getSiteId() == siteId).count();
-    }
-
-    public void generateKeysForOperators(Collection<OperatorKey> operatorKeys, long keyActivateInterval, int keyCountPerSite) throws Exception {
-        this.RotatingCloudEncryptionKeyProvider.loadContent();
-
-        if (operatorKeys == null || operatorKeys.isEmpty()) {
-            throw new IllegalArgumentException("Operator keys collection must not be null or empty");
-        }
-        if (keyActivateInterval <= 0) {
-            throw new IllegalArgumentException("Key activate interval must be greater than zero");
-        }
-        if (keyCountPerSite <= 0) {
-            throw new IllegalArgumentException("Key count per site must be greater than zero");
-        }
-
-        // Extract all the unique site IDs from input operator keys collection
-        Set<Integer> uniqueSiteIds = new HashSet<>();
-        for (OperatorKey operatorKey : operatorKeys) {
-            uniqueSiteIds.add(operatorKey.getSiteId());
-        }
-
-        for (Integer siteId : uniqueSiteIds) {
-            // Check if the site ID already exists in the S3 key provider and has fewer than the required number of keys
-            int currentKeyCount = countKeysForSite(siteId);
-            if (currentKeyCount < keyCountPerSite) {
-                int keysToGenerate = keyCountPerSite - currentKeyCount;
-                for (int i = 0; i < keysToGenerate; i++) {
-                    long created = Instant.now().getEpochSecond();
-                    long activated = created + (i * keyActivateInterval);
-                    CloudEncryptionKey cloudEncryptionKey = generateCloudEncryptionKey(siteId, activated, created);
-                    addCloudEncryptionKey(cloudEncryptionKey);
-                }
-                LOGGER.info("Generated " + keysToGenerate + " keys for site ID " + siteId);
-            } else {
-                LOGGER.info("Site ID " + siteId + " already has the required number of keys. Skipping key generation.");
-            }
-        }
     }
 }

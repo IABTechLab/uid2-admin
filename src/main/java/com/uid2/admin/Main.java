@@ -288,7 +288,11 @@ public class Main {
             }
 
             synchronized (writeLock) {
-                cloudEncryptionKeyManager.generateKeysForOperators(operatorKeyProvider.getAll(), config.getLong("cloud_encryption_key_activates_in_seconds"), config.getInteger("cloud_encryption_key_count_per_site"));
+                cloudEncryptionKeyManager.generateKeysForOperators(
+                        operatorKeyProvider.getAll(),
+                        config.getLong("cloud_encryption_key_activates_in_seconds"),
+                        config.getInteger("cloud_encryption_key_count_per_site")
+                );
                 RotatingCloudEncryptionKeyProvider.loadContent();
             }
 
