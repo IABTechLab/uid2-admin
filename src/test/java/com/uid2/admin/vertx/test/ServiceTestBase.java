@@ -10,6 +10,7 @@ import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.IEncryptionKeyManager;
+import com.uid2.admin.vertx.Endpoints;
 import com.uid2.shared.model.*;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.secret.IKeysetKeyManager;
@@ -38,6 +39,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,56 +60,99 @@ public abstract class ServiceTestBase {
     protected final WriteLock writeLock = new WriteLock();
 
     protected AdminAuthMiddleware auth;
-    @Mock private TokenRefreshHandler tokenRefreshHandler;
-    @Mock private IdTokenVerifier idTokenVerifier;
-    @Mock private AccessTokenVerifier accessTokenVerifier;
-    @Mock private Jwt jwt;
-    @Mock protected AuthenticationHandler authHandler;
-    @Mock protected AuthProvider authProvider;
+    @Mock
+    private TokenRefreshHandler tokenRefreshHandler;
+    @Mock
+    private IdTokenVerifier idTokenVerifier;
+    @Mock
+    private AccessTokenVerifier accessTokenVerifier;
+    @Mock
+    private Jwt jwt;
+    @Mock
+    protected AuthenticationHandler authHandler;
+    @Mock
+    protected AuthProvider authProvider;
 
-    @Mock protected StoreWriter storeWriter;
-    @Mock protected LegacyClientKeyStoreWriter clientKeyStoreWriter;
-    @Mock protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
-    @Mock protected KeysetKeyStoreWriter keysetKeyStoreWriter;
-    @Mock protected ClientSideKeypairStoreWriter keypairStoreWriter;
-    @Mock protected ServiceStoreWriter serviceStoreWriter;
-    @Mock protected ServiceLinkStoreWriter serviceLinkStoreWriter;
-    @Mock protected KeyAclStoreWriter keyAclStoreWriter;
-    @Mock protected KeysetStoreWriter keysetStoreWriter;
-    @Mock protected AdminKeysetWriter adminKeysetWriter;
-    @Mock protected OperatorKeyStoreWriter operatorKeyStoreWriter;
-    @Mock protected EnclaveStoreWriter enclaveStoreWriter;
-    @Mock protected SaltStoreWriter saltStoreWriter;
-    @Mock protected PartnerStoreWriter partnerStoreWriter;
+    @Mock
+    protected StoreWriter storeWriter;
+    @Mock
+    protected LegacyClientKeyStoreWriter clientKeyStoreWriter;
+    @Mock
+    protected EncryptionKeyStoreWriter encryptionKeyStoreWriter;
+    @Mock
+    protected KeysetKeyStoreWriter keysetKeyStoreWriter;
+    @Mock
+    protected ClientSideKeypairStoreWriter keypairStoreWriter;
+    @Mock
+    protected ServiceStoreWriter serviceStoreWriter;
+    @Mock
+    protected ServiceLinkStoreWriter serviceLinkStoreWriter;
+    @Mock
+    protected KeyAclStoreWriter keyAclStoreWriter;
+    @Mock
+    protected KeysetStoreWriter keysetStoreWriter;
+    @Mock
+    protected AdminKeysetWriter adminKeysetWriter;
+    @Mock
+    protected OperatorKeyStoreWriter operatorKeyStoreWriter;
+    @Mock
+    protected EnclaveStoreWriter enclaveStoreWriter;
+    @Mock
+    protected SaltStoreWriter saltStoreWriter;
+    @Mock
+    protected PartnerStoreWriter partnerStoreWriter;
 
-    @Mock protected IEncryptionKeyManager keyManager;
-    @Mock protected KeysetManager keysetManager;
-    @Mock protected IKeysetKeyManager keysetKeyManager;
-    @Mock protected RotatingSiteStore siteProvider;
-    @Mock protected RotatingLegacyClientKeyProvider clientKeyProvider;
-    @Mock protected RotatingKeyStore keyProvider;
-    @Mock protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
-    @Mock protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
-    @Mock protected RotatingKeyAclProvider keyAclProvider;
-    @Mock protected RotatingKeysetProvider keysetProvider;
-    @Mock protected RotatingAdminKeysetStore adminKeysetProvider;
-    @Mock protected RotatingKeysetKeyStore keysetKeyProvider;
-    @Mock protected RotatingClientSideKeypairStore keypairProvider;
-    @Mock protected RotatingServiceStore serviceProvider;
-    @Mock protected RotatingServiceLinkStore serviceLinkProvider;
-    @Mock protected KeysetSnapshot keysetSnapshot;
-    @Mock protected AdminKeysetSnapshot adminKeysetSnapshot;
-    @Mock protected AclSnapshot keyAclProviderSnapshot;
-    @Mock protected RotatingOperatorKeyProvider operatorKeyProvider;
-    @Mock protected EnclaveIdentifierProvider enclaveIdentifierProvider;
-    @Mock protected IKeyGenerator keyGenerator;
-    @Mock protected KeyHasher keyHasher;
-    @Mock protected Clock clock;
+    @Mock
+    protected IEncryptionKeyManager keyManager;
+    @Mock
+    protected KeysetManager keysetManager;
+    @Mock
+    protected IKeysetKeyManager keysetKeyManager;
+    @Mock
+    protected RotatingSiteStore siteProvider;
+    @Mock
+    protected RotatingLegacyClientKeyProvider clientKeyProvider;
+    @Mock
+    protected RotatingKeyStore keyProvider;
+    @Mock
+    protected IKeyStore.IKeyStoreSnapshot keyProviderSnapshot;
+    @Mock
+    protected KeysetKeyStoreSnapshot keysetKeyProviderSnapshot;
+    @Mock
+    protected RotatingKeyAclProvider keyAclProvider;
+    @Mock
+    protected RotatingKeysetProvider keysetProvider;
+    @Mock
+    protected RotatingAdminKeysetStore adminKeysetProvider;
+    @Mock
+    protected RotatingKeysetKeyStore keysetKeyProvider;
+    @Mock
+    protected RotatingClientSideKeypairStore keypairProvider;
+    @Mock
+    protected RotatingServiceStore serviceProvider;
+    @Mock
+    protected RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
+    @Mock
+    protected RotatingServiceLinkStore serviceLinkProvider;
+    @Mock
+    protected KeysetSnapshot keysetSnapshot;
+    @Mock
+    protected AdminKeysetSnapshot adminKeysetSnapshot;
+    @Mock
+    protected AclSnapshot keyAclProviderSnapshot;
+    @Mock
+    protected RotatingOperatorKeyProvider operatorKeyProvider;
+    @Mock
+    protected EnclaveIdentifierProvider enclaveIdentifierProvider;
+    @Mock
+    protected IKeyGenerator keyGenerator;
+    @Mock
+    protected KeyHasher keyHasher;
+    @Mock
+    protected Clock clock;
 
     final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
-    static final Set<Role> CUSTOM_OKTA_SCOPE_ROLES = Arrays.stream(OktaCustomScope.values())
-        .map(OktaCustomScope::getRole)
-        .collect(Collectors.toSet());
+    static final Set<Role> CUSTOM_OKTA_SCOPE_ROLES = Arrays.stream(OktaCustomScope.values()).map(OktaCustomScope::getRole).collect(Collectors.toSet());
 
     @BeforeEach
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -118,8 +163,7 @@ public abstract class ServiceTestBase {
         when(keyAclProvider.getSnapshot()).thenReturn(keyAclProviderSnapshot);
         when(keysetProvider.getSnapshot()).thenReturn(keysetSnapshot);
         when(adminKeysetProvider.getSnapshot()).thenReturn(adminKeysetSnapshot);
-        when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream()
-                .filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
+        when(siteProvider.getSite(anyInt())).then((i) -> siteProvider.getAllSites().stream().filter(s -> s.getId() == (Integer) i.getArgument(0)).findFirst().orElse(null));
         when(keyGenerator.generateRandomKey(anyInt())).thenReturn(new byte[]{1, 2, 3, 4, 5, 6});
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn(Utils.toBase64String(new byte[]{1, 2, 3, 4, 5, 6}));
         when(keyGenerator.generateFormattedKeyString(anyInt())).thenReturn("abcdef.abcdefabcdefabcdef");
@@ -135,10 +179,8 @@ public abstract class ServiceTestBase {
         })).when(tokenRefreshHandler).handle(any());
         when(idTokenVerifier.decode(anyString(), any())).thenReturn(jwt);
         when(accessTokenVerifier.decode(anyString())).thenReturn(jwt);
-        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER, String.join(",", OktaGroup.DEVELOPER.getName(),
-                OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
-        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER_ELEVATED.getName(),
-                OktaGroup.ADMIN.getName()));
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER, String.join(",", OktaGroup.DEVELOPER.getName(), OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
+        config.put(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED, String.join(",", OktaGroup.DEVELOPER_ELEVATED.getName(), OktaGroup.ADMIN.getName()));
         config.put(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER, OktaGroup.ADMIN.getName());
         auth = new AdminAuthMiddleware(authProvider, config);
         roleToOktaGroups.put(Role.MAINTAINER, List.of(OktaGroup.DEVELOPER));
@@ -163,10 +205,7 @@ public abstract class ServiceTestBase {
 
     protected void fakeAuth(Role role) {
         if (CUSTOM_OKTA_SCOPE_ROLES.contains(role)) {
-            String group = Arrays.stream(OktaCustomScope.values())
-                .filter(scope -> scope.getRole() == role)
-                .findFirst().orElse(OktaCustomScope.INVALID)
-                .getName();
+            String group = Arrays.stream(OktaCustomScope.values()).filter(scope -> scope.getRole() == role).findFirst().orElse(OktaCustomScope.INVALID).getName();
             doAnswer((invocationOnMock -> {
                 ((RoutingContext) invocationOnMock.getArgument(0)).request().headers().add("Authorization", "bearer token");
                 ((RoutingContext) invocationOnMock.getArgument(0)).next();
@@ -174,26 +213,23 @@ public abstract class ServiceTestBase {
             })).when(tokenRefreshHandler).handle(any());
             when(jwt.getClaims()).thenReturn(Map.of("scp", Collections.singletonList(group), "environment", "local"));
         } else {
-            List<String> groups = roleToOktaGroups.getOrDefault(role, List.of(OktaGroup.INVALID))
-                .stream()
-                .map(OktaGroup::toString)
-                .collect(Collectors.toList());
+            List<String> groups = roleToOktaGroups.getOrDefault(role, List.of(OktaGroup.INVALID)).stream().map(OktaGroup::toString).collect(Collectors.toList());
             when(jwt.getClaims()).thenReturn(Map.of("groups", groups, "environment", "local"));
         }
     }
 
     protected void get(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
-        client.getAbs(getUrlForEndpoint(endpoint))
-                .send()
-                .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
+        client.getAbs(getUrlForEndpoint(endpoint)).send().onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
+    }
+
+    protected void get(Vertx vertx, VertxTestContext testContext, Endpoints endpoint, TestHandler<HttpResponse<Buffer>> handler) {
+        get(vertx, testContext, endpoint.toString(), handler);
     }
 
     protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
-        client.postAbs(getUrlForEndpoint(endpoint))
-                .sendBuffer(body != null ?  Buffer.buffer(body) : null)
-                .onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
+        client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(body != null ? Buffer.buffer(body) : null).onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
     }
 
     protected void postWithoutBody(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
@@ -209,6 +245,13 @@ public abstract class ServiceTestBase {
 
     protected void setServiceLinks(ServiceLink... serviceLinks) {
         when(serviceLinkProvider.getAllServiceLinks()).thenReturn(Arrays.asList(serviceLinks));
+    }
+
+    protected void setCloudEncryptionKeys(CloudEncryptionKey... cloudEncryptionKeys) {
+        var keysById = Arrays
+                .stream(cloudEncryptionKeys)
+                .collect(Collectors.toMap(CloudEncryptionKey::getId, x -> x));
+        when(cloudEncryptionKeyProvider.getAll()).thenReturn(keysById);
     }
 
     protected void setSites(Site... sites) {
