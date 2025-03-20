@@ -16,28 +16,31 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class CloudEncryptionKeyManagerTest {
-
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
     private IKeyGenerator keyGenerator;
     private CloudEncryptionKeyManager cloudEncryptionKeyManager;
+
+    private final long keyActivateInterval = 3600; // 1 hour
+    private final int keyCountPerSite = 3;
+    private final int siteId = 1;
 
     @BeforeEach
     void setUp() {
         cloudEncryptionKeyProvider = mock(RotatingCloudEncryptionKeyProvider.class);
         cloudEncryptionKeyStoreWriter = mock(CloudEncryptionKeyStoreWriter.class);
         keyGenerator = mock(IKeyGenerator.class);
-        cloudEncryptionKeyManager = new CloudEncryptionKeyManager(cloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter,keyGenerator);
+        cloudEncryptionKeyManager = new CloudEncryptionKeyManager(cloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, keyGenerator);
     }
 
     @Test
     void testGenerateCloudEncryptionKey() throws Exception {
         when(keyGenerator.generateRandomKeyString(32)).thenReturn("randomKeyString");
 
-        CloudEncryptionKey cloudEncryptionKey = cloudEncryptionKeyManager.generateCloudEncryptionKey(1, 1000L, 2000L);
+        CloudEncryptionKey cloudEncryptionKey = cloudEncryptionKeyManager.generateCloudEncryptionKey(siteId, 1000L, 2000L);
 
         assertNotNull(cloudEncryptionKey);
-        assertEquals(1, cloudEncryptionKey.getSiteId());
+        assertEquals(siteId, cloudEncryptionKey.getSiteId());
         assertEquals(1000L, cloudEncryptionKey.getActivates());
         assertEquals(2000L, cloudEncryptionKey.getCreated());
         assertEquals("randomKeyString", cloudEncryptionKey.getSecret());
@@ -45,28 +48,28 @@ class CloudEncryptionKeyManagerTest {
 
     @Test
     void testAddCloudEncryptionKeyToEmpty() throws Exception {
-        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, 1, 1000L, 2000L, "randomKeyString");
+        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, siteId, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
 
-        cloudEncryptionKeyManager.addCloudEncryptionKey( cloudEncryptionKey);
+        cloudEncryptionKeyManager.addCloudEncryptionKey(cloudEncryptionKey);
 
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(cloudEncryptionKeyStoreWriter).upload(captor.capture(), isNull());
 
         Map<Integer, CloudEncryptionKey> capturedKeys = captor.getValue();
         assertEquals(1, capturedKeys.size());
-        assertEquals( cloudEncryptionKey, capturedKeys.get(1));
+        assertEquals(cloudEncryptionKey, capturedKeys.get(1));
     }
 
     @Test
     void testAddCloudEncryptionKeyToExisting() throws Exception {
-        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(3, 1, 1000L, 2000L, "randomKeyString");
+        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(3, siteId, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
-        CloudEncryptionKey existingKey1 = new CloudEncryptionKey(1, 1, 500L, 1500L, "existingSecret1");
-        CloudEncryptionKey existingKey2 = new CloudEncryptionKey(2, 1, 600L, 1600L, "existingSecret2");
+        CloudEncryptionKey existingKey1 = new CloudEncryptionKey(1, siteId, 500L, 1500L, "existingSecret1");
+        CloudEncryptionKey existingKey2 = new CloudEncryptionKey(2, siteId, 600L, 1600L, "existingSecret2");
         existingKeys.put(1, existingKey1);
         existingKeys.put(2, existingKey2);
 
@@ -88,7 +91,7 @@ class CloudEncryptionKeyManagerTest {
     @Test
     void testGetNextKeyId() {
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
-        existingKeys.put(1, new CloudEncryptionKey(1, 1, 500L, 1500L, "existingSecret1"));
+        existingKeys.put(1, new CloudEncryptionKey(1, siteId, 500L, 1500L, "existingSecret1"));
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
 
         int nextKeyId = cloudEncryptionKeyManager.getNextKeyId();
@@ -98,7 +101,7 @@ class CloudEncryptionKeyManagerTest {
 
     @Test
     void testGetCloudEncryptionKey() {
-        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, 1, 500L, 1500L, "existingSecret1");
+        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, siteId, 500L, 1500L, "existingSecret1");
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
         existingKeys.put(1, cloudEncryptionKey);
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
@@ -111,8 +114,8 @@ class CloudEncryptionKeyManagerTest {
     @Test
     void testGetAllCloudEncryptionKeys() {
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
-        CloudEncryptionKey existingKey1 = new CloudEncryptionKey(1, 1, 500L, 1500L, "existingSecret1");
-        CloudEncryptionKey existingKey2 = new CloudEncryptionKey(2, 1, 600L, 1600L, "existingSecret2");
+        CloudEncryptionKey existingKey1 = new CloudEncryptionKey(1, siteId, 500L, 1500L, "existingSecret1");
+        CloudEncryptionKey existingKey2 = new CloudEncryptionKey(2, siteId, 600L, 1600L, "existingSecret2");
         existingKeys.put(1, existingKey1);
         existingKeys.put(2, existingKey2);
 
@@ -125,7 +128,7 @@ class CloudEncryptionKeyManagerTest {
 
     @Test
     void testAddCloudEncryptionKey() throws Exception {
-        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, 1, 1000L, 2000L, "randomKeyString");
+        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, siteId, 1000L, 2000L, "randomKeyString");
 
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
@@ -178,7 +181,7 @@ class CloudEncryptionKeyManagerTest {
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(new HashMap<>());
         when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
 
-        CloudEncryptionKey newKey = cloudEncryptionKeyManager.createAndAddImmediate3Key(100);
+        CloudEncryptionKey newKey = cloudEncryptionKeyManager.createAndAddImmediateCloudEncryptionKey(100);
 
         assertNotNull(newKey);
         assertEquals(100, newKey.getSiteId());
@@ -189,7 +192,6 @@ class CloudEncryptionKeyManagerTest {
 
     @Test
     public void testDoesSiteHaveKeys_SiteHasKeys() {
-        int siteId = 1;
         CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(siteId, siteId, 0L, 0L, "key");
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, cloudEncryptionKey);
@@ -199,9 +201,9 @@ class CloudEncryptionKeyManagerTest {
         boolean result = cloudEncryptionKeyManager.doesSiteHaveKeys(siteId);
         assertTrue(result);
     }
+
     @Test
     public void testDoesSiteHaveKeys_SiteDoesNotHaveKeys() {
-        int siteId = 1;
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
 
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
@@ -212,8 +214,6 @@ class CloudEncryptionKeyManagerTest {
 
     @Test
     public void testDoesSiteHaveKeys_AllKeysNull() {
-        int siteId = 1;
-
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(null);
 
         boolean result = cloudEncryptionKeyManager.doesSiteHaveKeys(siteId);
@@ -237,7 +237,6 @@ class CloudEncryptionKeyManagerTest {
 
     @Test
     public void testDoesSiteHaveKeys_SameSiteIdMultipleKeys() {
-        int siteId = 1;
         CloudEncryptionKey cloudEncryptionKey1 = new CloudEncryptionKey(siteId, siteId, 0L, 0L, "key1");
         CloudEncryptionKey cloudEncryptionKey2 = new CloudEncryptionKey(siteId, siteId, 0L, 0L, "key2");
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
@@ -299,8 +298,6 @@ class CloudEncryptionKeyManagerTest {
                 createOperatorKey("hash2", 100),
                 createOperatorKey("hash3", 200)
         );
-        long keyActivateInterval = 3600; // 1 hour
-        int keyCountPerSite = 3;
 
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
         existingKeys.put(1, new CloudEncryptionKey(1, 100, 1000L, 900L, "existingKey1"));
@@ -322,8 +319,6 @@ class CloudEncryptionKeyManagerTest {
         Collection<OperatorKey> operatorKeys = Collections.singletonList(
                 createOperatorKey("hash1", 100)
         );
-        long keyActivateInterval = 3600;
-        int keyCountPerSite = 3;
 
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
         existingKeys.put(1, new CloudEncryptionKey(1, 100, 1000L, 900L, "existingKey1"));
@@ -339,8 +334,6 @@ class CloudEncryptionKeyManagerTest {
     @Test
     void testGenerateKeysForOperators_EmptyOperatorKeys() {
         Collection<OperatorKey> operatorKeys = Collections.emptyList();
-        long keyActivateInterval = 3600;
-        int keyCountPerSite = 3;
 
         assertThrows(IllegalArgumentException.class, () ->
                 cloudEncryptionKeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite)
@@ -353,7 +346,6 @@ class CloudEncryptionKeyManagerTest {
                 createOperatorKey("hash1", 100)
         );
         long keyActivateInterval = 0;
-        int keyCountPerSite = 3;
 
         assertThrows(IllegalArgumentException.class, () ->
                 cloudEncryptionKeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite)
@@ -365,7 +357,6 @@ class CloudEncryptionKeyManagerTest {
         Collection<OperatorKey> operatorKeys = Collections.singletonList(
                 createOperatorKey("hash1", 100)
         );
-        long keyActivateInterval = 3600;
         int keyCountPerSite = 0;
 
         assertThrows(IllegalArgumentException.class, () ->
@@ -380,8 +371,6 @@ class CloudEncryptionKeyManagerTest {
                 createOperatorKey("hash2", 200),
                 createOperatorKey("hash3", 300)
         );
-        long keyActivateInterval = 3600;
-        int keyCountPerSite = 3;
 
         Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
         existingKeys.put(1, new CloudEncryptionKey(1, 100, 1000L, 900L, "existingKey1"));
