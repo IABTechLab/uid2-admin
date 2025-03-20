@@ -54,7 +54,6 @@ import io.micrometer.prometheus.PrometheusRenameFilter;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,16 +200,16 @@ public class Main {
 
             CloudPath cloudEncryptionKeyMetadataPath = new CloudPath(config.getString(Const.Config.CloudEncryptionKeysMetadataPathProp));
             GlobalScope cloudEncryptionKeyGlobalScope = new GlobalScope(cloudEncryptionKeyMetadataPath);
-            RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyGlobalScope);
-            CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter = new CloudEncryptionKeyStoreWriter(RotatingCloudEncryptionKeyProvider, fileManager, jsonWriter, versionGenerator, clock, cloudEncryptionKeyGlobalScope);
+            RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyGlobalScope);
+            CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter = new CloudEncryptionKeyStoreWriter(rotatingCloudEncryptionKeyProvider, fileManager, jsonWriter, versionGenerator, clock, cloudEncryptionKeyGlobalScope);
             IKeyGenerator keyGenerator = new SecureKeyGenerator();
-            CloudEncryptionKeyManager cloudEncryptionKeyManager = new CloudEncryptionKeyManager(RotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter,keyGenerator);
+            CloudEncryptionKeyManager cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter,keyGenerator);
             try {
-                RotatingCloudEncryptionKeyProvider.loadContent();
+                rotatingCloudEncryptionKeyProvider.loadContent();
             } catch (CloudStorageException e) {
                 if (e.getMessage().contains("The specified key does not exist")) {
                     cloudEncryptionKeyStoreWriter.upload(new HashMap<>(), null);
-                    RotatingCloudEncryptionKeyProvider.loadContent();
+                    rotatingCloudEncryptionKeyProvider.loadContent();
                 } else {
                     throw e;
                 }
@@ -261,9 +260,10 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, RotatingCloudEncryptionKeyProvider),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
-                    new SearchService(auth, clientKeyProvider, operatorKeyProvider)
+                    new SearchService(auth, clientKeyProvider, operatorKeyProvider),
+                    new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider)
             };
 
 
@@ -293,7 +293,7 @@ public class Main {
                         config.getLong("cloud_encryption_key_activates_in_seconds"),
                         config.getInteger("cloud_encryption_key_count_per_site")
                 );
-                RotatingCloudEncryptionKeyProvider.loadContent();
+                rotatingCloudEncryptionKeyProvider.loadContent();
             }
 
             /*
@@ -342,7 +342,7 @@ public class Main {
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
 
-            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,RotatingCloudEncryptionKeyProvider);
+            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,rotatingCloudEncryptionKeyProvider);
             jobDispatcher.enqueue(encryptedFilesSyncJob);
             CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
             encryptedFilesSyncJobFuture.get();

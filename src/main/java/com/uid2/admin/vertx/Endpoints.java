@@ -98,6 +98,8 @@ public enum Endpoints {
     API_SITE_APP_NAMES("/api/site/app_names"),
     API_SITE_UPDATE("/api/site/update"),
 
+    CLOUD_ENCRYPTION_KEY_LIST("/api/cloud-encryption-key/list"),
+
     LOGIN("/login"),
     LOGOUT("/logout"),
     OPS_HEALTHCHECK("/ops/healthcheck"),
