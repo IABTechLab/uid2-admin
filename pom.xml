@@ -20,6 +20,7 @@
         <okta-jwt.version>0.5.10</okta-jwt.version>
         <image.version>${project.version}</image.version>
     </properties>
+
     <repositories>
         <repository>
             <id>maven-snapshots</id>
@@ -33,6 +34,7 @@
             </snapshots>
         </repository>
     </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -135,7 +137,6 @@
             <artifactId>okta-jwt-verifier</artifactId>
             <version>${okta-jwt.version}</version>
         </dependency>
-    
         <dependency>
             <groupId>com.okta.jwt</groupId>
             <artifactId>okta-jwt-verifier-impl</artifactId>
