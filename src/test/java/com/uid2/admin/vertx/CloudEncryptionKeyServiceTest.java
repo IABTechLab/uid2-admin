@@ -53,14 +53,19 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     public void testList_withKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
-        CloudEncryptionKey key1 = new CloudEncryptionKey(1, 2, 100, 100, "secret 1");
-        CloudEncryptionKey key2 = new CloudEncryptionKey(2, 2, 200, 100, "secret 2");
+        var date1EpochSeconds = 100;
+        var date2EpochSeconds = 200;
+        var date1Iso = "1970-01-01T00:01:40Z";
+        var date2Iso = "1970-01-01T00:03:20Z";
+
+        CloudEncryptionKey key1 = new CloudEncryptionKey(1, 2, date1EpochSeconds, date1EpochSeconds, "secret 1");
+        CloudEncryptionKey key2 = new CloudEncryptionKey(2, 2, date2EpochSeconds, date1EpochSeconds, "secret 2");
 
         setCloudEncryptionKeys(key1, key2);
 
         var expected = new CloudEncryptionKeyListResponse(List.of(
-                new CloudEncryptionKeySummary(1, 2, 100, 100),
-                new CloudEncryptionKeySummary(2, 2, 200, 100)
+                new CloudEncryptionKeySummary(1, 2, date1Iso, date1Iso),
+                new CloudEncryptionKeySummary(2, 2, date2Iso, date1Iso)
         ));
 
         get(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_LIST, response -> {
