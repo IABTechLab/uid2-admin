@@ -64,9 +64,6 @@ public class PrivateSiteDataRefreshService implements IService {
             PrivateSiteDataSyncJob job = new PrivateSiteDataSyncJob(config, writeLock);
             jobDispatcher.enqueue(job);
 
-            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, RotatingCloudEncryptionKeyProvider);
-            jobDispatcher.enqueue(encryptedFileSyncJob);
-
             rc.response().end("OK");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -85,11 +82,6 @@ public class PrivateSiteDataRefreshService implements IService {
             jobDispatcher.enqueue(privateSiteDataSyncJob);
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
-
-            EncryptedFilesSyncJob encryptedFileSyncJob = new EncryptedFilesSyncJob(config, writeLock, RotatingCloudEncryptionKeyProvider);
-            jobDispatcher.enqueue(encryptedFileSyncJob);
-            CompletableFuture<Boolean> encryptedFileSyncJobFuture = jobDispatcher.executeNextJob();
-            encryptedFileSyncJobFuture.get();
 
             rc.response().end("OK");
         } catch (Exception e) {
