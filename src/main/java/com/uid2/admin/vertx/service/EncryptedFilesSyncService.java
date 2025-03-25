@@ -38,7 +38,7 @@ public class EncryptedFilesSyncService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-            router.post("/api/encrypted-files/refresh").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/encrypted-files/refresh").blockingHandler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
                         this.handleEncryptedFileSync(ctx);
                     }
