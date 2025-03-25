@@ -260,7 +260,8 @@ public class Main {
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
-                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
+                    new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
+                    new EncryptedFilesSyncService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider),
                     new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider)
