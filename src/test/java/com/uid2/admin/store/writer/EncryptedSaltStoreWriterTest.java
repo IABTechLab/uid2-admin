@@ -111,6 +111,12 @@ public class EncryptedSaltStoreWriterTest {
     public void testUploadNew() throws Exception {
         RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.ofEpochMilli(1740607938167L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90002), 100);
         RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(Instant.ofEpochMilli(1740694476392L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000), 10);
+        JsonObject metadata = new JsonObject()
+                .put("version", 1742770328863L)
+                .put("generated", 1742770328)
+                .put("first_level", "FIRST-LEVEL")
+                .put("id_prefix", "a")
+                .put("id_secret", "ID-SECRET");
         when(rotatingSaltProvider.getMetadata()).thenThrow(new CloudStorageException("The specified key does not exist: AmazonS3Exception: test-core-bucket"));
         when(rotatingSaltProvider.getSnapshots()).thenReturn(null);
 
@@ -123,18 +129,21 @@ public class EncryptedSaltStoreWriterTest {
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
 
-        encryptedSaltStoreWriter.upload(snapshot);
+        encryptedSaltStoreWriter.upload(List.of(snapshot), metadata);
         verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
         // Capture the metadata
         JsonObject capturedMetadata = metadataCaptor.getValue();
+
         assertEquals(1, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain exactly 1 item");
-        encryptedSaltStoreWriter.upload(snapshot2);
+        encryptedSaltStoreWriter.upload(List.of(snapshot2), metadata);
 
         verify(fileManager,times(2)).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
         capturedMetadata = metadataCaptor.getValue();
-        assertEquals(2, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain 2 items");
 
+        assertEquals(2, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain 2 items");
+        assertEquals(capturedMetadata.getString("first_level"), metadata.getValue("first_level"));
+        assertEquals(capturedMetadata.getString("id_prefix"), metadata.getValue("id_prefix"));
         verify(taggableCloudStorage,times(3)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
 
         verifyFile(pathCaptor.getValue(), snapshot);
@@ -171,7 +180,14 @@ public class EncryptedSaltStoreWriterTest {
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
 
-        encryptedSaltStoreWriter.upload(snapshot2);
+        JsonObject metadata = new JsonObject()
+                .put("version", 1742770328863L)
+                .put("generated", 1742770328)
+                .put("first_level", "ZaCQ6O8v3kw76rsQfPNl6C+iKzj5c8X/LjCrJcs1zA8=")
+                .put("id_prefix", "a")
+                .put("id_secret", "ZhY2JZNaefrRiu5fURsfcAdgB/da3t9tbeEtfRT5KKU=");
+
+        encryptedSaltStoreWriter.upload(List.of(snapshot2), metadata);
 
         verify(fileManager,atLeastOnce()).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
