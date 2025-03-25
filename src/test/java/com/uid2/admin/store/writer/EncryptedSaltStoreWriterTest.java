@@ -183,9 +183,9 @@ public class EncryptedSaltStoreWriterTest {
         JsonObject metadata = new JsonObject()
                 .put("version", 1742770328863L)
                 .put("generated", 1742770328)
-                .put("first_level", "ZaCQ6O8v3kw76rsQfPNl6C+iKzj5c8X/LjCrJcs1zA8=")
+                .put("first_level", "FIRST-LEVEL")
                 .put("id_prefix", "a")
-                .put("id_secret", "ZhY2JZNaefrRiu5fURsfcAdgB/da3t9tbeEtfRT5KKU=");
+                .put("id_secret", "ID-SECRET");
 
         encryptedSaltStoreWriter.upload(List.of(snapshot2), metadata);
 
