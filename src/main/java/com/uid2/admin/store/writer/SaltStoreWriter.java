@@ -75,10 +75,7 @@ public class SaltStoreWriter {
         return filteredSnapshots;
     }
 
-    public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
-        final Instant now = Instant.now();
-        final long generated = now.getEpochSecond();
-
+    protected JsonObject getMetadata() throws Exception {
         JsonObject metadata = null;
         try {
             metadata = provider.getMetadata();
@@ -89,6 +86,15 @@ public class SaltStoreWriter {
                 throw e;
             }
         }
+        return metadata;
+    }
+
+    public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
+        final Instant now = Instant.now();
+        final long generated = now.getEpochSecond();
+
+        JsonObject metadata = this.getMetadata();
+
         // bump up metadata version
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);

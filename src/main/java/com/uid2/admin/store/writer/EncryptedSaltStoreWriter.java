@@ -2,6 +2,7 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.CloudEncryptionKey;
@@ -27,6 +28,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
+    private JsonObject metadata;
 
     private final List<RotatingSaltProvider.SaltSnapshot> previousSeenSnapshots = new ArrayList<>();
 
@@ -106,7 +108,18 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     }
 
     @Override
+    protected JsonObject getMetadata() throws Exception {
+        /*
+        *  We maintain a local store of metadata since the Scope is always `EncryptedScope`, which overrides the path to
+        * use the encrypted site-specific path, which may not have all entries.
+        * This logic allows `extraMeta` to be passed, containing all values of unencrypted metadata.
+        * */
+        return this.metadata;
+    }
+
+    @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
+        this.metadata = extraMeta;
         for(RotatingSaltProvider.SaltSnapshot saltSnapshot: (Collection<RotatingSaltProvider.SaltSnapshot>) data) {
             super.upload(saltSnapshot);
         }

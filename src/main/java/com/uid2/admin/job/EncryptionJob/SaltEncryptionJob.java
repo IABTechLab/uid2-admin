@@ -14,14 +14,14 @@ import java.util.List;
 
 public class SaltEncryptionJob extends Job {
     private final Collection<OperatorKey> globalOperators;
-    private final Collection<RotatingSaltProvider.SaltSnapshot> saltEntries;
+    private final RotatingSaltProvider saltProvider;
     private final MultiScopeStoreWriter<Collection<RotatingSaltProvider.SaltSnapshot>> multiScopeStoreWriter;
 
     public SaltEncryptionJob(Collection<OperatorKey> globalOperators,
-                             Collection<RotatingSaltProvider.SaltSnapshot> saltEntries,
+                             RotatingSaltProvider saltProvider,
                              MultiScopeStoreWriter<Collection<RotatingSaltProvider.SaltSnapshot>> multiScopeStoreWriter) {
         this.globalOperators = globalOperators;
-        this.saltEntries = saltEntries;
+        this.saltProvider = saltProvider;
         this.multiScopeStoreWriter = multiScopeStoreWriter;
     }
 
@@ -34,8 +34,8 @@ public class SaltEncryptionJob extends Job {
     @Override
     public void execute() throws Exception {
         List<Integer> desiredPrivateState = PrivateSiteUtil.getPrivateSaltSites(globalOperators);
-        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, saltEntries, null);
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, saltProvider.getSnapshots(), saltProvider.getMetadata());
         List<Integer> desiredPublicState = PublicSiteUtil.getPublicSaltSites(globalOperators);
-        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, saltEntries, null);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, saltProvider.getSnapshots(), saltProvider.getMetadata());
     }
 }
