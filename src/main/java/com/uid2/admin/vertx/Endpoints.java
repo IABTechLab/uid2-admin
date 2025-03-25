@@ -99,6 +99,7 @@ public enum Endpoints {
     API_SITE_UPDATE("/api/site/update"),
 
     CLOUD_ENCRYPTION_KEY_LIST("/api/cloud-encryption-key/list"),
+    CLOUD_ENCRYPTION_KEY_ROTATE("/api/cloud-encryption-key/rotate"),
 
     LOGIN("/login"),
     LOGOUT("/logout"),

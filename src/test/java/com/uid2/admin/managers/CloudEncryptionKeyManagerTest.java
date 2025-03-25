@@ -1,9 +1,9 @@
 package com.uid2.admin.managers;
 
+import com.uid2.admin.cloudEncryption.CloudSecretGenerator;
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.CloudEncryptionKey;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 class CloudEncryptionKeyManagerTest {
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
-    private IKeyGenerator keyGenerator;
+    private CloudSecretGenerator keyGenerator;
     private CloudEncryptionKeyManager cloudEncryptionKeyManager;
 
     private final long keyActivateInterval = 3600; // 1 hour
@@ -29,13 +29,13 @@ class CloudEncryptionKeyManagerTest {
     void setUp() {
         cloudEncryptionKeyProvider = mock(RotatingCloudEncryptionKeyProvider.class);
         cloudEncryptionKeyStoreWriter = mock(CloudEncryptionKeyStoreWriter.class);
-        keyGenerator = mock(IKeyGenerator.class);
+        keyGenerator = mock(CloudSecretGenerator.class);
         cloudEncryptionKeyManager = new CloudEncryptionKeyManager(cloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, keyGenerator);
     }
 
     @Test
     void testGenerateCloudEncryptionKey() throws Exception {
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("randomKeyString");
+        when(keyGenerator.generate()).thenReturn("randomKeyString");
 
         CloudEncryptionKey cloudEncryptionKey = cloudEncryptionKeyManager.generateCloudEncryptionKey(siteId, 1000L, 2000L);
 
@@ -179,7 +179,7 @@ class CloudEncryptionKeyManagerTest {
     @Test
     void testCreateAndAddImmediateCloudEncryptionKey() throws Exception {
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(new HashMap<>());
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
+        when(keyGenerator.generate()).thenReturn("generatedSecret");
 
         CloudEncryptionKey newKey = cloudEncryptionKeyManager.createAndAddImmediateCloudEncryptionKey(100);
 
@@ -303,7 +303,7 @@ class CloudEncryptionKeyManagerTest {
         existingKeys.put(1, new CloudEncryptionKey(1, 100, 1000L, 900L, "existingKey1"));
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
 
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
+        when(keyGenerator.generate()).thenReturn("generatedSecret");
 
         cloudEncryptionKeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
@@ -378,7 +378,7 @@ class CloudEncryptionKeyManagerTest {
         existingKeys.put(3, new CloudEncryptionKey(3, 200, 3000L, 2900L, "existingKey3"));
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
 
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
+        when(keyGenerator.generate()).thenReturn("generatedSecret");
 
         cloudEncryptionKeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
