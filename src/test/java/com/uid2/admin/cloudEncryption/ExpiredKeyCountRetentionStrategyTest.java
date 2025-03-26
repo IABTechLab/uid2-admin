@@ -16,15 +16,13 @@ import static org.mockito.Mockito.when;
 class ExpiredKeyCountRetentionStrategyTest {
     private final long past1 = 100L;
     private final long past2 = 200L;
-    private final long past3 = 300L;
-    private final long now = 400L;
-    private final long future = 500L;
+    private final long now = 300L;
+    private final long future = 400L;
     private ExpiredKeyCountRetentionStrategy strategy;
-    private Clock clock;
 
     @BeforeEach
     void setUp() {
-        clock = mock(Clock.class);
+        Clock clock = mock(Clock.class);
         strategy = new ExpiredKeyCountRetentionStrategy(clock, 2);
         when(clock.getEpochSecond()).thenReturn(now);
     }
@@ -50,29 +48,27 @@ class ExpiredKeyCountRetentionStrategyTest {
     }
 
     @Test
-    void selectKeysToRetain_withMoreThanNNonExpiredKeys() {
+    void selectKeysToRetain_dropsFutureKeys() {
         var activeKey = new CloudEncryptionKey(1, 1, now, now, "secret 1");
         var futureKey1 = new CloudEncryptionKey(2, 1, future, now, "secret 2");
-        var futureKey2 = new CloudEncryptionKey(3, 1, future, now, "secret 3");
-        var futureKey3 = new CloudEncryptionKey(4, 1, future, now, "secret 4");
-        var expiredKey1 = new CloudEncryptionKey(5, 1, past1, now, "secret 5");
-        var originalKeys = Set.of(activeKey, futureKey1, futureKey2, futureKey3, expiredKey1);
+        var expiredKey1 = new CloudEncryptionKey(3, 1, past1, now, "secret 3");
+        var originalKeys = Set.of(activeKey, futureKey1, expiredKey1);
+
+        var expected = Set.of(activeKey, expiredKey1);
 
         var actual = strategy.selectKeysToRetain(originalKeys);
 
-        assertThat(actual).isEqualTo(originalKeys);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    void selectKeysToRetain_withMoreThanNExpiredKeys() {
+    void selectKeysToRetain_keepsNMostRecentNonFutureKeys() {
         var oldestExpiredKey = new CloudEncryptionKey(1, 1, past1, past1, "secret 1"); // Don't retain
         var expiredKey2 = new CloudEncryptionKey(2, 1, past2, past1, "secret 2");
-        var expiredKey3 = new CloudEncryptionKey(3, 1, past3, past1, "secret 3");
-        var activeKey = new CloudEncryptionKey(3, 1, now, past1, "secret 4");
-        var futureKey = new CloudEncryptionKey(3, 1, now, past1, "secret 5");
-        var originalKeys = Set.of(oldestExpiredKey, expiredKey2, expiredKey3, activeKey, futureKey);
+        var activeKey = new CloudEncryptionKey(3, 1, now, past1, "secret 3");
+        var originalKeys = Set.of(oldestExpiredKey, expiredKey2, activeKey);
 
-        var expected = Set.of(expiredKey2, expiredKey3, activeKey, futureKey);
+        var expected = Set.of(expiredKey2, activeKey);
 
         var actual = strategy.selectKeysToRetain(originalKeys);
 

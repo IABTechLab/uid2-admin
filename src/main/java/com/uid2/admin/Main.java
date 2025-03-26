@@ -76,7 +76,6 @@ public class Main {
 
     private final Vertx vertx;
     private final JsonObject config;
-
     public Main(Vertx vertx, JsonObject config) {
         this.vertx = vertx;
         this.config = config;

@@ -50,7 +50,7 @@ public class CloudEncryptionKeyService implements IService {
         );
 
         router.post(Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE.toString()).handler(
-                auth.handle(this::handleRotate, Role.MAINTAINER)
+                auth.handle(this::handleRotate, Role.MAINTAINER, Role.SECRET_ROTATION)
         );
     }
 

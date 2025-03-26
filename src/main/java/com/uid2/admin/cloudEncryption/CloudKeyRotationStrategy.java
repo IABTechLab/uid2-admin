@@ -48,8 +48,9 @@ public class CloudKeyRotationStrategy {
                 KeyIdGenerator idGenerator,
                 Set<CloudEncryptionKey> existingKeys
         ) {
-                var withNewKey = Streams.concat(existingKeys.stream(), Stream.of(makeNewKey(siteId, idGenerator)));
-                return keyRetentionStrategy.selectKeysToRetain(withNewKey.collect(Collectors.toSet())).stream();
+                var existingKeysToRetain = keyRetentionStrategy.selectKeysToRetain(existingKeys);
+                var newKey = makeNewKey(siteId, idGenerator);
+                return Streams.concat(existingKeysToRetain.stream(), Stream.of(newKey));
         }
 
         private CloudEncryptionKey makeNewKey(Integer siteId, KeyIdGenerator idGenerator) {
