@@ -3,7 +3,7 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.AdminAuthMiddleware;
-import com.uid2.admin.cloudEncryption.CloudKeyRotationStrategy;
+import com.uid2.admin.cloudencryption.CloudKeyRotationStrategy;
 import com.uid2.admin.model.CloudEncryptionKeyListResponse;
 import com.uid2.admin.model.CloudEncryptionKeySummary;
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;

@@ -1,4 +1,4 @@
-package com.uid2.admin.cloudEncryption;
+package com.uid2.admin.cloudencryption;
 
 import com.google.common.collect.Streams;
 import com.uid2.admin.store.Clock;
