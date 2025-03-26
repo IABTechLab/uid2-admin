@@ -28,7 +28,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
-    private JsonObject metadata;
+    private JsonObject unencryptedSaltProviderMetadata;
 
     private final List<RotatingSaltProvider.SaltSnapshot> previousSeenSnapshots = new ArrayList<>();
 
@@ -114,12 +114,12 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         * use the encrypted site-specific path, which may not have all entries.
         * This logic allows `extraMeta` to be passed, containing all values of unencrypted metadata.
         * */
-        return this.metadata;
+        return this.unencryptedSaltProviderMetadata;
     }
 
     @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
-        this.metadata = extraMeta;
+        this.unencryptedSaltProviderMetadata = extraMeta;
         for(RotatingSaltProvider.SaltSnapshot saltSnapshot: (Collection<RotatingSaltProvider.SaltSnapshot>) data) {
             super.upload(saltSnapshot);
         }
