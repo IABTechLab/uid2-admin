@@ -1,4 +1,4 @@
-package com.uid2.admin.cloudEncryption;
+package com.uid2.admin.cloudencryption;
 
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;
 import com.uid2.shared.auth.OperatorKey;

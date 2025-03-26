@@ -9,7 +9,7 @@ import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.cloudEncryption.CloudSecretGenerator;
+import com.uid2.admin.cloudencryption.CloudSecretGenerator;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.vertx.Endpoints;
 import com.uid2.shared.model.*;
