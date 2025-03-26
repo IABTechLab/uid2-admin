@@ -16,7 +16,7 @@ import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.cloudEncryption.CloudSecretGenerator;
 import com.uid2.admin.monitoring.DataStoreMetrics;
-import com.uid2.admin.managers.CloudEncryptionKeyManager;
+import com.uid2.admin.cloudEncryption.CloudEncryptionKeyManager;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
