@@ -9,6 +9,7 @@ import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
+import com.uid2.admin.cloudEncryption.CloudSecretGenerator;
 import com.uid2.admin.secret.IEncryptionKeyManager;
 import com.uid2.admin.vertx.Endpoints;
 import com.uid2.shared.model.*;
@@ -39,7 +40,6 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -101,7 +101,10 @@ public abstract class ServiceTestBase {
     protected SaltStoreWriter saltStoreWriter;
     @Mock
     protected PartnerStoreWriter partnerStoreWriter;
-
+    @Mock
+    protected CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
+    @Mock
+    protected CloudSecretGenerator cloudSecretGenerator;
     @Mock
     protected IEncryptionKeyManager keyManager;
     @Mock
@@ -230,6 +233,10 @@ public abstract class ServiceTestBase {
     protected void post(Vertx vertx, VertxTestContext testContext, String endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
         WebClient client = WebClient.create(vertx);
         client.postAbs(getUrlForEndpoint(endpoint)).sendBuffer(body != null ? Buffer.buffer(body) : null).onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
+    }
+
+    protected void post(Vertx vertx, VertxTestContext testContext, Endpoints endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
+        post(vertx, testContext, endpoint.toString(), body, handler);
     }
 
     protected void postWithoutBody(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {

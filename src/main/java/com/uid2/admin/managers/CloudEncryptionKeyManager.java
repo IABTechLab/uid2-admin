@@ -1,9 +1,9 @@
 package com.uid2.admin.managers;
 
+import com.uid2.admin.cloudEncryption.CloudSecretGenerator;
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.CloudEncryptionKey;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +21,16 @@ public class CloudEncryptionKeyManager {
 
     private final RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider;
     private final CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
-    private final IKeyGenerator keyGenerator;
+    private final CloudSecretGenerator secretGenerator;
 
     public CloudEncryptionKeyManager(
             RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider,
             CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter,
-            IKeyGenerator keyGenerator
+            CloudSecretGenerator keyGenerator
     ) {
         this.RotatingCloudEncryptionKeyProvider = RotatingCloudEncryptionKeyProvider;
         this.cloudEncryptionKeyStoreWriter = cloudEncryptionKeyStoreWriter;
-        this.keyGenerator = keyGenerator;
+        this.secretGenerator = keyGenerator;
     }
 
     // Ensures there are `keyCountPerSite` sites for each site corresponding of operatorKeys. If there are less - create new ones.
@@ -89,13 +89,8 @@ public class CloudEncryptionKeyManager {
 
     CloudEncryptionKey generateCloudEncryptionKey(int siteId, long activates, long created) throws Exception {
         int newKeyId = getNextKeyId();
-        String secret = generateSecret();
+        String secret = secretGenerator.generate();
         return new CloudEncryptionKey(newKeyId, siteId, activates, created, secret);
-    }
-
-    String generateSecret() throws Exception {
-        //Generate a 32-byte key for AesGcm
-        return keyGenerator.generateRandomKeyString(32);
     }
 
     void addCloudEncryptionKey(CloudEncryptionKey cloudEncryptionKey) throws Exception {
@@ -117,7 +112,7 @@ public class CloudEncryptionKeyManager {
     CloudEncryptionKey createAndAddImmediateCloudEncryptionKey(int siteId) throws Exception {
         int newKeyId = getNextKeyId();
         long created = Instant.now().getEpochSecond();
-        CloudEncryptionKey newKey = new CloudEncryptionKey(newKeyId, siteId, created, created, generateSecret());
+        CloudEncryptionKey newKey = new CloudEncryptionKey(newKeyId, siteId, created, created, secretGenerator.generate());
         addCloudEncryptionKey(newKey);
         return newKey;
     }
