@@ -43,7 +43,7 @@ public class SaltStoreWriter {
         this.versionGenerator = versionGenerator;
     }
 
-    protected List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
+    private List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
         if (provider.getSnapshots() == null) {
             throw new IllegalStateException("Snapshots cannot be null");
         }
@@ -89,21 +89,17 @@ public class SaltStoreWriter {
         return metadata;
     }
 
-    public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
+    protected void buildAndUploadMetadata(JsonObject metadata, JsonArray snapshotsMetadata ) throws Exception{
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
-
-        JsonObject metadata = this.getMetadata();
-
-        // bump up metadata version
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
-
-        final JsonArray snapshotsMetadata = new JsonArray();
         metadata.put("salts", snapshotsMetadata);
+        fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
+    }
 
-        List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
-
+    protected JsonArray uploadASnapshotsAndGetMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
+        final JsonArray snapshotsMetadata = new JsonArray();
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
             final String location = getSaltSnapshotLocation(snapshot);
             final JsonObject snapshotMetadata = new JsonObject();
@@ -112,17 +108,20 @@ public class SaltStoreWriter {
             snapshotMetadata.put("location", location);
             snapshotMetadata.put("size", snapshot.getAllRotatingSalts().length);
             snapshotsMetadata.add(snapshotMetadata);
-
             uploadSaltsSnapshot(snapshot, location);
         }
+        return snapshotsMetadata;
+    }
 
-        fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
-
+    public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
+        JsonObject metadata = this.getMetadata();
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
+        this.buildAndUploadMetadata(metadata, this.uploadASnapshotsAndGetMetadata(snapshots));
         // refresh manually
         refreshProvider();
     }
 
-    protected void refreshProvider() throws Exception {
+    private void refreshProvider() throws Exception {
         provider.loadContent();
     }
 

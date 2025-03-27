@@ -2,7 +2,6 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
-import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.CloudEncryptionKey;
@@ -28,9 +27,6 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
-    private JsonObject unencryptedSaltProviderMetadata;
-
-    private final List<RotatingSaltProvider.SaltSnapshot> previousSeenSnapshots = new ArrayList<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedSaltStoreWriter.class);
     public EncryptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
@@ -91,38 +87,12 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
 
         this.upload(newSaltsFile.toString(), location);
     }
-    
-    @Override
-    protected void refreshProvider() {
-       // we do not need to refresh the provider on encrypted writers
-    }
-
-    @Override
-    protected List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
-    /*
-    Since metadata.json is overwritten during the process, we maintain a history of all snapshots seen so far.
-    On the final write, we append this history to metadata.json to ensure no snapshots are lost.
-    */
-        this.previousSeenSnapshots.add(data);
-        return this.previousSeenSnapshots;
-    }
-
-    @Override
-    protected JsonObject getMetadata() throws Exception {
-        /*
-        *  We maintain a local store of metadata since the Scope is always `EncryptedScope`, which overrides the path to
-        * use the encrypted site-specific path, which may not have all entries.
-        * This logic allows `extraMeta` to be passed, containing all values of unencrypted metadata.
-        * */
-        return this.unencryptedSaltProviderMetadata;
-    }
 
     @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
-        this.unencryptedSaltProviderMetadata = extraMeta;
-        for(RotatingSaltProvider.SaltSnapshot saltSnapshot: (Collection<RotatingSaltProvider.SaltSnapshot>) data) {
-            super.upload(saltSnapshot);
-        }
+        @SuppressWarnings("unchecked")
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = new ArrayList<>((Collection<RotatingSaltProvider.SaltSnapshot>) data);
+        this.buildAndUploadMetadata(extraMeta, this.uploadASnapshotsAndGetMetadata(snapshots));
     }
 
     @Override

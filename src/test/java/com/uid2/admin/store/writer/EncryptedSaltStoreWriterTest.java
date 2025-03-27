@@ -129,22 +129,16 @@ public class EncryptedSaltStoreWriterTest {
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
 
-        encryptedSaltStoreWriter.upload(List.of(snapshot), metadata);
+        encryptedSaltStoreWriter.upload(List.of(snapshot,snapshot2), metadata);
         verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
         // Capture the metadata
         JsonObject capturedMetadata = metadataCaptor.getValue();
 
-        assertEquals(1, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain exactly 1 item");
-        encryptedSaltStoreWriter.upload(List.of(snapshot2), metadata);
-
-        verify(fileManager,times(2)).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
-        capturedMetadata = metadataCaptor.getValue();
-
         assertEquals(2, capturedMetadata.getJsonArray("salts").size(), "The 'salts' array should contain 2 items");
         assertEquals(capturedMetadata.getString("first_level"), metadata.getValue("first_level"));
         assertEquals(capturedMetadata.getString("id_prefix"), metadata.getValue("id_prefix"));
-        verify(taggableCloudStorage,times(3)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
+        verify(taggableCloudStorage,times(2)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
 
         verifyFile(pathCaptor.getValue(), snapshot);
     }
