@@ -7,7 +7,6 @@ import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,7 @@ public class CloudEncryptionKeyManager {
     private Set<OperatorKey> operatorKeys;
     private Set<CloudEncryptionKey> existingKeys;
 
-    private static final Logger logger = LoggerFactory.getLogger(CloudEncryptionKeyManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CloudEncryptionKeyManager.class);
 
     public CloudEncryptionKeyManager(
             RotatingCloudEncryptionKeyProvider keyProvider,
@@ -47,10 +46,10 @@ public class CloudEncryptionKeyManager {
             writeKeys(desiredKeys);
             success = true;
             var diff = CloudEncryptionKeyDiff.calculateDiff(existingKeys, desiredKeys);
-            logger.info("Key rotation complete. Diff: {}", diff);
+            LOGGER.info("Key rotation complete. Diff: {}", diff);
         } catch (Exception e) {
             success = false;
-            logger.error("Key rotation failed", e);
+            LOGGER.error("Key rotation failed", e);
             throw e;
         } finally {
             Counter.builder("uid2.cloud_encryption_key_manager.rotations")
@@ -67,9 +66,9 @@ public class CloudEncryptionKeyManager {
             var desiredKeys = planner.planBackfill(existingKeys, operatorKeys);
             writeKeys(desiredKeys);
             var diff = CloudEncryptionKeyDiff.calculateDiff(existingKeys, desiredKeys);
-            logger.info("Key backfill complete. Diff: {}", diff);
+            LOGGER.info("Key backfill complete. Diff: {}", diff);
         } catch (Exception e) {
-            logger.error("Key backfill failed", e);
+            LOGGER.error("Key backfill failed", e);
             throw e;
         }
     }
