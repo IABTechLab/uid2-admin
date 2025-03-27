@@ -5,7 +5,7 @@ import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.OktaAuthProvider;
 import com.uid2.admin.auth.AuthProvider;
 import com.uid2.admin.auth.TokenRefreshHandler;
-import com.uid2.admin.cloudencryption.CloudKeyRotationStrategy;
+import com.uid2.admin.cloudencryption.CloudKeyStatePlanner;
 import com.uid2.admin.cloudencryption.ExpiredKeyCountRetentionStrategy;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
@@ -248,9 +248,9 @@ public class Main {
             ClientSideKeypairService clientSideKeypairService = new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock);
 
             var cloudEncryptionSecretGenerator = new CloudSecretGenerator(keyGenerator);
-            var cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, cloudEncryptionSecretGenerator);
             var cloudEncryptionKeyRetentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 5);
-            var cloudEncryptionKeyRotationStrategy = new CloudKeyRotationStrategy(cloudEncryptionSecretGenerator, clock, cloudEncryptionKeyRetentionStrategy);
+            var cloudEncryptionKeyRotationStrategy = new CloudKeyStatePlanner(cloudEncryptionSecretGenerator, clock, cloudEncryptionKeyRetentionStrategy);
+            var cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, operatorKeyProvider, cloudEncryptionKeyRotationStrategy);
 
             IService[] services = {
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
@@ -268,7 +268,7 @@ public class Main {
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider),
-                    new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, operatorKeyProvider, cloudEncryptionKeyRotationStrategy)
+                    new CloudEncryptionKeyService(auth, cloudEncryptionKeyManager)
             };
 
 
@@ -293,11 +293,7 @@ public class Main {
             }
 
             synchronized (writeLock) {
-                cloudEncryptionKeyManager.generateKeysForOperators(
-                        operatorKeyProvider.getAll(),
-                        config.getLong("cloud_encryption_key_activates_in_seconds"),
-                        config.getInteger("cloud_encryption_key_count_per_site")
-                );
+                cloudEncryptionKeyManager.backfillKeys();
                 rotatingCloudEncryptionKeyProvider.loadContent();
             }
 

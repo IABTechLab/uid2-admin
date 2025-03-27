@@ -47,8 +47,6 @@ public class OperatorKeyService implements IService {
     private final KeyHasher keyHasher;
     private final String operatorKeyPrefix;
     private final CloudEncryptionKeyManager cloudEncryptionKeyManager;
-    private final long cloudEncryptionKeyActivatesInSeconds;
-    private final int cloudEncryptionKeyCountPerSite;
 
     public OperatorKeyService(JsonObject config,
                               AdminAuthMiddleware auth,
@@ -69,8 +67,6 @@ public class OperatorKeyService implements IService {
         this.cloudEncryptionKeyManager = cloudEncryptionKeyManager;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
-        this.cloudEncryptionKeyActivatesInSeconds = config.getLong("cloud_encryption_key_activates_in_seconds",0L);
-        this.cloudEncryptionKeyCountPerSite = config.getInteger("cloud_encryption_key_count_per_site",0);
     }
 
     @Override
@@ -274,7 +270,8 @@ public class OperatorKeyService implements IService {
             // upload to storage
             operatorKeyStoreWriter.upload(operators);
 
-            cloudEncryptionKeyManager.generateKeysForOperators(Collections.singletonList(newOperator), cloudEncryptionKeyActivatesInSeconds, cloudEncryptionKeyCountPerSite);
+            // generate cloud encryption keys as needed
+            cloudEncryptionKeyManager.backfillKeys();
 
             // respond with new key
             rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
@@ -413,7 +410,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             if (siteIdChanged) {
-                cloudEncryptionKeyManager.generateKeysForOperators(Collections.singletonList(existingOperator), cloudEncryptionKeyActivatesInSeconds, cloudEncryptionKeyCountPerSite);
+                cloudEncryptionKeyManager.backfillKeys();
             }
 
             // return the updated client
