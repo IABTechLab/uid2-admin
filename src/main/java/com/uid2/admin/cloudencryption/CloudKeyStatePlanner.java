@@ -5,7 +5,9 @@ import com.uid2.admin.store.Clock;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.CloudEncryptionKey;
 
+import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,8 +29,8 @@ public class CloudKeyStatePlanner {
         }
 
         public Set<CloudEncryptionKey> planRotation(
-                Collection<CloudEncryptionKey> existingKeys,
-                Collection<OperatorKey> operatorKeys
+                Set<CloudEncryptionKey> existingKeys,
+                Set<OperatorKey> operatorKeys
         ) {
                 var keyGenerator = new CloudEncryptionKeyGenerator(clock, secretGenerator, existingKeys);
                 Map<Integer, Set<CloudEncryptionKey>> existingKeysBySite = existingKeys
@@ -41,8 +43,8 @@ public class CloudKeyStatePlanner {
         }
 
         public Set<CloudEncryptionKey> planBackfill(
-                Collection<CloudEncryptionKey> existingKeys,
-                Collection<OperatorKey> operatorKeys
+                Set<CloudEncryptionKey> existingKeys,
+                Set<OperatorKey> operatorKeys
         ) {
                 var keyGenerator = new CloudEncryptionKeyGenerator(clock, secretGenerator, existingKeys);
                 var siteIdsWithKeys = existingKeys.stream().map(CloudEncryptionKey::getSiteId).collect(Collectors.toSet());

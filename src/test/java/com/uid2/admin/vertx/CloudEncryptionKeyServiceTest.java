@@ -232,6 +232,18 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    public void testRotate_handleExceptions(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setOperatorKeys(operator1);
+        when(clock.getEpochSecond()).thenThrow(new RuntimeException("oops"));
+
+        post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE, null, rotateResponse -> {
+            assertEquals(500, rotateResponse.statusCode());
+            testContext.completeNow();
+        });
+    }
+
     private static CloudEncryptionKeyListResponse parseKeyListResponse(HttpResponse<Buffer> response) throws JsonProcessingException {
         return OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {
         });

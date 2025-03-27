@@ -36,8 +36,8 @@ class CloudKeyStatePlannerTest {
     @Test
     void planBackfill_doesNotRemoveKeysWhenOperatorsForKeyMissing() {
         // We do cleanup in rotation, this job is supposed to be extremely safe and won't delete anything
-        var existingCloudKeys = List.of(key1);
-        var operatorKeys = List.<OperatorKey>of();
+        var existingCloudKeys = Set.of(key1);
+        var operatorKeys = Set.<OperatorKey>of();
         var expected = Set.of(key1);
 
         var actual = planner.planBackfill(existingCloudKeys, operatorKeys);
@@ -47,8 +47,8 @@ class CloudKeyStatePlannerTest {
 
     @Test
     void planBackfill_createsNoNewKeysForOperatorsWithExistingKeys() {
-        var existingCloudKeys = List.of(key1);
-        var operatorKeys = List.of(operatorKey1);
+        var existingCloudKeys = Set.of(key1);
+        var operatorKeys = Set.of(operatorKey1);
         var expected = Set.of(key1);
 
         var actual = planner.planBackfill(existingCloudKeys, operatorKeys);
@@ -58,8 +58,8 @@ class CloudKeyStatePlannerTest {
 
     @Test
     void planBackfill_createsNewKeysForOperatorsWithNoKeys() {
-        var existingCloudKeys = List.<CloudEncryptionKey>of();
-        var operatorKeys = List.of(operatorKey1);
+        var existingCloudKeys = Set.<CloudEncryptionKey>of();
+        var operatorKeys = Set.of(operatorKey1);
         var expected = Set.of(key1);
 
         var actual = planner.planBackfill(existingCloudKeys, operatorKeys);

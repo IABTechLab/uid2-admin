@@ -6,6 +6,9 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +21,10 @@ public class CloudEncryptionKeyManager {
     private final RotatingOperatorKeyProvider operatorKeyProvider;
     private final CloudEncryptionKeyStoreWriter keyWriter;
     private final CloudKeyStatePlanner planner;
-    private Collection<OperatorKey> operatorKeys;
-    private Collection<CloudEncryptionKey> existingKeys;
+    private Set<OperatorKey> operatorKeys;
+    private Set<CloudEncryptionKey> existingKeys;
+
+    private static final Logger logger = LoggerFactory.getLogger(CloudEncryptionKeyManager.class);
 
     public CloudEncryptionKeyManager(
             RotatingCloudEncryptionKeyProvider keyProvider,
@@ -32,21 +37,41 @@ public class CloudEncryptionKeyManager {
         this.planner = planner;
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(CloudEncryptionKeyManager.class);
-
     // For any site that has an operator create a new key activating now
     // Keep up to 5 most recent old keys per site, delete the rest
     public void rotateKeys() throws Exception {
-        refreshCloudData();
-        var desiredKeys = planner.planRotation(existingKeys, operatorKeys);
-        writeKeys(desiredKeys);
+        boolean success = false;
+        try {
+            refreshCloudData();
+            var desiredKeys = planner.planRotation(existingKeys, operatorKeys);
+            writeKeys(desiredKeys);
+            success = true;
+            var diff = CloudEncryptionKeyDiff.calculateDiff(existingKeys, desiredKeys);
+            logger.info("Key rotation complete. Diff: {}", diff);
+        } catch (Exception e) {
+            success = false;
+            logger.error("Key rotation failed", e);
+            throw e;
+        } finally {
+            Counter.builder("uid2.cloud_encryption_key_manager.rotations")
+                    .tag("success", Boolean.toString(success))
+                    .description("The number of times rotations have happened")
+                    .register(Metrics.globalRegistry);
+        }
     }
 
     // For any site that has an operator, if there are no keys, create a key activating now
     public void backfillKeys() throws Exception {
-        refreshCloudData();
-        var desiredKeys = planner.planBackfill(existingKeys, operatorKeys);
-        writeKeys(desiredKeys);
+        try {
+            refreshCloudData();
+            var desiredKeys = planner.planBackfill(existingKeys, operatorKeys);
+            writeKeys(desiredKeys);
+            var diff = CloudEncryptionKeyDiff.calculateDiff(existingKeys, desiredKeys);
+            logger.info("Key backfill complete. Diff: {}", diff);
+        } catch (Exception e) {
+            logger.error("Key backfill failed", e);
+            throw e;
+        }
     }
 
     public List<CloudEncryptionKeySummary> getKeySummaries() throws Exception {
@@ -65,7 +90,7 @@ public class CloudEncryptionKeyManager {
     private void refreshCloudData() throws Exception {
         keyProvider.loadContent();
         operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
-        operatorKeys = operatorKeyProvider.getAll();
-        existingKeys = keyProvider.getAll().values();
+        operatorKeys = new HashSet<>(operatorKeyProvider.getAll());
+        existingKeys = new HashSet<>(keyProvider.getAll().values());
     }
 }

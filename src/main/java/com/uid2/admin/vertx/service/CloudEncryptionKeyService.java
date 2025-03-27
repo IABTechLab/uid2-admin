@@ -12,11 +12,6 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
-// We need a slightly different thing to a rotation for on startup and on operator update
-// There we only want to fill in missing keys, not create new immediately active keys for sites which have keys
-// We could still
-
-
 public class CloudEncryptionKeyService implements IService {
     private final AdminAuthMiddleware auth;
     private final CloudEncryptionKeyManager keyManager;
