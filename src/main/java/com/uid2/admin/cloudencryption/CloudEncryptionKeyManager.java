@@ -1,16 +1,11 @@
-package com.uid2.admin.managers;
+package com.uid2.admin.cloudencryption;
 
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.CloudEncryptionKey;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import java.time.Instant;
 import java.util.*;
@@ -21,16 +16,16 @@ public class CloudEncryptionKeyManager {
 
     private final RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider;
     private final CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
-    private final IKeyGenerator keyGenerator;
+    private final CloudSecretGenerator secretGenerator;
 
     public CloudEncryptionKeyManager(
             RotatingCloudEncryptionKeyProvider RotatingCloudEncryptionKeyProvider,
             CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter,
-            IKeyGenerator keyGenerator
+            CloudSecretGenerator keyGenerator
     ) {
         this.RotatingCloudEncryptionKeyProvider = RotatingCloudEncryptionKeyProvider;
         this.cloudEncryptionKeyStoreWriter = cloudEncryptionKeyStoreWriter;
-        this.keyGenerator = keyGenerator;
+        this.secretGenerator = keyGenerator;
     }
 
     // Ensures there are `keyCountPerSite` sites for each site corresponding of operatorKeys. If there are less - create new ones.
@@ -89,13 +84,8 @@ public class CloudEncryptionKeyManager {
 
     CloudEncryptionKey generateCloudEncryptionKey(int siteId, long activates, long created) throws Exception {
         int newKeyId = getNextKeyId();
-        String secret = generateSecret();
+        String secret = secretGenerator.generate();
         return new CloudEncryptionKey(newKeyId, siteId, activates, created, secret);
-    }
-
-    String generateSecret() throws Exception {
-        //Generate a 32-byte key for AesGcm
-        return keyGenerator.generateRandomKeyString(32);
     }
 
     void addCloudEncryptionKey(CloudEncryptionKey cloudEncryptionKey) throws Exception {
@@ -110,49 +100,6 @@ public class CloudEncryptionKeyManager {
             return 1;
         }
         return cloudEncryptionKeys.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-    }
-
-    // Used in test only
-    // Creates and uploads a CloudEncryptionKey that activates immediately for a specific sites, for emergency rotation
-    CloudEncryptionKey createAndAddImmediateCloudEncryptionKey(int siteId) throws Exception {
-        int newKeyId = getNextKeyId();
-        long created = Instant.now().getEpochSecond();
-        CloudEncryptionKey newKey = new CloudEncryptionKey(newKeyId, siteId, created, created, generateSecret());
-        addCloudEncryptionKey(newKey);
-        return newKey;
-    }
-
-    // Used in test only
-    CloudEncryptionKey getCloudEncryptionKeyByKeyIdentifier(int keyIdentifier) {
-        return RotatingCloudEncryptionKeyProvider.getAll().get(keyIdentifier);
-    }
-
-    // Used in test only
-    Optional<CloudEncryptionKey> getCloudEncryptionKeyBySiteId(int siteId) {
-        return RotatingCloudEncryptionKeyProvider.getAll().values().stream()
-                .filter(key -> key.getSiteId() == siteId)
-                .findFirst();
-    }
-
-    // Used in test only
-    List<CloudEncryptionKey> getAllCloudEncryptionKeysBySiteId(int siteId) {
-        return RotatingCloudEncryptionKeyProvider.getAll().values().stream()
-                .filter(key -> key.getSiteId() == siteId)
-                .collect(Collectors.toList());
-    }
-
-    // Used in test only
-    Map<Integer, CloudEncryptionKey> getAllCloudEncryptionKeys() {
-        return RotatingCloudEncryptionKeyProvider.getAll();
-    }
-
-    // Used in test only
-    boolean doesSiteHaveKeys(int siteId) {
-        Map<Integer, CloudEncryptionKey> allKeys = RotatingCloudEncryptionKeyProvider.getAll();
-        if (allKeys == null) {
-            return false;
-        }
-        return allKeys.values().stream().anyMatch(key -> key.getSiteId() == siteId);
     }
 
     int countKeysForSite(int siteId) {

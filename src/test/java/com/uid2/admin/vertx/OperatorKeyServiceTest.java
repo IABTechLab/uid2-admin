@@ -3,7 +3,7 @@ package com.uid2.admin.vertx;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.RevealedKey;
-import com.uid2.admin.managers.CloudEncryptionKeyManager;
+import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;

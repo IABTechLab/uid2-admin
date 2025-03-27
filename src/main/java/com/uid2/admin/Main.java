@@ -5,6 +5,8 @@ import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.OktaAuthProvider;
 import com.uid2.admin.auth.AuthProvider;
 import com.uid2.admin.auth.TokenRefreshHandler;
+import com.uid2.admin.cloudencryption.CloudKeyRotationStrategy;
+import com.uid2.admin.cloudencryption.ExpiredKeyCountRetentionStrategy;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
@@ -12,8 +14,9 @@ import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
+import com.uid2.admin.cloudencryption.CloudSecretGenerator;
 import com.uid2.admin.monitoring.DataStoreMetrics;
-import com.uid2.admin.managers.CloudEncryptionKeyManager;
+import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
@@ -29,7 +32,6 @@ import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.secret.SecureKeyGenerator;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
@@ -74,7 +76,6 @@ public class Main {
 
     private final Vertx vertx;
     private final JsonObject config;
-
     public Main(Vertx vertx, JsonObject config) {
         this.vertx = vertx;
         this.config = config;
@@ -122,7 +123,7 @@ public class Main {
             try {
                 adminKeysetProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")){
+                if (e.getMessage().contains("The specified key does not exist")) {
                     adminKeysetStoreWriter.upload(new HashMap<>(), null);
                     adminKeysetProvider.loadContent();
                 } else {
@@ -134,7 +135,7 @@ public class Main {
             GlobalScope keysetKeysGlobalScope = new GlobalScope(keysetKeyMetadataPath);
             RotatingKeysetKeyStore keysetKeysProvider = new RotatingKeysetKeyStore(cloudStorage, keysetKeysGlobalScope);
             KeysetKeyStoreWriter keysetKeyStoreWriter = new KeysetKeyStoreWriter(keysetKeysProvider, fileManager, versionGenerator, clock, keysetKeysGlobalScope, enableKeysets);
-            if(enableKeysets) {
+            if (enableKeysets) {
                 try {
                     keysetKeysProvider.loadContent();
                 } catch (CloudStorageException e) {
@@ -154,7 +155,7 @@ public class Main {
             try {
                 clientSideKeypairProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     clientSideKeypairStoreWriter.upload(new HashSet<>(), null);
                     clientSideKeypairProvider.loadContent();
                 } else {
@@ -163,13 +164,13 @@ public class Main {
             }
 
             CloudPath serviceMetadataPath = new CloudPath(config.getString(Const.Config.ServiceMetadataPathProp));
-            GlobalScope serviceGlobalScope= new GlobalScope(serviceMetadataPath);
+            GlobalScope serviceGlobalScope = new GlobalScope(serviceMetadataPath);
             RotatingServiceStore serviceProvider = new RotatingServiceStore(cloudStorage, serviceGlobalScope);
             ServiceStoreWriter serviceStoreWriter = new ServiceStoreWriter(serviceProvider, fileManager, jsonWriter, versionGenerator, clock, serviceGlobalScope);
             try {
                 serviceProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     serviceStoreWriter.upload(new HashSet<>(), null);
                     serviceProvider.loadContent();
                 } else {
@@ -178,13 +179,13 @@ public class Main {
             }
 
             CloudPath serviceLinkMetadataPath = new CloudPath(config.getString(Const.Config.ServiceLinkMetadataPathProp));
-            GlobalScope serviceLinkGlobalScope= new GlobalScope(serviceLinkMetadataPath);
+            GlobalScope serviceLinkGlobalScope = new GlobalScope(serviceLinkMetadataPath);
             RotatingServiceLinkStore serviceLinkProvider = new RotatingServiceLinkStore(cloudStorage, serviceLinkGlobalScope);
             ServiceLinkStoreWriter serviceLinkStoreWriter = new ServiceLinkStoreWriter(serviceLinkProvider, fileManager, jsonWriter, versionGenerator, clock, serviceLinkGlobalScope);
             try {
                 serviceLinkProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")) {
+                if (e.getMessage().contains("The specified key does not exist")) {
                     serviceLinkStoreWriter.upload(new HashSet<>(), null);
                     serviceLinkProvider.loadContent();
                 } else {
@@ -202,8 +203,7 @@ public class Main {
             GlobalScope cloudEncryptionKeyGlobalScope = new GlobalScope(cloudEncryptionKeyMetadataPath);
             RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyGlobalScope);
             CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter = new CloudEncryptionKeyStoreWriter(rotatingCloudEncryptionKeyProvider, fileManager, jsonWriter, versionGenerator, clock, cloudEncryptionKeyGlobalScope);
-            IKeyGenerator keyGenerator = new SecureKeyGenerator();
-            CloudEncryptionKeyManager cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter,keyGenerator);
+            SecureKeyGenerator keyGenerator = new SecureKeyGenerator();
             try {
                 rotatingCloudEncryptionKeyProvider.loadContent();
             } catch (CloudStorageException e) {
@@ -247,6 +247,11 @@ public class Main {
 
             ClientSideKeypairService clientSideKeypairService = new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock);
 
+            var cloudEncryptionSecretGenerator = new CloudSecretGenerator(keyGenerator);
+            var cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, cloudEncryptionSecretGenerator);
+            var cloudEncryptionKeyRetentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 5);
+            var cloudEncryptionKeyRotationStrategy = new CloudKeyRotationStrategy(cloudEncryptionSecretGenerator, clock, cloudEncryptionKeyRetentionStrategy);
+
             IService[] services = {
                     new ClientKeyService(config, auth, writeLock, clientKeyStoreWriter, clientKeyProvider, siteProvider, keysetManager, keyGenerator, keyHasher),
                     new EnclaveIdService(auth, writeLock, enclaveStoreWriter, enclaveIdProvider, clock),
@@ -264,7 +269,7 @@ public class Main {
                     new EncryptedFilesSyncService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider),
-                    new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider)
+                    new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, operatorKeyProvider, cloudEncryptionKeyRotationStrategy)
             };
 
 
@@ -280,7 +285,7 @@ public class Main {
             try {
                 keysetProvider.loadContent();
             } catch (CloudStorageException e) {
-                if(e.getMessage().contains("The specified key does not exist")){
+                if (e.getMessage().contains("The specified key does not exist")) {
                     keysetStoreWriter.upload(new HashMap<>(), null);
                     keysetProvider.loadContent();
                 } else {
@@ -306,7 +311,7 @@ public class Main {
             The jobs are executed after because they copy data from these files locations consumed by public and private operators.
             This caused an issue because the files were empty and the job started to fail so the operators got empty files.
              */
-            if(enableKeysets) {
+            if (enableKeysets) {
                 synchronized (writeLock) {
                     //UID2-628 keep keys.json and keyset_keys.json in sync. This function syncs them on start up
                     keysetProvider.loadContent();
@@ -343,7 +348,7 @@ public class Main {
             CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
             privateSiteDataSyncJobFuture.get();
 
-            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock,rotatingCloudEncryptionKeyProvider);
+            EncryptedFilesSyncJob encryptedFilesSyncJob = new EncryptedFilesSyncJob(config, writeLock, rotatingCloudEncryptionKeyProvider);
             jobDispatcher.enqueue(encryptedFilesSyncJob);
             CompletableFuture<Boolean> encryptedFilesSyncJobFuture = jobDispatcher.executeNextJob();
             encryptedFilesSyncJobFuture.get();

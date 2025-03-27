@@ -1,9 +1,8 @@
-package com.uid2.admin.managers;
+package com.uid2.admin.cloudencryption;
 
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.CloudEncryptionKey;
-import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +17,7 @@ import static org.mockito.Mockito.*;
 class CloudEncryptionKeyManagerTest {
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private CloudEncryptionKeyStoreWriter cloudEncryptionKeyStoreWriter;
-    private IKeyGenerator keyGenerator;
+    private CloudSecretGenerator keyGenerator;
     private CloudEncryptionKeyManager cloudEncryptionKeyManager;
 
     private final long keyActivateInterval = 3600; // 1 hour
@@ -29,13 +28,13 @@ class CloudEncryptionKeyManagerTest {
     void setUp() {
         cloudEncryptionKeyProvider = mock(RotatingCloudEncryptionKeyProvider.class);
         cloudEncryptionKeyStoreWriter = mock(CloudEncryptionKeyStoreWriter.class);
-        keyGenerator = mock(IKeyGenerator.class);
+        keyGenerator = mock(CloudSecretGenerator.class);
         cloudEncryptionKeyManager = new CloudEncryptionKeyManager(cloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, keyGenerator);
     }
 
     @Test
     void testGenerateCloudEncryptionKey() throws Exception {
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("randomKeyString");
+        when(keyGenerator.generate()).thenReturn("randomKeyString");
 
         CloudEncryptionKey cloudEncryptionKey = cloudEncryptionKeyManager.generateCloudEncryptionKey(siteId, 1000L, 2000L);
 
@@ -100,33 +99,6 @@ class CloudEncryptionKeyManagerTest {
     }
 
     @Test
-    void testGetCloudEncryptionKey() {
-        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, siteId, 500L, 1500L, "existingSecret1");
-        Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
-        existingKeys.put(1, cloudEncryptionKey);
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
-
-        CloudEncryptionKey result = cloudEncryptionKeyManager.getCloudEncryptionKeyByKeyIdentifier(1);
-
-        assertEquals(cloudEncryptionKey, result);
-    }
-
-    @Test
-    void testGetAllCloudEncryptionKeys() {
-        Map<Integer, CloudEncryptionKey> existingKeys = new HashMap<>();
-        CloudEncryptionKey existingKey1 = new CloudEncryptionKey(1, siteId, 500L, 1500L, "existingSecret1");
-        CloudEncryptionKey existingKey2 = new CloudEncryptionKey(2, siteId, 600L, 1600L, "existingSecret2");
-        existingKeys.put(1, existingKey1);
-        existingKeys.put(2, existingKey2);
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
-
-        Map<Integer, CloudEncryptionKey> result = cloudEncryptionKeyManager.getAllCloudEncryptionKeys();
-
-        assertEquals(existingKeys, result);
-    }
-
-    @Test
     void testAddCloudEncryptionKey() throws Exception {
         CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(1, siteId, 1000L, 2000L, "randomKeyString");
 
@@ -141,135 +113,6 @@ class CloudEncryptionKeyManagerTest {
         Map<Integer, CloudEncryptionKey> capturedKeys = captor.getValue();
         assertEquals(1, capturedKeys.size());
         assertEquals(cloudEncryptionKey, capturedKeys.get(1));
-    }
-
-    @Test
-    void testGetCloudEncryptionKeyBySiteId() {
-        CloudEncryptionKey key1 = new CloudEncryptionKey(1, 100, 0, 0, "secret1");
-        CloudEncryptionKey key2 = new CloudEncryptionKey(2, 200, 0, 0, "secret2");
-        Map<Integer, CloudEncryptionKey> keys = new HashMap<>();
-        keys.put(1, key1);
-        keys.put(2, key2);
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(keys);
-
-        Optional<CloudEncryptionKey> result = cloudEncryptionKeyManager.getCloudEncryptionKeyBySiteId(100);
-        assertTrue(result.isPresent());
-        assertEquals(key1, result.get());
-    }
-
-    @Test
-    void testGetAllCloudEncryptionKeysBySiteId() {
-        CloudEncryptionKey key1 = new CloudEncryptionKey(1, 100, 0, 0, "secret1");
-        CloudEncryptionKey key2 = new CloudEncryptionKey(2, 100, 0, 0, "secret2");
-        CloudEncryptionKey key3 = new CloudEncryptionKey(3, 200, 0, 0, "secret3");
-        Map<Integer, CloudEncryptionKey> keys = new HashMap<>();
-        keys.put(1, key1);
-        keys.put(2, key2);
-        keys.put(3, key3);
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(keys);
-
-        List<CloudEncryptionKey> result = cloudEncryptionKeyManager.getAllCloudEncryptionKeysBySiteId(100);
-        assertEquals(2, result.size());
-        assertTrue(result.contains(key1));
-        assertTrue(result.contains(key2));
-    }
-
-    @Test
-    void testCreateAndAddImmediateCloudEncryptionKey() throws Exception {
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(new HashMap<>());
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
-
-        CloudEncryptionKey newKey = cloudEncryptionKeyManager.createAndAddImmediateCloudEncryptionKey(100);
-
-        assertNotNull(newKey);
-        assertEquals(100, newKey.getSiteId());
-        assertEquals("generatedSecret", newKey.getSecret());
-
-        verify(cloudEncryptionKeyStoreWriter, times(1)).upload(any(Map.class), eq(null));
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_SiteHasKeys() {
-        CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(siteId, siteId, 0L, 0L, "key");
-        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
-        allKeys.put(1, cloudEncryptionKey);
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
-
-        boolean result = cloudEncryptionKeyManager.doesSiteHaveKeys(siteId);
-        assertTrue(result);
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_SiteDoesNotHaveKeys() {
-        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
-
-        boolean result = cloudEncryptionKeyManager.doesSiteHaveKeys(siteId);
-        assertFalse(result);
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_AllKeysNull() {
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(null);
-
-        boolean result = cloudEncryptionKeyManager.doesSiteHaveKeys(siteId);
-        assertFalse(result);
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_MultipleKeysDifferentSiteIds() {
-        CloudEncryptionKey cloudEncryptionKey1 = new CloudEncryptionKey(1, 1, 0L, 0L, "key1");
-        CloudEncryptionKey cloudEncryptionKey2 = new CloudEncryptionKey(2, 2, 0L, 0L, "key2");
-        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
-        allKeys.put(1, cloudEncryptionKey1);
-        allKeys.put(2, cloudEncryptionKey2);
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
-
-        assertTrue(cloudEncryptionKeyManager.doesSiteHaveKeys(1));
-        assertTrue(cloudEncryptionKeyManager.doesSiteHaveKeys(2));
-        assertFalse(cloudEncryptionKeyManager.doesSiteHaveKeys(3)); // Site ID 3 does not exist
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_SameSiteIdMultipleKeys() {
-        CloudEncryptionKey cloudEncryptionKey1 = new CloudEncryptionKey(siteId, siteId, 0L, 0L, "key1");
-        CloudEncryptionKey cloudEncryptionKey2 = new CloudEncryptionKey(siteId, siteId, 0L, 0L, "key2");
-        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
-        allKeys.put(1, cloudEncryptionKey1);
-        allKeys.put(2, cloudEncryptionKey2);
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
-
-        boolean result = cloudEncryptionKeyManager.doesSiteHaveKeys(siteId);
-        assertTrue(result);
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_LargeNumberOfKeys() {
-        Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
-        for (int i = 1; i <= 1000; i++) {
-            CloudEncryptionKey cloudEncryptionKey = new CloudEncryptionKey(i, i, 0L, 0L, "key" + i);
-            allKeys.put(i, cloudEncryptionKey);
-        }
-
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
-
-        for (int i = 1; i <= 1000; i++) {
-            assertTrue(cloudEncryptionKeyManager.doesSiteHaveKeys(i));
-        }
-        assertFalse(cloudEncryptionKeyManager.doesSiteHaveKeys(1001)); // Site ID 1001 does not exist
-    }
-
-    @Test
-    public void testDoesSiteHaveKeys_EmptyKeys() {
-        when(cloudEncryptionKeyProvider.getAll()).thenReturn(new HashMap<>());
-
-        assertFalse(cloudEncryptionKeyManager.doesSiteHaveKeys(1));
     }
 
     @Test
@@ -303,7 +146,7 @@ class CloudEncryptionKeyManagerTest {
         existingKeys.put(1, new CloudEncryptionKey(1, 100, 1000L, 900L, "existingKey1"));
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
 
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
+        when(keyGenerator.generate()).thenReturn("generatedSecret");
 
         cloudEncryptionKeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
@@ -378,7 +221,7 @@ class CloudEncryptionKeyManagerTest {
         existingKeys.put(3, new CloudEncryptionKey(3, 200, 3000L, 2900L, "existingKey3"));
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(existingKeys);
 
-        when(keyGenerator.generateRandomKeyString(32)).thenReturn("generatedSecret");
+        when(keyGenerator.generate()).thenReturn("generatedSecret");
 
         cloudEncryptionKeyManager.generateKeysForOperators(operatorKeys, keyActivateInterval, keyCountPerSite);
 
