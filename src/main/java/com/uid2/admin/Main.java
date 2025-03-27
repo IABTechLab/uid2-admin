@@ -268,7 +268,7 @@ public class Main {
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider),
-                    new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, siteProvider, cloudEncryptionKeyRotationStrategy)
+                    new CloudEncryptionKeyService(auth, rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, operatorKeyProvider, cloudEncryptionKeyRotationStrategy)
             };
 
 

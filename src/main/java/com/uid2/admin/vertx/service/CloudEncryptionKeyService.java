@@ -9,9 +9,9 @@ import com.uid2.admin.model.CloudEncryptionKeySummary;
 import com.uid2.admin.store.writer.CloudEncryptionKeyStoreWriter;
 import com.uid2.admin.vertx.Endpoints;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
-import com.uid2.shared.store.reader.RotatingSiteStore;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.Router;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class CloudEncryptionKeyService implements IService {
     private final AdminAuthMiddleware auth;
     private final RotatingCloudEncryptionKeyProvider keyProvider;
-    private final RotatingSiteStore siteProvider;
+    private final RotatingOperatorKeyProvider operatorKeyProvider;
     private final CloudEncryptionKeyStoreWriter keyWriter;
     private final CloudKeyRotationStrategy rotationStrategy;
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
@@ -33,12 +33,12 @@ public class CloudEncryptionKeyService implements IService {
             AdminAuthMiddleware auth,
             RotatingCloudEncryptionKeyProvider keyProvider,
             CloudEncryptionKeyStoreWriter keyWriter,
-            RotatingSiteStore siteProvider,
+            RotatingOperatorKeyProvider operatorKeyProvider,
             CloudKeyRotationStrategy rotationStrategy
     ) {
         this.auth = auth;
         this.keyProvider = keyProvider;
-        this.siteProvider = siteProvider;
+        this.operatorKeyProvider = operatorKeyProvider;
         this.keyWriter = keyWriter;
         this.rotationStrategy = rotationStrategy;
     }
@@ -57,11 +57,11 @@ public class CloudEncryptionKeyService implements IService {
     private void handleRotate(RoutingContext rc) {
         try {
             keyProvider.loadContent();
-            siteProvider.loadContent();
-            var allSites = siteProvider.getAllSites();
+            operatorKeyProvider.loadContent(operatorKeyProvider.getMetadata());
+            var operatorKeys = operatorKeyProvider.getAll();
             var existingKeys = keyProvider.getAll().values();
 
-            var desiredKeys = rotationStrategy.computeDesiredKeys(existingKeys, allSites);
+            var desiredKeys = rotationStrategy.computeDesiredKeys(existingKeys, operatorKeys);
             writeKeys(desiredKeys);
 
             rc.response().end();

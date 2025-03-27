@@ -10,9 +10,9 @@ import com.uid2.admin.model.CloudEncryptionKeySummary;
 import com.uid2.admin.vertx.service.CloudEncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
+import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.CloudEncryptionKey;
-import com.uid2.shared.model.Site;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -24,8 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
@@ -38,12 +37,12 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private final int keyId2 = 2;
     private final int keyId3 = 3;
     private final int keyId4 = 4;
-    private final String siteName1 = "Site 1";
-    private final Site site1 = new Site(siteId1, siteName1, true);
+    private final OperatorKey operator1 = testOperatorKey(siteId1, "one");
+    private final OperatorKey operator2 = testOperatorKey(siteId1, "two");
     private final String secret1 = "secret 1";
     private final String secret2 = "secret 2";
     private final String secret3 = "secret 3";
-    private final String secret4 = "secret4";
+    private final String secret4 = "secret 4";
 
     @Override
     protected IService createService() {
@@ -54,7 +53,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
                 auth,
                 cloudEncryptionKeyProvider,
                 cloudEncryptionKeyStoreWriter,
-                siteProvider,
+                operatorKeyProvider,
                 rotationStrategy
         );
     }
@@ -127,30 +126,27 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void testRotate_noSitesDoesNothing(Vertx vertx, VertxTestContext testContext) {
+    public void testRotate_noOperatorsNoKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         setCloudEncryptionKeys();
-        setSites();
+        setOperatorKeys();
 
         post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE, null, rotateResponse -> {
             assertEquals(200, rotateResponse.statusCode());
 
-            get(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_LIST, listResponse -> {
-                assertEquals(200, listResponse.statusCode());
-                assertEquals(noKeys, parseKeyListResponse(listResponse));
+            verify(cloudEncryptionKeyStoreWriter).upload(Map.of(), null);
 
-                testContext.completeNow();
-            });
+            testContext.completeNow();
         });
     }
 
     @Test
-    public void testRotate_forSiteWithNoKeysCreatesKey(Vertx vertx, VertxTestContext testContext) {
+    public void testRotate_forOperatorSiteWithNoKeysCreatesKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         setCloudEncryptionKeys();
-        setSites(site1);
+        setOperatorKeys(operator1);
         when(cloudSecretGenerator.generate()).thenReturn(secret1);
         when(clock.getEpochSecond()).thenReturn(now);
 
@@ -166,7 +162,26 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
-    public void testRotate_forSiteWithKeyCreatesNewActiveKey(Vertx vertx, VertxTestContext testContext) {
+    public void testRotate_CreatesOneKeyWhenThereAreMultipleOperatorsPerSite(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setCloudEncryptionKeys();
+        setOperatorKeys(operator1, operator2);
+
+        post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE, null, rotateResponse -> {
+            assertEquals(200, rotateResponse.statusCode());
+
+            get(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_LIST, listResponse -> {
+                assertEquals(200, listResponse.statusCode());
+                assertEquals(noKeys, parseKeyListResponse(listResponse));
+
+                testContext.completeNow();
+            });
+        });
+    }
+
+    @Test
+    public void testRotate_forOperatorSiteWithKeyCreatesNewActiveKey(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         var existingKey1 = new CloudEncryptionKey(keyId1, siteId1, before, before, secret1);
@@ -181,7 +196,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
         );
 
         setCloudEncryptionKeys(existingKey1, existingKey2, existingKey3);
-        setSites(site1);
+        setOperatorKeys(operator1);
         when(cloudSecretGenerator.generate()).thenReturn(secret4);
         when(clock.getEpochSecond()).thenReturn(now);
 
@@ -205,7 +220,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
         );
 
         setCloudEncryptionKeys(existingKey);
-        setSites(site1);
+        setOperatorKeys(operator1);
         when(cloudSecretGenerator.generate()).thenReturn(secret2);
         when(clock.getEpochSecond()).thenReturn(now);
 
@@ -219,5 +234,19 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private static CloudEncryptionKeyListResponse parseKeyListResponse(HttpResponse<Buffer> response) throws JsonProcessingException {
         return OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {
         });
+    }
+
+    private static OperatorKey testOperatorKey(int siteId, String keyId) {
+        return new OperatorKey(
+                "hash " + keyId,
+                "key salt " + keyId,
+                "name " + keyId,
+                "contact " + keyId,
+                "protocol "  + keyId,
+                0,
+                false,
+                siteId,
+                keyId
+        );
     }
 }
