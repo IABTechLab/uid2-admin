@@ -92,7 +92,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     public void upload(Object data, JsonObject extraMeta) throws Exception {
         @SuppressWarnings("unchecked")
         List<RotatingSaltProvider.SaltSnapshot> snapshots = new ArrayList<>((Collection<RotatingSaltProvider.SaltSnapshot>) data);
-        this.buildAndUploadMetadata(extraMeta, this.uploadASnapshotsAndGetMetadata(snapshots));
+        this.buildAndUploadMetadata(extraMeta, this.uploadSnapshotsAndGetMetadata(snapshots));
     }
 
     @Override

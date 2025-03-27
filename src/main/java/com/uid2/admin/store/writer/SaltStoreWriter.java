@@ -98,7 +98,7 @@ public class SaltStoreWriter {
         fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
     }
 
-    protected JsonArray uploadASnapshotsAndGetMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
+    protected JsonArray uploadSnapshotsAndGetMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
         final JsonArray snapshotsMetadata = new JsonArray();
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
             final String location = getSaltSnapshotLocation(snapshot);
@@ -116,7 +116,7 @@ public class SaltStoreWriter {
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
         JsonObject metadata = this.getMetadata();
         List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
-        this.buildAndUploadMetadata(metadata, this.uploadASnapshotsAndGetMetadata(snapshots));
+        this.buildAndUploadMetadata(metadata, this.uploadSnapshotsAndGetMetadata(snapshots));
         refreshProvider();
     }
 
