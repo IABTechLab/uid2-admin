@@ -23,13 +23,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
-    private final CloudEncryptionKeyListResponse noKeys = new CloudEncryptionKeyListResponse(List.of());
+    private final CloudEncryptionKeyListResponse noKeys = new CloudEncryptionKeyListResponse(Set.of());
     private final long longAgo = 0L;
     private final long before = 100L;
     private final long now = 200L;
@@ -94,14 +95,15 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
 
         setCloudEncryptionKeys(key1, key2);
 
-        var expected = new CloudEncryptionKeyListResponse(List.of(
+        var expected = new CloudEncryptionKeyListResponse(Set.of(
                 new CloudEncryptionKeySummary(1, 2, date1Iso, date1Iso),
                 new CloudEncryptionKeySummary(2, 2, date2Iso, date1Iso)
         ));
 
         get(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_LIST, response -> {
             assertEquals(200, response.statusCode());
-            assertEquals(expected, parseKeyListResponse(response));
+            var actual = parseKeyListResponse(response);
+            assertEquals(expected, actual);
 
             testContext.completeNow();
         });

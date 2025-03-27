@@ -73,9 +73,9 @@ public class CloudEncryptionKeyManager {
         }
     }
 
-    public List<CloudEncryptionKeySummary> getKeySummaries() throws Exception {
+    public Set<CloudEncryptionKeySummary> getKeySummaries() throws Exception {
         refreshCloudData();
-        return existingKeys.stream().map(CloudEncryptionKeySummary::fromFullKey).toList();
+        return existingKeys.stream().map(CloudEncryptionKeySummary::fromFullKey).collect(Collectors.toSet());
     }
 
     private void writeKeys(Set<CloudEncryptionKey> desiredKeys) throws Exception {

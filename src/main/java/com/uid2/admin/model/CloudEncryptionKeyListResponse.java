@@ -2,9 +2,9 @@ package com.uid2.admin.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
+import java.util.Set;
 
 public record CloudEncryptionKeyListResponse(
-        @JsonProperty List<CloudEncryptionKeySummary> cloudEncryptionKeys
+        @JsonProperty Set<CloudEncryptionKeySummary> cloudEncryptionKeys
 ) {}
 
