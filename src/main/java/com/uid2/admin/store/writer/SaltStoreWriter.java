@@ -117,7 +117,6 @@ public class SaltStoreWriter {
         JsonObject metadata = this.getMetadata();
         List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
         this.buildAndUploadMetadata(metadata, this.uploadASnapshotsAndGetMetadata(snapshots));
-        // refresh manually
         refreshProvider();
     }
 
