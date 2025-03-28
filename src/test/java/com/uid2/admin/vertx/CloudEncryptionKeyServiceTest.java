@@ -3,7 +3,8 @@ package com.uid2.admin.vertx;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.uid2.admin.cloudencryption.CloudKeyRotationStrategy;
+import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
+import com.uid2.admin.cloudencryption.CloudKeyStatePlanner;
 import com.uid2.admin.cloudencryption.ExpiredKeyCountRetentionStrategy;
 import com.uid2.admin.model.CloudEncryptionKeyListResponse;
 import com.uid2.admin.model.CloudEncryptionKeySummary;
@@ -22,13 +23,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
-    private final CloudEncryptionKeyListResponse noKeys = new CloudEncryptionKeyListResponse(List.of());
+    private final CloudEncryptionKeyListResponse noKeys = new CloudEncryptionKeyListResponse(Set.of());
     private final long longAgo = 0L;
     private final long before = 100L;
     private final long now = 200L;
@@ -47,15 +49,15 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     @Override
     protected IService createService() {
         var retentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 2);
-        var rotationStrategy = new CloudKeyRotationStrategy(cloudSecretGenerator, clock, retentionStrategy);
-
-        return new CloudEncryptionKeyService(
-                auth,
+        var rotationStrategy = new CloudKeyStatePlanner(cloudSecretGenerator, clock, retentionStrategy);
+        var manager = new CloudEncryptionKeyManager(
                 cloudEncryptionKeyProvider,
                 cloudEncryptionKeyStoreWriter,
                 operatorKeyProvider,
                 rotationStrategy
         );
+
+        return new CloudEncryptionKeyService(auth, manager);
     }
 
     @Test
@@ -93,14 +95,15 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
 
         setCloudEncryptionKeys(key1, key2);
 
-        var expected = new CloudEncryptionKeyListResponse(List.of(
+        var expected = new CloudEncryptionKeyListResponse(Set.of(
                 new CloudEncryptionKeySummary(1, 2, date1Iso, date1Iso),
                 new CloudEncryptionKeySummary(2, 2, date2Iso, date1Iso)
         ));
 
         get(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_LIST, response -> {
             assertEquals(200, response.statusCode());
-            assertEquals(expected, parseKeyListResponse(response));
+            var actual = parseKeyListResponse(response);
+            assertEquals(expected, actual);
 
             testContext.completeNow();
         });
@@ -231,6 +234,18 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
         });
     }
 
+    @Test
+    public void testRotate_handleExceptions(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setOperatorKeys(operator1);
+        when(clock.getEpochSecond()).thenThrow(new RuntimeException("oops"));
+
+        post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE, null, rotateResponse -> {
+            assertEquals(500, rotateResponse.statusCode());
+            testContext.completeNow();
+        });
+    }
+
     private static CloudEncryptionKeyListResponse parseKeyListResponse(HttpResponse<Buffer> response) throws JsonProcessingException {
         return OBJECT_MAPPER.readValue(response.bodyAsString(), new TypeReference<>() {
         });
@@ -242,7 +257,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
                 "key salt " + keyId,
                 "name " + keyId,
                 "contact " + keyId,
-                "protocol "  + keyId,
+                "protocol " + keyId,
                 0,
                 false,
                 siteId,
