@@ -38,14 +38,14 @@ public class EncryptedFilesSyncService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/encrypted-files/refresh").handler(auth.handle((ctx) -> {
+        router.post("/api/encrypted-files/refresh").blockingHandler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
                         this.handleEncryptedFileSync(ctx);
                     }
                 },
                 Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
 
-        router.post("/api/encrypted-files/syncNow").handler(auth.handle(
+        router.post("/api/encrypted-files/syncNow").blockingHandler(auth.handle(
                 this::handleEncryptedFileSyncNow,
                 Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
     }

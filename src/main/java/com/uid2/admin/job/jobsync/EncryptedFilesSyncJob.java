@@ -195,7 +195,7 @@ public class EncryptedFilesSyncJob extends Job {
                 encryptionKeyWriter
         );
         KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls);
-        SaltEncryptionJob saltEncryptionJob = new SaltEncryptionJob(globalOperators, saltProvider.getSnapshots(), saltWriter);
+        SaltEncryptionJob saltEncryptionJob = new SaltEncryptionJob(globalOperators, saltProvider, saltWriter);
         ClientSideKeypairEncryptionJob clientSideKeypairEncryptionJob = new ClientSideKeypairEncryptionJob(globalOperators, globalClientSideKeypair, clientSideKeypairWriter);
 
         siteEncryptionSyncJob.execute();

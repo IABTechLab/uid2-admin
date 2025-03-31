@@ -28,8 +28,6 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
 
-    private final List<RotatingSaltProvider.SaltSnapshot> previousSeenSnapshots = new ArrayList<>();
-
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedSaltStoreWriter.class);
     public EncryptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
                                     TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator, StoreScope scope,
@@ -49,12 +47,6 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         if (siteId == null) {
             throw new IllegalStateException("Site ID is not set.");
-        }
-
-        if (!cloudStorage.list(location).isEmpty()) {
-            // update the tags on the file to ensure it is still marked as current
-            this.setStatusTagToCurrent(location);
-            return;
         }
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -89,27 +81,12 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
 
         this.upload(newSaltsFile.toString(), location);
     }
-    
-    @Override
-    protected void refreshProvider() {
-       // we do not need to refresh the provider on encrypted writers
-    }
-
-    @Override
-    protected List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
-    /*
-    Since metadata.json is overwritten during the process, we maintain a history of all snapshots seen so far.
-    On the final write, we append this history to metadata.json to ensure no snapshots are lost.
-    */
-        this.previousSeenSnapshots.add(data);
-        return this.previousSeenSnapshots;
-    }
 
     @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
-        for(RotatingSaltProvider.SaltSnapshot saltSnapshot: (Collection<RotatingSaltProvider.SaltSnapshot>) data) {
-            super.upload(saltSnapshot);
-        }
+        @SuppressWarnings("unchecked")
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = new ArrayList<>((Collection<RotatingSaltProvider.SaltSnapshot>) data);
+        this.buildAndUploadMetadata(extraMeta, this.uploadSnapshotsAndGetMetadata(snapshots));
     }
 
     @Override
