@@ -49,12 +49,6 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
             throw new IllegalStateException("Site ID is not set.");
         }
 
-        if (!cloudStorage.list(location).isEmpty()) {
-            // update the tags on the file to ensure it is still marked as current
-            this.setStatusTagToCurrent(location);
-            return;
-        }
-
         StringBuilder stringBuilder = new StringBuilder();
 
         for (SaltEntry entry: snapshot.getAllRotatingSalts()) {
