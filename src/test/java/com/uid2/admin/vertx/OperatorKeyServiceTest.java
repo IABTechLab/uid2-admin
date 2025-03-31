@@ -22,7 +22,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -277,11 +276,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorAddGeneratesCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertNotNull(revealedOperator.getAuthorizable()),
-                        () -> verify(cloudEncryptionKeyManager).generateKeysForOperators(
-                                argThat(collection -> collection.size() == 1 && collection.iterator().next().getName().equals("test_operator")),
-                                eq(3600L),
-                                eq(5)
-                        )
+                        () -> verify(cloudEncryptionKeyManager).backfillKeys()
                 );
                 testContext.completeNow();
             } catch (Exception e) {
@@ -306,11 +301,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(5, updatedOperator.getSiteId()),
                         () -> assertNotEquals(1, updatedOperator.getSiteId()),
-                        () -> verify(cloudEncryptionKeyManager).generateKeysForOperators(
-                                argThat(collection -> collection.size() == 1 && collection.iterator().next().getName().equals("test_operator")),
-                                eq(3600L),
-                                eq(5)
-                        )
+                        () -> verify(cloudEncryptionKeyManager).backfillKeys()
                 );
                 testContext.completeNow();
             } catch (Exception e) {
@@ -334,7 +325,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorUpdateWithoutSiteIdChangeDoesNotGenerateCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(existingOperator.getSiteId(), updatedOperator.getSiteId()),
-                        () -> verify(cloudEncryptionKeyManager, never()).generateKeysForOperators(any(), anyLong(), anyInt())
+                        () -> verify(cloudEncryptionKeyManager, never()).backfillKeys()
                 );
                 testContext.completeNow();
             } catch (Exception e) {
