@@ -223,7 +223,20 @@ public class RequestUtil {
             return Optional.empty();
         }
         try {
-            return Optional.of(Double.valueOf(values.get(0)));
+            return Optional.of(Double.valueOf(values.getFirst()));
+        } catch (Exception ex) {
+            ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<Integer> getInteger(RoutingContext rc, String paramName) {
+        final List<String> values = rc.queryParam(paramName);
+        if (values.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Integer.valueOf(values.getFirst()));
         } catch (Exception ex) {
             ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
             return Optional.empty();
