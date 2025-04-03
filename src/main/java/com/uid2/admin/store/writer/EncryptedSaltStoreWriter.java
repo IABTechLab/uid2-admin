@@ -75,7 +75,6 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         CloudEncryptionKey encryptionKey = this.getActiveCloudEncryptionKey();
         boolean fileExist = !cloudStorage.list(location).isEmpty();
          if (fileExist) {
-             this.setStatusTagToCurrent(location);
              long currentUnixTime = Instant.now().getEpochSecond();
              boolean isMoreThan3HoursOld = (currentUnixTime - encryptionKey.getCreated()) > Duration.ofHours(3).getSeconds();
              if (isMoreThan3HoursOld) {
