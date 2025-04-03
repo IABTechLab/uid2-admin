@@ -6,15 +6,10 @@ import lombok.Getter;
 import java.time.Duration;
 
 public interface ISaltRotation {
-    Result rotateSaltsSimulation(RotatingSaltProvider.SaltSnapshot lastSnapshot,
-                                 Duration[] minAges,
-                                 double fraction,
-                                 int period,
-                                 int numEpochs) throws Exception;
-
     Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                        Duration[] minAges,
-                       double fraction) throws Exception;
+                       double fraction,
+                       int period) throws Exception;
 
     @Getter
     class Result {
@@ -33,6 +28,7 @@ public interface ISaltRotation {
         public static Result fromSnapshot(RotatingSaltProvider.SaltSnapshot snapshot) {
             return new Result(snapshot, null);
         }
+
         public static Result noSnapshot(String reason) {
             return new Result(null, reason);
         }

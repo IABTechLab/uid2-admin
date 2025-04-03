@@ -1,22 +1,21 @@
 package com.uid2.admin.secret;
 
-import com.uid2.admin.vertx.service.SaltService;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.RotatingSaltProvider;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
+// TODO: Add feature switch for any logic related to refresh_from
 public class SaltRotation implements ISaltRotation {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
+    private static final int PREVIOUS_SALT_EXPIRATION_DAYS = 90;
     private static final String SNAPSHOT_ACTIVATES_IN_SECONDS = "salt_snapshot_activates_in_seconds";
     private static final String SNAPSHOT_EXPIRES_AFTER_SECONDS = "salt_snapshot_expires_after_seconds";
 
@@ -27,6 +26,7 @@ public class SaltRotation implements ISaltRotation {
     public static Duration getSnapshotActivatesIn(JsonObject config) {
         return Duration.ofSeconds(config.getInteger(SNAPSHOT_ACTIVATES_IN_SECONDS));
     }
+
     public static Duration getSnapshotExpiresAfter(JsonObject config) {
         return Duration.ofSeconds(config.getInteger(SNAPSHOT_EXPIRES_AFTER_SECONDS));
     }
@@ -45,95 +45,47 @@ public class SaltRotation implements ISaltRotation {
     @Override
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                               Duration[] minAges,
-                              double fraction) throws Exception {
-        final Instant now = Instant.now();
-        final Instant nextEffective = now.plusSeconds(snapshotActivatesIn.getSeconds());
-        final Instant nextExpires = nextEffective.plusSeconds(snapshotExpiresAfter.getSeconds());
+                              double fraction,
+                              int period) throws Exception {
+        Instant now = Instant.now().plus(1, ChronoUnit.DAYS); // TODO: Plus one?
+        Instant nextEffective = now.plusSeconds(snapshotActivatesIn.getSeconds());
+        Instant nextExpires = nextEffective.plusSeconds(snapshotExpiresAfter.getSeconds());
         if (!nextEffective.isAfter(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp prior to that of an existing snapshot");
         }
 
-        final Instant[] thresholds = Arrays.stream(minAges)
+        Instant[] thresholds = Arrays.stream(minAges)
                 .map(a -> now.minusSeconds(a.getSeconds()))
                 .sorted()
                 .toArray(Instant[]::new);
-        final int maxSalts = (int)Math.ceil(lastSnapshot.getAllRotatingSalts().length * fraction);
-        final List<Integer> entryIndexes = new ArrayList<>();
+        int maxSalts = (int)Math.ceil(lastSnapshot.getAllRotatingSalts().length * fraction);
+        List<Integer> entryIndexes = new ArrayList<>();
 
+        // TODO: Candidate salt age histogram - Number of candidate salts can be derived from above
         Instant minLastUpdated = Instant.ofEpochMilli(0);
         for (Instant threshold : thresholds) {
             if (entryIndexes.size() >= maxSalts) break;
             addIndexesToRotate(entryIndexes, lastSnapshot,
-                    minLastUpdated.toEpochMilli(), threshold.toEpochMilli(),
-                    maxSalts - entryIndexes.size());
-            minLastUpdated = threshold;
-        }
-
-        if (entryIndexes.isEmpty()) return Result.noSnapshot("all salts are below min rotation age");
-
-        return Result.fromSnapshot(createRotatedSnapshot(lastSnapshot, nextEffective, nextExpires, entryIndexes));
-    }
-
-    @Override
-    public Result rotateSaltsSimulation(RotatingSaltProvider.SaltSnapshot lastSnapshot,
-                                        Duration[] minAges,
-                                        double fraction,
-                                        int period,
-                                        int numEpochs) throws Exception {
-        final Instant now = SaltService.NOW.plus(Duration.ofDays(numEpochs + 1));
-        final Instant nextEffective = now.plusSeconds(snapshotActivatesIn.getSeconds());
-        final Instant nextExpires = nextEffective.plusSeconds(snapshotExpiresAfter.getSeconds());
-        if (!nextEffective.isAfter(lastSnapshot.getEffective())) {
-            return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp prior to that of an existing snapshot");
-        }
-
-        final Instant[] thresholds = Arrays.stream(minAges)
-                .map(a -> now.minusSeconds(a.getSeconds()))
-                .sorted()
-                .toArray(Instant[]::new);
-        final int maxSalts = (int)Math.ceil(lastSnapshot.getAllRotatingSalts().length * fraction);
-        final List<Integer> entryIndexes = new ArrayList<>();
-
-        Instant minLastUpdated = Instant.ofEpochMilli(0);
-        for (Instant threshold : thresholds) {
-            if (entryIndexes.size() >= maxSalts) break;
-            addIndexesToRotateForward(entryIndexes, lastSnapshot,
                     now.toEpochMilli(), minLastUpdated.toEpochMilli(), threshold.toEpochMilli(),
                     maxSalts - entryIndexes.size());
             minLastUpdated = threshold;
         }
 
-        if (entryIndexes.isEmpty()) return Result.noSnapshot("all salts are below min rotation age");
-
-        return Result.fromSnapshot(createRotatedSnapshotSimulation(lastSnapshot, now, nextEffective, nextExpires, entryIndexes, period, numEpochs));
+        if (entryIndexes.isEmpty()) {
+            return Result.noSnapshot("all salts are below min rotation age");
+        }
+        return Result.fromSnapshot(createRotatedSnapshot(lastSnapshot, now, nextEffective, nextExpires, entryIndexes, period));
     }
 
     private void addIndexesToRotate(List<Integer> entryIndexes,
                                     RotatingSaltProvider.SaltSnapshot lastSnapshot,
+                                    long now,
                                     long minLastUpdated,
                                     long maxLastUpdated,
                                     int maxIndexes) {
-        final SaltEntry[] entries = lastSnapshot.getAllRotatingSalts();
-        final List<Integer> candidateIndexes = IntStream.range(0, entries.length)
-                .filter(i -> isBetween(entries[i].getLastUpdated(), minLastUpdated, maxLastUpdated))
-                .boxed().collect(toList());
-        if (candidateIndexes.size() <= maxIndexes) {
-            entryIndexes.addAll(candidateIndexes);
-            return;
-        }
-        Collections.shuffle(candidateIndexes);
-        candidateIndexes.stream().limit(maxIndexes).forEachOrdered(i -> entryIndexes.add(i));
-    }
-
-    private void addIndexesToRotateForward(List<Integer> entryIndexes,
-                                           RotatingSaltProvider.SaltSnapshot lastSnapshot,
-                                           long now,
-                                           long minLastUpdated,
-                                           long maxLastUpdated,
-                                           int maxIndexes) {
-        final SaltEntry[] entries = lastSnapshot.getAllRotatingSalts();
-        final List<Integer> candidateIndexes = IntStream.range(0, entries.length)
-                .filter(i -> entries[i].getRefreshFrom() <= now)
+        SaltEntry[] entries = lastSnapshot.getAllRotatingSalts();
+        List<Integer> candidateIndexes = IntStream.range(0, entries.length)
+                .filter(i -> entries[i].getRefreshFrom() <= now) // TODO: Check whether refresh is exactly today, round down refreshFrom and now to nearest day
                 .filter(i -> isBetween(entries[i].getLastUpdated(), minLastUpdated, maxLastUpdated))
                 .boxed().collect(toList());
 
@@ -150,38 +102,27 @@ public class SaltRotation implements ISaltRotation {
     }
 
     private RotatingSaltProvider.SaltSnapshot createRotatedSnapshot(RotatingSaltProvider.SaltSnapshot lastSnapshot,
+                                                                    Instant now,
                                                                     Instant nextEffective,
                                                                     Instant nextExpires,
-                                                                    List<Integer> entryIndexes) throws Exception {
-        final long lastUpdated = nextEffective.toEpochMilli();
-        final RotatingSaltProvider.SaltSnapshot nextSnapshot = new RotatingSaltProvider.SaltSnapshot(
+                                                                    List<Integer> entryIndexes,
+                                                                    int period) throws Exception {
+        long lastUpdated = nextEffective.toEpochMilli();
+        RotatingSaltProvider.SaltSnapshot nextSnapshot = new RotatingSaltProvider.SaltSnapshot(
                 nextEffective, nextExpires,
                 Arrays.copyOf(lastSnapshot.getAllRotatingSalts(), lastSnapshot.getAllRotatingSalts().length),
                 lastSnapshot.getFirstLevelSalt());
-        for (Integer i : entryIndexes) {
-            final SaltEntry oldSalt = nextSnapshot.getAllRotatingSalts()[i];
-            final String secret = this.keyGenerator.generateRandomKeyString(32);
-            nextSnapshot.getAllRotatingSalts()[i] = new SaltEntry(oldSalt.getId(), oldSalt.getHashedId(), lastUpdated, secret);
-        }
-        return nextSnapshot;
-    }
 
-    private RotatingSaltProvider.SaltSnapshot createRotatedSnapshotSimulation(RotatingSaltProvider.SaltSnapshot lastSnapshot,
-                                                                              Instant now,
-                                                                              Instant nextEffective,
-                                                                              Instant nextExpires,
-                                                                              List<Integer> entryIndexes,
-                                                                              int period,
-                                                                              int numEpochs) throws Exception {
-        final long lastUpdated = nextEffective.toEpochMilli();
-        final RotatingSaltProvider.SaltSnapshot nextSnapshot = new RotatingSaltProvider.SaltSnapshot(
-                nextEffective, nextExpires,
-                Arrays.copyOf(lastSnapshot.getAllRotatingSalts(), lastSnapshot.getAllRotatingSalts().length),
-                lastSnapshot.getFirstLevelSalt());
+        /* TODO: Add metrics
+         * Rotated salt age histogram
+         * rotatedAgeCounts
+         * Number of rotated salts can be derived from above
+         * All salt age histogram
+         * rotatedAgeCounts + unrotatedAgeCounts
+         */
 
         Map<Long, Integer> unrotatedAgeCounts = new TreeMap<>();
         Map<Long, Integer> rotatedAgeCounts = new TreeMap<>();
-        long totalAge = 0;
 
         Set<Integer> entryIndexesSet = new HashSet<>(entryIndexes);
         for (int i = 0; i < nextSnapshot.getAllRotatingSalts().length; i++) {
@@ -190,34 +131,30 @@ public class SaltRotation implements ISaltRotation {
 
             if (entryIndexesSet.contains(i)) {
                 rotatedAgeCounts.put(age, rotatedAgeCounts.getOrDefault(age, 0) + 1);
-                totalAge += age;
 
-                final String secret = this.keyGenerator.generateRandomKeyString(32);
+                String secret = this.keyGenerator.generateRandomKeyString(32);
                 nextSnapshot.getAllRotatingSalts()[i] = new SaltEntry(
                         salt.getId(),
                         salt.getHashedId(),
                         lastUpdated,
                         secret,
+                        salt.getSalt(),
                         Instant.ofEpochMilli(salt.getRefreshFrom()).plus(Duration.ofDays(period)).toEpochMilli()
                 );
             } else {
                 unrotatedAgeCounts.put(age, unrotatedAgeCounts.getOrDefault(age, 0) + 1);
-                if (salt.getRefreshFrom() > now.toEpochMilli()) continue;
+
+                // TODO: Check whether refresh is exactly today, round down refreshFrom and now to nearest day in case cronjob ran a bit later than midnight
+                if (salt.getRefreshFrom() > now.toEpochMilli()) {
+                    continue;
+                }
+
+                if (Duration.between(Instant.ofEpochMilli(salt.getLastUpdated()), now).toDays() > PREVIOUS_SALT_EXPIRATION_DAYS) {
+                    salt.setPreviousSalt(null);
+                }
+                // TODO: Make this add period repeatedly until refresh > now in case of missed rotations
                 salt.setRefreshFrom(Instant.ofEpochMilli(salt.getRefreshFrom()).plus(Duration.ofDays(period)).toEpochMilli());
             }
-        }
-
-        LOGGER.info(
-                "Epoch: {} | Rotated salts: {} | Average lifetime: {}",
-                numEpochs,
-                entryIndexes.size(),
-                (double) totalAge / entryIndexes.size()
-        );
-//        for (Map.Entry<Long, Integer> entry : unrotatedAgeCounts.entrySet()) {
-//            LOGGER.info("Unrotated age: {} | Count: {}", entry.getKey(), entry.getValue());
-//        }
-        for (Map.Entry<Long, Integer> entry : rotatedAgeCounts.entrySet()) {
-            LOGGER.info("Rotated age: {} | Count: {}", entry.getKey(), entry.getValue());
         }
 
         return nextSnapshot;

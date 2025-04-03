@@ -1,12 +1,10 @@
 package com.uid2.admin.job.EncryptionJob;
 
 import com.uid2.admin.job.model.Job;
-import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
 import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.RotatingSaltProvider;
 
 import java.util.Collection;

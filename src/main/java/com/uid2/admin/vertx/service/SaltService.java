@@ -14,6 +14,7 @@ import com.uid2.shared.util.Mapper;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
@@ -21,18 +22,13 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class SaltService implements IService {
-    public static class SimulationResult {
-        public Map<Long, Integer> saltLifetimeCounts = new TreeMap<>();
-        public Map<Long, Integer> daysRemainingCounts = new TreeMap<>();
-    }
-
-    public static Instant NOW = Instant.ofEpochMilli(1743459126294L);
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
+    private static final int REFRESH_PERIOD = 30;
 
     private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
@@ -57,15 +53,15 @@ public class SaltService implements IService {
         router.get("/api/salt/snapshots").handler(
                 auth.handle(this::handleSaltSnapshots, Role.MAINTAINER));
 
-        router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/salt/backfill").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleSaltRotate(ctx);
+                this.handleSaltBackfill(ctx);
             }
         }, Role.SUPER_USER, Role.SECRET_ROTATION));
 
-        router.post("/api/salt/simulate").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
-                this.handleSaltSimulate(ctx);
+                this.handleSaltRotate(ctx);
             }
         }, Role.SUPER_USER, Role.SECRET_ROTATION));
     }
@@ -85,61 +81,27 @@ public class SaltService implements IService {
         }
     }
 
-    private void handleSaltSimulate(RoutingContext rc) {
+    private void handleSaltBackfill(RoutingContext rc) {
         try {
-            // Sanitise input
-            final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
-            if (fraction.isEmpty()) return;
-            final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
-            if (minAges == null) return;
-            final Optional<Integer> period = RequestUtil.getInteger(rc, "period");
-            if (period.isEmpty()) return;
-
-            // Load snapshots
             this.saltProvider.loadContent();
             List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
             RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
-            SimulationResult result = new SimulationResult();
+            Instant now = Instant.now();
+            BackfillResult result = new BackfillResult();
+
             for (SaltEntry saltEntry : lastSnapshot.getAllRotatingSalts()) {
-                long age = Duration.between(Instant.ofEpochMilli(saltEntry.getLastUpdated()), NOW).toDays();
-                long nextCutoff = Math.ceilDiv(age, period.get()) * period.get();
-                long refreshFrom = Instant.ofEpochMilli(saltEntry.getLastUpdated()).plus(Duration.ofDays(nextCutoff)).toEpochMilli();
+                long age = Duration.between(Instant.ofEpochMilli(saltEntry.getLastUpdated()), now).toDays();
+                long nextCutoff = Math.ceilDiv(age, REFRESH_PERIOD) * REFRESH_PERIOD; // Round age to the nearest multiple of 30
+                long refreshFrom = Instant.ofEpochMilli(saltEntry.getLastUpdated()).plus(nextCutoff, ChronoUnit.DAYS).toEpochMilli();
                 saltEntry.setRefreshFrom(refreshFrom);
-                result.saltLifetimeCounts.put(age, result.saltLifetimeCounts.getOrDefault(age, 0) + 1);
+                result.getSaltLifetimeCounts().put(age, result.getSaltLifetimeCounts().getOrDefault(age, 0) + 1);
 
-                long daysToRefresh = Duration.between(NOW, Instant.ofEpochMilli(refreshFrom)).toDays();
-                result.daysRemainingCounts.put(daysToRefresh, result.daysRemainingCounts.getOrDefault(daysToRefresh, 0) + 1);
+                long daysToRefresh = Duration.between(now, Instant.ofEpochMilli(refreshFrom)).toDays();
+                result.getDaysRemainingCounts().put(daysToRefresh, result.getDaysRemainingCounts().getOrDefault(daysToRefresh, 0) + 1);
             }
 
-
-//            String location = "salts/backfilled_salts.txt";
-//            Path newSaltsFile = Files.createTempFile("operators", ".txt");
-//            LOGGER.info("Temp path: {}", newSaltsFile.toAbsolutePath());
-//            try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
-//                for (SaltEntry entry : lastSnapshot.getAllRotatingSalts()) {
-//                    w.write(
-//                            entry.getId() + ","
-//                                    + entry.getSalt() + ","
-//                                    + entry.getLastUpdated() + ","
-//                                    + entry.getRefreshFrom() + "\n");
-//                }
-//            }
-//            cloudStorage.upload(newSaltsFile.toString(), location);
-
-            // Forward Simulation
-            for (int i = 0; i < 100; i++) {
-                ISaltRotation.Result rotationResult = saltRotation.rotateSaltsSimulation(
-                        lastSnapshot, minAges, fraction.get(), period.get(), i);
-                if (!rotationResult.hasSnapshot()) {
-                    ResponseUtil.error(rc, 200, rotationResult.getReason());
-                    return;
-                }
-
-                lastSnapshot = rotationResult.getSnapshot();
-
-                LOGGER.info("=====================");
-            }
+            storageManager.upload(lastSnapshot);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -157,16 +119,16 @@ public class SaltService implements IService {
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
 
-            // force refresh
+            // Force refresh
             this.saltProvider.loadContent();
 
-            // mark all the referenced files as ready to archive
+            // Mark all the referenced files as ready to archive
             storageManager.archiveSaltLocations();
 
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
             final ISaltRotation.Result result = saltRotation.rotateSalts(
-                    lastSnapshot, minAges, fraction.get());
+                    lastSnapshot, minAges, fraction.get(), REFRESH_PERIOD);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;
@@ -195,5 +157,16 @@ public class SaltService implements IService {
                 .map(SaltEntry::getLastUpdated)
                 .max(Long::compare).orElse(null));
         return jo;
+    }
+
+    @Getter
+    private static class BackfillResult {
+        private final Map<Long, Integer> saltLifetimeCounts;
+        private final Map<Long, Integer> daysRemainingCounts;
+
+        public BackfillResult() {
+            saltLifetimeCounts = new TreeMap<>();
+            daysRemainingCounts = new TreeMap<>();
+        }
     }
 }

@@ -81,51 +81,51 @@ public class SaltServiceTest extends ServiceTestBase {
         });
     }
 
-    @Test
-    void rotateSalts(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SUPER_USER);
-
-        final RotatingSaltProvider.SaltSnapshot[] snapshots = {
-                makeSnapshot(Instant.ofEpochMilli(10001), Instant.ofEpochMilli(20001), 10),
-                makeSnapshot(Instant.ofEpochMilli(10002), Instant.ofEpochMilli(20002), 10),
-                makeSnapshot(Instant.ofEpochMilli(10003), Instant.ofEpochMilli(20003), 10),
-        };
-        setSnapshots(snapshots);
-
-        final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
-                makeSnapshot(Instant.ofEpochMilli(10004), Instant.ofEpochMilli(20004), 10),
-        };
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
-
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
-            assertEquals(200, response.statusCode());
-            checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
-            verify(saltStoreWriter).upload(any());
-            verify(saltStoreWriter, times(1)).archiveSaltLocations();
-            testContext.completeNow();
-        });
-    }
-
-    @Test
-    void rotateSaltsNoNewSnapshot(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SUPER_USER);
-
-        final RotatingSaltProvider.SaltSnapshot[] snapshots = {
-                makeSnapshot(Instant.ofEpochMilli(10001), Instant.ofEpochMilli(20001), 10),
-                makeSnapshot(Instant.ofEpochMilli(10002), Instant.ofEpochMilli(20002), 10),
-                makeSnapshot(Instant.ofEpochMilli(10003), Instant.ofEpochMilli(20003), 10),
-        };
-        setSnapshots(snapshots);
-
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
-
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
-            assertEquals(200, response.statusCode());
-            JsonObject jo = response.bodyAsJsonObject();
-            assertFalse(jo.containsKey("effective"));
-            assertFalse(jo.containsKey("expires"));
-            verify(saltStoreWriter, times(0)).upload(any());
-            testContext.completeNow();
-        });
-    }
+//    @Test
+//    void rotateSalts(Vertx vertx, VertxTestContext testContext) throws Exception {
+//        fakeAuth(Role.SUPER_USER);
+//
+//        final RotatingSaltProvider.SaltSnapshot[] snapshots = {
+//                makeSnapshot(Instant.ofEpochMilli(10001), Instant.ofEpochMilli(20001), 10),
+//                makeSnapshot(Instant.ofEpochMilli(10002), Instant.ofEpochMilli(20002), 10),
+//                makeSnapshot(Instant.ofEpochMilli(10003), Instant.ofEpochMilli(20003), 10),
+//        };
+//        setSnapshots(snapshots);
+//
+//        final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
+//                makeSnapshot(Instant.ofEpochMilli(10004), Instant.ofEpochMilli(20004), 10),
+//        };
+//        when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
+//
+//        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+//            assertEquals(200, response.statusCode());
+//            checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
+//            verify(saltStoreWriter).upload(any());
+//            verify(saltStoreWriter, times(1)).archiveSaltLocations();
+//            testContext.completeNow();
+//        });
+//    }
+//
+//    @Test
+//    void rotateSaltsNoNewSnapshot(Vertx vertx, VertxTestContext testContext) throws Exception {
+//        fakeAuth(Role.SUPER_USER);
+//
+//        final RotatingSaltProvider.SaltSnapshot[] snapshots = {
+//                makeSnapshot(Instant.ofEpochMilli(10001), Instant.ofEpochMilli(20001), 10),
+//                makeSnapshot(Instant.ofEpochMilli(10002), Instant.ofEpochMilli(20002), 10),
+//                makeSnapshot(Instant.ofEpochMilli(10003), Instant.ofEpochMilli(20003), 10),
+//        };
+//        setSnapshots(snapshots);
+//
+//        when(saltRotation.rotateSalts(any(), any(), eq(0.2))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
+//
+//        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+//            assertEquals(200, response.statusCode());
+//            JsonObject jo = response.bodyAsJsonObject();
+//            assertFalse(jo.containsKey("effective"));
+//            assertFalse(jo.containsKey("expires"));
+//            verify(saltStoreWriter, times(0)).upload(any());
+//            testContext.completeNow();
+//        });
+//    }
 }

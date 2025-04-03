@@ -20,20 +20,19 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SaltStoreWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltStoreWriter.class);
-    private final RotatingSaltProvider provider;
-    private final FileManager fileManager;
-    protected final String saltSnapshotLocationPrefix;
-    private final VersionGenerator versionGenerator;
-
-    protected final TaggableCloudStorage cloudStorage;
 
     private final Map<String, String> currentTags = Map.of("status", "current");
     private final Map<String, String> obsoleteTags = Map.of("status", "obsolete");
+    private final RotatingSaltProvider provider;
+    private final FileManager fileManager;
+    private final VersionGenerator versionGenerator;
+
+    protected final TaggableCloudStorage cloudStorage;
+    protected final String saltSnapshotLocationPrefix;
 
     public SaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager, TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator) {
         this.provider = provider;
@@ -47,12 +46,11 @@ public class SaltStoreWriter {
         if (provider.getSnapshots() == null) {
             throw new IllegalStateException("Snapshots cannot be null");
         }
-        final Instant now = Instant.now();
+        Instant now = Instant.now();
         List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
-        List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
-        snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
                 .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                .collect(Collectors.toList());
+                .toList();
         RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
                 .filter(snapshot -> snapshot.isEffective(now))
                 .reduce((a, b) -> b).orElse(null);
@@ -61,12 +59,13 @@ public class SaltStoreWriter {
 
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
             if (!now.isBefore(snapshot.getExpires())) {
-                LOGGER.info("Skipping expired snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires());
+                LOGGER.info("Skipping expired snapshot, effective={}, expires={}", snapshot.getEffective(), snapshot.getExpires());
                 continue;
             }
             if (newestEffectiveSnapshot != null && snapshot != newestEffectiveSnapshot) {
-                        LOGGER.info("Skipping effective snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires()
-                                + " in favour of newer snapshot, effective=" + newestEffectiveSnapshot.getEffective() + ", expires=" + newestEffectiveSnapshot.getExpires());
+                LOGGER.info("Skipping effective snapshot, effective={}, expires={} in favour of newer snapshot, effective={}, expires={}",
+                        snapshot.getEffective(), snapshot.getExpires(),
+                        newestEffectiveSnapshot.getEffective(), newestEffectiveSnapshot.getExpires());
                 continue;
             }
             filteredSnapshots.add(snapshot);
@@ -76,10 +75,10 @@ public class SaltStoreWriter {
     }
 
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
-        final Instant now = Instant.now();
-        final long generated = now.getEpochSecond();
+        Instant now = Instant.now();
+        long generated = now.getEpochSecond();
 
-        JsonObject metadata = null;
+        JsonObject metadata;
         try {
             metadata = provider.getMetadata();
         } catch (CloudStorageException e) {
@@ -93,14 +92,14 @@ public class SaltStoreWriter {
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
 
-        final JsonArray snapshotsMetadata = new JsonArray();
+        JsonArray snapshotsMetadata = new JsonArray();
         metadata.put("salts", snapshotsMetadata);
 
         List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
 
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
-            final String location = getSaltSnapshotLocation(snapshot);
-            final JsonObject snapshotMetadata = new JsonObject();
+            String location = getSaltSnapshotLocation(snapshot);
+            JsonObject snapshotMetadata = new JsonObject();
             snapshotMetadata.put("effective", snapshot.getEffective().toEpochMilli());
             snapshotMetadata.put("expires", snapshot.getExpires().toEpochMilli());
             snapshotMetadata.put("location", location);
@@ -112,7 +111,7 @@ public class SaltStoreWriter {
 
         fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
 
-        // refresh manually
+        // Refresh manually
         refreshProvider();
     }
 
@@ -124,7 +123,7 @@ public class SaltStoreWriter {
      * reads the metadata file, and marks each referenced file as ready for archiving
      */
     public void archiveSaltLocations() throws Exception {
-        final JsonObject metadata = provider.getMetadata();
+        JsonObject metadata = provider.getMetadata();
 
         metadata.getJsonArray("salts").forEach(instance -> {
             try {
@@ -144,9 +143,9 @@ public class SaltStoreWriter {
     }
 
     protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
-        // do not overwrite existing files
+        // Do not overwrite existing files
         if (!cloudStorage.list(location).isEmpty()) {
-            // update the tags on the file to ensure it is still marked as current
+            // Update the tags on the file to ensure it is still marked as current
             this.setStatusTagToCurrent(location);
             return;
         }
@@ -154,7 +153,12 @@ public class SaltStoreWriter {
         final Path newSaltsFile = Files.createTempFile("operators", ".txt");
         try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
             for (SaltEntry entry : snapshot.getAllRotatingSalts()) {
-                w.write(entry.getId() + "," + entry.getLastUpdated() + "," + entry.getSalt() + "\n");
+                w.write(
+                        entry.getId() + ","
+                                + entry.getLastUpdated() + ","
+                                + entry.getSalt() + ","
+                                + entry.getPreviousSalt() + ","
+                                + entry.getRefreshFrom() + "\n");
             }
         }
 
