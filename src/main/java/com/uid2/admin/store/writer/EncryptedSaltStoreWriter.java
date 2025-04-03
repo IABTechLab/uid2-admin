@@ -2,6 +2,7 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
+import com.uid2.shared.Utils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.CloudEncryptionKey;
@@ -15,9 +16,12 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 
 import java.io.BufferedWriter;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -43,12 +47,51 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         return scope.resolve(new CloudPath("salts.txt." + snapshot.getEffective().toEpochMilli())).toString();
     }
 
+    private CloudEncryptionKey getActiveCloudEncryptionKey(){
+        try {
+            return cloudEncryptionKeyProvider.getEncryptionKeyForSite(siteId);
+        } catch (IllegalStateException e) {
+            LOGGER.error("Error: No Cloud Encryption keys available for encryption for site ID: {}", siteId, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Attempts to upload the salts snapshot to the specified location.
+     * <p>
+     * If the snapshot does not exist, it will be created at the given location.
+     * If it exists but was encrypted with a different key, the snapshot is
+     * re-encrypted and overwritten.
+     * </p>
+     * @param snapshot The snapshot containing the salts.
+     * @param location The target storage location.
+     * @return {@code true} if the snapshot was successfully written, {@code false} otherwise.
+     */
     @Override
-    protected void uploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
+    protected boolean tryUploadSaltsSnapshot(RotatingSaltProvider.SaltSnapshot snapshot, String location) throws Exception {
         if (siteId == null) {
             throw new IllegalStateException("Site ID is not set.");
         }
-
+        CloudEncryptionKey encryptionKey = this.getActiveCloudEncryptionKey();
+        boolean fileExist = !cloudStorage.list(location).isEmpty();
+         if (fileExist) {
+             this.setStatusTagToCurrent(location);
+             long currentUnixTime = Instant.now().getEpochSecond();
+             boolean isMoreThan3HoursOld = (currentUnixTime - encryptionKey.getCreated()) > Duration.ofHours(3).getSeconds();
+             if (isMoreThan3HoursOld) {
+                 LOGGER.info("Not overwriting salt files for site {} as encryption key is not updated recently", this.siteId);
+                 return false;
+             } else {
+                 LOGGER.info("Trying to overwriting salt files for site {} as encryption key is relatively new", this.siteId);
+                 InputStream s = this.cloudStorage.download(location);
+                 JsonObject o = Utils.toJsonObject(s);
+                 if (o.getInteger("key_id") == encryptionKey.getId()) {
+                     LOGGER.info("Not overwriting salt files for site {} as encryption key is already used before", this.siteId);
+                     return false;
+                 }
+             }
+             LOGGER.info("Overwriting salt files for site {} as encryption key is updated", this.siteId);
+        }
         StringBuilder stringBuilder = new StringBuilder();
 
         for (SaltEntry entry: snapshot.getAllRotatingSalts()) {
@@ -56,13 +99,6 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         }
 
         String data = stringBuilder.toString();
-
-        CloudEncryptionKey encryptionKey = null;
-        try {
-            encryptionKey = cloudEncryptionKeyProvider.getEncryptionKeyForSite(siteId);
-        } catch (IllegalStateException e) {
-            LOGGER.error("Error: No Cloud Encryption keys available for encryption for site ID: {}", siteId, e);
-        }
         JsonObject encryptedJson = new JsonObject();
         if (encryptionKey != null) {
             byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
@@ -78,8 +114,8 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
             w.write(encryptedJson.encodePrettily());
         }
-
         this.upload(newSaltsFile.toString(), location);
+        return true;
     }
 
     @Override
