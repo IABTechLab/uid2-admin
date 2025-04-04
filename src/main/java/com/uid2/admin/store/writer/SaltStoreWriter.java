@@ -123,7 +123,7 @@ public class SaltStoreWriter {
     /**
      * Builds snapshot metadata and uploads snapshots if they need to be updated.
      * <p>
-     * Iterates through the provided snapshots, generates metadata, and uploads them if necessary.
+     * Iterates through the provided snapshots, generates metadata iff it could upload successfully.
      * Returns metadata containing snapshot details and whether any uploads were performed.
      * </p>
      * @param snapshots The list of snapshots to check and upload if needed.
