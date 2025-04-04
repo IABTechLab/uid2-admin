@@ -100,16 +100,19 @@ public class SaltStoreWriter {
      * If {@code snapshotInfo.storageModified} is {@code true}, the metadata version is updated,
      * and new metadata is uploaded. Otherwise, the operation is skipped.
      * </p>
-     * @param metadata    The base metadata used to generate the updated metadata.
-     * @param snapshotInfo Contains snapshot metadata and indicates whether storage has been modified.
+     * @param snapshots  List of snapshots to update metadata for.
      */
-    protected void buildAndUploadMetadata(JsonObject metadata, JsonObject snapshotInfo ) throws Exception{
-        if (!snapshotInfo.getBoolean("storageModified")) return;
+    protected void buildAndUploadMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception{
+        JsonObject metadata = this.getMetadata();
+        JsonArray snapshotsMetadata = this.getSnapshotsMetadata(snapshots);
+        if (snapshotsMetadata == null || snapshotsMetadata.isEmpty()) {
+            LOGGER.info("No new snapshots, skipping metadata update");
+        }
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
-        metadata.put("salts", snapshotInfo.getJsonArray("snapshotsMetadata"));
+        metadata.put("salts", snapshotsMetadata);
         JsonObject finalMetadata = enrichMetadata(metadata);
         fileManager.uploadMetadata(finalMetadata, "salts", this.getMetadataPath());
     }
@@ -124,31 +127,27 @@ public class SaltStoreWriter {
      * Returns metadata containing snapshot details and whether any uploads were performed.
      * </p>
      * @param snapshots The list of snapshots to check and upload if needed.
-     * @return A {@code JsonObject} containing snapshot metadata and a flag indicating
-     *         if storage was modified.
+     * @return A {@code JsonArray} containing snapshot metadata
      */
-    protected JsonObject uploadSnapshotsAndGetMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
+    protected JsonArray getSnapshotsMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
         final JsonArray snapshotsMetadata = new JsonArray();
-        boolean storageModified = false;
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
             final String location = getSaltSnapshotLocation(snapshot);
+            if (!tryUploadSaltsSnapshot(snapshot, location)) {
+                continue;
+            }
             final JsonObject snapshotMetadata = new JsonObject();
             snapshotMetadata.put("effective", snapshot.getEffective().toEpochMilli());
             snapshotMetadata.put("expires", snapshot.getExpires().toEpochMilli());
             snapshotMetadata.put("location", location);
             snapshotMetadata.put("size", snapshot.getAllRotatingSalts().length);
             snapshotsMetadata.add(snapshotMetadata);
-            storageModified |= tryUploadSaltsSnapshot(snapshot, location);
         }
-        return new JsonObject()
-                .put("snapshotsMetadata", snapshotsMetadata)
-                .put("storageModified", storageModified);
+        return snapshotsMetadata;
     }
 
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
-        JsonObject metadata = this.getMetadata();
-        List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data);
-        this.buildAndUploadMetadata(metadata, this.uploadSnapshotsAndGetMetadata(snapshots));
+        this.buildAndUploadMetadata(this.getSnapshots(data));
         refreshProvider();
     }
 

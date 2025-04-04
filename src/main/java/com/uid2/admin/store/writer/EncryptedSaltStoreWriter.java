@@ -28,6 +28,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
+    private JsonObject unEncryptedMetadataData;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedSaltStoreWriter.class);
     public EncryptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
@@ -111,10 +112,16 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     }
 
     @Override
+    protected JsonObject getMetadata(){
+        return this.unEncryptedMetadataData;
+    }
+
+    @Override
     public void upload(Object data, JsonObject extraMeta) throws Exception {
+        this.unEncryptedMetadataData = extraMeta;
         @SuppressWarnings("unchecked")
         List<RotatingSaltProvider.SaltSnapshot> snapshots = new ArrayList<>((Collection<RotatingSaltProvider.SaltSnapshot>) data);
-        this.buildAndUploadMetadata(extraMeta, this.uploadSnapshotsAndGetMetadata(snapshots));
+        this.buildAndUploadMetadata(snapshots);
     }
 
     @Override
