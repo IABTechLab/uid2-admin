@@ -22,10 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
     private StoreScope scope;
@@ -56,6 +53,12 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         }
     }
 
+    @Override
+    protected JsonObject enrichMetadata(JsonObject metadata){
+        metadata.put("key_id", this.getActiveCloudEncryptionKey().getId());
+        return metadata;
+    }
+
     /**
      * Attempts to upload the salts snapshot to the specified location.
      * <p>
@@ -75,22 +78,12 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         CloudEncryptionKey encryptionKey = this.getActiveCloudEncryptionKey();
         boolean fileExist = !cloudStorage.list(location).isEmpty();
          if (fileExist) {
-             long currentUnixTime = Instant.now().getEpochSecond();
-             boolean isMoreThan3HoursOld = (currentUnixTime - encryptionKey.getCreated()) > Duration.ofHours(3).getSeconds();
-             if (isMoreThan3HoursOld) {
-                 LOGGER.info("Not overwriting salt files for site {} as encryption key is not updated recently", this.siteId);
+             JsonObject metadata = Utils.toJsonObject(this.cloudStorage.download(this.getMetadataPath().toString()));
+             if (Objects.equals(metadata.getInteger("key_id", null), encryptionKey.getId())) {
+                 LOGGER.info("Not overwriting salt files for site {} as encryption key is already used before", this.siteId);
                  return false;
-             } else {
-                 LOGGER.info("Trying to overwriting salt files for site {} as encryption key is relatively new", this.siteId);
-                 InputStream s = this.cloudStorage.download(location);
-                 JsonObject o = Utils.toJsonObject(s);
-                 if (o.getInteger("key_id") == encryptionKey.getId()) {
-                     LOGGER.info("Not overwriting salt files for site {} as encryption key is already used before", this.siteId);
-                     return false;
-                 }
              }
-             LOGGER.info("Overwriting salt files for site {} as encryption key is updated", this.siteId);
-        }
+         }
         StringBuilder stringBuilder = new StringBuilder();
 
         for (SaltEntry entry: snapshot.getAllRotatingSalts()) {

@@ -91,6 +91,9 @@ public class SaltStoreWriter {
         return metadata;
     }
 
+    protected CloudPath getMetadataPath(){
+        return new CloudPath(this.provider.getMetadataPath());
+    }
     /**
      * Builds and uploads metadata if the snapshot has been updated.
      * <p>
@@ -107,9 +110,13 @@ public class SaltStoreWriter {
         metadata.put("version", versionGenerator.getVersion());
         metadata.put("generated", generated);
         metadata.put("salts", snapshotInfo.getJsonArray("snapshotsMetadata"));
-        fileManager.uploadMetadata(metadata, "salts", new CloudPath(provider.getMetadataPath()));
+        JsonObject finalMetadata = enrichMetadata(metadata);
+        fileManager.uploadMetadata(finalMetadata, "salts", this.getMetadataPath());
     }
 
+    protected JsonObject enrichMetadata(JsonObject metadata){
+        return metadata;
+    }
     /**
      * Builds snapshot metadata and uploads snapshots if they need to be updated.
      * <p>
