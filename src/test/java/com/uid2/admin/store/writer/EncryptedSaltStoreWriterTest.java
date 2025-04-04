@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 import static com.uid2.shared.util.CloudEncryptionHelpers.decryptInputStream;
 
@@ -164,6 +165,8 @@ public class EncryptedSaltStoreWriterTest {
         verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
         JsonObject capturedMetadata = metadataCaptor.getValue();
+        Integer key_id = capturedMetadata.getInteger("key_id", null);
+        assertNull(key_id);
         JsonArray saltsArray = capturedMetadata.getJsonArray("salts");
         assertEquals(1, saltsArray.size(), "Salts array should have exactly one entry, as other is removed in newest-effective logic");
         JsonObject salt = saltsArray.getJsonObject(0);
@@ -186,8 +189,10 @@ public class EncryptedSaltStoreWriterTest {
         verify(fileManager,atLeastOnce()).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
         capturedMetadata = metadataCaptor.getValue();
+        key_id = capturedMetadata.getInteger("key_id");
         saltsArray = capturedMetadata.getJsonArray("salts");
         salt = saltsArray.getJsonObject(0);
+        assertEquals(1, key_id);
         assertEquals(1740694476392L, salt.getLong("effective"), "Effective timestamp should match second entry");
         assertEquals(10, salt.getInteger("size"), "Size should match second entries");
         verify(taggableCloudStorage,atLeastOnce()).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
