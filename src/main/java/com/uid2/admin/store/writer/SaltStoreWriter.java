@@ -107,6 +107,7 @@ public class SaltStoreWriter {
         JsonArray snapshotsMetadata = this.uploadAndGetSnapshotsMetadata(snapshots);
         if (snapshotsMetadata == null || snapshotsMetadata.isEmpty()) {
             LOGGER.info("No new snapshots, skipping metadata update");
+            return;
         }
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
