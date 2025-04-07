@@ -27,8 +27,8 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     private StoreScope scope;
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedSaltStoreWriter.class);
+
     public EncryptedSaltStoreWriter(JsonObject config, RotatingSaltProvider provider, FileManager fileManager,
                                     TaggableCloudStorage cloudStorage, VersionGenerator versionGenerator, StoreScope scope,
                                     RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider, Integer siteId) {
@@ -80,6 +80,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         }
 
         this.upload(newSaltsFile.toString(), location);
+        LOGGER.info("File encryption completed for site_id={} key_id={} store={}", siteId, encryptionKey.getId(), "salts");
     }
 
     @Override
