@@ -129,7 +129,7 @@ public class SaltStoreWriter {
      * @param snapshots The list of snapshots to check and upload if needed.
      * @return A {@code JsonArray} containing snapshot metadata
      */
-    protected JsonArray uploadAndGetSnapshotsMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
+    private JsonArray uploadAndGetSnapshotsMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
         final JsonArray snapshotsMetadata = new JsonArray();
         boolean anyUploadSucceeded = false;
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
