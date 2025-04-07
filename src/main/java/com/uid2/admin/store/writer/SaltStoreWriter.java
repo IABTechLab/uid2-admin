@@ -104,7 +104,7 @@ public class SaltStoreWriter {
      */
     protected void buildAndUploadMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception{
         JsonObject metadata = this.getMetadata();
-        JsonArray snapshotsMetadata = this.getSnapshotsMetadata(snapshots);
+        JsonArray snapshotsMetadata = this.uploadAndGetSnapshotsMetadata(snapshots);
         if (snapshotsMetadata == null || snapshotsMetadata.isEmpty()) {
             LOGGER.info("No new snapshots, skipping metadata update");
         }
@@ -129,13 +129,12 @@ public class SaltStoreWriter {
      * @param snapshots The list of snapshots to check and upload if needed.
      * @return A {@code JsonArray} containing snapshot metadata
      */
-    protected JsonArray getSnapshotsMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
+    protected JsonArray uploadAndGetSnapshotsMetadata(List<RotatingSaltProvider.SaltSnapshot> snapshots) throws Exception {
         final JsonArray snapshotsMetadata = new JsonArray();
+        boolean anyUploadSucceeded = false;
         for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
             final String location = getSaltSnapshotLocation(snapshot);
-            if (!tryUploadSaltsSnapshot(snapshot, location)) {
-                continue;
-            }
+            anyUploadSucceeded |= tryUploadSaltsSnapshot(snapshot, location);
             final JsonObject snapshotMetadata = new JsonObject();
             snapshotMetadata.put("effective", snapshot.getEffective().toEpochMilli());
             snapshotMetadata.put("expires", snapshot.getExpires().toEpochMilli());
@@ -143,7 +142,7 @@ public class SaltStoreWriter {
             snapshotMetadata.put("size", snapshot.getAllRotatingSalts().length);
             snapshotsMetadata.add(snapshotMetadata);
         }
-        return snapshotsMetadata;
+        return anyUploadSucceeded ? snapshotsMetadata : new JsonArray();
     }
 
     public void upload(RotatingSaltProvider.SaltSnapshot data) throws Exception {
