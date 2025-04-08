@@ -31,6 +31,7 @@ import static org.mockito.Mockito.*;
 public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
     private final CloudEncryptionKeyListResponse noKeys = new CloudEncryptionKeyListResponse(Set.of());
+    private final long one_hour = 60 * 60 * 1000;
     private final long longAgo = 0L;
     private final long before = 100L;
     private final long now = 200L;
@@ -154,7 +155,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
         when(clock.getEpochSecond()).thenReturn(now);
 
         var expected = Map.of(
-                siteId1, new CloudEncryptionKey(keyId1, siteId1, now, now, secret1)
+                siteId1, new CloudEncryptionKey(keyId1, siteId1, now + one_hour, now, secret1)
         );
 
         post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE, null, rotateResponse -> {
@@ -195,7 +196,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
                 keyId1, existingKey1,
                 // We allow 2 expired keys, but have 4. Key 2 is removed as oldest expired key.
                 keyId3, existingKey3,
-                keyId4, new CloudEncryptionKey(4, siteId1, now, now, secret4)
+                keyId4, new CloudEncryptionKey(4, siteId1, now + one_hour, now, secret4)
         );
 
         setCloudEncryptionKeys(existingKey1, existingKey2, existingKey3);
@@ -219,7 +220,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
 
         var expected = Map.of(
                 keyId1, existingKey,
-                key2Id, new CloudEncryptionKey(key2Id, siteId1, now, now, secret2)
+                key2Id, new CloudEncryptionKey(key2Id, siteId1, now + one_hour, now, secret2)
         );
 
         setCloudEncryptionKeys(existingKey);

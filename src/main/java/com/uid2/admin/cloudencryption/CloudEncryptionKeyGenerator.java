@@ -19,11 +19,12 @@ public class CloudEncryptionKeyGenerator {
         this.idGenerator = new KeyIdGenerator(existingKeys);
     }
 
-    public CloudEncryptionKey makeNewKey(Integer siteId) {
-        var nowSeconds = clock.getEpochSecond();
+    public CloudEncryptionKey makeNewKey(Integer siteId, Integer activatesInSeconds) {
+        var created = clock.getEpochSecond();
+        var activates = created + activatesInSeconds;
         var keyId = idGenerator.nextId();
         var secret = secretGenerator.generate();
-        return new CloudEncryptionKey(keyId, siteId, nowSeconds, nowSeconds, secret);
+        return new CloudEncryptionKey(keyId, siteId, activates, created, secret);
     }
 
     private static class KeyIdGenerator {

@@ -248,7 +248,7 @@ public class Main {
             ClientSideKeypairService clientSideKeypairService = new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock);
 
             var cloudEncryptionSecretGenerator = new CloudSecretGenerator(keyGenerator);
-            var cloudEncryptionKeyRetentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 5);
+            var cloudEncryptionKeyRetentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 10);
             var cloudEncryptionKeyRotationStrategy = new CloudKeyStatePlanner(cloudEncryptionSecretGenerator, clock, cloudEncryptionKeyRetentionStrategy);
             var cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, operatorKeyProvider, cloudEncryptionKeyRotationStrategy);
 
