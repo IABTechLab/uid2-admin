@@ -14,14 +14,16 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -31,41 +33,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static com.uid2.shared.util.CloudEncryptionHelpers.decryptInputStream;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class EncryptedSaltStoreWriterTest {
-    private AutoCloseable mocks;
+    private final Integer siteId = 1;
 
     @Mock
     private FileManager fileManager;
-
     @Mock
-    TaggableCloudStorage taggableCloudStorage;
-
+    private TaggableCloudStorage taggableCloudStorage;
     @Mock
-    RotatingSaltProvider rotatingSaltProvider;
-
+    private RotatingSaltProvider rotatingSaltProvider;
     @Mock
-    RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider;
-
+    private RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider;
     @Mock
-    VersionGenerator versionGenerator;
-
+    private VersionGenerator versionGenerator;
     @Mock
-    StoreScope storeScope;
-
-    CloudEncryptionKey encryptionKey;
-
-    JsonObject config;
-
-    private final Integer siteId = 1;
+    private StoreScope storeScope;
 
     @Captor
     private ArgumentCaptor<String> pathCaptor;
     @Captor
     private ArgumentCaptor<String> cloudPathCaptor;
 
+    private JsonObject config;
+
     @BeforeEach
-    public void setUp() throws Exception {
-        mocks = MockitoAnnotations.openMocks(this);
+    public void setup() throws Exception {
         config = new JsonObject();
         config.put("salt_snapshot_location_prefix", "test");
 
@@ -77,7 +71,7 @@ public class EncryptedSaltStoreWriterTest {
         byte[] keyBytes = new byte[32];
         new Random().nextBytes(keyBytes);
         String base64Key = Base64.getEncoder().encodeToString(keyBytes);
-        encryptionKey = new CloudEncryptionKey(1, 1, 0, 0, base64Key);
+        CloudEncryptionKey encryptionKey = new CloudEncryptionKey(1, 1, 0, 0, base64Key);
 
         Map<Integer, CloudEncryptionKey> mockKeyMap = new HashMap<>();
         mockKeyMap.put(encryptionKey.getId(), encryptionKey);
@@ -96,9 +90,9 @@ public class EncryptedSaltStoreWriterTest {
 
     private void verifyFile(String filelocation, RotatingSaltProvider.SaltSnapshot snapshot) throws IOException {
         InputStream encoded = Files.newInputStream(Paths.get(filelocation));
-        String contents = decryptInputStream(encoded, rotatingCloudEncryptionKeyProvider);
+        String contents = decryptInputStream(encoded, rotatingCloudEncryptionKeyProvider, "salts");
         SaltEntry[] entries = snapshot.getAllRotatingSalts();
-        Integer idx = 0;
+        int idx = 0;
         for (String line : contents.split("\n")) {
             String[] entrySplit = line.split(",");
             assertEquals(entries[idx].getId(), Long.parseLong(entrySplit[0]));
