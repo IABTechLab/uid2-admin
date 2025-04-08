@@ -21,6 +21,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
     private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
     private Integer siteId;
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptedScopedStoreWriter.class);
+    private String storeName;
 
     public EncryptedScopedStoreWriter(IMetadataVersionedStore provider,
                                       FileManager fileManager, VersionGenerator versionGenerator, Clock clock,
@@ -29,6 +30,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
         //site id is passed in to look up S3 key to encrypt
         this.siteId = siteId;
+        this.storeName = dataType; // for logging purposes
     }
 
     @Override
@@ -46,6 +48,7 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
 
         if (encryptionKey != null) {
             uploadWithEncryptionKey(data, extraMeta, encryptionKey);
+            LOGGER.info("File encryption completed for site_id={} key_id={} store={}", siteId, encryptionKey.getId(), storeName);
         } else {
             throw new IllegalStateException("No Cloud Encryption keys available for encryption for site ID: " + siteId);
         }

@@ -123,7 +123,7 @@ public class JobDispatcher {
                     success = true;
                     long after = System.currentTimeMillis();
                     long durationMs = after - before;
-                    LOGGER.info("Job successfully executed: {} in {}ms", currentJobId, durationMs);
+                    LOGGER.info("Job successfully executed: job_id={} duration_ms={}", currentJobId, durationMs);
                     break;
                 } catch (Throwable t) {
                     if (retryCount < maxRetries) {

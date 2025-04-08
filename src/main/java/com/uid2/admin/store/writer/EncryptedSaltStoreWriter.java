@@ -108,6 +108,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
             w.write(encryptedJson.encodePrettily());
         }
         this.upload(newSaltsFile.toString(), location);
+        LOGGER.info("File encryption completed for site_id={} key_id={} store={}", siteId, encryptionKey.getId(), "salts");
         return true;
     }
 
