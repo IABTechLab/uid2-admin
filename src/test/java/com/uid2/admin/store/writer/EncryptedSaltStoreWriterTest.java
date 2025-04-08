@@ -36,7 +36,7 @@ import static com.uid2.shared.util.CloudEncryptionHelpers.decryptInputStream;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class EncryptedSaltStoreWriterTest {
-    private final Integer siteId = 1;
+    private static final Integer SITE_ID = 1;
 
     @Mock
     private FileManager fileManager;
@@ -77,7 +77,7 @@ public class EncryptedSaltStoreWriterTest {
         mockKeyMap.put(encryptionKey.getId(), encryptionKey);
         when(rotatingCloudEncryptionKeyProvider.getAll()).thenReturn(mockKeyMap);
         when(rotatingCloudEncryptionKeyProvider.getKey(1)).thenReturn(mockKeyMap.get(1));
-        when(rotatingCloudEncryptionKeyProvider.getEncryptionKeyForSite(siteId)).thenReturn(encryptionKey);
+        when(rotatingCloudEncryptionKeyProvider.getEncryptionKeyForSite(SITE_ID)).thenReturn(encryptionKey);
     }
 
     private RotatingSaltProvider.SaltSnapshot makeSnapshot(Instant effective, Instant expires, int nsalts) {
@@ -121,7 +121,7 @@ public class EncryptedSaltStoreWriterTest {
         ArgumentCaptor<CloudPath> locationCaptor = ArgumentCaptor.forClass(CloudPath.class);
 
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
-                fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
+                fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, SITE_ID);
 
         encryptedSaltStoreWriter.upload(List.of(snapshot,snapshot2), metadata);
         verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
@@ -166,7 +166,7 @@ public class EncryptedSaltStoreWriterTest {
 
         //Now sending snapshot2 to encrypted to verify that does the same.
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
-                fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, siteId);
+                fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, SITE_ID);
 
         JsonObject metadata = new JsonObject()
                 .put("version", 1742770328863L)
