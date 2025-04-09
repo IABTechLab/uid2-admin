@@ -153,7 +153,7 @@ public class JobDispatcher {
             }
             jobInfos.addAll(jobQueue.stream()
                     .map(job -> new JobInfo(job, false))
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         return jobInfos;
     }

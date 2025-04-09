@@ -6,8 +6,6 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,23 +37,15 @@ public class CloudEncryptionKeyManager {
     // For any site that has an operator create a new key activating in one hour
     // Keep up to 10 most recent old keys per site, delete the rest
     public void rotateKeys() throws Exception {
-        boolean success = false;
         try {
             refreshCloudData();
             var desiredKeys = planner.planRotation(existingKeys, operatorKeys);
             writeKeys(desiredKeys);
-            success = true;
             var diff = CloudEncryptionKeyDiff.calculateDiff(existingKeys, desiredKeys);
             LOGGER.info("Key rotation complete. Diff: {}", diff);
         } catch (Exception e) {
-            success = false;
             LOGGER.error("Key rotation failed", e);
             throw e;
-        } finally {
-            Counter.builder("uid2.cloud_encryption_key_manager.rotations")
-                    .tag("success", Boolean.toString(success))
-                    .description("The number of times rotations have happened")
-                    .register(Metrics.globalRegistry);
         }
     }
 
