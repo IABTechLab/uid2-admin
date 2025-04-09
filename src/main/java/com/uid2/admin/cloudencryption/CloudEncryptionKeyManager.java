@@ -36,8 +36,8 @@ public class CloudEncryptionKeyManager {
         this.planner = planner;
     }
 
-    // For any site that has an operator create a new key activating now
-    // Keep up to 5 most recent old keys per site, delete the rest
+    // For any site that has an operator create a new key activating in one hour
+    // Keep up to 10 most recent old keys per site, delete the rest
     public void rotateKeys() throws Exception {
         boolean success = false;
         try {

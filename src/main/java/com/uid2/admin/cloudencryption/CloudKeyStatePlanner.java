@@ -5,9 +5,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.CloudEncryptionKey;
 
-import java.text.MessageFormat;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,6 +15,7 @@ public class CloudKeyStatePlanner {
         private final CloudSecretGenerator secretGenerator;
         private final Clock clock;
         private final CloudKeyRetentionStrategy keyRetentionStrategy;
+        private static final int ONE_HOUR_IN_SECONDS = 3600;
 
         public CloudKeyStatePlanner(
                 CloudSecretGenerator secretGenerator,
@@ -49,7 +48,7 @@ public class CloudKeyStatePlanner {
                 var keyGenerator = new CloudEncryptionKeyGenerator(clock, secretGenerator, existingKeys);
                 var siteIdsWithKeys = existingKeys.stream().map(CloudEncryptionKey::getSiteId).collect(Collectors.toSet());
                 var sitesWithoutKeys = siteIdsWithOperators(operatorKeys).filter(siteId -> !siteIdsWithKeys.contains(siteId));
-                var newKeys = sitesWithoutKeys.map(keyGenerator::makeNewKey);
+                var newKeys = sitesWithoutKeys.map((Integer siteId) -> keyGenerator.makeNewKey(siteId, 0));
                 return Streams.concat(existingKeys.stream(), newKeys).collect(Collectors.toSet());
         }
 
@@ -59,7 +58,7 @@ public class CloudKeyStatePlanner {
                 Set<CloudEncryptionKey> existingKeys
         ) {
                 var existingKeysToRetain = keyRetentionStrategy.selectKeysToRetain(existingKeys);
-                var newKey = keyGenerator.makeNewKey(siteId);
+                var newKey = keyGenerator.makeNewKey(siteId, ONE_HOUR_IN_SECONDS);
                 return Streams.concat(existingKeysToRetain.stream(), Stream.of(newKey));
         }
 
