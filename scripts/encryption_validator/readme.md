@@ -11,6 +11,8 @@ This script fetches two S3 objects (e.g. encrypted and unencrypted salts) and co
 
 ### Run the script:
 
+Login to AWS account
+`pip install requirements.txt` 
 `python script.py <key> <bucket> <region_name> [prefix]` 
 
 -   `key` – Required. Must start with `salt`. Example: `salts/salts.txt.1744152738842`
