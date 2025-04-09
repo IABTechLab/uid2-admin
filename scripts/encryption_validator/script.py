@@ -73,6 +73,3 @@ if __name__ == '__main__':
     if not key.startswith("salt"):
         raise "only salts supported"
     print(salt_compare(key=key, prefix=prefix, bucket=bucket, region_name=region_name))
-
-
-  
