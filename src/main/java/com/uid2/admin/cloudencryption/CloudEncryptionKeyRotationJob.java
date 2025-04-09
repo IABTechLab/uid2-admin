@@ -4,9 +4,11 @@ import com.uid2.admin.job.model.Job;
 
 public class CloudEncryptionKeyRotationJob extends Job {
     private final CloudEncryptionKeyManager keyManager;
+    private final boolean shouldFail;
 
-    public CloudEncryptionKeyRotationJob(CloudEncryptionKeyManager keyManager) {
+    public CloudEncryptionKeyRotationJob(CloudEncryptionKeyManager keyManager, boolean shouldFail) {
         this.keyManager = keyManager;
+        this.shouldFail = shouldFail;
     }
 
     @Override
@@ -16,6 +18,6 @@ public class CloudEncryptionKeyRotationJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        keyManager.rotateKeys();
+        keyManager.rotateKeys(shouldFail);
     }
 }

@@ -123,6 +123,16 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     }
 
     @Test
+    public void testRotate_fail_on_request(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE + "?fail=true", null, response -> {
+            assertEquals(500, response.statusCode());
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     public void testRotate_canBeRotatedBySecretRotationJob(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SECRET_ROTATION);
         post(vertx, testContext, Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE, null, response -> {

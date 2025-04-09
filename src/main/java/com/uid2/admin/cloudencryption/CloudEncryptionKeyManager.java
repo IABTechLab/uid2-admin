@@ -36,10 +36,13 @@ public class CloudEncryptionKeyManager {
 
     // For any site that has an operator create a new key activating in one hour
     // Keep up to 10 most recent old keys per site, delete the rest
-    public void rotateKeys() throws Exception {
+    public void rotateKeys(boolean shouldFail) throws Exception {
         try {
             refreshCloudData();
             var desiredKeys = planner.planRotation(existingKeys, operatorKeys);
+            if (shouldFail) {
+                throw new Exception("Failing key rotation on demand due to `fail` query param being passed");
+            }
             writeKeys(desiredKeys);
             var diff = CloudEncryptionKeyDiff.calculateDiff(existingKeys, desiredKeys);
             LOGGER.info("Key rotation complete. Diff: {}", diff);
