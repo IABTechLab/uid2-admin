@@ -19,6 +19,7 @@ class AesGcm:
             raise ValueError("Invalid GCM tag during decryption")
         
 def _get_encryption_secret(key_id, bucket, prefix, region_name):
+    print("Fetching secret key for ", key_id)
     s3 = boto3.client('s3', region_name=region_name)
     response = s3.get_object(Bucket=bucket, Key=f"{prefix}cloud_encryption_keys/cloud_encryption_keys.json")
     data = json.load(response['Body'])
@@ -40,7 +41,6 @@ def _decrypt_input_stream(input_stream: IO[bytes], bucket, prefix, region_name) 
         secret_bytes = base64.b64decode(decryption_key)
         encrypted_bytes = base64.b64decode(encrypted_payload_b64)
         nonce = encrypted_bytes[:12]
-        ciphertext = encrypted_bytes[12:]
         ciphertext = encrypted_bytes[12:-16]
         auth_tag = encrypted_bytes[-16:]
         cipher = Cipher(algorithms.AES(secret_bytes), modes.GCM(nonce, auth_tag), backend=default_backend())
