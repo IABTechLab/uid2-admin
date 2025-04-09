@@ -47,7 +47,10 @@ public class CloudEncryptionKeyService implements IService {
             if (isSuccess) {
                 rc.response().end();
             } else {
-                rc.fail(500);
+                rc.response()
+                        .setStatusCode(500)
+                        .putHeader("Content-Type", "text/plain")
+                        .end("Failed to rotate cloud encryption keys");
             }
         } catch (Exception e) {
             rc.fail(500, e);
