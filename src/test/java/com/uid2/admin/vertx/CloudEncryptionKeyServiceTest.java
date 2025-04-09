@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
     private final CloudEncryptionKeyListResponse noKeys = new CloudEncryptionKeyListResponse(Set.of());
-    private final long one_hour = 60 * 60 * 1000;
+    private final long one_hour = 60 * 60;
     private final long longAgo = 0L;
     private final long before = 100L;
     private final long now = 200L;
