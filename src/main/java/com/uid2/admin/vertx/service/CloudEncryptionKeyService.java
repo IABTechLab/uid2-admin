@@ -42,7 +42,9 @@ public class CloudEncryptionKeyService implements IService {
 
     private void handleRotate(RoutingContext rc) {
         try {
-            jobDispatcher.enqueue(new CloudEncryptionKeyRotationJob(keyManager));
+            var shouldFail = !rc.queryParam("fail").isEmpty();
+
+            jobDispatcher.enqueue(new CloudEncryptionKeyRotationJob(keyManager, shouldFail));
             var isSuccess = jobDispatcher.executeNextJob().get();
             if (isSuccess) {
                 rc.response().end();
