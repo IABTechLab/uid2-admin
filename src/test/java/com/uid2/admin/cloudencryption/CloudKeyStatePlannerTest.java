@@ -6,7 +6,6 @@ import com.uid2.shared.model.CloudEncryptionKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -29,7 +28,7 @@ class CloudKeyStatePlannerTest {
         secretGenerator = mock(CloudSecretGenerator.class);
         when(secretGenerator.generate()).thenReturn(secret1);
         clock = mock(Clock.class);
-        retentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 3);
+        retentionStrategy = new ExpiredKeyCountRetentionStrategy(3);
         planner = new CloudKeyStatePlanner(secretGenerator, clock, retentionStrategy);
     }
 

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
+import com.uid2.admin.cloudencryption.CloudEncryptionKeyRotationJob;
+import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.model.CloudEncryptionKeyListResponse;
 import com.uid2.admin.vertx.Endpoints;
 import com.uid2.shared.auth.Role;
@@ -15,14 +17,16 @@ import io.vertx.ext.web.RoutingContext;
 public class CloudEncryptionKeyService implements IService {
     private final AdminAuthMiddleware auth;
     private final CloudEncryptionKeyManager keyManager;
+    private final JobDispatcher jobDispatcher;
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
 
     public CloudEncryptionKeyService(
             AdminAuthMiddleware auth,
-            CloudEncryptionKeyManager keyManager
-    ) {
+            CloudEncryptionKeyManager keyManager,
+            JobDispatcher jobDispatcher) {
         this.auth = auth;
         this.keyManager = keyManager;
+        this.jobDispatcher = jobDispatcher;
     }
 
     @Override
@@ -38,8 +42,13 @@ public class CloudEncryptionKeyService implements IService {
 
     private void handleRotate(RoutingContext rc) {
         try {
-            keyManager.rotateKeys();
-            rc.response().end();
+            jobDispatcher.enqueue(new CloudEncryptionKeyRotationJob(keyManager));
+            var isSuccess = jobDispatcher.executeNextJob().get();
+            if (isSuccess) {
+                rc.response().end();
+            } else {
+                rc.fail(500);
+            }
         } catch (Exception e) {
             rc.fail(500, e);
         }

@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
 import com.uid2.admin.cloudencryption.CloudKeyStatePlanner;
 import com.uid2.admin.cloudencryption.ExpiredKeyCountRetentionStrategy;
+import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.model.CloudEncryptionKeyListResponse;
 import com.uid2.admin.model.CloudEncryptionKeySummary;
+import com.uid2.admin.store.InstantClock;
 import com.uid2.admin.vertx.service.CloudEncryptionKeyService;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -21,7 +23,6 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,7 +50,7 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
 
     @Override
     protected IService createService() {
-        var retentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 2);
+        var retentionStrategy = new ExpiredKeyCountRetentionStrategy(2);
         var rotationStrategy = new CloudKeyStatePlanner(cloudSecretGenerator, clock, retentionStrategy);
         var manager = new CloudEncryptionKeyManager(
                 cloudEncryptionKeyProvider,
@@ -58,7 +59,9 @@ public class CloudEncryptionKeyServiceTest extends ServiceTestBase {
                 rotationStrategy
         );
 
-        return new CloudEncryptionKeyService(auth, manager);
+        var dispatcher = new JobDispatcher("test-job-dispatcher", 10, 5, new InstantClock());
+
+        return new CloudEncryptionKeyService(auth, manager, dispatcher);
     }
 
     @Test

@@ -5,8 +5,7 @@ import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.OktaAuthProvider;
 import com.uid2.admin.auth.AuthProvider;
 import com.uid2.admin.auth.TokenRefreshHandler;
-import com.uid2.admin.cloudencryption.CloudKeyStatePlanner;
-import com.uid2.admin.cloudencryption.ExpiredKeyCountRetentionStrategy;
+import com.uid2.admin.cloudencryption.*;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.job.jobsync.EncryptedFilesSyncJob;
 import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
@@ -14,9 +13,7 @@ import com.uid2.admin.job.jobsync.keyset.ReplaceSharingTypesWithSitesJob;
 import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
-import com.uid2.admin.cloudencryption.CloudSecretGenerator;
 import com.uid2.admin.monitoring.DataStoreMetrics;
-import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
@@ -248,7 +245,7 @@ public class Main {
             ClientSideKeypairService clientSideKeypairService = new ClientSideKeypairService(config, auth, writeLock, clientSideKeypairStoreWriter, clientSideKeypairProvider, siteProvider, keysetManager, keypairGenerator, clock);
 
             var cloudEncryptionSecretGenerator = new CloudSecretGenerator(keyGenerator);
-            var cloudEncryptionKeyRetentionStrategy = new ExpiredKeyCountRetentionStrategy(clock, 10);
+            var cloudEncryptionKeyRetentionStrategy = new ExpiredKeyCountRetentionStrategy(10);
             var cloudEncryptionKeyRotationStrategy = new CloudKeyStatePlanner(cloudEncryptionSecretGenerator, clock, cloudEncryptionKeyRetentionStrategy);
             var cloudEncryptionKeyManager = new CloudEncryptionKeyManager(rotatingCloudEncryptionKeyProvider, cloudEncryptionKeyStoreWriter, operatorKeyProvider, cloudEncryptionKeyRotationStrategy);
 
@@ -269,7 +266,7 @@ public class Main {
                     new EncryptedFilesSyncService(auth, jobDispatcher, writeLock, config, rotatingCloudEncryptionKeyProvider),
                     new JobDispatcherService(auth, jobDispatcher),
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider),
-                    new CloudEncryptionKeyService(auth, cloudEncryptionKeyManager)
+                    new CloudEncryptionKeyService(auth, cloudEncryptionKeyManager, jobDispatcher)
             };
 
 
