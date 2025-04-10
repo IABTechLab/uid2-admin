@@ -50,11 +50,12 @@ public class ScopedStoreWriter {
             location = metadata.locationOf(dataType);
         }
 
-        metadata.setVersion(versionGenerator.getVersion());
+
         metadata.setGenerated(generated);
         if (extraMeta != null) {
             metadata.addExtra(extraMeta);
         }
+        metadata.setVersion(this.getMetadataVersion(metadata));
 
         fileManager.uploadFile(location, dataFile, data);
         fileManager.uploadMetadata(metadata.getJson(), dataType, scope.getMetadataPath());
