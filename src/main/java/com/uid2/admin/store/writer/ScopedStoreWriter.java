@@ -66,13 +66,17 @@ public class ScopedStoreWriter {
         upload(data, null);
     }
 
+    protected Long getMetadataVersion(Metadata metadata) throws Exception {
+        return versionGenerator.getVersion();
+    }
+
     public void rewriteMeta() throws Exception {
         if (!fileManager.isPresent(scope.getMetadataPath())) {
             return;
         }
         Metadata metadata = new Metadata(provider.getMetadata());
-        Long version = versionGenerator.getVersion();
-        metadata.setVersion(version);
+
+        metadata.setVersion(this.getMetadataVersion(metadata));
 
         fileManager.uploadMetadata(metadata.getJson(), dataType, scope.getMetadataPath());
     }

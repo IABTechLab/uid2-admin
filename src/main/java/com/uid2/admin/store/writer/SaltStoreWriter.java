@@ -94,6 +94,11 @@ public class SaltStoreWriter {
     protected CloudPath getMetadataPath(){
         return new CloudPath(this.provider.getMetadataPath());
     }
+
+    protected long getMetadataVersion() throws Exception {
+        return versionGenerator.getVersion();
+    }
+
     /**
      * Builds and uploads metadata if the snapshot has been updated.
      * <p>
@@ -111,7 +116,7 @@ public class SaltStoreWriter {
         }
         final Instant now = Instant.now();
         final long generated = now.getEpochSecond();
-        metadata.put("version", versionGenerator.getVersion());
+        metadata.put("version", this.getMetadataVersion());
         metadata.put("generated", generated);
         metadata.put("salts", snapshotsMetadata);
         JsonObject finalMetadata = enrichMetadata(metadata);

@@ -16,12 +16,9 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 
 import java.io.BufferedWriter;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 
 public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
@@ -115,6 +112,11 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     @Override
     protected JsonObject getMetadata(){
         return this.unEncryptedMetadataData;
+    }
+
+    @Override
+    protected long getMetadataVersion() throws Exception {
+        return this.unEncryptedMetadataData.getLong("version");
     }
 
     @Override
