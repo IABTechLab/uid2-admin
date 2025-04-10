@@ -115,7 +115,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     }
 
     @Override
-    protected long getMetadataVersion() throws Exception {
+    protected Long getMetadataVersion() throws Exception {
         return this.unEncryptedMetadataData.getLong("version");
     }
 

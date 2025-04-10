@@ -95,7 +95,7 @@ public class SaltStoreWriter {
         return new CloudPath(this.provider.getMetadataPath());
     }
 
-    protected long getMetadataVersion() throws Exception {
+    protected Long getMetadataVersion() throws Exception {
         return versionGenerator.getVersion();
     }
 
