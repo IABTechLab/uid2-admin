@@ -54,6 +54,11 @@ public class EncryptedScopedStoreWriter extends ScopedStoreWriter {
         }
     }
 
+    @Override
+    protected Long getMetadataVersion(Metadata metadata) throws Exception {
+        return metadata.getJson().getLong("version");
+    }
+
     private void uploadWithEncryptionKey(String data, JsonObject extraMeta, CloudEncryptionKey encryptionKey) throws Exception {
         byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
         byte[] encryptedPayload = AesGcm.encrypt(data.getBytes(StandardCharsets.UTF_8), secret);
