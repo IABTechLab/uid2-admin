@@ -14,6 +14,5 @@ services:
       - KMS_PROVIDER=local-kms
     healthcheck:
       test: awslocal s3api wait bucket-exists --bucket test-core-bucket
-        && awslocal s3api wait bucket-exists --bucket test-snowflake-bucket
       interval: 5s
       timeout: 5s
