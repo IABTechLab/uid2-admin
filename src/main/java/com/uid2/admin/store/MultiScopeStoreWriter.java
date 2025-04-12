@@ -1,21 +1,17 @@
 package com.uid2.admin.store;
 
-import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.factory.StoreFactory;
-import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
-import com.uid2.admin.store.writer.ScopedStoreWriter;
-import com.uid2.shared.model.KeysetKey;
 
 import com.uid2.admin.store.factory.EncryptedStoreFactory;
-import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.StoreReader;
 import io.vertx.core.json.JsonObject;
-
+import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class MultiScopeStoreWriter<T> {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MultiScopeStoreWriter.class);
     private final FileManager fileManager;
     private final StoreFactory<T> factory;
     private final BiFunction<T, T, Boolean> areEqual;
@@ -85,11 +81,16 @@ public class MultiScopeStoreWriter<T> {
 
     public void uploadPublicWithEncryption(Map<Integer, T> desiredPublicState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
-        if (extraMeta == null) extraMeta = new JsonObject();
+
         for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
             Integer siteId = entry.getKey();
-            Long currentVersion = factory.getReader(siteId).getMetadata().getLong("version");
-            extraMeta.put("version", currentVersion);
+            try {
+                if (extraMeta == null) extraMeta = new JsonObject();
+                Long currentVersion = factory.getReader(siteId).getMetadata().getLong("version");
+                extraMeta.put("version", currentVersion);
+            } catch (Exception e) {
+                LOGGER.info("Plaintext metadata doesn't exist for {}. Creating new version", siteId);
+            }
             encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
         }
     }
