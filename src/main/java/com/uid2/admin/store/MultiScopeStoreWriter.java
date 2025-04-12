@@ -57,16 +57,21 @@ public class MultiScopeStoreWriter<T> {
         return currentState;
     }
 
+    private void addUnencryptedVersionInfo(JsonObject extraMeta, Integer siteId) throws Exception {
+        try {
+            if (extraMeta == null) extraMeta = new JsonObject();
+            Long currentVersion = factory.getReader(siteId).getMetadata().getLong("version");
+            extraMeta.put("version", currentVersion);
+        } catch (Exception e) {
+            LOGGER.info("Unencrypted metadata doesn't exist for {}. Creating new version", siteId);
+        }
+    }
+
     public void uploadPrivateWithEncryption(Map<Integer, T> desiredState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
-        if (extraMeta == null) {
-            extraMeta = new JsonObject();
-        }
         for (Map.Entry<Integer, T> entry : desiredState.entrySet()) {
             Integer siteId = entry.getKey();
-            StoreReader storereader = factory.getReader(siteId);
-            Long currentVersion = storereader.getMetadata().getLong("version");
-            extraMeta.put("version", currentVersion);
+            addUnencryptedVersionInfo(extraMeta, siteId);
             encryptedFactory.getEncryptedWriter(siteId,false).upload(desiredState.get(siteId), extraMeta);
         }
     }
@@ -81,16 +86,9 @@ public class MultiScopeStoreWriter<T> {
 
     public void uploadPublicWithEncryption(Map<Integer, T> desiredPublicState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
-
         for (Map.Entry<Integer, T> entry : desiredPublicState.entrySet()) {
             Integer siteId = entry.getKey();
-            try {
-                if (extraMeta == null) extraMeta = new JsonObject();
-                Long currentVersion = factory.getReader(siteId).getMetadata().getLong("version");
-                extraMeta.put("version", currentVersion);
-            } catch (Exception e) {
-                LOGGER.info("Plaintext metadata doesn't exist for {}. Creating new version", siteId);
-            }
+            addUnencryptedVersionInfo(extraMeta, siteId);
             encryptedFactory.getEncryptedWriter(siteId,true).upload(desiredPublicState.get(siteId), extraMeta);
         }
     }
