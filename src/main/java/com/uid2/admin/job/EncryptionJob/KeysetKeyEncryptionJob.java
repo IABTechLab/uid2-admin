@@ -9,6 +9,7 @@ import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.KeysetKey;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Collection;
 import java.util.Map;
@@ -18,6 +19,7 @@ public class KeysetKeyEncryptionJob extends Job {
     private final Collection<KeysetKey> globalKeysetKeys;
     private final Map<Integer, Keyset> globalKeysets;
     private final Integer globalMaxKeyId;
+    private final Long version;
 
     private final MultiScopeStoreWriter<Collection<KeysetKey>> multiScopeStoreWriter;
 
@@ -25,12 +27,13 @@ public class KeysetKeyEncryptionJob extends Job {
                             Collection<KeysetKey> globalKeysetKeys,
                             Map<Integer, Keyset> globalKeysets,
                             Integer globalMaxKeyId,
-                            MultiScopeStoreWriter<Collection<KeysetKey>> multiScopeStoreWriter) {
+                            MultiScopeStoreWriter<Collection<KeysetKey>> multiScopeStoreWriter, Long version) {
         this.globalOperators = globalOperators;
         this.globalKeysetKeys = globalKeysetKeys;
         this.globalKeysets = globalKeysets;
         this.globalMaxKeyId = globalMaxKeyId;
         this.multiScopeStoreWriter = multiScopeStoreWriter;
+        this.version = version;
     }
 
     @Override
@@ -41,8 +44,10 @@ public class KeysetKeyEncryptionJob extends Job {
     @Override
     public void execute() throws Exception {
         PrivateSiteDataMap<KeysetKey> desiredPrivateState = PrivateSiteUtil.getKeysetKeys(globalOperators, globalKeysetKeys, globalKeysets);
-        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId));
+        JsonObject extraMeta = KeysetKeyStoreWriter.maxKeyMeta(globalMaxKeyId);
+        extraMeta.put("version", this.version);
+        multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState, extraMeta);
         PrivateSiteDataMap<KeysetKey> desiredPublicState = PublicSiteUtil.getPublicKeysetKeys(globalKeysetKeys, globalOperators);
-        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, null);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, extraMeta);
     }
 }
