@@ -15,7 +15,6 @@ import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
-import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.model.EncryptionKey;
@@ -23,7 +22,6 @@ import com.uid2.shared.model.KeysetKey;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.admin.legacy.LegacyClientKey;
-import com.uid2.shared.store.EncryptedRotatingSaltProvider;
 import com.uid2.shared.store.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.GlobalScope;
@@ -184,26 +182,27 @@ public class EncryptedFilesSyncJob extends Job {
                 clientSideKeypairStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual);
 
-        SiteEncryptionJob siteEncryptionSyncJob = new SiteEncryptionJob(siteWriter, globalSites, globalOperators);
-        ClientKeyEncryptionJob clientEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators);
+        SiteEncryptionJob siteEncryptionSyncJob = new SiteEncryptionJob(siteWriter, globalSites, globalOperators, siteStoreFactory.getGlobalReader().getMetadata().getLong("version"));
+        ClientKeyEncryptionJob clientEncryptionSyncJob = new ClientKeyEncryptionJob(clientWriter, globalClients, globalOperators, clientKeyStoreFactory.getGlobalReader().getMetadata().getLong("version"));
         EncryptionKeyEncryptionJob encryptionKeyEncryptionSyncJob = new EncryptionKeyEncryptionJob(
                 globalEncryptionKeys,
                 globalClients,
                 globalOperators,
                 globalKeyAcls,
                 globalMaxKeyId,
-                encryptionKeyWriter
+                encryptionKeyWriter,
+                encryptionKeyStoreFactory.getGlobalReader().getMetadata().getLong("version")
         );
-        KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls);
+        KeyAclEncryptionJob keyAclEncryptionSyncJob = new KeyAclEncryptionJob(keyAclWriter, globalOperators, globalKeyAcls, keyAclStoreFactory.getGlobalReader().getMetadata().getLong("version"));
         SaltEncryptionJob saltEncryptionJob = new SaltEncryptionJob(globalOperators, saltProvider, saltWriter);
-        ClientSideKeypairEncryptionJob clientSideKeypairEncryptionJob = new ClientSideKeypairEncryptionJob(globalOperators, globalClientSideKeypair, clientSideKeypairWriter);
+        ClientSideKeypairEncryptionJob clientSideKeypairEncryptionJob = new ClientSideKeypairEncryptionJob(globalOperators, globalClientSideKeypair, clientSideKeypairWriter, clientSideKeypairStoreFactory.getGlobalReader().getMetadata().getLong("version"));
 
         siteEncryptionSyncJob.execute();
         clientEncryptionSyncJob.execute();
         encryptionKeyEncryptionSyncJob.execute();
         keyAclEncryptionSyncJob.execute();
-        saltEncryptionJob.execute();
         clientSideKeypairEncryptionJob.execute();
+        saltEncryptionJob.execute();
 
         if(config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
@@ -217,9 +216,8 @@ public class EncryptedFilesSyncJob extends Job {
                     fileManager,
                     keysetKeyStoreFactory,
                     MultiScopeStoreWriter::areCollectionsEqual);
-            SiteKeysetEncryptionJob keysetEncryptionSyncJob = new SiteKeysetEncryptionJob(keysetWriter, globalOperators, globalKeysets);
-            KeysetKeyEncryptionJob keysetKeyEncryptionSyncJob = new KeysetKeyEncryptionJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter);
-
+            SiteKeysetEncryptionJob keysetEncryptionSyncJob = new SiteKeysetEncryptionJob(keysetWriter, globalOperators, globalKeysets, keysetStoreFactory.getGlobalReader().getMetadata().getLong("version"));
+            KeysetKeyEncryptionJob keysetKeyEncryptionSyncJob = new KeysetKeyEncryptionJob(globalOperators, globalKeysetKeys, globalKeysets, globalMaxKeysetKeyId, keysetKeyWriter, keysetKeyStoreFactory.getGlobalReader().getMetadata().getLong("version"));
             keysetEncryptionSyncJob.execute();
             keysetKeyEncryptionSyncJob.execute();
         }

@@ -1,21 +1,17 @@
 package com.uid2.admin.store;
 
-import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.factory.StoreFactory;
-import com.uid2.admin.store.writer.EncryptedScopedStoreWriter;
-import com.uid2.admin.store.writer.ScopedStoreWriter;
-import com.uid2.shared.model.KeysetKey;
 
 import com.uid2.admin.store.factory.EncryptedStoreFactory;
-import com.uid2.shared.model.Site;
 import com.uid2.shared.store.reader.StoreReader;
 import io.vertx.core.json.JsonObject;
-
+import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class MultiScopeStoreWriter<T> {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MultiScopeStoreWriter.class);
     private final FileManager fileManager;
     private final StoreFactory<T> factory;
     private final BiFunction<T, T, Boolean> areEqual;
@@ -69,6 +65,7 @@ public class MultiScopeStoreWriter<T> {
         }
     }
 
+    //Used only for salts
     public void uploadPrivateWithEncryption(List<Integer> siteIds, T desiredState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
         for (Integer siteId : siteIds) {
@@ -84,6 +81,7 @@ public class MultiScopeStoreWriter<T> {
         }
     }
 
+    //Used only for salts
     public void uploadPublicWithEncryption(List<Integer> siteIds, T desiredState, JsonObject extraMeta) throws Exception {
         EncryptedStoreFactory<T> encryptedFactory = (EncryptedStoreFactory<T>) factory;
         for (Integer siteId : siteIds) {

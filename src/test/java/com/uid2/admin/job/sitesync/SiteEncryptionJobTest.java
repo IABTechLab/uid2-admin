@@ -33,7 +33,7 @@ class SiteEncryptionJobTest {
         multiScopeStoreWriter = mock(MultiScopeStoreWriter.class);
         globalSites = Collections.emptyList();
         globalOperators = Collections.emptyList();
-        siteEncryptionJob = new SiteEncryptionJob(multiScopeStoreWriter, globalSites, globalOperators);
+        siteEncryptionJob = new SiteEncryptionJob(multiScopeStoreWriter, globalSites, globalOperators, 1000L);
     }
 
     @Test
@@ -55,11 +55,11 @@ class SiteEncryptionJobTest {
             siteEncryptionJob.execute();
 
             ArgumentCaptor<PrivateSiteDataMap> privateCaptor = ArgumentCaptor.forClass(PrivateSiteDataMap.class);
-            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(privateCaptor.capture(), eq(null));
+            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(privateCaptor.capture(), any());
             assertEquals(privateSites, privateCaptor.getValue());
 
             ArgumentCaptor<PrivateSiteDataMap> publicCaptor = ArgumentCaptor.forClass(PrivateSiteDataMap.class);
-            verify(multiScopeStoreWriter).uploadPublicWithEncryption(publicCaptor.capture(), eq(null));
+            verify(multiScopeStoreWriter).uploadPublicWithEncryption(publicCaptor.capture(), any());
             assertEquals(publicSites, publicCaptor.getValue());
         }
     }
@@ -67,7 +67,7 @@ class SiteEncryptionJobTest {
     @Test
     void writesNoSitesIfThereAreNoSites() throws Exception {
         MultiScopeStoreWriter<Collection<Site>> emptyMultiScopeStoreWriter = mock(MultiScopeStoreWriter.class);
-        SiteEncryptionJob job = new SiteEncryptionJob(emptyMultiScopeStoreWriter, Collections.emptyList(), Collections.emptyList());
+        SiteEncryptionJob job = new SiteEncryptionJob(emptyMultiScopeStoreWriter, Collections.emptyList(), Collections.emptyList(), 100L);
 
         try (MockedStatic<PrivateSiteUtil> privateSiteUtilMock = mockStatic(PrivateSiteUtil.class);
              MockedStatic<PublicSiteUtil> publicSiteUtilMock = mockStatic(PublicSiteUtil.class)) {
@@ -84,8 +84,8 @@ class SiteEncryptionJobTest {
             job.execute();
 
             // Verify
-            verify(emptyMultiScopeStoreWriter).uploadPrivateWithEncryption(argThat(map -> map.isEmpty()), eq(null));
-            verify(emptyMultiScopeStoreWriter).uploadPublicWithEncryption(argThat(map -> map.isEmpty()), eq(null));
+            verify(emptyMultiScopeStoreWriter).uploadPrivateWithEncryption(argThat(map -> map.isEmpty()), any());
+            verify(emptyMultiScopeStoreWriter).uploadPublicWithEncryption(argThat(map -> map.isEmpty()), any());
 
             // Verify that getSites and getPublicSites were called with empty collections
             privateSiteUtilMock.verify(() -> PrivateSiteUtil.getSites(eq(Collections.emptyList()), eq(Collections.emptyList())));
@@ -97,7 +97,7 @@ class SiteEncryptionJobTest {
     void syncsNewSites() throws Exception {
         Site site = mock(Site.class);
         Collection<Site> sites = Collections.singletonList(site);
-        SiteEncryptionJob job = new SiteEncryptionJob(multiScopeStoreWriter, sites, globalOperators);
+        SiteEncryptionJob job = new SiteEncryptionJob(multiScopeStoreWriter, sites, globalOperators, 100L);
 
         PrivateSiteDataMap<Site> expectedPrivateSites = mock(PrivateSiteDataMap.class);
         PrivateSiteDataMap<Site> expectedPublicSites = mock(PrivateSiteDataMap.class);
@@ -110,8 +110,8 @@ class SiteEncryptionJobTest {
 
             job.execute();
 
-            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(eq(expectedPrivateSites), eq(null));
-            verify(multiScopeStoreWriter).uploadPublicWithEncryption(eq(expectedPublicSites), eq(null));
+            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(eq(expectedPrivateSites), any());
+            verify(multiScopeStoreWriter).uploadPublicWithEncryption(eq(expectedPublicSites), any());
         }
     }
 
@@ -122,8 +122,8 @@ class SiteEncryptionJobTest {
         Collection<Site> initialSites = Collections.singletonList(site1);
         Collection<Site> updatedSites = Arrays.asList(site1, site2);
 
-        SiteEncryptionJob initialJob = new SiteEncryptionJob(multiScopeStoreWriter, initialSites, globalOperators);
-        SiteEncryptionJob updatedJob = new SiteEncryptionJob(multiScopeStoreWriter, updatedSites, globalOperators);
+        SiteEncryptionJob initialJob = new SiteEncryptionJob(multiScopeStoreWriter, initialSites, globalOperators,100L);
+        SiteEncryptionJob updatedJob = new SiteEncryptionJob(multiScopeStoreWriter, updatedSites, globalOperators, 100L);
 
         PrivateSiteDataMap<Site> initialPrivateSites = mock(PrivateSiteDataMap.class);
         PrivateSiteDataMap<Site> initialPublicSites = mock(PrivateSiteDataMap.class);
@@ -140,13 +140,13 @@ class SiteEncryptionJobTest {
 
             initialJob.execute();
 
-            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(eq(initialPrivateSites), eq(null));
-            verify(multiScopeStoreWriter).uploadPublicWithEncryption(eq(initialPublicSites), eq(null));
+            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(eq(initialPrivateSites), any());
+            verify(multiScopeStoreWriter).uploadPublicWithEncryption(eq(initialPublicSites), any());
 
             updatedJob.execute();
 
-            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(eq(updatedPrivateSites), eq(null));
-            verify(multiScopeStoreWriter).uploadPublicWithEncryption(eq(updatedPublicSites), eq(null));
+            verify(multiScopeStoreWriter).uploadPrivateWithEncryption(eq(updatedPrivateSites), any());
+            verify(multiScopeStoreWriter).uploadPublicWithEncryption(eq(updatedPublicSites), any());
         }
     }
 }

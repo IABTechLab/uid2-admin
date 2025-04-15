@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.uid2.admin.store.factory.EncryptedStoreFactory;
 import com.uid2.admin.store.factory.SiteStoreFactory;
+import com.uid2.admin.store.factory.StoreFactory;
 import com.uid2.admin.store.version.EpochVersionGenerator;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.admin.store.writer.mocks.FileStorageMock;
@@ -24,6 +25,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +48,7 @@ class MultiScopeStoreWriterTest {
     private FileManager fileManager;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         cloudStorage = new InMemoryStorageMock();
         FileStorageMock fileStorage = new FileStorageMock(cloudStorage);
         Clock clock = new InstantClock();
@@ -203,13 +207,16 @@ class MultiScopeStoreWriterTest {
 
     @Test
     public void uploadPrivateWithEncryption() throws Exception {
+        JsonObject metadata = new JsonObject();
+        metadata.put("version", 5);
+        InputStream metadataStream = new ByteArrayInputStream(metadata.encode().getBytes(StandardCharsets.UTF_8));
+        cloudStorage.upload(metadataStream, "/some/test/path/sites/site/10/metadata.json");
         CloudEncryptionKey encryptionKey = new CloudEncryptionKey(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
         when(cloudEncryptionKeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, encryptionKey);
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
         when(cloudEncryptionKeyProvider.getKey(1)).thenReturn(encryptionKey);
-
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
@@ -237,17 +244,21 @@ class MultiScopeStoreWriterTest {
         Collection<Site> sites = reader.getAll();
         assertThat(sites).containsExactly(privateSite);
         assertThat(reader.getMetadata().getString("key")).isEqualTo("value");
+        cloudStorage.delete("/some/test/path/sites/site/10/metadata.json");
     }
 
     @Test
     public void uploadPublicWithEncryption() throws Exception {
+        JsonObject metadata = new JsonObject();
+        metadata.put("version", 5);
+        InputStream metadataStream = new ByteArrayInputStream(metadata.encode().getBytes(StandardCharsets.UTF_8));
+        cloudStorage.upload(metadataStream, "/some/test/path/sites/site/10/metadata.json");
         CloudEncryptionKey encryptionKey = new CloudEncryptionKey(1, 10, 1, 1, "mydrCudb2PZOm01Qn0SpthltmexHUAA11Hy1m+uxjVw=");
         when(cloudEncryptionKeyProvider.getEncryptionKeyForSite(10)).thenReturn(encryptionKey);
         Map<Integer, CloudEncryptionKey> allKeys = new HashMap<>();
         allKeys.put(1, encryptionKey);
         when(cloudEncryptionKeyProvider.getAll()).thenReturn(allKeys);
         when(cloudEncryptionKeyProvider.getKey(1)).thenReturn(encryptionKey);
-
         SiteStoreFactory siteStoreFactory = new SiteStoreFactory(
                 cloudStorage,
                 globalSiteMetadataPath,
@@ -263,7 +274,6 @@ class MultiScopeStoreWriterTest {
                 siteStoreFactory,
                 MultiScopeStoreWriter::areCollectionsEqual
         );
-
         Site publicSite = new Site(scopedSiteId, "public site", true);
         JsonObject extraMeta = new JsonObject().put("key", "value");
 
@@ -275,6 +285,7 @@ class MultiScopeStoreWriterTest {
         Collection<Site> sites = reader.getAll();
         assertThat(sites).containsExactly(publicSite);
         assertThat(reader.getMetadata().getString("key")).isEqualTo("value");
+        cloudStorage.delete("/some/test/path/sites/site/10/metadata.json");
     }
 
 
