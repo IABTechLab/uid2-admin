@@ -1,5 +1,6 @@
 package com.uid2.admin.job.EncryptionJob;
 
+import com.uid2.admin.job.model.EncryptedJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.model.PrivateSiteDataMap;
 import com.uid2.admin.store.MultiScopeStoreWriter;
@@ -11,18 +12,18 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Collection;
 
-public class ClientSideKeypairEncryptionJob extends Job {
+public class ClientSideKeypairEncryptionJob extends EncryptedJob {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<ClientSideKeypair> globalClientSideKeypairs;
 
     private final MultiScopeStoreWriter<Collection<ClientSideKeypair>> multiScopeStoreWriter;
-    private final Long version;
+
     public ClientSideKeypairEncryptionJob(Collection<OperatorKey> globalOperators, Collection<ClientSideKeypair> globalClientSideKeypairs,
                                           MultiScopeStoreWriter<Collection<ClientSideKeypair>> multiScopeStoreWriter, Long version) {
+        super(version);
         this.globalOperators = globalOperators;
         this.globalClientSideKeypairs = globalClientSideKeypairs;
         this.multiScopeStoreWriter = multiScopeStoreWriter;
-        this.version = version;
     }
 
     @Override
@@ -33,9 +34,7 @@ public class ClientSideKeypairEncryptionJob extends Job {
     @Override
     public void execute() throws Exception {
         // Only public operators support clientside keypair
-        JsonObject extraMeta = new JsonObject();
-        extraMeta.put("version", this.version);
         PrivateSiteDataMap<ClientSideKeypair> desiredPublicState = PublicSiteUtil.getPublicClientKeypairs(globalClientSideKeypairs, globalOperators);
-        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, extraMeta);
+        multiScopeStoreWriter.uploadPublicWithEncryption(desiredPublicState, this.getBaseMetadata());
     }
 }

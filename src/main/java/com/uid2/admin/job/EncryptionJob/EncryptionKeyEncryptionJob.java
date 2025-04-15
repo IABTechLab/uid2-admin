@@ -1,5 +1,6 @@
 package com.uid2.admin.job.EncryptionJob;
 
+import com.uid2.admin.job.model.EncryptedJob;
 import com.uid2.admin.job.model.Job;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.model.PrivateSiteDataMap;
@@ -15,13 +16,12 @@ import io.vertx.core.json.JsonObject;
 import java.util.Collection;
 import java.util.Map;
 
-public class EncryptionKeyEncryptionJob extends Job {
+public class EncryptionKeyEncryptionJob extends EncryptedJob {
     private final Collection<OperatorKey> globalOperators;
     private final Collection<EncryptionKey> globalEncryptionKeys;
     private final Collection<LegacyClientKey> globalClientKeys;
     private final Map<Integer, EncryptionKeyAcl> globalAcls;
     private final Integer globalMaxKeyId;
-    private final Long version;
 
     private final MultiScopeStoreWriter<Collection<EncryptionKey>> multiScopeStoreWriter;
 
@@ -33,13 +33,13 @@ public class EncryptionKeyEncryptionJob extends Job {
             Integer globalMaxKeyId,
             MultiScopeStoreWriter<Collection<EncryptionKey>> multiScopeStoreWriter,
             Long version) {
+        super(version);
         this.globalEncryptionKeys = globalEncryptionKeys;
         this.globalClientKeys = globalClientKeys;
         this.globalOperators = globalOperators;
         this.globalAcls = globalAcls;
         this.globalMaxKeyId = globalMaxKeyId;
         this.multiScopeStoreWriter = multiScopeStoreWriter;
-        this.version = version;
     }
 
     @Override
@@ -49,8 +49,8 @@ public class EncryptionKeyEncryptionJob extends Job {
 
     @Override
     public void execute() throws Exception {
-        JsonObject extraMeta = EncryptionKeyStoreWriter.maxKeyMeta(globalMaxKeyId); //Why is it not passed to public? - Same pattern in SiteKeySet
-        extraMeta.put("version", this.version);
+        JsonObject extraMeta = this.getBaseMetadata();
+        extraMeta.put("max_key_id", globalMaxKeyId);
         PrivateSiteDataMap<EncryptionKey> desiredPrivateState = PrivateSiteUtil.getEncryptionKeys(globalOperators, globalEncryptionKeys, globalAcls, globalClientKeys);
         multiScopeStoreWriter.uploadPrivateWithEncryption(desiredPrivateState,extraMeta );
         PrivateSiteDataMap<EncryptionKey> desiredPublicState = PublicSiteUtil.getPublicEncryptionKeys(globalEncryptionKeys, globalOperators);
