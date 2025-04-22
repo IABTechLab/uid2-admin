@@ -95,10 +95,7 @@ function init() {
             $(".authed").show();
 
             if (u.groups.findIndex(e => e === "developer" || e === "developer-elevated" || e === "infra-admin" || e === "admin") >= 0) {
-                $(".ro-cki").show();
-                $(".ro-opm").show();
                 $(".ro-adm").show();
-                $(".ro-sem").show();
             }
             if (u.groups.length === 0) {
                 $(".ro-nil").show();

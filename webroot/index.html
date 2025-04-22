@@ -6,69 +6,71 @@
 <body>
 <h1>UID2 Env Admin Site</h1>
 
-<div class="notauthed" style="display: none">
-<a href="/login">Login</a>
-<br>
+<div class="notauthed">
+    <a href="/login">Login</a>
+    <br>
 </div>
 
-<div class="authed" style="display: none">
-Logged in as <span id="loginEmail"></span>
-<br>
-<a href="/logout">Logout</a>
-<br>
+<div class="authed">
+    Logged in as <span id="loginEmail"></span>
+    <br>
+    <a href="/logout">Logout</a>
+    <br>
 </div>
 
-<h3 class="ro-adm" style="display: none">On-call Support Workflow</h3>
-<ul>
-    <li class="ro-adm" style="display: none"><a href="/adm/oncall/participant-summary.html">Participant Summary</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/oncall/generate-api-key-secret.html">Generate API Key/Secret</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/oncall/generate-cstg-keypair.html">Generate CSTG Keypair</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/oncall/search.html">Key and Secret Search</a></li>
-</ul>
+<div class="ro-nil" style="display: none">
+    <ul>
+        <li>No Admin Permissions</li>
+    </ul>
+</div>
 
-<hr>
+<div class="ro-adm" style="display: none">
+    <h3>On-call Support Workflow</h3>
+    <ul>
+        <li><a href="/adm/oncall/participant-summary.html">Participant Summary</a></li>
+        <li><a href="/adm/oncall/generate-api-key-secret.html">Generate API Key/Secret</a></li>
+        <li><a href="/adm/oncall/generate-cstg-keypair.html">Generate CSTG Keypair</a></li>
+        <li><a href="/adm/oncall/search.html">Key and Secret Search</a></li>
+    </ul>
 
-<h3 class="ro-adm" style="display: none">Clients</h3>
-<ul>
-    <li class="ro-cki ro-adm" style="display: none"><a href="/adm/site.html">Site Management</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/client-side-keypairs.html">Client Side Keypair Management</a></li>
-    <li class="ro-cki ro-adm" style="display: none"><a href="/adm/client-key.html">Client Key Management</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/keysets.html">Keyset Access Management</a></li>
-    <li class="ro-sem" style="display: none"><a href="/adm/encryption-key.html">Encryption Key Management</a></li>
-</ul>
+    <hr>
+    <h3>Clients</h3>
+    <ul>
+        <li><a href="/adm/site.html">Site Management</a></li>
+        <li><a href="/adm/client-side-keypairs.html">Client Side Keypair Management</a></li>
+        <li><a href="/adm/client-key.html">Client Key Management</a></li>
+        <li><a href="/adm/keysets.html">Keyset Access Management</a></li>
+        <li class="ro-sem"><a href="/adm/encryption-key.html">Encryption Key Management</a></li>
+    </ul>
 
-<hr>
+    <hr>
+    <h3>Services</h3>
+    <ul>
+        <li><a href="/adm/services.html">Service Management</a></li>
+        <li><a href="/adm/service-links.html">Service Link Management</a></li>
+    </ul>
 
-<h3 class="ro-adm" style="display: none">Services</h3>
-<ul>
-    <li class="ro-adm" style="display: none"><a href="/adm/services.html">Service Management</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/service-links.html">Service Link Management</a></li>
-</ul>
+    <hr>
+    <h3>Operators</h3>
+    <ul>
+        <li><a href="/adm/operator-key.html">Operator Key Management</a></li>
+        <li><a href="/adm/enclave-id.html">Enclave ID Management</a></li>
+        <li><a href="/adm/enclave-gcp.html">GCP Enclave ID Tool</a></li>
+        <li><a href="/adm/enclave-gcp-v2.html">GCP Enclave ID Tool(V2)</a></li>
+        <li><a href="/adm/partner-config.html">OptOut Partner Management</a></li>
+    </ul>
 
-<hr>
+    <hr>
+    <h3>Internal</h3>
+    <ul>
+        <li><a href="/adm/salt.html">Salts Management</a></li>
+    </ul>
 
-<h3 class="ro-adm" style="display: none">Operators</h3>
-<ul>
-    <li class="ro-opm ro-adm" style="display: none"><a href="/adm/operator-key.html">Operator Key Management</a></li>
-    <li class="ro-opm ro-adm" style="display: none"><a href="/adm/enclave-id.html">Enclave ID Management</a></li>
-    <li class="ro-opm ro-adm" style="display: none"><a href="/adm/enclave-gcp.html">GCP Enclave ID Tool</a></li>
-    <li class="ro-opm ro-adm" style="display: none"><a href="/adm/enclave-gcp-v2.html">GCP Enclave ID Tool(V2)</a></li>
-    <li class="ro-adm" style="display: none"><a href="/adm/partner-config.html">OptOut Partner Management</a></li>
-    <li class="ro-nil" style="display: none">No Admin Permissions</li>
-</ul>
-
-<hr>
-
-<h3 class="ro-adm" style="display: none">Internal</h3>
-<ul>
-    <li class="ro-sem" style="display: none"><a href="/adm/salt.html">Salts Management</a></li>
-</ul>
-
-<hr>
-
-<h3 class="ro-adm" style="display: none">Deprecated</h3>
-<ul>
-    <li class="ro-cki ro-adm" style="display: none"><a href="/adm/key-acl.html">Deprecated: Encryption Key ACL Management</a></li>
-</ul>
+    <hr>
+    <h3>Deprecated</h3>
+    <ul>
+        <li><a href="/adm/key-acl.html">Deprecated: Encryption Key ACL Management</a></li>
+    </ul>
+</div>
 </body>
 </html>
