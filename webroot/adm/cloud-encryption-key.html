@@ -1,0 +1,42 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/js/main.js"></script>
+</head>
+<body>
+<h1>UID2 Env - Cloud Encryption Key Management</h1>
+
+<a href="/">Back</a>
+
+<br>
+<br>
+
+<div class="ro-adm" style="display: none">
+    <h3>Operations</h3>
+    <ul>
+        <li><a href="#" id="doMeta">Get Metadata</a></li>
+        <li><a href="#" id="doList">List Cloud Encryption Keys</a></li>
+    </ul>
+
+    <br>
+
+    <h3>Output</h3>
+    <div id="output">
+        <pre id="errorOutput"></pre>
+        <pre id="standardOutput"></pre>
+    </div>
+</div>
+
+<script language="JavaScript">
+    $(document).ready(function () {
+        $('#doMeta').on('click', function () {
+            doApiCall('GET', '/api/cloud-encryption-key/metadata', '#standardOutput', '#errorOutput');
+        });
+
+        $('#doList').on('click', function () {
+            doApiCall('GET', '/api/cloud-encryption-key/list', '#standardOutput', '#errorOutput');
+        });
+    });
+</script>
+</body>
+</html>
