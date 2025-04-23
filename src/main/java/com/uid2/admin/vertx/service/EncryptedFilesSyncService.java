@@ -33,7 +33,7 @@ public class EncryptedFilesSyncService implements IService {
         this.jobDispatcher = jobDispatcher;
         this.writeLock = writeLock;
         this.config = config;
-        this.cloudEncryptionKeyProvider =cloudEncryptionKeyProvider;
+        this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
     }
 
     @Override

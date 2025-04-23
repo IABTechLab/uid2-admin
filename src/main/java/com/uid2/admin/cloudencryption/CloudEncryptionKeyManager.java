@@ -6,6 +6,7 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
+import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,15 @@ public class CloudEncryptionKeyManager {
         this.operatorKeyProvider = operatorKeyProvider;
         this.keyWriter = keyWriter;
         this.planner = planner;
+    }
+
+    public JsonObject getMetadata() throws Exception {
+        return keyProvider.getMetadata();
+    }
+
+    public Set<CloudEncryptionKeySummary> getKeySummaries() throws Exception {
+        refreshCloudData();
+        return existingKeys.stream().map(CloudEncryptionKeySummary::fromFullKey).collect(Collectors.toSet());
     }
 
     // For any site that has an operator create a new key activating in one hour
@@ -64,11 +74,6 @@ public class CloudEncryptionKeyManager {
             LOGGER.error("Key backfill failed", e);
             throw e;
         }
-    }
-
-    public Set<CloudEncryptionKeySummary> getKeySummaries() throws Exception {
-        refreshCloudData();
-        return existingKeys.stream().map(CloudEncryptionKeySummary::fromFullKey).collect(Collectors.toSet());
     }
 
     private void writeKeys(Set<CloudEncryptionKey> desiredKeys) throws Exception {
