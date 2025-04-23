@@ -40,7 +40,6 @@
             {
                 name: "Key ID",
                 formatter: (cell, row) => {
-                    console.log(row.cells);
                     return gridjs.html(`<span class="${row.cells[4].data}">${cell}</span>`)
                 }
             },
