@@ -2,6 +2,8 @@
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
+    <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+    <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
 </head>
 <body>
 <h1>UID2 Env - Cloud Encryption Key Management</h1>
@@ -25,16 +27,38 @@
         <pre id="errorOutput"></pre>
         <pre id="standardOutput"></pre>
     </div>
+    <div id="output-table"></div>
 </div>
 
 <script language="JavaScript">
+    const grid = new gridjs.Grid({
+        columns: ["Key ID", "Site ID", "Activates", "Created"],
+        data: [],
+        sort: true,
+        search: true
+    })
+        .render(document.getElementById("output-table"));
+
+    const updateGrid = (grid, data) => {
+        grid
+            .updateConfig({ data: data.cloudEncryptionKeys.map((entry) => [entry.id, entry.siteId, entry.activates, entry.created]) })
+            .forceRender(document.getElementById("output-table"));
+    }
+
+    const clearGrid = (grid) => {
+        grid
+            .updateConfig({ data: [] })
+            .forceRender(document.getElementById("output-table"));
+    }
+
     $(document).ready(function () {
         $('#doMeta').on('click', function () {
             doApiCall('GET', '/api/cloud-encryption-key/metadata', '#standardOutput', '#errorOutput');
         });
 
         $('#doList').on('click', function () {
-            doApiCall('GET', '/api/cloud-encryption-key/list', '#standardOutput', '#errorOutput');
+            clearGrid(grid);
+            doApiCallWithCallback('GET', '/api/cloud-encryption-key/list', (text) => updateGrid(grid, JSON.parse(text)), errorCallback);
         });
     });
 </script>
