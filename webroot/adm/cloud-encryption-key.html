@@ -22,6 +22,7 @@
     <ul>
         <li><a href="#" id="doMeta">Get Metadata</a></li>
         <li><a href="#" id="doList">List Cloud Encryption Keys</a></li>
+        <li><a href="#" id="doRotate">Rotate Cloud Encryption Keys</a></li>
     </ul>
 
     <br>
@@ -131,28 +132,37 @@
             .forceRender();
     }
 
-    $(document).ready(function () {
-        $("#doMeta").on("click", function () {
+    const doList = () => {
+        clearGrid(grid);
+        doApiCallWithCallback("GET", "/api/site/list", (text) => {
+            const sites = JSON.parse(text);
+            const siteDict = sites.reduce((acc, site) => {
+                acc[site.id] = site.name;
+                return acc;
+            }, {});
+
+            doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => {
+                const data = JSON.parse(text);
+                data.cloudEncryptionKeys.forEach((key) => {
+                    key.siteName = !siteDict[key.siteId] ? "Unknown site" : siteDict[key.siteId]
+                });
+                updateGrid(grid, data);
+            }, errorCallback);
+        }, errorCallback);
+    }
+
+    $(document).ready(() => {
+        $("#doMeta").on("click", () => {
             doApiCall("GET", "/api/cloud-encryption-key/metadata", "#standardOutput", "#errorOutput");
         });
 
-        $("#doList").on("click", function () {
-            clearGrid(grid);
-            doApiCallWithCallback("GET", "/api/site/list", (text) => {
-                const sites = JSON.parse(text);
-                const siteDict = sites.reduce((acc, site) => {
-                    acc[site.id] = site.name;
-                    return acc;
-                }, {});
+        $("#doList").on("click", () => {
+            doList();
+        });
 
-                doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => {
-                    const data = JSON.parse(text);
-                    data.cloudEncryptionKeys.forEach((key) => {
-                        key.siteName = !siteDict[key.siteId] ? "Unknown site" : siteDict[key.siteId]
-                    });
-                    updateGrid(grid, data);
-                }, errorCallback);
-            }, errorCallback);
+        $("#doRotate").on("click", () => {
+            doApiCall("POST", "/api/cloud-encryption-key/rotate", "#standardOutput", "#errorOutput");
+            doList();
         });
     });
 </script>
