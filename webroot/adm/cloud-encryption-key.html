@@ -39,9 +39,23 @@
     })
         .render(document.getElementById("output-table"));
 
+    const formatDate = (text) => {
+        const date = new Date(text);
+        const options = {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            timeZoneName: "short"
+        };
+        return date.toLocaleString("en-US", options);
+    }
+
     const updateGrid = (grid, data) => {
         grid
-            .updateConfig({ data: data.cloudEncryptionKeys.map((entry) => [entry.id, entry.siteId, entry.activates, entry.created]) })
+            .updateConfig({ data: data.cloudEncryptionKeys.map((entry) => [entry.id, entry.siteId, formatDate(entry.activates), formatDate(entry.created)]) })
             .forceRender(document.getElementById("output-table"));
     }
 
@@ -52,13 +66,13 @@
     }
 
     $(document).ready(function () {
-        $('#doMeta').on('click', function () {
-            doApiCall('GET', '/api/cloud-encryption-key/metadata', '#standardOutput', '#errorOutput');
+        $("#doMeta").on("click", function () {
+            doApiCall("GET", "/api/cloud-encryption-key/metadata", "#standardOutput", "#errorOutput");
         });
 
-        $('#doList').on('click', function () {
+        $("#doList").on("click", function () {
             clearGrid(grid);
-            doApiCallWithCallback('GET', '/api/cloud-encryption-key/list', (text) => updateGrid(grid, JSON.parse(text)), errorCallback);
+            doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => updateGrid(grid, JSON.parse(text)), errorCallback);
         });
     });
 </script>
