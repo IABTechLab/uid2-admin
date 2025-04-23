@@ -23,6 +23,7 @@
         <li><a href="#" id="doMeta">Get Metadata</a></li>
         <li><a href="#" id="doList">List Cloud Encryption Keys</a></li>
         <li><a href="#" id="doRotate">Rotate Cloud Encryption Keys</a></li>
+        <li><a href="#" id="doEncrypt">Re-encrypt All S3 Files</a></li>
     </ul>
 
     <br>
@@ -181,6 +182,10 @@
         $("#doRotate").on("click", () => {
             doApiCall("POST", "/api/cloud-encryption-key/rotate", "#standardOutput", "#errorOutput");
             doList();
+        });
+
+        $("#doEncrypt").on("click", () => {
+            doApiCall("POST", "/api/encrypted-files/syncNow", "#standardOutput", "#errorOutput");
         });
     });
 </script>
