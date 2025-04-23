@@ -53,6 +53,7 @@ def _decrypt_input_stream(input_stream: IO[bytes], bucket, prefix, region_name) 
 def salt_compare(key, prefix, bucket, region_name):
     s3 = boto3.client('s3', region_name=region_name)
     key = f"{prefix}{key}"
+    print("Key is ", key)
     base_path = '/'.join(key.split('/')[:-3])
     file_name = key.split('/')[-1:][0]
     unencrypted = f'{base_path}/{file_name}'
@@ -63,13 +64,31 @@ def salt_compare(key, prefix, bucket, region_name):
     unencrypted = response['Body'].read().decode('utf-8')
     return (encrypted==unencrypted)
 
+def _get_most_recent_files(bucket, prefix, key):
+    s3 = boto3.client("s3")
+    paginator = s3.get_paginator("list_objects_v2")
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=f"{prefix}{key[:-2]}/")
+    n, all_files = 5 , []
+    for i, page in enumerate(page_iterator):
+        if i >= n:
+            break
+        all_files.extend(page.get("Contents", []))
+    recent_files = sorted(all_files, key=lambda x: x["LastModified"], reverse=True)
+    recent_files = list(map(lambda x: x['Key'], recent_files))
+    recent_files = list(filter(lambda x: "metadata" not in x, recent_files))
+    return recent_files[:10]
+
 if __name__ == '__main__':
-    key = sys.argv[1]
+    encrypted_file = sys.argv[1]
     bucket = sys.argv[2]
     region_name = sys.argv[3]
     prefix = sys.argv[4] if len(sys.argv) > 4 else ''
     if prefix != '' and prefix[-1]!='/':
         raise "prefix should terminate with /"
-    if not key.startswith("salt"):
+    if not encrypted_file.startswith("salt"):
         raise "only salts supported"
-    print(salt_compare(key=key, prefix=prefix, bucket=bucket, region_name=region_name))
+    if encrypted_file[-2:] == '/*':
+        for recent in _get_most_recent_files(bucket=bucket, prefix=prefix, key=encrypted_file):
+            print(salt_compare(key=recent, prefix=prefix, bucket=bucket, region_name=region_name))
+    else:
+        print(salt_compare(key=encrypted_file, prefix=prefix, bucket=bucket, region_name=region_name))

@@ -15,7 +15,7 @@ Login to AWS account
 `pip install requirements.txt` 
 `python script.py <key> <bucket> <region_name> [prefix]` 
 
--   `key` – Required. Must start with `salt`. Example: `salts/salts.txt.1744152738842`
+-   `encrypted_file` – Required. Must start with `salt`. Example: `salts/encrypted/12_private/salts.txt.1745532777048` (To query multiple files you can use `salts/encrypted/12_private/*`)
 -   `bucket` – Required. Name of the S3 bucket. 
 -   `region_name` – Required. AWS region of the S3 bucket (e.g. `us-east-1`) 
 -   `prefix` – Optional. S3 path prefix. If provided, it **must end with `/`**.
