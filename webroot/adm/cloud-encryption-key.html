@@ -4,6 +4,10 @@
     <script src="/js/main.js"></script>
     <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
     <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+    <style>
+        .active { color: darkgreen; }
+        .inactive { color: darkred; }
+    </style>
 </head>
 <body>
 <h1>UID2 Env - Cloud Encryption Key Management</h1>
@@ -32,10 +36,51 @@
 
 <script language="JavaScript">
     const grid = new gridjs.Grid({
-        columns: ["Key ID", "Site ID", "Activates", "Created"],
+        columns: [
+            {
+                name: "Key ID",
+                formatter: (cell, row) => {
+                    console.log(row.cells);
+                    return gridjs.html(`<span class="${row.cells[4].data}">${cell}</span>`)
+                }
+            },
+            {
+                name: "Site ID",
+                formatter: (cell, row) => {
+                    return gridjs.html(`<span class="${row.cells[4].data}">${cell}</span>`)
+                }
+            },
+            {
+                name: "Activates",
+                formatter: (cell, row) => {
+                    return gridjs.html(`<span class="${row.cells[4].data}">${formatDate(cell)}</span>`)
+                }
+            },
+            {
+                name: "Created",
+                formatter: (cell, row) => {
+                    return gridjs.html(`<span class="${row.cells[4].data}">${formatDate(cell)}</span>`)
+                }
+            },
+            {
+                name: "Style",
+                hidden: true
+            }
+        ],
         data: [],
         sort: true,
-        search: true
+        search: {
+            selector: (cell, rowIndex, cellIndex) => {
+                if (cellIndex === 0 || cellIndex === 1) {
+                    return cell;
+                }
+            }
+        },
+        language: {
+            search: {
+                placeholder: "Search by Key ID or Site ID..."
+            }
+        }
     })
         .render(document.getElementById("output-table"));
 
@@ -54,15 +99,42 @@
     }
 
     const updateGrid = (grid, data) => {
+        const now = new Date();
+
+        const groupedData = data.cloudEncryptionKeys.reduce((acc, entry) => {
+            if (!acc[entry.siteId]) {
+                acc[entry.siteId] = [];
+            }
+            acc[entry.siteId].push(entry);
+            return acc;
+        }, {});
+
+        const gridData = [];
+        for (const siteId in groupedData) {
+            const entries = groupedData[siteId];
+            const latestEntry = entries.reduce((latest, entry) => new Date(entry.activates) > new Date(latest.activates) ? entry : latest);
+
+            entries.forEach((entry) => {
+                let style = "";
+                if (entry === latestEntry) {
+                    style = "active";
+                } else {
+                    style = "inactive";
+                }
+
+                gridData.push([ entry.id, entry.siteId, entry.activates, entry.created, style ]);
+            });
+        }
+
         grid
-            .updateConfig({ data: data.cloudEncryptionKeys.map((entry) => [entry.id, entry.siteId, formatDate(entry.activates), formatDate(entry.created)]) })
-            .forceRender(document.getElementById("output-table"));
+            .updateConfig({ data: gridData })
+            .forceRender();
     }
 
     const clearGrid = (grid) => {
         grid
             .updateConfig({ data: [] })
-            .forceRender(document.getElementById("output-table"));
+            .forceRender();
     }
 
     $(document).ready(function () {
