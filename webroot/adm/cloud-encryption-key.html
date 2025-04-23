@@ -45,9 +45,9 @@
                 }
             },
             {
-                name: "Site ID",
+                name: "Site",
                 formatter: (cell, row) => {
-                    return gridjs.html(`<span class="${row.cells[4].data}">${cell}</span>`)
+                    return gridjs.html(`<span class="${row.cells[4].data}">${cell.siteId} - ${cell.siteName}</span>`)
                 }
             },
             {
@@ -71,14 +71,16 @@
         sort: true,
         search: {
             selector: (cell, rowIndex, cellIndex) => {
-                if (cellIndex === 0 || cellIndex === 1) {
+                if (cellIndex === 0) {
                     return cell;
+                } else if (cellIndex === 1) {
+                    return `${cell.siteId} - ${cell.siteName}`;
                 }
             }
         },
         language: {
             search: {
-                placeholder: "Search by Key ID or Site ID..."
+                placeholder: "Search by Key ID or Site..."
             }
         }
     })
@@ -99,30 +101,23 @@
     }
 
     const updateGrid = (grid, data) => {
-        const now = new Date();
-
-        const groupedData = data.cloudEncryptionKeys.reduce((acc, entry) => {
-            if (!acc[entry.siteId]) {
-                acc[entry.siteId] = [];
+        const groupedData = data.cloudEncryptionKeys.reduce((acc, key) => {
+            if (!acc[key.siteId]) {
+                acc[key.siteId] = [];
             }
-            acc[entry.siteId].push(entry);
+            acc[key.siteId].push(key);
             return acc;
         }, {});
 
         const gridData = [];
         for (const siteId in groupedData) {
-            const entries = groupedData[siteId];
-            const latestEntry = entries.reduce((latest, entry) => new Date(entry.activates) > new Date(latest.activates) ? entry : latest);
+            const keys = groupedData[siteId];
+            const latestKey = keys.reduce((latest, key) => new Date(key.activates) > new Date(latest.activates) ? key : latest);
 
-            entries.forEach((entry) => {
-                let style = "";
-                if (entry === latestEntry) {
-                    style = "active";
-                } else {
-                    style = "inactive";
-                }
+            keys.forEach((key) => {
+                let style = key === latestKey ? "active" : "inactive";
 
-                gridData.push([ entry.id, entry.siteId, entry.activates, entry.created, style ]);
+                gridData.push([ key.id, { siteId: key.siteId, siteName: key.siteName }, key.activates, key.created, style ]);
             });
         }
 
@@ -144,7 +139,21 @@
 
         $("#doList").on("click", function () {
             clearGrid(grid);
-            doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => updateGrid(grid, JSON.parse(text)), errorCallback);
+            doApiCallWithCallback("GET", "/api/site/list", (text) => {
+                const sites = JSON.parse(text);
+                const siteDict = sites.reduce((acc, site) => {
+                    acc[site.id] = site.name;
+                    return acc;
+                }, {});
+
+                doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => {
+                    const data = JSON.parse(text);
+                    data.cloudEncryptionKeys.forEach((key) => {
+                        key.siteName = !siteDict[key.siteId] ? "Unknown site" : siteDict[key.siteId]
+                    });
+                    updateGrid(grid, data);
+                }, errorCallback);
+            }, errorCallback);
         });
     });
 </script>
