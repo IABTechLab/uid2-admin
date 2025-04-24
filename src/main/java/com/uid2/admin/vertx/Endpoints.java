@@ -98,6 +98,7 @@ public enum Endpoints {
     API_SITE_APP_NAMES("/api/site/app_names"),
     API_SITE_UPDATE("/api/site/update"),
 
+    CLOUD_ENCRYPTION_KEY_METADATA("/api/cloud-encryption-key/metadata"),
     CLOUD_ENCRYPTION_KEY_LIST("/api/cloud-encryption-key/list"),
     CLOUD_ENCRYPTION_KEY_ROTATE("/api/cloud-encryption-key/rotate"),
 

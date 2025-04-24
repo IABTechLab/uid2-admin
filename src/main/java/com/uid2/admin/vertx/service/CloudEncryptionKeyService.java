@@ -31,6 +31,9 @@ public class CloudEncryptionKeyService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
+        router.get(Endpoints.CLOUD_ENCRYPTION_KEY_METADATA.toString()).handler(
+                auth.handle(this::handleMetadata, Role.MAINTAINER));
+
         router.get(Endpoints.CLOUD_ENCRYPTION_KEY_LIST.toString()).handler(
                 auth.handle(this::handleList, Role.MAINTAINER)
         );
@@ -38,6 +41,25 @@ public class CloudEncryptionKeyService implements IService {
         router.post(Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE.toString()).handler(
                 auth.handle(this::handleRotate, Role.MAINTAINER, Role.SECRET_ROTATION)
         );
+    }
+
+    private void handleMetadata(RoutingContext rc) {
+        try {
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keyManager.getMetadata().encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleList(RoutingContext rc) {
+        try {
+            var response = new CloudEncryptionKeyListResponse(keyManager.getKeySummaries());
+            respondWithJson(rc, response);
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
     }
 
     private void handleRotate(RoutingContext rc) {
@@ -54,15 +76,6 @@ public class CloudEncryptionKeyService implements IService {
                         .putHeader("Content-Type", "text/plain")
                         .end("Failed to rotate cloud encryption keys");
             }
-        } catch (Exception e) {
-            rc.fail(500, e);
-        }
-    }
-
-    private void handleList(RoutingContext rc) {
-        try {
-            var response = new CloudEncryptionKeyListResponse(keyManager.getKeySummaries());
-            respondWithJson(rc, response);
         } catch (Exception e) {
             rc.fail(500, e);
         }
