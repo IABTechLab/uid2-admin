@@ -22,6 +22,8 @@
     <ul>
         <li><a href="#" id="doMeta">Get Metadata</a></li>
         <li><a href="#" id="doList">List Cloud Encryption Keys</a></li>
+        <li><a href="#" id="doRotate">Rotate Cloud Encryption Keys</a></li>
+        <li><a href="#" id="doEncrypt">Re-encrypt All S3 Files</a></li>
     </ul>
 
     <br>
@@ -46,7 +48,21 @@
             {
                 name: "Site",
                 formatter: (cell, row) => {
-                    return gridjs.html(`<span class="${row.cells[4].data}">${cell.siteId} - ${cell.siteName}</span>`)
+                    return gridjs.html(`<span class="${row.cells[4].data}">${formatSite(cell)}</span>`)
+                },
+                sort: {
+                    compare: (a, b) => {
+                        const fullA = formatSite(a);
+                        const fullB = formatSite(b);
+
+                        if (fullA > fullB) {
+                            return 1;
+                        } else if (fullA < fullB) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    }
                 }
             },
             {
@@ -73,7 +89,7 @@
                 if (cellIndex === 0) {
                     return cell;
                 } else if (cellIndex === 1) {
-                    return `${cell.siteId} - ${cell.siteName}`;
+                    return formatSite(cell);
                 }
             }
         },
@@ -97,7 +113,11 @@
             timeZoneName: "short"
         };
         return date.toLocaleString("en-US", options);
-    }
+    };
+
+    const formatSite = (site) => {
+        return `${site.siteId} - ${site.siteName}`;
+    };
 
     const updateGrid = (grid, data) => {
         const groupedData = data.cloudEncryptionKeys.reduce((acc, key) => {
@@ -123,36 +143,49 @@
         grid
             .updateConfig({ data: gridData })
             .forceRender();
-    }
+    };
 
     const clearGrid = (grid) => {
         grid
             .updateConfig({ data: [] })
             .forceRender();
-    }
+    };
 
-    $(document).ready(function () {
-        $("#doMeta").on("click", function () {
+    const doList = () => {
+        clearGrid(grid);
+        doApiCallWithCallback("GET", "/api/site/list", (text) => {
+            const sites = JSON.parse(text);
+            const siteDict = sites.reduce((acc, site) => {
+                acc[site.id] = site.name;
+                return acc;
+            }, {});
+
+            doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => {
+                const data = JSON.parse(text);
+                data.cloudEncryptionKeys.forEach((key) => {
+                    key.siteName = !siteDict[key.siteId] ? "Unknown site" : siteDict[key.siteId]
+                });
+                updateGrid(grid, data);
+            }, errorCallback);
+        }, errorCallback);
+    };
+
+    $(document).ready(() => {
+        $("#doMeta").on("click", () => {
             doApiCall("GET", "/api/cloud-encryption-key/metadata", "#standardOutput", "#errorOutput");
         });
 
-        $("#doList").on("click", function () {
-            clearGrid(grid);
-            doApiCallWithCallback("GET", "/api/site/list", (text) => {
-                const sites = JSON.parse(text);
-                const siteDict = sites.reduce((acc, site) => {
-                    acc[site.id] = site.name;
-                    return acc;
-                }, {});
+        $("#doList").on("click", () => {
+            doList();
+        });
 
-                doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => {
-                    const data = JSON.parse(text);
-                    data.cloudEncryptionKeys.forEach((key) => {
-                        key.siteName = !siteDict[key.siteId] ? "Unknown site" : siteDict[key.siteId]
-                    });
-                    updateGrid(grid, data);
-                }, errorCallback);
-            }, errorCallback);
+        $("#doRotate").on("click", () => {
+            doApiCall("POST", "/api/cloud-encryption-key/rotate", "#standardOutput", "#errorOutput");
+            doList();
+        });
+
+        $("#doEncrypt").on("click", () => {
+            doApiCall("POST", "/api/encrypted-files/syncNow", "#standardOutput", "#errorOutput");
         });
     });
 </script>
