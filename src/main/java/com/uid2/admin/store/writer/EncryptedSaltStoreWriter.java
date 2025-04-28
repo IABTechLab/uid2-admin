@@ -8,7 +8,7 @@ import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.StoreScope;
 import org.slf4j.Logger;
@@ -85,7 +85,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         StringBuilder stringBuilder = new StringBuilder();
 
         for (SaltEntry entry: snapshot.getAllRotatingSalts()) {
-            stringBuilder.append(entry.getId()).append(",").append(entry.getLastUpdated()).append(",").append(entry.getSalt()).append("\n");
+            stringBuilder.append(entry.id()).append(",").append(entry.lastUpdated()).append(",").append(entry.currentSalt()).append("\n");
         }
 
         String data = stringBuilder.toString();

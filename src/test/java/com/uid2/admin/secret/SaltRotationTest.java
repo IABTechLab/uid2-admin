@@ -2,7 +2,7 @@ package com.uid2.admin.secret;
 
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ public class SaltRotationTest {
 
         public SnapshotBuilder withEntries(int count, Instant lastUpdated) {
             for (int i = 0; i < count; ++i) {
-                entries.add(new SaltEntry(entries.size(), "h", lastUpdated.toEpochMilli(), "salt" + entries.size()));
+                entries.add(new SaltEntry(entries.size(), "h", lastUpdated.toEpochMilli(), "salt" + entries.size(), null, null, null, null));
             }
             return this;
         }
@@ -60,7 +60,7 @@ public class SaltRotationTest {
     }
 
     private int countEntriesWithLastUpdated(SaltEntry[] entries, Instant lastUpdated) {
-        return (int)Arrays.stream(entries).filter(e -> e.getLastUpdated() == lastUpdated.toEpochMilli()).count();
+        return (int)Arrays.stream(entries).filter(e -> e.lastUpdated() == lastUpdated.toEpochMilli()).count();
     }
 
     private static void assertEqualsClose(Instant expected, Instant actual, int withinSeconds) {

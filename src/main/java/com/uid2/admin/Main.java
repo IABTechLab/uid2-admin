@@ -39,7 +39,7 @@ import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import com.uid2.shared.store.reader.*;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.util.HTTPPathMetricFilter;

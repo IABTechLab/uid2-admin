@@ -8,7 +8,7 @@ import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SaltEntry;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -109,10 +109,10 @@ public class SaltService implements IService {
         jo.put("expires", snapshot.getExpires().toEpochMilli());
         jo.put("salts_count", snapshot.getAllRotatingSalts().length);
         jo.put("min_last_updated", Arrays.stream(snapshot.getAllRotatingSalts())
-                .map(SaltEntry::getLastUpdated)
+                .map(SaltEntry::lastUpdated)
                 .min(Long::compare).orElse(null));
         jo.put("max_last_updated", Arrays.stream(snapshot.getAllRotatingSalts())
-                .map(SaltEntry::getLastUpdated)
+                .map(SaltEntry::lastUpdated)
                 .max(Long::compare).orElse(null));
         return jo;
     }

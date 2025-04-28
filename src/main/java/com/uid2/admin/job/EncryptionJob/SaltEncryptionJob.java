@@ -7,7 +7,7 @@ import com.uid2.admin.util.PrivateSiteUtil;
 import com.uid2.admin.util.PublicSiteUtil;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.model.SaltEntry;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 
 import java.util.Collection;
 import java.util.List;
