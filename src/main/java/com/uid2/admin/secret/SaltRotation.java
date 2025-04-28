@@ -2,7 +2,7 @@ package com.uid2.admin.secret;
 
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.json.JsonObject;
 
 import java.time.Duration;
@@ -77,7 +77,7 @@ public class SaltRotation implements ISaltRotation {
                                     int maxIndexes) {
         final SaltEntry[] entries = lastSnapshot.getAllRotatingSalts();
         final List<Integer> candidateIndexes = IntStream.range(0, entries.length)
-                .filter(i -> isBetween(entries[i].getLastUpdated(), minLastUpdated, maxLastUpdated))
+                .filter(i -> isBetween(entries[i].lastUpdated(), minLastUpdated, maxLastUpdated))
                 .boxed().collect(toList());
         if (candidateIndexes.size() <= maxIndexes) {
             entryIndexes.addAll(candidateIndexes);
@@ -103,7 +103,7 @@ public class SaltRotation implements ISaltRotation {
         for (Integer i : entryIndexes) {
             final SaltEntry oldSalt = nextSnapshot.getAllRotatingSalts()[i];
             final String secret = this.keyGenerator.generateRandomKeyString(32);
-            nextSnapshot.getAllRotatingSalts()[i] = new SaltEntry(oldSalt.getId(), oldSalt.getHashedId(), lastUpdated, secret);
+            nextSnapshot.getAllRotatingSalts()[i] = new SaltEntry(oldSalt.id(), oldSalt.hashedId(), lastUpdated, secret, null, null, null, null);
         }
         return nextSnapshot;
     }

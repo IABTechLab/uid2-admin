@@ -6,7 +6,7 @@ import com.uid2.admin.vertx.service.SaltService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SaltEntry;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
@@ -47,7 +47,7 @@ public class SaltServiceTest extends ServiceTestBase {
     private RotatingSaltProvider.SaltSnapshot makeSnapshot(Instant effective, Instant expires, int nsalts) {
         SaltEntry[] entries = new SaltEntry[nsalts];
         for (int i = 0; i < entries.length; ++i) {
-            entries[i] = new SaltEntry(i, "hashed_id", effective.toEpochMilli(), "salt");
+            entries[i] = new SaltEntry(i, "hashed_id", effective.toEpochMilli(), "salt", null, null, null, null);
         }
         return new RotatingSaltProvider.SaltSnapshot(effective, expires, entries, "test_first_level_salt");
     }

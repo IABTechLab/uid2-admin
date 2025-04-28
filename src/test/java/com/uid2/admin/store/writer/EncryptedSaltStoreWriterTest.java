@@ -7,7 +7,7 @@ import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.scope.StoreScope;
 import io.vertx.core.json.JsonArray;
@@ -84,7 +84,7 @@ public class EncryptedSaltStoreWriterTest {
     private RotatingSaltProvider.SaltSnapshot makeSnapshot(Instant effective, Instant expires, int nsalts) {
         SaltEntry[] entries = new SaltEntry[nsalts];
         for (int i = 0; i < entries.length; ++i) {
-            entries[i] = new SaltEntry(i, "hashed_id", effective.toEpochMilli(), "salt");
+            entries[i] = new SaltEntry(i, "hashed_id", effective.toEpochMilli(), "salt", null, null, null, null);
         }
         return new RotatingSaltProvider.SaltSnapshot(effective, expires, entries, "test_first_level_salt");
     }
@@ -96,8 +96,8 @@ public class EncryptedSaltStoreWriterTest {
         int idx = 0;
         for (String line : contents.split("\n")) {
             String[] entrySplit = line.split(",");
-            assertEquals(entries[idx].getId(), Long.parseLong(entrySplit[0]));
-            assertEquals(entries[idx].getSalt(), entrySplit[2]);
+            assertEquals(entries[idx].id(), Long.parseLong(entrySplit[0]));
+            assertEquals(entries[idx].currentSalt(), entrySplit[2]);
             idx++;
         }
     }

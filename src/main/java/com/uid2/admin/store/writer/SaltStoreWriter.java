@@ -7,7 +7,7 @@ import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -54,7 +54,7 @@ public class SaltStoreWriter {
         List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
         snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
                 .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                .collect(Collectors.toList());
+                .toList();
         RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
                 .filter(snapshot -> snapshot.isEffective(now))
                 .reduce((a, b) -> b).orElse(null);
@@ -203,7 +203,7 @@ public class SaltStoreWriter {
         final Path newSaltsFile = Files.createTempFile("operators", ".txt");
         try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
             for (SaltEntry entry : snapshot.getAllRotatingSalts()) {
-                w.write(entry.getId() + "," + entry.getLastUpdated() + "," + entry.getSalt() + "\n");
+                w.write(entry.id() + "," + entry.lastUpdated() + "," + entry.currentSalt() + "\n");
             }
         }
         this.upload(newSaltsFile.toString(), location);

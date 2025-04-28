@@ -1,6 +1,6 @@
 package com.uid2.admin.secret;
 
-import com.uid2.shared.store.RotatingSaltProvider;
+import com.uid2.shared.store.salt.RotatingSaltProvider;
 
 import java.time.Duration;
 
