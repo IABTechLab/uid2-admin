@@ -43,7 +43,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
 
     @Override
     public void rewriteMeta() throws Exception {
-
+        // No rewrite_metadata endpoint for salts
     }
 
     @Override
