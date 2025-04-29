@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -39,6 +40,10 @@ import static com.uid2.shared.util.CloudEncryptionHelpers.decryptInputStream;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class EncryptedSaltStoreWriterTest {
     private static final Integer SITE_ID = 1;
+    private final Instant feb26 = Instant.parse("2025-02-26T22:12:18Z");
+    private final Instant feb27 = Instant.parse("2025-02-27T22:14:36Z");
+    private final Instant mar23 = Instant.parse("2025-03-23T14:52:08Z");
+    private final Instant mar25 = Instant.parse("2025-03-25T14:52:08Z");
 
     @Mock
     private FileManager fileManager;
@@ -84,20 +89,22 @@ public class EncryptedSaltStoreWriterTest {
 
     @Test
     public void testUploadNew() throws Exception {
-        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(
-                Instant.ofEpochMilli(1740607938167L),
-                Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90002),
+        RotatingSaltProvider.SaltSnapshot olderSnapshot = makeSnapshot(
+                feb26,
+                Instant.now().plus(Duration.ofSeconds(90)),
                 100
-        ); // Older snapshot
-        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(
-                Instant.ofEpochMilli(1740694476392L),
-                Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000),
+        );
+
+        RotatingSaltProvider.SaltSnapshot activeSnapshot = makeSnapshot(
+                feb27,
+                Instant.now().plus(Duration.ofMinutes(2)),
                 10
-        ); // Newer active snapshot
+        );
+
 
         JsonObject metadata = new JsonObject()
-                .put("version", 1742770328863L)
-                .put("generated", 1742770328)
+                .put("version", mar23.toEpochMilli())
+                .put("generated", mar23.getEpochSecond())
                 .put("first_level", "FIRST-LEVEL")
                 .put("id_prefix", "a")
                 .put("id_secret", "ID-SECRET");
@@ -113,7 +120,7 @@ public class EncryptedSaltStoreWriterTest {
         EncryptedSaltStoreWriter encryptedSaltStoreWriter = new EncryptedSaltStoreWriter(config, rotatingSaltProvider,
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, SITE_ID);
 
-        encryptedSaltStoreWriter.upload(List.of(snapshot,snapshot2), metadata);
+        encryptedSaltStoreWriter.upload(List.of(olderSnapshot,activeSnapshot), metadata);
         verify(fileManager).uploadMetadata(metadataCaptor.capture(), nameCaptor.capture(), locationCaptor.capture());
 
         // Capture the metadata
@@ -124,13 +131,23 @@ public class EncryptedSaltStoreWriterTest {
         assertEquals(capturedMetadata.getString("id_prefix"), metadata.getValue("id_prefix"));
         verify(taggableCloudStorage,times(2)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
 
-        assertWrittenFileEquals(pathCaptor.getValue(), snapshot2);
+        assertWrittenFileEquals(pathCaptor.getValue(), activeSnapshot);
     }
 
     @Test
     public void testUnencryptedAndEncryptedBehavesTheSame() throws Exception {
-        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.ofEpochMilli(1740607938167L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90000), 100);
-        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(Instant.ofEpochMilli(1740694476392L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000), 10);
+        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(
+                feb26,
+                Instant.now().plus(Duration.ofSeconds(90)),
+                100
+        );
+
+        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(
+                feb27,
+                Instant.now().plus(Duration.ofMinutes(2)),
+                10
+        );
+
         List<RotatingSaltProvider.SaltSnapshot> snapshots = List.of(snapshot, snapshot2);
 
         when(rotatingSaltProvider.getMetadata()).thenThrow(new CloudStorageException("The specified key does not exist: AmazonS3Exception: test-core-bucket"));
@@ -153,7 +170,11 @@ public class EncryptedSaltStoreWriterTest {
         JsonArray saltsArray = capturedMetadata.getJsonArray("salts");
         assertEquals(1, saltsArray.size(), "Salts array should have exactly one entry, as other is removed in newest-effective logic");
         JsonObject salt = saltsArray.getJsonObject(0);
-        assertEquals(1740694476392L, salt.getLong("effective"), "Effective timestamp should match second entry");
+        assertEquals(
+                feb27.toEpochMilli(),
+                salt.getLong("effective"),
+                "Effective timestamp should match second entry"
+        );
         assertEquals(10, salt.getInteger("size"), "Size should match second entries");
 
         //Now sending snapshot2 to encrypted to verify that does the same.
@@ -161,8 +182,8 @@ public class EncryptedSaltStoreWriterTest {
                 fileManager, taggableCloudStorage, versionGenerator, storeScope, rotatingCloudEncryptionKeyProvider, SITE_ID);
 
         JsonObject metadata = new JsonObject()
-                .put("version", 1742770328863L)
-                .put("generated", 1742770328)
+                .put("version", mar25.toEpochMilli())
+                .put("generated", mar25.getEpochSecond())
                 .put("first_level", "FIRST-LEVEL")
                 .put("id_prefix", "a")
                 .put("id_secret", "ID-SECRET");
@@ -176,7 +197,11 @@ public class EncryptedSaltStoreWriterTest {
         saltsArray = capturedMetadata.getJsonArray("salts");
         salt = saltsArray.getJsonObject(0);
         assertEquals(1, key_id);
-        assertEquals(1740694476392L, salt.getLong("effective"), "Effective timestamp should match second entry");
+        assertEquals(
+                feb27.toEpochMilli(),
+                salt.getLong("effective"),
+                "Effective timestamp should match second entry"
+        );
         assertEquals(10, salt.getInteger("size"), "Size should match second entries");
         verify(taggableCloudStorage,atLeastOnce()).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
     }

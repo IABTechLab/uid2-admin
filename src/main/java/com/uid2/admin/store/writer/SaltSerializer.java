@@ -3,6 +3,8 @@ package com.uid2.admin.store.writer;
 import com.uid2.shared.model.SaltEntry;
 
 public class SaltSerializer {
+    private SaltSerializer() {}
+
     public static String toCsv(SaltEntry[] entries) {
         StringBuilder stringBuilder = new StringBuilder();
 
