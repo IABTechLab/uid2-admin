@@ -2,7 +2,7 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.shared.model.SaltEntry;
 
-public class SaltSerializer {
+public final class SaltSerializer {
     private SaltSerializer() {}
 
     public static String toCsv(SaltEntry[] entries) {
