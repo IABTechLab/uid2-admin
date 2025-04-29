@@ -2,8 +2,6 @@ package com.uid2.admin.store.writer;
 
 import com.uid2.shared.model.SaltEntry;
 
-import java.util.List;
-
 public class SaltSerializer {
     public static String toCsv(SaltEntry[] entries) {
         StringBuilder stringBuilder = new StringBuilder();

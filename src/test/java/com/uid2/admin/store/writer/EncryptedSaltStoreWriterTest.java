@@ -6,6 +6,7 @@ import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.model.SaltEntry;
+import com.uid2.shared.model.SaltEntry.KeyMaterial;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
@@ -29,8 +30,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static java.lang.Long.parseLong;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static com.uid2.shared.util.CloudEncryptionHelpers.decryptInputStream;
 
@@ -81,31 +82,19 @@ public class EncryptedSaltStoreWriterTest {
         when(rotatingCloudEncryptionKeyProvider.getEncryptionKeyForSite(SITE_ID)).thenReturn(encryptionKey);
     }
 
-    private RotatingSaltProvider.SaltSnapshot makeSnapshot(Instant effective, Instant expires, int nsalts) {
-        SaltEntry[] entries = new SaltEntry[nsalts];
-        for (int i = 0; i < entries.length; ++i) {
-            entries[i] = new SaltEntry(i, "hashed_id", effective.toEpochMilli(), "salt", null, null, null, null);
-        }
-        return new RotatingSaltProvider.SaltSnapshot(effective, expires, entries, "test_first_level_salt");
-    }
-
-    private void verifyFile(String filelocation, RotatingSaltProvider.SaltSnapshot snapshot) throws IOException {
-        InputStream encoded = Files.newInputStream(Paths.get(filelocation));
-        String contents = decryptInputStream(encoded, rotatingCloudEncryptionKeyProvider, "salts");
-        SaltEntry[] entries = snapshot.getAllRotatingSalts();
-        int idx = 0;
-        for (String line : contents.split("\n")) {
-            String[] entrySplit = line.split(",");
-            assertEquals(entries[idx].id(), Long.parseLong(entrySplit[0]));
-            assertEquals(entries[idx].currentSalt(), entrySplit[2]);
-            idx++;
-        }
-    }
-
     @Test
     public void testUploadNew() throws Exception {
-        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(Instant.ofEpochMilli(1740607938167L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90002), 100);
-        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(Instant.ofEpochMilli(1740694476392L), Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000), 10);
+        RotatingSaltProvider.SaltSnapshot snapshot = makeSnapshot(
+                Instant.ofEpochMilli(1740607938167L),
+                Instant.ofEpochMilli(Instant.now().toEpochMilli() + 90002),
+                100
+        ); // Older snapshot
+        RotatingSaltProvider.SaltSnapshot snapshot2 = makeSnapshot(
+                Instant.ofEpochMilli(1740694476392L),
+                Instant.ofEpochMilli(Instant.now().toEpochMilli() + 130000),
+                10
+        ); // Newer active snapshot
+
         JsonObject metadata = new JsonObject()
                 .put("version", 1742770328863L)
                 .put("generated", 1742770328)
@@ -135,7 +124,7 @@ public class EncryptedSaltStoreWriterTest {
         assertEquals(capturedMetadata.getString("id_prefix"), metadata.getValue("id_prefix"));
         verify(taggableCloudStorage,times(2)).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
 
-        verifyFile(pathCaptor.getValue(), snapshot);
+        assertWrittenFileEquals(pathCaptor.getValue(), snapshot2);
     }
 
     @Test
@@ -190,5 +179,49 @@ public class EncryptedSaltStoreWriterTest {
         assertEquals(1740694476392L, salt.getLong("effective"), "Effective timestamp should match second entry");
         assertEquals(10, salt.getInteger("size"), "Size should match second entries");
         verify(taggableCloudStorage,atLeastOnce()).upload(pathCaptor.capture(), cloudPathCaptor.capture(), any());
+    }
+
+    private RotatingSaltProvider.SaltSnapshot makeSnapshot(Instant effective, Instant expires, int nsalts) {
+        SaltEntry[] entries = new SaltEntry[nsalts];
+
+        for (int i = 0; i < entries.length; ++i) {
+            entries[i] = new SaltEntry(
+                    i,
+                    "hashed_id",
+                    effective.toEpochMilli(),
+                    "salt",
+                    1000L,
+                    "previous salt",
+                    new KeyMaterial(1, "key 1", "key salt 1"),
+                    new KeyMaterial(2, "key 2", "key salt 2")
+            );
+        }
+        return new RotatingSaltProvider.SaltSnapshot(effective, expires, entries, "test_first_level_salt");
+    }
+
+    private void assertWrittenFileEquals(String fileLocation, RotatingSaltProvider.SaltSnapshot snapshot) throws IOException {
+        InputStream encoded = Files.newInputStream(Paths.get(fileLocation));
+        String contents = decryptInputStream(encoded, rotatingCloudEncryptionKeyProvider, "salts");
+        SaltEntry[] entries = snapshot.getAllRotatingSalts();
+        var lines = contents.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            var entry = entries[i];
+            String[] fields = line.split(",");
+
+            assertAll(
+                    () -> assertEquals(entry.id(), parseLong(fields[0])),
+                    () -> assertEquals(entry.lastUpdated(), parseLong(fields[1])),
+                    () -> assertEquals(entry.currentSalt(), fields[2]),
+                    () -> assertEquals(entry.refreshFrom(), parseLong(fields[3])),
+                    () -> assertEquals(entry.previousSalt(), fields[4]),
+                    () -> assertEquals(entry.currentKey().id(), parseLong(fields[5])),
+                    () -> assertEquals(entry.currentKey().key(), fields[6]),
+                    () -> assertEquals(entry.currentKey().salt(), fields[7]),
+                    () -> assertEquals(entry.previousKey().id(), parseLong(fields[8])),
+                    () -> assertEquals(entry.previousKey().key(), fields[9]),
+                    () -> assertEquals(entry.previousKey().salt(), fields[10])
+            );
+        }
     }
 }
