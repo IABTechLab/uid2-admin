@@ -6,7 +6,6 @@ import com.uid2.shared.Utils;
 import com.uid2.shared.cloud.TaggableCloudStorage;
 import com.uid2.shared.encryption.AesGcm;
 import com.uid2.shared.model.CloudEncryptionKey;
-import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
@@ -15,10 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 
-import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWriter {
@@ -35,6 +31,19 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
         this.scope = scope;
         this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
         this.siteId = siteId;
+    }
+
+    @Override
+    public void upload(Object data, JsonObject extraMeta) throws Exception {
+        this.unEncryptedMetadataData = extraMeta;
+        @SuppressWarnings("unchecked")
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = new ArrayList<>((Collection<RotatingSaltProvider.SaltSnapshot>) data);
+        this.buildAndUploadMetadata(snapshots);
+    }
+
+    @Override
+    public void rewriteMeta() throws Exception {
+
     }
 
     @Override
@@ -82,13 +91,16 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
                  return false;
              }
          }
-        StringBuilder stringBuilder = new StringBuilder();
 
-        for (SaltEntry entry: snapshot.getAllRotatingSalts()) {
-            stringBuilder.append(entry.id()).append(",").append(entry.lastUpdated()).append(",").append(entry.currentSalt()).append("\n");
-        }
+        var saltCsv = SaltSerializer.toCsv(snapshot.getAllRotatingSalts());
+        var encryptedSaltCsv = addEncryptedEnvelope(encryptionKey, saltCsv);
+        uploadSaltsFile(location, encryptedSaltCsv);
 
-        String data = stringBuilder.toString();
+        LOGGER.info("File encryption completed for site_id={} key_id={} store={}", siteId, encryptionKey.getId(), "salts");
+        return true;
+    }
+
+    private String addEncryptedEnvelope(CloudEncryptionKey encryptionKey, String data) {
         JsonObject encryptedJson = new JsonObject();
         if (encryptionKey != null) {
             byte[] secret = Base64.getDecoder().decode(encryptionKey.getSecret());
@@ -100,13 +112,7 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
             throw new IllegalStateException("No Cloud Encryption keys available for encryption for site ID: " + siteId);
         }
 
-        final Path newSaltsFile = Files.createTempFile("salts", ".txt");
-        try (BufferedWriter w = Files.newBufferedWriter(newSaltsFile)) {
-            w.write(encryptedJson.encodePrettily());
-        }
-        this.upload(newSaltsFile.toString(), location);
-        LOGGER.info("File encryption completed for site_id={} key_id={} store={}", siteId, encryptionKey.getId(), "salts");
-        return true;
+        return encryptedJson.encodePrettily();
     }
 
     @Override
@@ -117,18 +123,5 @@ public class EncryptedSaltStoreWriter extends SaltStoreWriter implements StoreWr
     @Override
     protected Long getMetadataVersion() throws Exception {
         return this.unEncryptedMetadataData.getLong("version");
-    }
-
-    @Override
-    public void upload(Object data, JsonObject extraMeta) throws Exception {
-        this.unEncryptedMetadataData = extraMeta;
-        @SuppressWarnings("unchecked")
-        List<RotatingSaltProvider.SaltSnapshot> snapshots = new ArrayList<>((Collection<RotatingSaltProvider.SaltSnapshot>) data);
-        this.buildAndUploadMetadata(snapshots);
-    }
-
-    @Override
-    public void rewriteMeta() throws Exception {
-
     }
 }
