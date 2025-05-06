@@ -5,52 +5,34 @@ import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.json.JsonObject;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
 public class SaltRotation implements ISaltRotation {
-    private static final String SNAPSHOT_ACTIVATES_IN_SECONDS = "salt_snapshot_activates_in_seconds";
-    private static final String SNAPSHOT_EXPIRES_AFTER_SECONDS = "salt_snapshot_expires_after_seconds";
-
     private final IKeyGenerator keyGenerator;
-    private final Duration snapshotActivatesIn;
-    private final Duration snapshotExpiresAfter;
+    private static final int DAY_IN_SECONDS = 86400;
 
-    public static Duration getSnapshotActivatesIn(JsonObject config) {
-        return Duration.ofSeconds(config.getInteger(SNAPSHOT_ACTIVATES_IN_SECONDS));
-    }
-    public static Duration getSnapshotExpiresAfter(JsonObject config) {
-        return Duration.ofSeconds(config.getInteger(SNAPSHOT_EXPIRES_AFTER_SECONDS));
-    }
-
-    public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
+    public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
-
-        snapshotActivatesIn = getSnapshotActivatesIn(config);
-        snapshotExpiresAfter = getSnapshotExpiresAfter(config);
-
-        if (snapshotActivatesIn.compareTo(snapshotExpiresAfter) >= 0) {
-            throw new IllegalStateException(SNAPSHOT_EXPIRES_AFTER_SECONDS + " must be greater than " + SNAPSHOT_ACTIVATES_IN_SECONDS);
-        }
     }
 
     @Override
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                                                          Duration[] minAges,
                                                          double fraction) throws Exception {
-        final Instant now = Instant.now();
-        final Instant nextEffective = now.plusSeconds(snapshotActivatesIn.getSeconds());
-        final Instant nextExpires = nextEffective.plusSeconds(snapshotExpiresAfter.getSeconds());
-        if (!nextEffective.isAfter(lastSnapshot.getEffective())) {
-            return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp prior to that of an existing snapshot");
+
+        final Instant nextEffective = Instant.now().truncatedTo(ChronoUnit.DAYS).plusSeconds(DAY_IN_SECONDS);
+        final Instant nextExpires = nextEffective.plusSeconds(DAY_IN_SECONDS * 7);
+        if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
+            return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
         }
 
         final Instant[] thresholds = Arrays.stream(minAges)
-                .map(a -> now.minusSeconds(a.getSeconds()))
+                .map(a -> nextEffective.minusSeconds(a.getSeconds()))
                 .sorted()
                 .toArray(Instant[]::new);
         final int maxSalts = (int)Math.ceil(lastSnapshot.getAllRotatingSalts().length * fraction);
