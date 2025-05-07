@@ -18,14 +18,12 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.*;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class SaltService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
-    private static final int DAY_IN_SECONDS = 86400;
 
     private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;

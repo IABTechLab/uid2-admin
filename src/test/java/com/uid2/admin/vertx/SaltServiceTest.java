@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx;
 
-import com.google.api.services.compute.model.Zone;
 import com.uid2.admin.secret.ISaltRotation;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SaltService;
@@ -19,7 +18,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -135,7 +133,7 @@ public class SaltServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSaltsWitnTargetDate(Vertx vertx, VertxTestContext testContext) throws Exception {
+    void rotateSaltsWitnSpecificTargetDate(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SUPER_USER);
         Instant targetDate = LocalDateTime.of(2025, 5, 8, 0, 0).toInstant(ZoneOffset.UTC);
         final RotatingSaltProvider.SaltSnapshot[] snapshots = {
@@ -148,7 +146,6 @@ public class SaltServiceTest extends ServiceTestBase {
         final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
                 makeSnapshot(targetDate, targetDate.plus(1, ChronoUnit.DAYS), 10),
         };
-
 
         when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(targetDate))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
 
