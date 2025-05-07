@@ -20,9 +20,11 @@ public class SaltRotation implements ISaltRotation {
 
     @Override
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
-                                                         Duration[] minAges,
-                                                         double fraction, Instant nextEffective) throws Exception {
+                                                        Duration[] minAges,
+                                                        double fraction,
+                                                        LocalDate targetDate) throws Exception {
 
+        final Instant nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
         final Instant nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");

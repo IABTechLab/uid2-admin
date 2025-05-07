@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -98,7 +99,7 @@ public class SaltServiceTest extends ServiceTestBase {
         final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
                 makeSnapshot(Instant.ofEpochMilli(10004), Instant.ofEpochMilli(20004), 10),
         };
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(Instant.now().truncatedTo(ChronoUnit.DAYS).plusSeconds(86400)))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
+        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(LocalDate.now().plusDays(1)))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
@@ -120,7 +121,7 @@ public class SaltServiceTest extends ServiceTestBase {
         };
         setSnapshots(snapshots);
 
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(Instant.now().truncatedTo(ChronoUnit.DAYS).plusSeconds(86400)))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
+        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(LocalDate.now().plusDays(1)))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
@@ -135,16 +136,17 @@ public class SaltServiceTest extends ServiceTestBase {
     @Test
     void rotateSaltsWitnSpecificTargetDate(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SUPER_USER);
-        Instant targetDate = LocalDateTime.of(2025, 5, 8, 0, 0).toInstant(ZoneOffset.UTC);
+        LocalDate targetDate = LocalDate.of(2025, 5, 8);
+        Instant targetDateAsInstant = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
         final RotatingSaltProvider.SaltSnapshot[] snapshots = {
-                makeSnapshot(targetDate.minus(5, ChronoUnit.DAYS), targetDate.minus(4, ChronoUnit.DAYS), 10),
-                makeSnapshot(targetDate.minus(4, ChronoUnit.DAYS), targetDate.minus(3, ChronoUnit.DAYS), 10),
-                makeSnapshot(targetDate.minus(3, ChronoUnit.DAYS), targetDate.minus(2, ChronoUnit.DAYS), 10),
+                makeSnapshot(targetDateAsInstant.minus(5, ChronoUnit.DAYS), targetDateAsInstant.minus(4, ChronoUnit.DAYS), 10),
+                makeSnapshot(targetDateAsInstant.minus(4, ChronoUnit.DAYS), targetDateAsInstant.minus(3, ChronoUnit.DAYS), 10),
+                makeSnapshot(targetDateAsInstant.minus(3, ChronoUnit.DAYS), targetDateAsInstant.minus(2, ChronoUnit.DAYS), 10),
         };
         setSnapshots(snapshots);
 
         final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
-                makeSnapshot(targetDate, targetDate.plus(1, ChronoUnit.DAYS), 10),
+                makeSnapshot(targetDateAsInstant, targetDateAsInstant.plus(1, ChronoUnit.DAYS), 10),
         };
 
         when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(targetDate))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));

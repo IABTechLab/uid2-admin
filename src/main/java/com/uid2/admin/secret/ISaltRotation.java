@@ -3,13 +3,13 @@ package com.uid2.admin.secret;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDate;
 
 public interface ISaltRotation {
     Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                        Duration[] minAges,
                        double fraction,
-                       Instant nextEffective) throws Exception;
+                       LocalDate nextEffective) throws Exception;
 
     class Result {
         private RotatingSaltProvider.SaltSnapshot snapshot; // can be null if new snapshot is not needed

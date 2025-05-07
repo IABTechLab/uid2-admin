@@ -78,8 +78,8 @@ public class SaltService implements IService {
             if (!fraction.isPresent()) return;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
-            final Instant targetDate = RequestUtil.getInstantFromDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
-                                                    .orElse(Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS));
+            final LocalDate targetDate = RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                                                    .orElse(LocalDate.now(Clock.systemUTC()).plusDays(1));
 
             // force refresh
             this.saltProvider.loadContent();
