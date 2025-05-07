@@ -8,7 +8,8 @@ import java.time.Instant;
 public interface ISaltRotation {
     Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                        Duration[] minAges,
-                       double fraction, Instant nextEffective) throws Exception;
+                       double fraction,
+                       Instant nextEffective) throws Exception;
 
     class Result {
         private RotatingSaltProvider.SaltSnapshot snapshot; // can be null if new snapshot is not needed

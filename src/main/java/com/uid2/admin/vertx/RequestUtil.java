@@ -8,7 +8,6 @@ import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.ISiteStore;
 import io.vertx.ext.web.RoutingContext;
 
-import java.text.DateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
