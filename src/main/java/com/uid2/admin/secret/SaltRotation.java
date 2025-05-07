@@ -3,7 +3,6 @@ package com.uid2.admin.secret;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
-import io.vertx.core.json.JsonObject;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
@@ -14,7 +13,6 @@ import static java.util.stream.Collectors.toList;
 
 public class SaltRotation implements ISaltRotation {
     private final IKeyGenerator keyGenerator;
-    private static final int DAY_IN_SECONDS = 86400;
 
     public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
@@ -23,10 +21,9 @@ public class SaltRotation implements ISaltRotation {
     @Override
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                                                          Duration[] minAges,
-                                                         double fraction) throws Exception {
+                                                         double fraction, Instant nextEffective) throws Exception {
 
-        final Instant nextEffective = Instant.now().truncatedTo(ChronoUnit.DAYS).plusSeconds(DAY_IN_SECONDS);
-        final Instant nextExpires = nextEffective.plusSeconds(DAY_IN_SECONDS * 7);
+        final Instant nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
         }

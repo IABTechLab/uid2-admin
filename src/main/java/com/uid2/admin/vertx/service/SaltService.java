@@ -17,13 +17,15 @@ import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
-import java.time.Duration;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class SaltService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
+    private static final int DAY_IN_SECONDS = 86400;
 
     private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
@@ -76,6 +78,7 @@ public class SaltService implements IService {
             if (!fraction.isPresent()) return;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
+            final LocalDate targetDate = RequestUtil.getDate(rc, "target_date", "yyyy-MM-dd").orElse(LocalDate.now(Clock.systemUTC()).plusDays(1));
 
             // force refresh
             this.saltProvider.loadContent();
@@ -85,8 +88,9 @@ public class SaltService implements IService {
 
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
+
             final ISaltRotation.Result result = saltRotation.rotateSalts(
-                    lastSnapshot, minAges, fraction.get());
+                    lastSnapshot, minAges, fraction.get(), targetDate.atStartOfDay().toInstant(ZoneOffset.UTC));
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;

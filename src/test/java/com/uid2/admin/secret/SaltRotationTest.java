@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +24,7 @@ public class SaltRotationTest {
     @Mock private IKeyGenerator keyGenerator;
     private SaltRotation saltRotation;
 
-    private final LocalDateTime now = LocalDate.now(Clock.systemUTC()).atStartOfDay().plusDays(1);
+    private final Instant targetDate = Instant.now().truncatedTo(ChronoUnit.DAYS);
 
     @BeforeEach
     void setup() throws Exception {
@@ -69,14 +70,14 @@ public class SaltRotationTest {
                 Duration.ofDays(2),
         };
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
-                .withEntries(10, Instant.ofEpochSecond(10001))
-                .build(now.minusDays(1).toInstant(ZoneOffset.UTC),
-                        now.plusDays(7).toInstant(ZoneOffset.UTC));
+                .withEntries(10, targetDate)
+                .build(targetDate,
+                        targetDate.plus(7, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result firstRotation = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2);
-        assertTrue(firstRotation.hasSnapshot());
-        final ISaltRotation.Result secondRotation = saltRotation.rotateSalts(firstRotation.getSnapshot(), minAges, 0.2);
-        assertFalse(secondRotation.hasSnapshot());
+        final ISaltRotation.Result result1 = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
+        assertFalse(result1.hasSnapshot());
+        final ISaltRotation.Result result2 = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate.minus(1, ChronoUnit.DAYS));
+        assertFalse(result2.hasSnapshot());
     }
 
     @Test
@@ -87,11 +88,11 @@ public class SaltRotationTest {
         };
 
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
-                .withEntries(10, now.toInstant(ZoneOffset.UTC))
-                .build(now.minusDays(1).toInstant(ZoneOffset.UTC),
-                        now.plusDays(8).toInstant(ZoneOffset.UTC));
+                .withEntries(10, targetDate.minus(1, ChronoUnit.DAYS))
+                .build(targetDate.minus(1, ChronoUnit.DAYS),
+                        targetDate.plus(6, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2);
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
         assertFalse(result.hasSnapshot());
         verify(keyGenerator, times(0)).generateRandomKeyString(anyInt());
     }
@@ -104,15 +105,16 @@ public class SaltRotationTest {
         };
 
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
-                .withEntries(10, now.minusDays(2).toInstant(ZoneOffset.UTC))
-                .build(Instant.now(), Instant.now());
+                .withEntries(10, targetDate.minus(2, ChronoUnit.DAYS))
+                .build(targetDate.minus(1, ChronoUnit.DAYS),
+                        targetDate.plus(6, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2);
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
         assertTrue(result.hasSnapshot());
         assertEquals(2, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective()));
-        assertEquals(8, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), now.minusDays(2).toInstant(ZoneOffset.UTC)));
-        assertEquals(now.toInstant(ZoneOffset.UTC), result.getSnapshot().getEffective());
-        assertEquals(now.plusDays(7).toInstant(ZoneOffset.UTC), result.getSnapshot().getExpires());
+        assertEquals(8, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), targetDate.minus(2, ChronoUnit.DAYS)));
+        assertEquals(targetDate, result.getSnapshot().getEffective());
+        assertEquals(targetDate.plus(7, ChronoUnit.DAYS), result.getSnapshot().getExpires());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
     }
 
@@ -123,23 +125,24 @@ public class SaltRotationTest {
                 Duration.ofDays(4),
         };
 
-        final Instant lastUpdated1 = now.minusDays(6).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated2 = now.minusDays(4).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated3 = now.minusDays(3).toInstant(ZoneOffset.UTC);
+        final Instant lastUpdated1 = targetDate.minus(6, ChronoUnit.DAYS);
+        final Instant lastUpdated2 = targetDate.minus(5, ChronoUnit.DAYS);
+        final Instant lastUpdated3 = targetDate.minus(4, ChronoUnit.DAYS);
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
                 .withEntries(3, lastUpdated1)
                 .withEntries(5, lastUpdated2)
                 .withEntries(2, lastUpdated3)
-                .build(Instant.now(), Instant.now());
+                .build(targetDate.minus(1, ChronoUnit.DAYS),
+                        targetDate.plus(6, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2);
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
         assertTrue(result.hasSnapshot());
         assertEquals(2, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective()));
         assertEquals(1, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated1));
         assertEquals(5, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated2));
         assertEquals(2, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated3));
-        assertEquals(now.toInstant(ZoneOffset.UTC), result.getSnapshot().getEffective());
-        assertEquals(now.plusDays(7).toInstant(ZoneOffset.UTC), result.getSnapshot().getExpires());
+        assertEquals(targetDate, result.getSnapshot().getEffective());
+        assertEquals(targetDate.plus(7, ChronoUnit.DAYS), result.getSnapshot().getExpires());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
     }
 
@@ -150,20 +153,21 @@ public class SaltRotationTest {
                 Duration.ofDays(3),
         };
 
-        final Instant lastUpdated1 = now.minusDays(4).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated2 = now.minusDays(3).toInstant(ZoneOffset.UTC);
+        final Instant lastUpdated1 = targetDate.minus(4, ChronoUnit.DAYS);
+        final Instant lastUpdated2 = targetDate.minus(3, ChronoUnit.DAYS);
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
                 .withEntries(3, lastUpdated1)
                 .withEntries(7, lastUpdated2)
-                .build(Instant.now(), Instant.now());
+                .build(targetDate.minus(1, ChronoUnit.DAYS),
+                        targetDate.plus(6, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2);
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
         assertTrue(result.hasSnapshot());
         assertEquals(2, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective()));
         assertEquals(1, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated1));
         assertEquals(7, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated2));
-        assertEquals(now.toInstant(ZoneOffset.UTC), result.getSnapshot().getEffective());
-        assertEquals(now.plusDays(7).toInstant(ZoneOffset.UTC), result.getSnapshot().getExpires());
+        assertEquals(targetDate, result.getSnapshot().getEffective());
+        assertEquals(targetDate.plus(7, ChronoUnit.DAYS), result.getSnapshot().getExpires());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
     }
 
@@ -174,23 +178,24 @@ public class SaltRotationTest {
                 Duration.ofDays(4),
         };
 
-        final Instant lastUpdated1 = now.minusDays(6).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated2 = now.minusDays(5).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated3 = now.minusDays(4).toInstant(ZoneOffset.UTC);
+        final Instant lastUpdated1 = targetDate.minus(6, ChronoUnit.DAYS);
+        final Instant lastUpdated2 = targetDate.minus(5, ChronoUnit.DAYS);
+        final Instant lastUpdated3 = targetDate.minus(4, ChronoUnit.DAYS);
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
                 .withEntries(3, lastUpdated1)
                 .withEntries(5, lastUpdated2)
                 .withEntries(2, lastUpdated3)
-                .build(Instant.now(), Instant.now());
+                .build(targetDate.minus(1, ChronoUnit.DAYS),
+                        targetDate.plus(6, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.45);
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.45, targetDate);
         assertTrue(result.hasSnapshot());
         assertEquals(5, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective()));
         assertEquals(0, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated1));
         assertEquals(3, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated2));
         assertEquals(2, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated3));
-        assertEquals(now.toInstant(ZoneOffset.UTC), result.getSnapshot().getEffective());
-        assertEquals(now.plusDays(7).toInstant(ZoneOffset.UTC), result.getSnapshot().getExpires());
+        assertEquals(targetDate, result.getSnapshot().getEffective());
+        assertEquals(targetDate.plus(7, ChronoUnit.DAYS), result.getSnapshot().getExpires());
         verify(keyGenerator, times(5)).generateRandomKeyString(anyInt());
     }
 
@@ -201,23 +206,24 @@ public class SaltRotationTest {
                 Duration.ofDays(3),
         };
 
-        final Instant lastUpdated1 = now.minusDays(6).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated2 = now.minusDays(4).toInstant(ZoneOffset.UTC);
-        final Instant lastUpdated3 = now.minusDays(2).toInstant(ZoneOffset.UTC);
+        final Instant lastUpdated1 = targetDate.minus(5, ChronoUnit.DAYS);
+        final Instant lastUpdated2 = targetDate.minus(4, ChronoUnit.DAYS);
+        final Instant lastUpdated3 = targetDate.minus(2, ChronoUnit.DAYS);
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
                 .withEntries(1, lastUpdated1)
                 .withEntries(2, lastUpdated2)
                 .withEntries(7, lastUpdated3)
-                .build(Instant.now(), Instant.now());
+                .build(targetDate.minus(1, ChronoUnit.DAYS),
+                        targetDate.plus(6, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.45);
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.45, targetDate);
         assertTrue(result.hasSnapshot());
         assertEquals(3, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective()));
         assertEquals(0, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated1));
         assertEquals(0, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated2));
         assertEquals(7, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated3));
-        assertEquals(now.toInstant(ZoneOffset.UTC), result.getSnapshot().getEffective());
-        assertEquals(now.plusDays(7).toInstant(ZoneOffset.UTC), result.getSnapshot().getExpires());
+        assertEquals(targetDate, result.getSnapshot().getEffective());
+        assertEquals(targetDate.plus(7, ChronoUnit.DAYS), result.getSnapshot().getExpires());
         verify(keyGenerator, times(3)).generateRandomKeyString(anyInt());
     }
 }

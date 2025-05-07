@@ -8,7 +8,9 @@ import com.uid2.shared.model.SiteUtil;
 import com.uid2.shared.store.ISiteStore;
 import io.vertx.ext.web.RoutingContext;
 
-import java.time.Duration;
+import java.text.DateFormat;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -224,6 +226,19 @@ public class RequestUtil {
         }
         try {
             return Optional.of(Double.valueOf(values.get(0)));
+        } catch (Exception ex) {
+            ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<LocalDate> getDate(RoutingContext rc, String paramName, String pattern) {
+        final List<String> values = rc.queryParam(paramName);
+        if (values.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(LocalDate.parse(values.get(0), DateTimeFormatter.ofPattern(pattern)));
         } catch (Exception ex) {
             ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
             return Optional.empty();
