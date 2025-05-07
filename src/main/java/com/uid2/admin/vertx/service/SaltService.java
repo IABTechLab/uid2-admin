@@ -18,6 +18,8 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +78,8 @@ public class SaltService implements IService {
             if (!fraction.isPresent()) return;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
-            final LocalDate targetDate = RequestUtil.getDate(rc, "target_date", "yyyy-MM-dd").orElse(LocalDate.now(Clock.systemUTC()).plusDays(1));
+            final Instant targetDate = RequestUtil.getInstantFromDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                                                    .orElse(Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS));
 
             // force refresh
             this.saltProvider.loadContent();
@@ -88,7 +91,7 @@ public class SaltService implements IService {
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
 
             final ISaltRotation.Result result = saltRotation.rotateSalts(
-                    lastSnapshot, minAges, fraction.get(), targetDate.atStartOfDay().toInstant(ZoneOffset.UTC));
+                    lastSnapshot, minAges, fraction.get(), targetDate);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;

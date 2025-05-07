@@ -232,13 +232,13 @@ public class RequestUtil {
         }
     }
 
-    public static Optional<LocalDate> getDate(RoutingContext rc, String paramName, String pattern) {
+    public static Optional<Instant> getInstantFromDate(RoutingContext rc, String paramName, DateTimeFormatter formatter) {
         final List<String> values = rc.queryParam(paramName);
         if (values.isEmpty()) {
             return Optional.empty();
         }
         try {
-            return Optional.of(LocalDate.parse(values.get(0), DateTimeFormatter.ofPattern(pattern)));
+            return Optional.of(LocalDate.parse(values.get(0), formatter).atStartOfDay().toInstant(ZoneOffset.UTC));
         } catch (Exception ex) {
             ResponseUtil.error(rc, 400, "failed to parse " + paramName + ": " + ex.getMessage());
             return Optional.empty();
