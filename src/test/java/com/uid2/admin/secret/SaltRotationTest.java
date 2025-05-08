@@ -19,8 +19,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class SaltRotationTest {
-    private AutoCloseable mocks;
-
     @Mock private IKeyGenerator keyGenerator;
     private SaltRotation saltRotation;
 
@@ -28,8 +26,8 @@ public class SaltRotationTest {
     private final Instant targetDateAsInstant = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
 
     @BeforeEach
-    void setup() throws Exception {
-        mocks = MockitoAnnotations.openMocks(this);
+    void setup() {
+        MockitoAnnotations.openMocks(this);
 
         saltRotation = new SaltRotation(keyGenerator);
     }
@@ -51,7 +49,7 @@ public class SaltRotationTest {
 
         public RotatingSaltProvider.SaltSnapshot build(Instant effective, Instant expires) {
             return new RotatingSaltProvider.SaltSnapshot(
-                    effective, expires, entries.stream().toArray(SaltEntry[]::new), "test_first_level_salt");
+                    effective, expires, entries.toArray(SaltEntry[]::new), "test_first_level_salt");
         }
     }
 
