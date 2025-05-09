@@ -1,6 +1,6 @@
 package com.uid2.admin.vertx;
 
-import com.uid2.admin.secret.ISaltRotation;
+import com.uid2.admin.secret.SaltRotation;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.SaltService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
@@ -15,7 +15,6 @@ import org.mockito.Mock;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.*;
 
 public class SaltServiceTest extends ServiceTestBase {
     @Mock RotatingSaltProvider saltProvider;
-    @Mock ISaltRotation saltRotation;
+    @Mock SaltRotation saltRotation;
 
     @Override
     protected IService createService() {
@@ -99,7 +98,7 @@ public class SaltServiceTest extends ServiceTestBase {
         final RotatingSaltProvider.SaltSnapshot[] addedSnapshots = {
                 makeSnapshot(Instant.ofEpochMilli(10004), Instant.ofEpochMilli(20004), 10),
         };
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(LocalDate.now().plusDays(1)))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
+        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(LocalDate.now().plusDays(1)))).thenReturn(SaltRotation.Result.fromSnapshot(addedSnapshots[0]));
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
@@ -121,7 +120,7 @@ public class SaltServiceTest extends ServiceTestBase {
         };
         setSnapshots(snapshots);
 
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(LocalDate.now().plusDays(1)))).thenReturn(ISaltRotation.Result.noSnapshot("test"));
+        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(LocalDate.now().plusDays(1)))).thenReturn(SaltRotation.Result.noSnapshot("test"));
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
@@ -149,7 +148,7 @@ public class SaltServiceTest extends ServiceTestBase {
                 makeSnapshot(targetDateAsInstant, targetDateAsInstant.plus(1, ChronoUnit.DAYS), 10),
         };
 
-        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(targetDate))).thenReturn(ISaltRotation.Result.fromSnapshot(addedSnapshots[0]));
+        when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(targetDate))).thenReturn(SaltRotation.Result.fromSnapshot(addedSnapshots[0]));
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2&target_date=2025-05-08", "", response -> {
             assertEquals(200, response.statusCode());

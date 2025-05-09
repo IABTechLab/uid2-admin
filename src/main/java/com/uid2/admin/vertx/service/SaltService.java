@@ -1,7 +1,7 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
-import com.uid2.admin.secret.ISaltRotation;
+import com.uid2.admin.secret.SaltRotation;
 import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -30,13 +30,13 @@ public class SaltService implements IService {
     private final WriteLock writeLock;
     private final SaltStoreWriter storageManager;
     private final RotatingSaltProvider saltProvider;
-    private final ISaltRotation saltRotation;
+    private final SaltRotation saltRotation;
 
     public SaltService(AdminAuthMiddleware auth,
                        WriteLock writeLock,
                        SaltStoreWriter storageManager,
                        RotatingSaltProvider saltProvider,
-                       ISaltRotation saltRotation) {
+                       SaltRotation saltRotation) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
@@ -89,7 +89,7 @@ public class SaltService implements IService {
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
 
-            final ISaltRotation.Result result = saltRotation.rotateSalts(
+            final SaltRotation.Result result = saltRotation.rotateSalts(
                     lastSnapshot, minAges, fraction.get(), targetDate);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
