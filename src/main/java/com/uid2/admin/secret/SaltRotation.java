@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 public class SaltRotation {
     private final IKeyGenerator keyGenerator;
     private final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
+    private final long DAY_IN_MS = Duration.ofDays(1).toMillis();
 
     public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
@@ -83,12 +84,13 @@ public class SaltRotation {
         return lastUpdated + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
-    private String calculatePreviousSalt(SaltEntry oldSalt, boolean shouldRotate, long nextEffective) throws Exception {
+    private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, long nextEffective) throws Exception {
         if (shouldRotate) {
-            return oldSalt.currentSalt();
+            return salt.currentSalt();
         }
-        if (ChronoUnit.DAYS.between(Instant.ofEpochMilli(oldSalt.lastUpdated()), Instant.ofEpochMilli(nextEffective)) < 90) {
-            return oldSalt.previousSalt();
+        long age = nextEffective - salt.lastUpdated();
+        if ( age / DAY_IN_MS < 90) {
+            return salt.previousSalt();
         }
         return null;
     }
