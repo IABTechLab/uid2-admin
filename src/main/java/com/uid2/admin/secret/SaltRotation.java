@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 
 public class SaltRotation {
     private final IKeyGenerator keyGenerator;
+    private final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
 
     public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
@@ -76,10 +77,9 @@ public class SaltRotation {
     }
 
     private long calculateRefreshFrom(long lastUpdated, long nextEffective) {
-        long thirtyDaysMillis = 2592000000L;
         long age = nextEffective - lastUpdated;
-        long multiplier = age / thirtyDaysMillis + 1;
-        return lastUpdated + (multiplier * thirtyDaysMillis);
+        long multiplier = age / THIRTY_DAYS_IN_MS + 1;
+        return lastUpdated + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
     private List<Integer> pickSaltIndexesToRotate(
