@@ -18,7 +18,6 @@ import static java.util.stream.Collectors.toList;
 
 public class SaltRotation implements ISaltRotation {
     private final IKeyGenerator keyGenerator;
-
     public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
     }
@@ -63,17 +62,26 @@ public class SaltRotation implements ISaltRotation {
     private SaltEntry updateSalt(SaltEntry oldSalt, boolean shouldRotate, long nextEffective) throws Exception {
         var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
         var lastUpdated = shouldRotate ? nextEffective : oldSalt.lastUpdated();
-
         return new SaltEntry(
                 oldSalt.id(),
                 oldSalt.hashedId(),
                 lastUpdated,
                 currentSalt,
                 null,
-                null,
+                populatePreviousSaltField(oldSalt, shouldRotate, nextEffective),
                 null,
                 null
         );
+    }
+
+    private String populatePreviousSaltField(SaltEntry oldSalt, boolean shouldRotate, long nextEffective) throws Exception {
+        if (shouldRotate) {
+            return oldSalt.currentSalt();
+        }
+        if (ChronoUnit.DAYS.between(Instant.ofEpochMilli(oldSalt.lastUpdated()), Instant.ofEpochMilli(nextEffective)) < 90) {
+            return oldSalt.previousSalt();
+        }
+        return null;
     }
 
     private List<Integer> pickSaltIndexesToRotate(

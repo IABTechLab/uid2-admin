@@ -47,6 +47,11 @@ public class SaltRotationTest {
             return this;
         }
 
+        public SnapshotBuilder withEntry(Instant lastUpdated, String currentSalt, Long refreshFrom, String previousSalt, SaltEntry.KeyMaterial currentKey, SaltEntry.KeyMaterial previousKey) {
+            entries.add(new SaltEntry(entries.size(), "h", lastUpdated.toEpochMilli(), currentSalt, refreshFrom, previousSalt, currentKey, previousKey));
+            return this;
+        }
+
         public RotatingSaltProvider.SaltSnapshot build(Instant effective, Instant expires) {
             return new RotatingSaltProvider.SaltSnapshot(
                     effective, expires, entries.toArray(SaltEntry[]::new), "test_first_level_salt");
@@ -73,10 +78,10 @@ public class SaltRotationTest {
                 .build(targetDateAsInstant,
                         targetDateAsInstant.plus(7, ChronoUnit.DAYS));
 
-        final ISaltRotation.Result result1 = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
-        assertFalse(result1.hasSnapshot());
-        final ISaltRotation.Result result2 = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate.minusDays(1));
-        assertFalse(result2.hasSnapshot());
+        final ISaltRotation.Result rotateOnSameDay = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate);
+        assertFalse(rotateOnSameDay.hasSnapshot());
+        final ISaltRotation.Result rotateForDayBefore = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate.minusDays(1));
+        assertFalse(rotateForDayBefore.hasSnapshot());
     }
 
     @Test
@@ -224,6 +229,62 @@ public class SaltRotationTest {
         assertEquals(7, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), lastUpdated3));
         assertEquals(targetDateAsInstant, result.getSnapshot().getEffective());
         assertEquals(targetDateAsInstant.plus(7, ChronoUnit.DAYS), result.getSnapshot().getExpires());
+        verify(keyGenerator, times(3)).generateRandomKeyString(anyInt());
+    }
+
+    @Test
+    void rotateSaltsPopulatePreviousSalt() throws Exception {
+        final Duration[] minAges = {
+                Duration.ofDays(5),
+        };
+
+        final Instant validForRotation = targetDateAsInstant.minus(8, ChronoUnit.DAYS);
+        final Instant notValidForRotation = targetDateAsInstant.minus(2, ChronoUnit.DAYS);
+        final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
+                .withEntry(validForRotation, "salt1", null, null, null, null)
+                .withEntry(validForRotation, "salt2", null, null, null, null)
+                .withEntry(validForRotation, "salt3", null, null, null, null)
+                .withEntries(7, notValidForRotation)
+                .build(targetDateAsInstant.minus(1, ChronoUnit.DAYS),
+                        targetDateAsInstant.plus(6, ChronoUnit.DAYS));
+
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.3, targetDate);
+        assertTrue(result.hasSnapshot());
+        assertEquals("salt1", result.getSnapshot().getAllRotatingSalts()[0].previousSalt());
+        assertEquals("salt2", result.getSnapshot().getAllRotatingSalts()[1].previousSalt());
+        assertEquals("salt3", result.getSnapshot().getAllRotatingSalts()[2].previousSalt());
+        assertEquals(7, Arrays.stream(result.getSnapshot().getAllRotatingSalts()).filter(s -> s.previousSalt() == null).count());
+
+        verify(keyGenerator, times(3)).generateRandomKeyString(anyInt());
+    }
+
+    @Test
+    void rotateSaltsRemovePreviousSaltIfOver90DaysOld() throws Exception {
+        final Duration[] minAges = {
+                Duration.ofDays(90),
+                Duration.ofDays(60),
+                Duration.ofDays(40),
+        };
+
+        final Instant lessThan90Days = targetDateAsInstant.minus(50, ChronoUnit.DAYS);
+        final Instant is90DaysOld = targetDateAsInstant.minus(90, ChronoUnit.DAYS);
+        final Instant over90Days = targetDateAsInstant.minus(100, ChronoUnit.DAYS);
+        final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
+                .withEntry(lessThan90Days, "currentSalt", null, "lessThan90Days", null, null)
+                .withEntry(lessThan90Days, "currentSalt", null, "lessThan90Days", null, null)
+                .withEntry(is90DaysOld, "currentSalt", null, "olderThan90Days", null, null)
+                .withEntry(is90DaysOld, "currentSalt", null, "olderThan90Days", null, null)
+                .withEntry(over90Days, "currentSalt", null, null, null, null)
+                .withEntry(over90Days, "currentSalt", null, null, null, null)
+                .build(targetDateAsInstant.minus(1, ChronoUnit.DAYS),
+                        targetDateAsInstant.plus(6, ChronoUnit.DAYS));
+
+        final ISaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.5, targetDate);
+        assertTrue(result.hasSnapshot());
+        assertEquals(2, Arrays.stream(result.getSnapshot().getAllRotatingSalts()).filter(s -> s.previousSalt() != null && s.previousSalt().equals("lessThan90Days")).count());
+        assertEquals(1, Arrays.stream(result.getSnapshot().getAllRotatingSalts()).filter(s -> s.previousSalt() == null).count());
+        assertEquals(3, Arrays.stream(result.getSnapshot().getAllRotatingSalts()).filter(s -> s.previousSalt() != null && s.previousSalt().equals("currentSalt")).count());
+
         verify(keyGenerator, times(3)).generateRandomKeyString(anyInt());
     }
 }
