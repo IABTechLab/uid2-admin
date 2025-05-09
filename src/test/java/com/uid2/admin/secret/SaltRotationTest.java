@@ -251,8 +251,8 @@ public class SaltRotationTest {
         final RotatingSaltProvider.SaltSnapshot lastSnapshot = SnapshotBuilder.start()
                 .withEntries(
                     new SaltEntry(1, "1", validForRotation, "salt1", null, null, null, null),
-                    new SaltEntry(1, "1", validForRotation, "salt2", null, null, null, null),
-                    new SaltEntry(1, "1", validForRotation, "salt3", null, null, null, null)
+                    new SaltEntry(2, "2", validForRotation, "salt2", null, null, null, null),
+                    new SaltEntry(3, "3", validForRotation, "salt3", null, null, null, null)
                 )
                 .withEntries(7, notValidForRotation)
                 .build(daysEarlier(1), daysLater(6));
