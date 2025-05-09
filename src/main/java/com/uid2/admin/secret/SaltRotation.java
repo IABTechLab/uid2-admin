@@ -16,19 +16,18 @@ import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
-public class SaltRotation implements ISaltRotation {
+public class SaltRotation {
     private final IKeyGenerator keyGenerator;
+    private final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
 
     public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
     }
 
-    @Override
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
                                                         Duration[] minAges,
                                                         double fraction,
                                                         LocalDate targetDate) throws Exception {
-
         final Instant nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
         final Instant nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
@@ -63,17 +62,24 @@ public class SaltRotation implements ISaltRotation {
     private SaltEntry updateSalt(SaltEntry oldSalt, boolean shouldRotate, long nextEffective) throws Exception {
         var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
         var lastUpdated = shouldRotate ? nextEffective : oldSalt.lastUpdated();
+        var refreshFrom = calculateRefreshFrom(oldSalt.lastUpdated(), nextEffective);
 
         return new SaltEntry(
                 oldSalt.id(),
                 oldSalt.hashedId(),
                 lastUpdated,
                 currentSalt,
-                null,
+                refreshFrom,
                 null,
                 null,
                 null
         );
+    }
+
+    private long calculateRefreshFrom(long lastUpdated, long nextEffective) {
+        long age = nextEffective - lastUpdated;
+        long multiplier = age / THIRTY_DAYS_IN_MS + 1;
+        return lastUpdated + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
     private List<Integer> pickSaltIndexesToRotate(
@@ -125,4 +131,24 @@ public class SaltRotation implements ISaltRotation {
         return minInclusive <= t && t < maxExclusive;
     }
 
+    public static class Result {
+        private final RotatingSaltProvider.SaltSnapshot snapshot; // can be null if new snapshot is not needed
+        private final String reason; // why you are not getting a new snapshot
+
+        private Result(RotatingSaltProvider.SaltSnapshot snapshot, String reason) {
+            this.snapshot = snapshot;
+            this.reason = reason;
+        }
+
+        public boolean hasSnapshot() { return snapshot != null; }
+        public RotatingSaltProvider.SaltSnapshot getSnapshot() { return snapshot; }
+        public String getReason() { return reason; }
+
+        public static Result fromSnapshot(RotatingSaltProvider.SaltSnapshot snapshot) {
+            return new Result(snapshot, null);
+        }
+        public static Result noSnapshot(String reason) {
+            return new Result(null, reason);
+        }
+    }
 }
