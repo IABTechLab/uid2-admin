@@ -3,14 +3,19 @@ package com.uid2.admin.auth;
 
 import com.okta.jwt.*;
 import com.uid2.admin.AdminConst;
+import com.uid2.admin.model.AuditParams;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
+
 
 public class AdminAuthMiddleware {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminAuthMiddleware.class);
@@ -40,13 +45,66 @@ public class AdminAuthMiddleware {
         return allOktaGroups;
     }
 
-    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
+    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, AuditParams params, Role... roles) {
         if (isAuthDisabled) return handler;
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }
-        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment, roleToOktaGroups);
+        Handler<RoutingContext> loggedHandler = logAndHandle(handler, params);
+        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(loggedHandler, authProvider, Set.of(roles),
+                environment, roleToOktaGroups);
         return adminAuthHandler::handle;
+    }
+
+    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
+        return this.handle(handler, null, roles);
+    }
+
+    private Handler<RoutingContext> logAndHandle(Handler<RoutingContext> handler, AuditParams params) {
+        return ctx -> {
+            long startTime = System.currentTimeMillis();
+
+            ctx.addBodyEndHandler(v -> {
+                long durationMs = System.currentTimeMillis() - startTime;
+                String method = ctx.request().method().name();
+                String path = ctx.request().path();
+                int status = ctx.response().getStatusCode();
+                String userAgent = ctx.request().getHeader("User-Agent");
+                String ip = ctx.request().remoteAddress().host();
+                String requestId = ctx.request().getHeader("X-Amzn-Trace-Id");
+                JsonObject userDetails = ctx.get("userDetails");
+                String requestBody = ctx.getBodyAsString();
+                String queryParams = ctx.request().query();
+                MultiMap queryParamsMap = ctx.request().params();
+                JsonObject queryParamsJson = new JsonObject();
+                queryParamsMap.forEach(entry -> {
+                    if (params.getQueryParams().contains(entry.getKey())) {
+                        queryParamsJson.put(entry.getKey(), entry.getValue());
+                    }
+                });
+                // Structured JSON log
+                JsonObject auditLog = new JsonObject()
+                        .put("timestamp", Instant.now().toString())
+                        .put("method", method)
+                        .put("endpoint", path)
+                        .put("status", status)
+                        .put("duration_ms", durationMs)
+                        .put("request_id", requestId != null ? requestId : "ABUTEST")
+                        .put("ip", ip)
+                        .put("user_agent", userAgent)
+                        .put("user", userDetails);
+                if (params != null)
+                    auditLog.put("params", queryParamsJson);
+
+                if ("POST".equals(method) || "PUT".equals(method)) {
+                    auditLog.put("body", requestBody);
+                }
+
+                // logger.info(auditLog.encode());
+                System.out.println(auditLog.toString());
+            });
+            handler.handle(ctx);
+        };
     }
 
     private static class AdminAuthHandler {
@@ -99,8 +157,8 @@ public class AdminAuthMiddleware {
             }
             return false;
         }
+
         public void handle(RoutingContext rc) {
-            // human user
             String idToken = null;
             if(rc.user() != null && rc.user().principal() != null) {
                 idToken = rc.user().principal().getString("id_token");
@@ -142,6 +200,7 @@ public class AdminAuthMiddleware {
 
         private void validateIdToken(RoutingContext rc, String idToken) {
             Jwt jwt;
+            rc.put("random", "value");
             try {
                 jwt = authProvider.getIdTokenVerifier().decode(idToken, null);
             } catch (JwtVerificationException e) {
@@ -153,8 +212,14 @@ public class AdminAuthMiddleware {
                 rc.response().setStatusCode(401).end();
                 return;
             }
+            // this varies by human/system user
             List<String> groups = (List<String>) jwt.getClaims().get("groups");
+            JsonObject userDetails = new JsonObject();
+            userDetails.put("groups", (List<String>) jwt.getClaims().get("groups"));
+            userDetails.put("email", jwt.getClaims().get("email"));
+            userDetails.put("sub", jwt.getClaims().get("sub"));
             if(isAuthorizedUser(groups)) {
+                rc.put("userDetails", userDetails);
                 innerHandler.handle(rc);
             } else {
                 rc.response().setStatusCode(401).end();
