@@ -1,8 +1,10 @@
 package com.uid2.admin.secret;
 
+import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,7 +40,9 @@ public class SaltRotationTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
 
-        saltRotation = new SaltRotation(keyGenerator);
+        JsonObject config = new JsonObject();
+
+        saltRotation = new SaltRotation(config, keyGenerator);
     }
 
     private static class SnapshotBuilder {
@@ -318,4 +322,44 @@ public class SaltRotationTest {
         assertNull(salts[1].previousSalt());
     }
 
+
+    @Test
+    void rotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
+        JsonObject config = new JsonObject();
+        config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
+        saltRotation = new SaltRotation(config, keyGenerator);
+
+        final Duration[] minAges = {
+                Duration.ofDays(90),
+                Duration.ofDays(60),
+        };
+
+        var validForRotation1 = daysEarlier(120).toEpochMilli();
+        var validForRotation2 = daysEarlier(70).toEpochMilli();
+        var notValidForRotation = daysEarlier(30).toEpochMilli();
+        var refreshNow = targetDateAsInstant.toEpochMilli();
+        var refreshLater = daysLater(20).toEpochMilli();
+
+        var lastSnapshot = SnapshotBuilder.start()
+                .withEntries(
+                    new SaltEntry(1, "1", validForRotation1, "salt", refreshNow, null, null, null),
+                    new SaltEntry(2, "2", notValidForRotation, "salt", refreshNow, null, null, null),
+                    new SaltEntry(3, "3", validForRotation2, "salt", refreshLater, null, null, null)
+                )
+                .build(daysEarlier(1), daysLater(6));
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate);
+        assertTrue(result.hasSnapshot());
+
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertEquals(targetDateAsInstant.toEpochMilli(), salts[0].lastUpdated());
+        assertEquals(daysLater(30).toEpochMilli(), salts[0].refreshFrom());
+
+        assertEquals(notValidForRotation, salts[1].lastUpdated());
+        assertEquals(daysLater(30).toEpochMilli(), salts[1].refreshFrom());
+
+        assertEquals(validForRotation2, salts[2].lastUpdated());
+        assertEquals(refreshLater, salts[2].refreshFrom());
+    }
 }
