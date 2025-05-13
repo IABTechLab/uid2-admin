@@ -3,10 +3,12 @@ package com.uid2.admin.secret;
 import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
-import com.uid2.shared.store.salt.RotatingSaltProvider;
 
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
 import io.vertx.core.json.JsonObject;
+import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -14,9 +16,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.IntStream;
-
-import static java.util.stream.Collectors.toList;
 
 public class SaltRotation {
     private final static long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
@@ -24,35 +23,61 @@ public class SaltRotation {
 
     private final IKeyGenerator keyGenerator;
     private final boolean isRefreshFromEnabled;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
 
     public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
         this.isRefreshFromEnabled = config.getBoolean(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, false);
     }
 
-    public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
-                                                        Duration[] minAges,
-                                                        double fraction,
-                                                        LocalDate targetDate) throws Exception {
-        final Instant nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
-        final Instant nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
+    public Result rotateSalts(
+            SaltSnapshot lastSnapshot,
+            Duration[] minAges,
+            double fraction,
+            LocalDate targetDate
+    ) throws Exception {
+        var preRotationSalts = lastSnapshot.getAllRotatingSalts();
+        var nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
         }
 
-        List<Integer> saltIndexesToRotate = pickSaltIndexesToRotate(lastSnapshot, nextEffective, minAges, fraction);
+        var rotatableSaltIndexes = findRotatableSaltIndexes(preRotationSalts, nextEffective.toEpochMilli());
+        var saltIndexesToRotate = pickSaltIndexesToRotate(
+                nextEffective,
+                minAges,
+                fraction,
+                preRotationSalts,
+                rotatableSaltIndexes
+        );
+
         if (saltIndexesToRotate.isEmpty()) {
-            return Result.noSnapshot("all salts are below min rotation age");
+            return Result.noSnapshot("all rotatable salts are below min rotation age");
         }
 
-        var updatedSalts = updateSalts(lastSnapshot.getAllRotatingSalts(), saltIndexesToRotate, nextEffective.toEpochMilli());
+        var postRotationSalts = updateSalts(preRotationSalts, saltIndexesToRotate, nextEffective.toEpochMilli());
 
-        SaltSnapshot nextSnapshot = new SaltSnapshot(
+        new SaltAgeCounter("rotatable-salts", nextEffective).countIndexes(preRotationSalts, rotatableSaltIndexes);
+        new SaltAgeCounter("rotated-salts", nextEffective).countIndexes(preRotationSalts, saltIndexesToRotate);
+        new SaltAgeCounter("total-salts", nextEffective).count(postRotationSalts);
+
+        var nextSnapshot = new SaltSnapshot(
                 nextEffective,
                 nextExpires,
-                updatedSalts,
+                postRotationSalts,
                 lastSnapshot.getFirstLevelSalt());
         return Result.fromSnapshot(nextSnapshot);
+    }
+
+    private List<Integer> findRotatableSaltIndexes(SaltEntry[] preRotationSalts, long nextEffective) {
+        var rotatableSalts = new ArrayList<Integer>();
+        for (int i = 0; i < preRotationSalts.length; i++) {
+            if (isRotatable(nextEffective, preRotationSalts[i])) {
+                rotatableSalts.add(i);
+            }
+        }
+        return rotatableSalts;
     }
 
     private SaltEntry[] updateSalts(SaltEntry[] oldSalts, List<Integer> saltIndexesToRotate, long nextEffective) throws Exception {
@@ -94,88 +119,155 @@ public class SaltRotation {
             return salt.currentSalt();
         }
         long age = nextEffective - salt.lastUpdated();
-        if ( age / DAY_IN_MS < 90) {
+        if (age / DAY_IN_MS < 90) {
             return salt.previousSalt();
         }
         return null;
     }
 
     private List<Integer> pickSaltIndexesToRotate(
-            SaltSnapshot lastSnapshot,
             Instant nextEffective,
             Duration[] minAges,
-            double fraction) {
-        final Instant[] thresholds = Arrays.stream(minAges)
+            double fraction,
+            SaltEntry[] preRotationSalts,
+            List<Integer> rotatableSaltIndexes
+    ) {
+        var thresholds = Arrays.stream(minAges)
                 .map(age -> nextEffective.minusSeconds(age.getSeconds()))
                 .sorted()
                 .toArray(Instant[]::new);
-        final int maxSalts = (int) Math.ceil(lastSnapshot.getAllRotatingSalts().length * fraction);
-        final SaltEntry[] rotatableSalts = getRotatableSalts(lastSnapshot, nextEffective.toEpochMilli());
-        final List<Integer> indexesToRotate = new ArrayList<>();
+        var maxSalts = (int) Math.ceil(preRotationSalts.length * fraction);
+        var indexesToRotate = new ArrayList<Integer>();
 
-        Instant minLastUpdated = Instant.ofEpochMilli(0);
-        for (Instant threshold : thresholds) {
+        var minLastUpdated = Instant.ofEpochMilli(0);
+        for (var maxLastUpdated : thresholds) {
             if (indexesToRotate.size() >= maxSalts) break;
-            addIndexesToRotate(
-                    indexesToRotate,
-                    rotatableSalts,
+
+            var maxIndexes = maxSalts - indexesToRotate.size();
+            var saltsToRotate = selectIndexesToRotate(
+                    preRotationSalts,
                     minLastUpdated.toEpochMilli(),
-                    threshold.toEpochMilli(),
-                    maxSalts - indexesToRotate.size()
+                    maxLastUpdated.toEpochMilli(),
+                    maxIndexes,
+                    rotatableSaltIndexes
             );
-            minLastUpdated = threshold;
+            indexesToRotate.addAll(saltsToRotate);
+            minLastUpdated = maxLastUpdated;
         }
         return indexesToRotate;
     }
 
-    private SaltEntry[] getRotatableSalts(SaltSnapshot lastSnapshot, long nextEffective) {
-        SaltEntry[] salts = lastSnapshot.getAllRotatingSalts();
-        if (isRefreshFromEnabled) {
-            return Arrays.stream(salts).filter(s -> s.refreshFrom() == nextEffective).toArray(SaltEntry[]::new);
-        }
-        return salts;
-    }
+    private List<Integer> selectIndexesToRotate(
+            SaltEntry[] salts,
+            long minLastUpdated,
+            long maxLastUpdated,
+            int maxIndexes,
+            List<Integer> rotatableSaltIndexes
+    ) {
+        var candidateIndexes = indexesForRotation(salts, minLastUpdated, maxLastUpdated, rotatableSaltIndexes);
 
-
-    private void addIndexesToRotate(List<Integer> entryIndexes,
-                                    SaltEntry[] entries,
-                                    long minLastUpdated,
-                                    long maxLastUpdated,
-                                    int maxIndexes) {
-        final List<Integer> candidateIndexes = IntStream.range(0, entries.length)
-                .filter(i -> isBetween(entries[i].lastUpdated(), minLastUpdated, maxLastUpdated))
-                .boxed()
-                .collect(toList());
         if (candidateIndexes.size() <= maxIndexes) {
-            entryIndexes.addAll(candidateIndexes);
-            return;
+            return candidateIndexes;
         }
         Collections.shuffle(candidateIndexes);
-        candidateIndexes.stream().limit(maxIndexes).forEachOrdered(entryIndexes::add);
+        return candidateIndexes.subList(0, Math.min(maxIndexes, candidateIndexes.size()));
     }
 
-    private static boolean isBetween(long t, long minInclusive, long maxExclusive) {
-        return minInclusive <= t && t < maxExclusive;
+    private List<Integer> indexesForRotation(
+            SaltEntry[] salts,
+            long minLastUpdated,
+            long maxLastUpdated,
+            List<Integer> rotatableSaltIndexes
+    ) {
+        var candidateIndexes = new ArrayList<Integer>();
+        for (int i = 0; i < salts.length; i++) {
+            var salt = salts[i];
+            var lastUpdated = salt.lastUpdated();
+            var isInTimeWindow = minLastUpdated <= lastUpdated && lastUpdated < maxLastUpdated;
+            var isRotatable = rotatableSaltIndexes.contains(i);
+
+            if (isInTimeWindow && isRotatable) {
+                candidateIndexes.add(i);
+            }
+        }
+        return candidateIndexes;
     }
 
+    private boolean isRotatable(long nextEffective, SaltEntry salt) {
+        if (this.isRefreshFromEnabled) {
+            if (salt.refreshFrom() == null) { // TODO: remove once refreshFrom is no longer optional
+                return true;
+            }
+            return salt.refreshFrom() == nextEffective;
+        }
+
+        return true;
+    }
+
+    @Getter
     public static class Result {
-        private final RotatingSaltProvider.SaltSnapshot snapshot; // can be null if new snapshot is not needed
+        private final SaltSnapshot snapshot; // can be null if new snapshot is not needed
         private final String reason; // why you are not getting a new snapshot
 
-        private Result(RotatingSaltProvider.SaltSnapshot snapshot, String reason) {
+        private Result(SaltSnapshot snapshot, String reason) {
             this.snapshot = snapshot;
             this.reason = reason;
         }
 
-        public boolean hasSnapshot() { return snapshot != null; }
-        public RotatingSaltProvider.SaltSnapshot getSnapshot() { return snapshot; }
-        public String getReason() { return reason; }
+        public boolean hasSnapshot() {
+            return snapshot != null;
+        }
 
-        public static Result fromSnapshot(RotatingSaltProvider.SaltSnapshot snapshot) {
+        public static Result fromSnapshot(SaltSnapshot snapshot) {
             return new Result(snapshot, null);
         }
+
         public static Result noSnapshot(String reason) {
             return new Result(null, reason);
+        }
+    }
+
+    private static class SaltAgeCounter {
+        private final String logEvent;
+        private final long nextEffective;
+        private final HashMap<Long, Long> ages = new HashMap<>(); // salt age to count
+
+        public SaltAgeCounter(String logEvent, Instant nextEffective) {
+            this.logEvent = logEvent;
+            this.nextEffective = nextEffective.toEpochMilli();
+        }
+
+        public void count(SaltEntry[] salts) {
+            try {
+                for (var salt : salts) {
+                    count(salt);
+                }
+                logCounts();
+            } catch (Exception e) {
+                LOGGER.error("Error counting salts for {}", logEvent, e);
+            }
+        }
+
+        public void countIndexes(SaltEntry[] salts, List<Integer> saltIndexes) {
+            try {
+                for (var index : saltIndexes) {
+                    count(salts[index]);
+                }
+                logCounts();
+            } catch (Exception e) {
+                LOGGER.error("Error counting salts for {}", logEvent, e);
+            }
+        }
+
+        private void count(SaltEntry salt) {
+            long age = (nextEffective - salt.lastUpdated()) / DAY_IN_MS;
+            ages.put(age, ages.getOrDefault(age, 0L) + 1);
+        }
+
+        private void logCounts() {
+            for (var entry : ages.entrySet()) {
+                LOGGER.info("{} age={} salts={}", logEvent, entry.getKey(), entry.getValue());
+            }
         }
     }
 }
