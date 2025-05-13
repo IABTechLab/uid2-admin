@@ -5,6 +5,9 @@ import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
+import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,11 +20,16 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toList;
 
 public class SaltRotation {
-    private final IKeyGenerator keyGenerator;
-    private final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
+    private final static String ENABLE_REFRESH_FROM = "enable_salt_rotation_refresh_from";
+    private final static long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
 
-    public SaltRotation(IKeyGenerator keyGenerator) {
+    private final IKeyGenerator keyGenerator;
+    private final boolean isRefreshFromEnabled;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
+    public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
+        this.isRefreshFromEnabled = config.getBoolean(ENABLE_REFRESH_FROM, false);
     }
 
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,
@@ -92,6 +100,7 @@ public class SaltRotation {
                 .sorted()
                 .toArray(Instant[]::new);
         final int maxSalts = (int) Math.ceil(lastSnapshot.getAllRotatingSalts().length * fraction);
+        final SaltEntry[] rotatableSalts = getRotatableSalts(lastSnapshot, nextEffective.toEpochMilli());
         final List<Integer> indexesToRotate = new ArrayList<>();
 
         Instant minLastUpdated = Instant.ofEpochMilli(0);
@@ -99,7 +108,7 @@ public class SaltRotation {
             if (indexesToRotate.size() >= maxSalts) break;
             addIndexesToRotate(
                     indexesToRotate,
-                    lastSnapshot,
+                    rotatableSalts,
                     minLastUpdated.toEpochMilli(),
                     threshold.toEpochMilli(),
                     maxSalts - indexesToRotate.size()
@@ -109,12 +118,20 @@ public class SaltRotation {
         return indexesToRotate;
     }
 
+    private SaltEntry[] getRotatableSalts(SaltSnapshot lastSnapshot, long nextEffective) {
+        SaltEntry[] salts = lastSnapshot.getAllRotatingSalts();
+        if (isRefreshFromEnabled) {
+            return Arrays.stream(salts).filter(s -> s.refreshFrom() == nextEffective).toArray(SaltEntry[]::new);
+        }
+        return salts;
+    }
+
+
     private void addIndexesToRotate(List<Integer> entryIndexes,
-                                    SaltSnapshot lastSnapshot,
+                                    SaltEntry[] entries,
                                     long minLastUpdated,
                                     long maxLastUpdated,
                                     int maxIndexes) {
-        final SaltEntry[] entries = lastSnapshot.getAllRotatingSalts();
         final List<Integer> candidateIndexes = IntStream.range(0, entries.length)
                 .filter(i -> isBetween(entries[i].lastUpdated(), minLastUpdated, maxLastUpdated))
                 .boxed()
