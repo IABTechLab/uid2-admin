@@ -239,4 +239,83 @@ public class SaltRotationTest {
 
         assertThat(actual.refreshFrom()).isEqualTo(expected);
     }
+
+    @Test
+    void rotateSaltsPopulatePreviousSaltsOnRotation() throws Exception {
+        final Duration[] minAges = {
+                Duration.ofDays(90),
+                Duration.ofDays(60),
+                Duration.ofDays(30)
+        };
+
+        var lessThan90Days  = daysEarlier(60).toEpochMilli();
+        var exactly90Days = daysEarlier(90).toEpochMilli();
+        var over90Days = daysEarlier(120).toEpochMilli();
+        var lastSnapshot = SnapshotBuilder.start()
+                .withEntries(
+                    new SaltEntry(1, "1", lessThan90Days, "salt1", null, null, null, null),
+                    new SaltEntry(3, "2", exactly90Days, "salt2", null, null, null, null),
+                    new SaltEntry(5, "3", over90Days, "salt3", null, null, null, null)
+                )
+                .build(daysEarlier(1), daysLater(6));
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate);
+        assertTrue(result.hasSnapshot());
+
+        var salts = result.getSnapshot().getAllRotatingSalts();
+        assertEquals("salt1", salts[0].previousSalt());
+        assertEquals("salt2", salts[1].previousSalt());
+        assertEquals("salt3", salts[2].previousSalt());
+    }
+
+    @Test
+    void rotateSaltsPreservePreviousSaltsLessThan90DaysOld() throws Exception {
+        final Duration[] minAges = {
+                Duration.ofDays(60),
+        };
+
+        var notValidForRotation1 = daysEarlier(40).toEpochMilli();
+        var notValidForRotation2 = daysEarlier(50).toEpochMilli();
+        var validForRotation = daysEarlier(70);
+        var lastSnapshot = SnapshotBuilder.start()
+                .withEntries(
+                        new SaltEntry(1, "1", notValidForRotation1, "salt1", null, "previousSalt1", null, null),
+                        new SaltEntry(2, "2", notValidForRotation2, "salt2", null, null, null, null)
+                )
+                .withEntries(1, validForRotation)
+                .build(daysEarlier(1), daysLater(6));
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate);
+        assertTrue(result.hasSnapshot());
+
+        var salts = result.getSnapshot().getAllRotatingSalts();
+        assertEquals("previousSalt1", salts[0].previousSalt());
+        assertNull(salts[1].previousSalt());
+    }
+
+    @Test
+    void rotateSaltsRemovePreviousSaltsOver90DaysOld() throws Exception {
+        final Duration[] minAges = {
+                Duration.ofDays(100),
+        };
+
+        var exactly90Days = daysEarlier(90).toEpochMilli();
+        var over90Days = daysEarlier(100).toEpochMilli();
+        var validForRotation = daysEarlier(120);
+        var lastSnapshot = SnapshotBuilder.start()
+                .withEntries(
+                    new SaltEntry(1, "1", exactly90Days, "salt1", null, "90DaysOld", null, null),
+                    new SaltEntry(2, "2", over90Days, "salt2", null, "over90DaysOld", null, null)
+                )
+                .withEntries(1, validForRotation)
+                .build(daysEarlier(1), daysLater(6));
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.5, targetDate);
+        assertTrue(result.hasSnapshot());
+
+        var salts = result.getSnapshot().getAllRotatingSalts();
+        assertNull(salts[0].previousSalt());
+        assertNull(salts[1].previousSalt());
+    }
+
 }

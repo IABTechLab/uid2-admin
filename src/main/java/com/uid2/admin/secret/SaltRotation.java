@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 public class SaltRotation {
     private final IKeyGenerator keyGenerator;
     private final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
+    private final long DAY_IN_MS = Duration.ofDays(1).toMillis();
 
     public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
@@ -63,6 +64,7 @@ public class SaltRotation {
         var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
         var lastUpdated = shouldRotate ? nextEffective : oldSalt.lastUpdated();
         var refreshFrom = calculateRefreshFrom(oldSalt.lastUpdated(), nextEffective);
+        var previousSalt = calculatePreviousSalt(oldSalt, shouldRotate, nextEffective);
 
         return new SaltEntry(
                 oldSalt.id(),
@@ -70,7 +72,7 @@ public class SaltRotation {
                 lastUpdated,
                 currentSalt,
                 refreshFrom,
-                null,
+                previousSalt,
                 null,
                 null
         );
@@ -80,6 +82,17 @@ public class SaltRotation {
         long age = nextEffective - lastUpdated;
         long multiplier = age / THIRTY_DAYS_IN_MS + 1;
         return lastUpdated + (multiplier * THIRTY_DAYS_IN_MS);
+    }
+
+    private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, long nextEffective) throws Exception {
+        if (shouldRotate) {
+            return salt.currentSalt();
+        }
+        long age = nextEffective - salt.lastUpdated();
+        if ( age / DAY_IN_MS < 90) {
+            return salt.previousSalt();
+        }
+        return null;
     }
 
     private List<Integer> pickSaltIndexesToRotate(
