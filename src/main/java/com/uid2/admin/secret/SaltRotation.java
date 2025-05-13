@@ -6,8 +6,6 @@ import com.uid2.shared.store.salt.RotatingSaltProvider;
 
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,7 +24,6 @@ public class SaltRotation {
     private final IKeyGenerator keyGenerator;
     private final boolean isRefreshFromEnabled;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
     public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
         this.isRefreshFromEnabled = config.getBoolean(ENABLE_REFRESH_FROM, false);
