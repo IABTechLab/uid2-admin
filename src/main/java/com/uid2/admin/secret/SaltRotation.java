@@ -1,5 +1,6 @@
 package com.uid2.admin.secret;
 
+import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
@@ -18,7 +19,6 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toList;
 
 public class SaltRotation {
-    private final static String ENABLE_REFRESH_FROM = "enable_salt_rotation_refresh_from";
     private final static long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
 
     private final IKeyGenerator keyGenerator;
@@ -26,7 +26,7 @@ public class SaltRotation {
 
     public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
-        this.isRefreshFromEnabled = config.getBoolean(ENABLE_REFRESH_FROM, false);
+        this.isRefreshFromEnabled = config.getBoolean(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, false);
     }
 
     public Result rotateSalts(RotatingSaltProvider.SaltSnapshot lastSnapshot,

@@ -1,9 +1,11 @@
 package com.uid2.admin.secret;
 
+import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -34,12 +36,11 @@ public class SaltRotationTest {
         return targetDateAsInstant.plus(days, DAYS);
     }
 
-
-    void setup(boolean enableRefreshFrom) {
+    @BeforeEach
+    void setup() {
         MockitoAnnotations.openMocks(this);
 
         JsonObject config = new JsonObject();
-        config.put("enable_salt_rotation_refresh_from", enableRefreshFrom);
 
         saltRotation = new SaltRotation(config, keyGenerator);
     }
@@ -75,7 +76,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsLastSnapshotIsUpToDate() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -92,7 +92,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsAllSaltsUpToDate() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -109,7 +108,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsAllSaltsOld() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -130,7 +128,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(4),
@@ -156,7 +153,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(3),
@@ -180,7 +176,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsRotateSaltsFromMultipleBuckets() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(4),
@@ -206,7 +201,6 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
-        setup(false);
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(3),
@@ -237,7 +231,6 @@ public class SaltRotationTest {
             "60, 90", // Exactly at multiple of 30 days post rotation, use next increment of 30 days
     })
     void testRefreshFromCalculation(int lastRotationDaysAgo, int refreshFromDaysFromRotation) throws Exception {
-        setup(false);
         var lastRotation = daysEarlier(lastRotationDaysAgo);
         var lastSnapshot = SnapshotBuilder.start()
                 .withEntries(new SaltEntry(1, "1", lastRotation.toEpochMilli(), "salt1", 100L, null, null, null))
@@ -253,7 +246,10 @@ public class SaltRotationTest {
 
     @Test
     void rotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
-        setup(true);
+        JsonObject config = new JsonObject();
+        config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
+        saltRotation = new SaltRotation(config, keyGenerator);
+
         final Duration[] minAges = {
                 Duration.ofDays(90),
                 Duration.ofDays(60),
