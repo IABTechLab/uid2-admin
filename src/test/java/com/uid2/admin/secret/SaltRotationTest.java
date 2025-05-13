@@ -252,7 +252,7 @@ public class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsOnRefreshFromDate() throws Exception {
+    void rotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
         setup(true);
         final Duration[] minAges = {
                 Duration.ofDays(90),
