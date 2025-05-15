@@ -59,13 +59,14 @@ public class SaltRotation {
 
         var postRotationSalts = updateSalts(preRotationSalts, saltIndexesToRotate, nextEffective.toEpochMilli());
 
-        var rotatableSalts = onlySaltsAtIndexes(preRotationSalts, rotatableSaltIndexes);
-        logSaltAgeCounts("rotatable-salts", targetDate, nextEffective, rotatableSalts);
-
-        var rotatedSalts = onlySaltsAtIndexes(preRotationSalts, saltIndexesToRotate);
-        logSaltAgeCounts("rotated-salts", targetDate, nextEffective, rotatedSalts);
-
-        logSaltAgeCounts("total-salts", targetDate, nextEffective, postRotationSalts);
+        logSaltCounts(
+                targetDate,
+                nextEffective,
+                preRotationSalts,
+                postRotationSalts,
+                rotatableSaltIndexes,
+                saltIndexesToRotate
+        );
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -209,29 +210,6 @@ public class SaltRotation {
         return true;
     }
 
-    @Getter
-    public static class Result {
-        private final SaltSnapshot snapshot; // can be null if new snapshot is not needed
-        private final String reason; // why you are not getting a new snapshot
-
-        private Result(SaltSnapshot snapshot, String reason) {
-            this.snapshot = snapshot;
-            this.reason = reason;
-        }
-
-        public boolean hasSnapshot() {
-            return snapshot != null;
-        }
-
-        public static Result fromSnapshot(SaltSnapshot snapshot) {
-            return new Result(snapshot, null);
-        }
-
-        public static Result noSnapshot(String reason) {
-            return new Result(null, reason);
-        }
-    }
-
     private void logSaltAgeCounts(String logEvent, LocalDate targetDate, Instant nextEffective, SaltEntry[] salts) {
         var formattedDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(targetDate);
 
@@ -252,5 +230,39 @@ public class SaltRotation {
             selected[i] = salts[saltIndexes.get(i)];
         }
         return selected;
+    }
+
+    private void logSaltCounts(LocalDate targetDate, Instant nextEffective, SaltEntry[] preRotationSalts, SaltEntry[] postRotationSalts, List<Integer> rotatableSaltIndexes, List<Integer> rotatedSaltIndexes) {
+        var rotatableSalts = onlySaltsAtIndexes(preRotationSalts, rotatableSaltIndexes);
+        logSaltAgeCounts("rotatable-salts", targetDate, nextEffective, rotatableSalts);
+
+        var rotatedSalts = onlySaltsAtIndexes(preRotationSalts, rotatedSaltIndexes);
+        logSaltAgeCounts("rotated-salts", targetDate, nextEffective, rotatedSalts);
+
+        logSaltAgeCounts("total-salts", targetDate, nextEffective, postRotationSalts);
+    }
+
+    @Getter
+    public static class Result {
+
+        private final SaltSnapshot snapshot; // can be null if new snapshot is not needed
+        private final String reason; // why you are not getting a new snapshot
+
+        private Result(SaltSnapshot snapshot, String reason) {
+            this.snapshot = snapshot;
+            this.reason = reason;
+        }
+
+        public boolean hasSnapshot() {
+            return snapshot != null;
+        }
+
+        public static Result fromSnapshot(SaltSnapshot snapshot) {
+            return new Result(snapshot, null);
+        }
+
+        public static Result noSnapshot(String reason) {
+            return new Result(null, reason);
+        }
     }
 }
