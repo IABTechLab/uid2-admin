@@ -3,6 +3,7 @@ package com.uid2.admin.secret;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.uid2.admin.AdminConst;
+import com.uid2.admin.secret.SaltRotation.TargetDate;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
@@ -19,7 +20,6 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.time.temporal.ChronoUnit.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -33,8 +33,7 @@ public class SaltRotationTest {
     private IKeyGenerator keyGenerator;
     private SaltRotation saltRotation;
 
-    private static final LocalDate TARGET_DATE = LocalDate.of(2025, 1, 1);
-    private static final Instant TARGET_DATE_AS_INSTANT = TARGET_DATE.atStartOfDay().toInstant(ZoneOffset.UTC);
+    private static final TargetDate TARGET_DATE = TargetDate.of(2025, 1, 1);
     private ListAppender<ILoggingEvent> appender;
     private AutoCloseable mocks;
 
@@ -63,8 +62,8 @@ public class SaltRotationTest {
                 Duration.ofDays(2),
         };
         var lastSnapshot = SnapshotBuilder.start()
-                .entries(10, TARGET_DATE_AS_INSTANT)
-                .effective(TARGET_DATE_AS_INSTANT)
+                .entries(10, TARGET_DATE)
+                .effective(TARGET_DATE)
                 .expires(daysLater(7))
                 .build();
 
@@ -82,7 +81,7 @@ public class SaltRotationTest {
         };
 
         var lastSnapshot = SnapshotBuilder.start()
-                .entries(10, TARGET_DATE_AS_INSTANT)
+                .entries(10, TARGET_DATE)
                 .build();
 
         var result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, TARGET_DATE);
@@ -105,8 +104,8 @@ public class SaltRotationTest {
         assertTrue(result.hasSnapshot());
         assertEquals(2, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective()));
         assertEquals(8, countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), daysEarlier(10)));
-        assertEquals(TARGET_DATE_AS_INSTANT, result.getSnapshot().getEffective());
-        assertEquals(daysLater(7), result.getSnapshot().getExpires());
+        assertEquals(TARGET_DATE.asInstant(), result.getSnapshot().getEffective());
+        assertEquals(daysLater(7).asInstant(), result.getSnapshot().getExpires());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
     }
 
@@ -130,8 +129,8 @@ public class SaltRotationTest {
         assertEquals(1, countEntriesWithLastUpdated(salts, daysEarlier(6)));
         assertEquals(5, countEntriesWithLastUpdated(salts, daysEarlier(5)));
         assertEquals(2, countEntriesWithLastUpdated(salts, daysEarlier(4)));
-        assertEquals(TARGET_DATE_AS_INSTANT, result.getSnapshot().getEffective());
-        assertEquals(daysLater(7), result.getSnapshot().getExpires());
+        assertEquals(TARGET_DATE.asInstant(), result.getSnapshot().getEffective());
+        assertEquals(daysLater(7).asInstant(), result.getSnapshot().getExpires());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
     }
 
@@ -153,8 +152,8 @@ public class SaltRotationTest {
         assertEquals(2, countEntriesWithLastUpdated(salts, result.getSnapshot().getEffective()));
         assertEquals(1, countEntriesWithLastUpdated(salts, daysEarlier(4)));
         assertEquals(7, countEntriesWithLastUpdated(salts, daysEarlier(3)));
-        assertEquals(TARGET_DATE_AS_INSTANT, result.getSnapshot().getEffective());
-        assertEquals(daysLater(7), result.getSnapshot().getExpires());
+        assertEquals(TARGET_DATE.asInstant(), result.getSnapshot().getEffective());
+        assertEquals(daysLater(7).asInstant(), result.getSnapshot().getExpires());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
     }
 
@@ -178,8 +177,8 @@ public class SaltRotationTest {
         assertEquals(0, countEntriesWithLastUpdated(salts, daysEarlier(6)));
         assertEquals(3, countEntriesWithLastUpdated(salts, daysEarlier(5)));
         assertEquals(2, countEntriesWithLastUpdated(salts, daysEarlier(4)));
-        assertEquals(TARGET_DATE_AS_INSTANT, result.getSnapshot().getEffective());
-        assertEquals(daysLater(7), result.getSnapshot().getExpires());
+        assertEquals(TARGET_DATE.asInstant(), result.getSnapshot().getEffective());
+        assertEquals(daysLater(7).asInstant(), result.getSnapshot().getExpires());
         verify(keyGenerator, times(5)).generateRandomKeyString(anyInt());
     }
 
@@ -203,8 +202,8 @@ public class SaltRotationTest {
         assertEquals(0, countEntriesWithLastUpdated(salts, daysEarlier(5)));
         assertEquals(0, countEntriesWithLastUpdated(salts, daysEarlier(4)));
         assertEquals(7, countEntriesWithLastUpdated(salts, daysEarlier(2)));
-        assertEquals(TARGET_DATE_AS_INSTANT, result.getSnapshot().getEffective());
-        assertEquals(daysLater(7), result.getSnapshot().getExpires());
+        assertEquals(TARGET_DATE.asInstant(), result.getSnapshot().getEffective());
+        assertEquals(daysLater(7).asInstant(), result.getSnapshot().getExpires());
         verify(keyGenerator, times(3)).generateRandomKeyString(anyInt());
     }
 
@@ -223,7 +222,7 @@ public class SaltRotationTest {
         var result = saltRotation.rotateSalts(lastSnapshot, new Duration[]{Duration.ofDays(1)}, 0.45, TARGET_DATE);
         var actual = result.getSnapshot().getAllRotatingSalts()[0];
 
-        var expected = lastRotation.plus(refreshFromDaysFromRotation, DAYS).toEpochMilli();
+        var expected = lastRotation.plusDays(refreshFromDaysFromRotation).asEpochMs();
 
         assertThat(actual.refreshFrom()).isEqualTo(expected);
     }
@@ -321,7 +320,7 @@ public class SaltRotationTest {
         var validForRotation1 = daysEarlier(120);
         var validForRotation2 = daysEarlier(70);
         var notValidForRotation = daysEarlier(30);
-        var refreshNow = TARGET_DATE_AS_INSTANT;
+        var refreshNow = TARGET_DATE;
         var refreshLater = daysLater(20);
 
         var lastSnapshot = SnapshotBuilder.start()
@@ -337,14 +336,14 @@ public class SaltRotationTest {
 
         var salts = result.getSnapshot().getAllRotatingSalts();
 
-        assertEquals(TARGET_DATE_AS_INSTANT.toEpochMilli(), salts[0].lastUpdated());
-        assertEquals(daysLater(30).toEpochMilli(), salts[0].refreshFrom());
+        assertEquals(TARGET_DATE.asEpochMs(), salts[0].lastUpdated());
+        assertEquals(daysLater(30).asEpochMs(), salts[0].refreshFrom());
 
-        assertEquals(notValidForRotation.toEpochMilli(), salts[1].lastUpdated());
-        assertEquals(daysLater(30).toEpochMilli(), salts[1].refreshFrom());
+        assertEquals(notValidForRotation.asEpochMs(), salts[1].lastUpdated());
+        assertEquals(daysLater(30).asEpochMs(), salts[1].refreshFrom());
 
-        assertEquals(validForRotation2.toEpochMilli(), salts[2].lastUpdated());
-        assertEquals(refreshLater.toEpochMilli(), salts[2].refreshFrom());
+        assertEquals(validForRotation2.asEpochMs(), salts[2].lastUpdated());
+        assertEquals(refreshLater.asEpochMs(), salts[2].refreshFrom());
     }
 
     @Test
@@ -356,27 +355,27 @@ public class SaltRotationTest {
         var lastSnapshot = SnapshotBuilder.start()
                 .entries(
                         // 5 salts total, 3 rotatable, 2 rotated given 40% fraction
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(TARGET_DATE_AS_INSTANT), // Rotatable, old enough, rotated
-                        SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(TARGET_DATE_AS_INSTANT), // Rotatable, too new
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(TARGET_DATE), // Rotatable, old enough, rotated
+                        SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(TARGET_DATE), // Rotatable, too new
                         SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)), // Not rotatable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(TARGET_DATE_AS_INSTANT), // Rotatable, old enough, rotated
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(TARGET_DATE), // Rotatable, old enough, rotated
                         SaltBuilder.start().lastUpdated(daysEarlier(10)).refreshFrom(daysLater(10)) // Not rotatable, too new
                 )
                 .build();
 
         var expected = Set.of(
                 // Post-rotation ages, we want to look at current state
-                "[INFO] total-salts target-date=2025-01-01 age=0 salts=2", // The two rotated salts, used to be 65 and 50 days old
-                "[INFO] total-salts target-date=2025-01-01 age=5 salts=1",
-                "[INFO] total-salts target-date=2025-01-01 age=10 salts=1",
-                "[INFO] total-salts target-date=2025-01-01 age=50 salts=1",
+                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=0 salt-count=2", // The two rotated salts, used to be 65 and 50 days old
+                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=5 salt-count=1",
+                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=10 salt-count=1",
+                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=50 salt-count=1",
 
                 // Pre-rotation ages, we want to see at which ages salts become rotatable, post rotation some will be 0
-                "[INFO] rotatable-salts target-date=2025-01-01 age=5 salts=1",
-                "[INFO] rotatable-salts target-date=2025-01-01 age=65 salts=2",
+                "[INFO] salt-count-type=rotatable-salts target-date=2025-01-01 age=5 salt-count=1",
+                "[INFO] salt-count-type=rotatable-salts target-date=2025-01-01 age=65 salt-count=2",
 
                 // Pre-rotation ages, post rotation they will all have age 0
-                "[INFO] rotated-salts target-date=2025-01-01 age=65 salts=2"
+                "[INFO] salt-count-type=rotated-salts target-date=2025-01-01 age=65 salt-count=2"
         );
 
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
@@ -386,18 +385,18 @@ public class SaltRotationTest {
         assertThat(actual).isEqualTo(expected);
     }
 
-    private static Instant daysEarlier(int days) {
-        return TARGET_DATE_AS_INSTANT.minus(days, DAYS);
+    private static TargetDate daysEarlier(int days) {
+        return TARGET_DATE.minusDays(days);
     }
 
-    private static Instant daysLater(int days) {
-        return TARGET_DATE_AS_INSTANT.plus(days, DAYS);
+    private static TargetDate daysLater(int days) {
+        return TARGET_DATE.plusDays(days);
     }
 
     private static class SnapshotBuilder {
         private final List<SaltEntry> entries = new ArrayList<>();
-        private Instant effective = daysEarlier(1);
-        private Instant expires = daysLater(6);
+        private TargetDate effective = daysEarlier(1);
+        private TargetDate expires = daysLater(6);
 
         private SnapshotBuilder() {
         }
@@ -406,9 +405,9 @@ public class SaltRotationTest {
             return new SnapshotBuilder();
         }
 
-        public SnapshotBuilder entries(int count, Instant lastUpdated) {
+        public SnapshotBuilder entries(int count, TargetDate lastUpdated) {
             for (int i = 0; i < count; ++i) {
-                entries.add(new SaltEntry(entries.size(), "h", lastUpdated.toEpochMilli(), "salt" + entries.size(), null, null, null, null));
+                entries.add(SaltBuilder.start().lastUpdated(lastUpdated).build());
             }
             return this;
         }
@@ -419,20 +418,20 @@ public class SaltRotationTest {
             return this;
         }
 
-        public SnapshotBuilder effective(Instant effective) {
+        public SnapshotBuilder effective(TargetDate effective) {
             this.effective = effective;
             return this;
         }
 
-        public SnapshotBuilder expires(Instant expires) {
+        public SnapshotBuilder expires(TargetDate expires) {
             this.expires = expires;
             return this;
         }
 
         public RotatingSaltProvider.SaltSnapshot build() {
             return new RotatingSaltProvider.SaltSnapshot(
-                    effective,
-                    expires,
+                    effective.asInstant(),
+                    expires.asInstant(),
                     entries.toArray(SaltEntry[]::new),
                     "test_first_level_salt"
             );
@@ -460,13 +459,13 @@ public class SaltRotationTest {
             return this;
         }
 
-        public SaltBuilder lastUpdated(Instant lastUpdated) {
-            this.lastUpdated = lastUpdated;
+        public SaltBuilder lastUpdated(TargetDate lastUpdated) {
+            this.lastUpdated = lastUpdated.asInstant();
             return this;
         }
 
-        public SaltBuilder refreshFrom(Instant refreshFrom) {
-            this.refreshFrom = refreshFrom;
+        public SaltBuilder refreshFrom(TargetDate refreshFrom) {
+            this.refreshFrom = refreshFrom.asInstant();
             return this;
         }
 
@@ -492,6 +491,10 @@ public class SaltRotationTest {
                     null
             );
         }
+    }
+
+    private int countEntriesWithLastUpdated(SaltEntry[] entries, TargetDate lastUpdated) {
+        return countEntriesWithLastUpdated(entries, lastUpdated.asInstant());
     }
 
     private int countEntriesWithLastUpdated(SaltEntry[] entries, Instant lastUpdated) {

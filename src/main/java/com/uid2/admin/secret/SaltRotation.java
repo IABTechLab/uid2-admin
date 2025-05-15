@@ -17,10 +17,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SaltRotation {
     private final static long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
-    private final static long DAY_IN_MS = Duration.ofDays(1).toMillis();
 
     private final IKeyGenerator keyGenerator;
     private final boolean isRefreshFromEnabled;
@@ -35,38 +35,34 @@ public class SaltRotation {
             SaltSnapshot lastSnapshot,
             Duration[] minAges,
             double fraction,
-            LocalDate targetDate
+            TargetDate targetDate
     ) throws Exception {
         var preRotationSalts = lastSnapshot.getAllRotatingSalts();
-        var nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        var nextEffective = targetDate.asInstant();
         var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
         }
 
-        var rotatableSaltIndexes = findRotatableSaltIndexes(preRotationSalts, nextEffective.toEpochMilli());
-        var saltIndexesToRotate = pickSaltIndexesToRotate(
-                nextEffective,
+        // Salts that can be rotated based on their refreshFrom being at target date
+        var rotatableSalts = findRotatableSalts(preRotationSalts, targetDate);
+
+        var saltsToRotate = pickSaltsToRotate(
+                rotatableSalts,
+                targetDate,
                 minAges,
-                fraction,
-                preRotationSalts,
-                rotatableSaltIndexes
+                getNumSaltsToRotate(preRotationSalts, fraction)
         );
 
-        if (saltIndexesToRotate.isEmpty()) {
+        if (saltsToRotate.isEmpty()) {
             return Result.noSnapshot("all rotatable salts are below min rotation age");
         }
 
-        var postRotationSalts = updateSalts(preRotationSalts, saltIndexesToRotate, nextEffective.toEpochMilli());
+        var postRotationSalts = rotateSalts(preRotationSalts, saltsToRotate, targetDate);
 
-        logSaltCounts(
-                targetDate,
-                nextEffective,
-                preRotationSalts,
-                postRotationSalts,
-                rotatableSaltIndexes,
-                saltIndexesToRotate
-        );
+        logSaltAgeCounts("rotatable-salts", targetDate, rotatableSalts);
+        logSaltAgeCounts("rotated-salts", targetDate, saltsToRotate);
+        logSaltAgeCounts("total-salts", targetDate, Arrays.asList(postRotationSalts));
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -76,31 +72,38 @@ public class SaltRotation {
         return Result.fromSnapshot(nextSnapshot);
     }
 
-    private List<Integer> findRotatableSaltIndexes(SaltEntry[] preRotationSalts, long nextEffective) {
-        var rotatableSalts = new ArrayList<Integer>();
-        for (int i = 0; i < preRotationSalts.length; i++) {
-            if (isRotatable(nextEffective, preRotationSalts[i])) {
-                rotatableSalts.add(i);
-            }
-        }
-        return rotatableSalts;
+    private static int getNumSaltsToRotate(SaltEntry[] preRotationSalts, double fraction) {
+        return (int) Math.ceil(preRotationSalts.length * fraction);
     }
 
-    private SaltEntry[] updateSalts(SaltEntry[] oldSalts, List<Integer> saltIndexesToRotate, long nextEffective) throws Exception {
-        var updatedSalts = new SaltEntry[oldSalts.length];
+    private Set<SaltEntry> findRotatableSalts(SaltEntry[] preRotationSalts, TargetDate targetDate) {
+        return Arrays.stream(preRotationSalts).filter(s -> isRotatable(targetDate, s)).collect(Collectors.toSet());
+    }
 
+    private boolean isRotatable(TargetDate targetDate, SaltEntry salt) {
+        if (this.isRefreshFromEnabled) {
+            return salt.refreshFrom().equals(targetDate.asEpochMs());
+        }
+
+        return true;
+    }
+
+    private SaltEntry[] rotateSalts(SaltEntry[] oldSalts, List<SaltEntry> saltsToRotate, TargetDate targetDate) throws Exception {
+        var saltIdsToRotate = saltsToRotate.stream().map(SaltEntry::id).collect(Collectors.toSet());
+
+        var updatedSalts = new SaltEntry[oldSalts.length];
         for (int i = 0; i < oldSalts.length; i++) {
-            var shouldRotate = saltIndexesToRotate.contains(i);
-            updatedSalts[i] = updateSalt(oldSalts[i], shouldRotate, nextEffective);
+            var shouldRotate = saltIdsToRotate.contains(oldSalts[i].id());
+            updatedSalts[i] = updateSalt(oldSalts[i], targetDate, shouldRotate);
         }
         return updatedSalts;
     }
 
-    private SaltEntry updateSalt(SaltEntry oldSalt, boolean shouldRotate, long nextEffective) throws Exception {
+    private SaltEntry updateSalt(SaltEntry oldSalt, TargetDate targetDate, boolean shouldRotate) throws Exception {
         var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
-        var lastUpdated = shouldRotate ? nextEffective : oldSalt.lastUpdated();
-        var refreshFrom = calculateRefreshFrom(oldSalt.lastUpdated(), nextEffective);
-        var previousSalt = calculatePreviousSalt(oldSalt, shouldRotate, nextEffective);
+        var lastUpdated = shouldRotate ? targetDate.asEpochMs() : oldSalt.lastUpdated();
+        var refreshFrom = calculateRefreshFrom(oldSalt, targetDate);
+        var previousSalt = calculatePreviousSalt(oldSalt, shouldRotate, targetDate);
 
         return new SaltEntry(
                 oldSalt.id(),
@@ -114,48 +117,43 @@ public class SaltRotation {
         );
     }
 
-    private long calculateRefreshFrom(long lastUpdated, long nextEffective) {
-        long age = nextEffective - lastUpdated;
-        long multiplier = age / THIRTY_DAYS_IN_MS + 1;
-        return lastUpdated + (multiplier * THIRTY_DAYS_IN_MS);
+    private long calculateRefreshFrom(SaltEntry salt, TargetDate targetDate) {
+        long multiplier = targetDate.ageOfSaltInMs(salt) / THIRTY_DAYS_IN_MS + 1;
+        return salt.lastUpdated() + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
-    private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, long nextEffective) throws Exception {
+    private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, TargetDate targetDate) {
         if (shouldRotate) {
             return salt.currentSalt();
         }
-        long age = nextEffective - salt.lastUpdated();
-        if (age / DAY_IN_MS < 90) {
+        if (targetDate.ageOfSaltInDays(salt) < 90) {
             return salt.previousSalt();
         }
         return null;
     }
 
-    private List<Integer> pickSaltIndexesToRotate(
-            Instant nextEffective,
+    private List<SaltEntry> pickSaltsToRotate(
+            Set<SaltEntry> rotatableSalts,
+            TargetDate targetDate,
             Duration[] minAges,
-            double fraction,
-            SaltEntry[] preRotationSalts,
-            List<Integer> rotatableSaltIndexes
+            int numSaltsToRotate
     ) {
         var thresholds = Arrays.stream(minAges)
-                .map(age -> nextEffective.minusSeconds(age.getSeconds()))
+                .map(minAge -> targetDate.asInstant().minusSeconds(minAge.getSeconds()))
                 .sorted()
                 .toArray(Instant[]::new);
-        var maxSalts = (int) Math.ceil(preRotationSalts.length * fraction);
-        var indexesToRotate = new ArrayList<Integer>();
+        var indexesToRotate = new ArrayList<SaltEntry>();
 
         var minLastUpdated = Instant.ofEpochMilli(0);
         for (var maxLastUpdated : thresholds) {
-            if (indexesToRotate.size() >= maxSalts) break;
+            if (indexesToRotate.size() >= numSaltsToRotate) break;
 
-            var maxIndexes = maxSalts - indexesToRotate.size();
-            var saltsToRotate = selectIndexesToRotate(
-                    preRotationSalts,
-                    minLastUpdated.toEpochMilli(),
-                    maxLastUpdated.toEpochMilli(),
+            var maxIndexes = numSaltsToRotate - indexesToRotate.size();
+            var saltsToRotate = pickSaltsToRotateInTimeWindow(
+                    rotatableSalts,
                     maxIndexes,
-                    rotatableSaltIndexes
+                    minLastUpdated.toEpochMilli(),
+                    maxLastUpdated.toEpochMilli()
             );
             indexesToRotate.addAll(saltsToRotate);
             minLastUpdated = maxLastUpdated;
@@ -163,83 +161,89 @@ public class SaltRotation {
         return indexesToRotate;
     }
 
-    private List<Integer> selectIndexesToRotate(
-            SaltEntry[] salts,
-            long minLastUpdated,
-            long maxLastUpdated,
+    private List<SaltEntry> pickSaltsToRotateInTimeWindow(
+            Set<SaltEntry> rotatableSalts,
             int maxIndexes,
-            List<Integer> rotatableSaltIndexes
-    ) {
-        var candidateIndexes = indexesForRotation(salts, minLastUpdated, maxLastUpdated, rotatableSaltIndexes);
-
-        if (candidateIndexes.size() <= maxIndexes) {
-            return candidateIndexes;
-        }
-        Collections.shuffle(candidateIndexes);
-        return candidateIndexes.subList(0, Math.min(maxIndexes, candidateIndexes.size()));
-    }
-
-    private List<Integer> indexesForRotation(
-            SaltEntry[] salts,
             long minLastUpdated,
-            long maxLastUpdated,
-            List<Integer> rotatableSaltIndexes
+            long maxLastUpdated
     ) {
-        var candidateIndexes = new ArrayList<Integer>();
-        for (int i = 0; i < salts.length; i++) {
-            var salt = salts[i];
+        var candidateSalts = new ArrayList<SaltEntry>();
+        for (SaltEntry salt : rotatableSalts) {
             var lastUpdated = salt.lastUpdated();
             var isInTimeWindow = minLastUpdated <= lastUpdated && lastUpdated < maxLastUpdated;
-            var isRotatable = rotatableSaltIndexes.contains(i);
 
-            if (isInTimeWindow && isRotatable) {
-                candidateIndexes.add(i);
+            if (isInTimeWindow) {
+                candidateSalts.add(salt);
             }
         }
-        return candidateIndexes;
-    }
 
-    private boolean isRotatable(long nextEffective, SaltEntry salt) {
-        if (this.isRefreshFromEnabled) {
-            if (salt.refreshFrom() == null) { // TODO: remove once refreshFrom is no longer optional
-                return true;
-            }
-            return salt.refreshFrom() == nextEffective;
+        if (candidateSalts.size() <= maxIndexes) {
+            return candidateSalts;
         }
 
-        return true;
+        Collections.shuffle(candidateSalts);
+        return candidateSalts.subList(0, Math.min(maxIndexes, candidateSalts.size()));
     }
 
-    private void logSaltAgeCounts(String logEvent, LocalDate targetDate, Instant nextEffective, SaltEntry[] salts) {
-        var formattedDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(targetDate);
-
+    private void logSaltAgeCounts(String saltCountType, TargetDate targetDate, Collection<SaltEntry> salts) {
         var ages = new HashMap<Long, Long>(); // salt age to count
         for (var salt : salts) {
-            long age = (nextEffective.toEpochMilli() - salt.lastUpdated()) / DAY_IN_MS;
-            ages.put(age, ages.getOrDefault(age, 0L) + 1);
+            long ageInDays = targetDate.ageOfSaltInDays(salt);
+            ages.put(ageInDays, ages.getOrDefault(ageInDays, 0L) + 1);
         }
 
         for (var entry : ages.entrySet()) {
-            LOGGER.info("{} target-date={} age={} salts={}", logEvent, formattedDate, entry.getKey(), entry.getValue());
+            LOGGER.info("salt-count-type={} target-date={} age={} salt-count={}", saltCountType, targetDate, entry.getKey(), entry.getValue());
         }
     }
 
-    private static SaltEntry[] onlySaltsAtIndexes(SaltEntry[] salts, List<Integer> saltIndexes) {
-        SaltEntry[] selected = new SaltEntry[saltIndexes.size()];
-        for (int i = 0; i < saltIndexes.size(); i++) {
-            selected[i] = salts[saltIndexes.get(i)];
+    public static class TargetDate {
+        private final static long DAY_IN_MS = Duration.ofDays(1).toMillis();
+
+        private final LocalDate date;
+        private final long epochMs;
+        private final Instant instant;
+        private final String formatted;
+
+        public TargetDate(LocalDate date) {
+            this.instant = date.atStartOfDay().toInstant(ZoneOffset.UTC);
+            this.date = date;
+            this.epochMs = instant.toEpochMilli();
+            this.formatted = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         }
-        return selected;
-    }
 
-    private void logSaltCounts(LocalDate targetDate, Instant nextEffective, SaltEntry[] preRotationSalts, SaltEntry[] postRotationSalts, List<Integer> rotatableSaltIndexes, List<Integer> rotatedSaltIndexes) {
-        var rotatableSalts = onlySaltsAtIndexes(preRotationSalts, rotatableSaltIndexes);
-        logSaltAgeCounts("rotatable-salts", targetDate, nextEffective, rotatableSalts);
+        public static TargetDate of(int year, int month, int day) {
+            return new TargetDate(LocalDate.of(year, month, day));
+        }
 
-        var rotatedSalts = onlySaltsAtIndexes(preRotationSalts, rotatedSaltIndexes);
-        logSaltAgeCounts("rotated-salts", targetDate, nextEffective, rotatedSalts);
+        public long asEpochMs() {
+            return epochMs;
+        }
 
-        logSaltAgeCounts("total-salts", targetDate, nextEffective, postRotationSalts);
+        public Instant asInstant() {
+            return instant;
+        }
+
+        public long ageOfSaltInMs(SaltEntry salt) {
+            return this.asEpochMs() - salt.lastUpdated();
+        }
+
+        public long ageOfSaltInDays(SaltEntry salt) {
+            return ageOfSaltInMs(salt) / DAY_IN_MS;
+        }
+
+        public TargetDate plusDays(int days) {
+            return new TargetDate(date.plusDays(days));
+        }
+
+        public TargetDate minusDays(int days) {
+            return new TargetDate(date.minusDays(days));
+        }
+
+        @Override
+        public String toString() {
+            return formatted;
+        }
     }
 
     @Getter
