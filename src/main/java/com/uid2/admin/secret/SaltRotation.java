@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -58,9 +59,13 @@ public class SaltRotation {
 
         var postRotationSalts = updateSalts(preRotationSalts, saltIndexesToRotate, nextEffective.toEpochMilli());
 
-        new SaltAgeCounter("rotatable-salts", nextEffective).countIndexes(preRotationSalts, rotatableSaltIndexes);
-        new SaltAgeCounter("rotated-salts", nextEffective).countIndexes(preRotationSalts, saltIndexesToRotate);
-        new SaltAgeCounter("total-salts", nextEffective).count(postRotationSalts);
+        var rotatableSalts = onlySaltsAtIndexes(preRotationSalts, rotatableSaltIndexes);
+        logSaltAgeCounts("rotatable-salts", targetDate, nextEffective, rotatableSalts);
+
+        var rotatedSalts = onlySaltsAtIndexes(preRotationSalts, saltIndexesToRotate);
+        logSaltAgeCounts("rotated-salts", targetDate, nextEffective, rotatedSalts);
+
+        logSaltAgeCounts("total-salts", targetDate, nextEffective, postRotationSalts);
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -227,47 +232,25 @@ public class SaltRotation {
         }
     }
 
-    private static class SaltAgeCounter {
-        private final String logEvent;
-        private final long nextEffective;
-        private final HashMap<Long, Long> ages = new HashMap<>(); // salt age to count
+    private void logSaltAgeCounts(String logEvent, LocalDate targetDate, Instant nextEffective, SaltEntry[] salts) {
+        var formattedDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(targetDate);
 
-        public SaltAgeCounter(String logEvent, Instant nextEffective) {
-            this.logEvent = logEvent;
-            this.nextEffective = nextEffective.toEpochMilli();
-        }
-
-        public void count(SaltEntry[] salts) {
-            try {
-                for (var salt : salts) {
-                    count(salt);
-                }
-                logCounts();
-            } catch (Exception e) {
-                LOGGER.error("Error counting salts for {}", logEvent, e);
-            }
-        }
-
-        public void countIndexes(SaltEntry[] salts, List<Integer> saltIndexes) {
-            try {
-                for (var index : saltIndexes) {
-                    count(salts[index]);
-                }
-                logCounts();
-            } catch (Exception e) {
-                LOGGER.error("Error counting salts for {}", logEvent, e);
-            }
-        }
-
-        private void count(SaltEntry salt) {
-            long age = (nextEffective - salt.lastUpdated()) / DAY_IN_MS;
+        var ages = new HashMap<Long, Long>(); // salt age to count
+        for (var salt : salts) {
+            long age = (nextEffective.toEpochMilli() - salt.lastUpdated()) / DAY_IN_MS;
             ages.put(age, ages.getOrDefault(age, 0L) + 1);
         }
 
-        private void logCounts() {
-            for (var entry : ages.entrySet()) {
-                LOGGER.info("{} age={} salts={}", logEvent, entry.getKey(), entry.getValue());
-            }
+        for (var entry : ages.entrySet()) {
+            LOGGER.info("{} target-date={} age={} salts={}", logEvent, formattedDate, entry.getKey(), entry.getValue());
         }
+    }
+
+    private static SaltEntry[] onlySaltsAtIndexes(SaltEntry[] salts, List<Integer> saltIndexes) {
+        SaltEntry[] selected = new SaltEntry[saltIndexes.size()];
+        for (int i = 0; i < saltIndexes.size(); i++) {
+            selected[i] = salts[saltIndexes.get(i)];
+        }
+        return selected;
     }
 }
