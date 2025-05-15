@@ -47,7 +47,7 @@ public class SaltService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get("/api/salt/snapshots").handler(
-            auth.handle(this::handleSaltSnapshots, Role.MAINTAINER));
+                auth.handle(this::handleSaltSnapshots, Role.MAINTAINER));
 
         router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -77,8 +77,10 @@ public class SaltService implements IService {
             if (!fraction.isPresent()) return;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
-            final LocalDate targetDate = RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
-                                                    .orElse(LocalDate.now(Clock.systemUTC()).plusDays(1));
+            final SaltRotation.TargetDate targetDate = new SaltRotation.TargetDate(
+                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                            .orElse(LocalDate.now(Clock.systemUTC()).plusDays(1))
+            );
 
             // force refresh
             this.saltProvider.loadContent();
@@ -87,7 +89,7 @@ public class SaltService implements IService {
             storageManager.archiveSaltLocations();
 
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
-            final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.get(snapshots.size() - 1);
+            final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
             final SaltRotation.Result result = saltRotation.rotateSalts(
                     lastSnapshot, minAges, fraction.get(), targetDate);
