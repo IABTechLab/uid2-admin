@@ -366,17 +366,17 @@ public class SaltRotationTest {
 
         var expected = Set.of(
                 // Post-rotation ages, we want to look at current state
-                "[INFO] total-salts age=0 salts=2", // The two rotated salts, used to be 65 and 50 days old
-                "[INFO] total-salts age=5 salts=1",
-                "[INFO] total-salts age=10 salts=1",
-                "[INFO] total-salts age=50 salts=1",
+                "[INFO] total-salts target-date=2025-01-01 age=0 salts=2", // The two rotated salts, used to be 65 and 50 days old
+                "[INFO] total-salts target-date=2025-01-01 age=5 salts=1",
+                "[INFO] total-salts target-date=2025-01-01 age=10 salts=1",
+                "[INFO] total-salts target-date=2025-01-01 age=50 salts=1",
 
                 // Pre-rotation ages, we want to see at which ages salts become rotatable, post rotation some will be 0
-                "[INFO] rotatable-salts age=5 salts=1",
-                "[INFO] rotatable-salts age=65 salts=2",
+                "[INFO] rotatable-salts target-date=2025-01-01 age=5 salts=1",
+                "[INFO] rotatable-salts target-date=2025-01-01 age=65 salts=2",
 
                 // Pre-rotation ages, post rotation they will all have age 0
-                "[INFO] rotated-salts age=65 salts=2"
+                "[INFO] rotated-salts target-date=2025-01-01 age=65 salts=2"
         );
 
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
