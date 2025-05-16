@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static java.time.temporal.ChronoUnit.*;
@@ -26,7 +27,7 @@ public class SaltRotationTest {
     private SaltRotation saltRotation;
 
     private final LocalDate targetDate = LocalDate.of(2025, 1, 1);
-    private final Instant targetDateAsInstant = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+    private final Instant targetDateAsInstant = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC).plusMillis(1);
 
     private Instant daysEarlier(int days) {
         return targetDateAsInstant.minus(days, DAYS);
