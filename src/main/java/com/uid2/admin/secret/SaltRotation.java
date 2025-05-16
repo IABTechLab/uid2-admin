@@ -34,7 +34,7 @@ public class SaltRotation {
                                                         Duration[] minAges,
                                                         double fraction,
                                                         LocalDate targetDate) throws Exception {
-        final Instant nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC).plusMillis(1);
+        final Instant nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
         final Instant nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
@@ -68,9 +68,6 @@ public class SaltRotation {
     private SaltEntry updateSalt(SaltEntry oldSalt, boolean shouldRotate, long nextEffective) throws Exception {
         var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
         var lastUpdated = shouldRotate ? nextEffective : oldSalt.lastUpdated();
-        if (lastUpdated % 1000 == 0) {
-            lastUpdated += 1;
-        }
         var refreshFrom = calculateRefreshFrom(oldSalt.lastUpdated(), nextEffective);
         var previousSalt = calculatePreviousSalt(oldSalt, shouldRotate, nextEffective);
 

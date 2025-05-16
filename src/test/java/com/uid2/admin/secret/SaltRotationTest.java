@@ -27,7 +27,7 @@ public class SaltRotationTest {
     private SaltRotation saltRotation;
 
     private final LocalDate targetDate = LocalDate.of(2025, 1, 1);
-    private final Instant targetDateAsInstant = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC).plusMillis(1);
+    private final Instant targetDateAsInstant = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
 
     private Instant daysEarlier(int days) {
         return targetDateAsInstant.minus(days, DAYS);
