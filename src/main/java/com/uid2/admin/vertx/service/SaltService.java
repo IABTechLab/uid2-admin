@@ -1,7 +1,8 @@
 package com.uid2.admin.vertx.service;
 
 import com.uid2.admin.auth.AdminAuthMiddleware;
-import com.uid2.admin.secret.SaltRotation;
+import com.uid2.admin.salt.SaltRotation;
+import com.uid2.admin.salt.TargetDate;
 import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
@@ -74,13 +75,16 @@ public class SaltService implements IService {
     private void handleSaltRotate(RoutingContext rc) {
         try {
             final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
-            if (!fraction.isPresent()) return;
+            if (fraction.isEmpty()) return;
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
-            final SaltRotation.TargetDate targetDate = new SaltRotation.TargetDate(
+
+
+            final TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
-                            .orElse(LocalDate.now(Clock.systemUTC()).plusDays(1))
-            );
+                            .map(TargetDate::new)
+                            .orElse(TargetDate.now().plusDays(1))
+            ;
 
             // force refresh
             this.saltProvider.loadContent();
@@ -91,8 +95,7 @@ public class SaltService implements IService {
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
-            final SaltRotation.Result result = saltRotation.rotateSalts(
-                    lastSnapshot, minAges, fraction.get(), targetDate);
+            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, fraction.get(), targetDate);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;

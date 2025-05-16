@@ -1,4 +1,4 @@
-package com.uid2.admin.secret;
+package com.uid2.admin.salt;
 
 import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
@@ -10,11 +10,7 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,9 +56,9 @@ public class SaltRotation {
 
         var postRotationSalts = rotateSalts(preRotationSalts, saltsToRotate, targetDate);
 
-        logSaltAgeCounts("rotatable-salts", targetDate, rotatableSalts);
-        logSaltAgeCounts("rotated-salts", targetDate, saltsToRotate);
-        logSaltAgeCounts("total-salts", targetDate, Arrays.asList(postRotationSalts));
+        logSaltAges("rotatable-salts", targetDate, rotatableSalts);
+        logSaltAges("rotated-salts", targetDate, saltsToRotate);
+        logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -118,7 +114,7 @@ public class SaltRotation {
     }
 
     private long calculateRefreshFrom(SaltEntry salt, TargetDate targetDate) {
-        long multiplier = targetDate.ageOfSaltInMs(salt) / THIRTY_DAYS_IN_MS + 1;
+        long multiplier = targetDate.saltAgeInDays(salt) / 30 + 1;
         return salt.lastUpdated() + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
@@ -126,7 +122,7 @@ public class SaltRotation {
         if (shouldRotate) {
             return salt.currentSalt();
         }
-        if (targetDate.ageOfSaltInDays(salt) < 90) {
+        if (targetDate.saltAgeInDays(salt) < 90) {
             return salt.previousSalt();
         }
         return null;
@@ -167,88 +163,38 @@ public class SaltRotation {
             long minLastUpdated,
             long maxLastUpdated
     ) {
-        var candidateSalts = new ArrayList<SaltEntry>();
-        for (SaltEntry salt : rotatableSalts) {
-            var lastUpdated = salt.lastUpdated();
-            var isInTimeWindow = minLastUpdated <= lastUpdated && lastUpdated < maxLastUpdated;
-
-            if (isInTimeWindow) {
-                candidateSalts.add(salt);
-            }
-        }
+        ArrayList<SaltEntry> candidateSalts = rotatableSalts.stream()
+                .filter(salt -> minLastUpdated <= salt.lastUpdated() && salt.lastUpdated() < maxLastUpdated)
+                .collect(Collectors.toCollection(ArrayList::new));
 
         if (candidateSalts.size() <= maxIndexes) {
             return candidateSalts;
         }
 
         Collections.shuffle(candidateSalts);
-        return candidateSalts.subList(0, Math.min(maxIndexes, candidateSalts.size()));
+
+        return candidateSalts.stream().limit(maxIndexes).collect(Collectors.toList());
     }
 
-    private void logSaltAgeCounts(String saltCountType, TargetDate targetDate, Collection<SaltEntry> salts) {
+    private void logSaltAges(String saltCountType, TargetDate targetDate, Collection<SaltEntry> salts) {
         var ages = new HashMap<Long, Long>(); // salt age to count
         for (var salt : salts) {
-            long ageInDays = targetDate.ageOfSaltInDays(salt);
+            long ageInDays = targetDate.saltAgeInDays(salt);
             ages.put(ageInDays, ages.getOrDefault(ageInDays, 0L) + 1);
         }
 
         for (var entry : ages.entrySet()) {
-            LOGGER.info("salt-count-type={} target-date={} age={} salt-count={}", saltCountType, targetDate, entry.getKey(), entry.getValue());
-        }
-    }
-
-    public static class TargetDate {
-        private final static long DAY_IN_MS = Duration.ofDays(1).toMillis();
-
-        private final LocalDate date;
-        private final long epochMs;
-        private final Instant instant;
-        private final String formatted;
-
-        public TargetDate(LocalDate date) {
-            this.instant = date.atStartOfDay().toInstant(ZoneOffset.UTC);
-            this.date = date;
-            this.epochMs = instant.toEpochMilli();
-            this.formatted = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        }
-
-        public static TargetDate of(int year, int month, int day) {
-            return new TargetDate(LocalDate.of(year, month, day));
-        }
-
-        public long asEpochMs() {
-            return epochMs;
-        }
-
-        public Instant asInstant() {
-            return instant;
-        }
-
-        public long ageOfSaltInMs(SaltEntry salt) {
-            return this.asEpochMs() - salt.lastUpdated();
-        }
-
-        public long ageOfSaltInDays(SaltEntry salt) {
-            return ageOfSaltInMs(salt) / DAY_IN_MS;
-        }
-
-        public TargetDate plusDays(int days) {
-            return new TargetDate(date.plusDays(days));
-        }
-
-        public TargetDate minusDays(int days) {
-            return new TargetDate(date.minusDays(days));
-        }
-
-        @Override
-        public String toString() {
-            return formatted;
+            LOGGER.info("salt-count-type={} target-date={} age={} salt-count={}",
+                    saltCountType,
+                    targetDate,
+                    entry.getKey(),
+                    entry.getValue()
+            );
         }
     }
 
     @Getter
     public static class Result {
-
         private final SaltSnapshot snapshot; // can be null if new snapshot is not needed
         private final String reason; // why you are not getting a new snapshot
 
