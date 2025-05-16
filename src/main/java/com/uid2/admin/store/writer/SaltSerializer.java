@@ -16,10 +16,11 @@ public final class SaltSerializer {
     }
 
     private static void addLine(SaltEntry entry, StringBuilder stringBuilder) {
+        long lastUpdated = entry.lastUpdated();
         stringBuilder
                 .append(entry.id())
                 .append(",")
-                .append(entry.lastUpdated())
+                .append(lastUpdated % 1000 == 0 ? lastUpdated + 1 : lastUpdated)
                 .append(",")
                 .append(entry.currentSalt());
 
