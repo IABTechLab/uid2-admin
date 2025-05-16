@@ -34,16 +34,13 @@ public class SaltRotation {
                                                         Duration[] minAges,
                                                         double fraction,
                                                         LocalDate targetDate) throws Exception {
-        final Instant nextEffective = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        final Instant nextEffective = Instant.now() ;
         final Instant nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
         if (nextEffective.equals(lastSnapshot.getEffective()) || nextEffective.isBefore(lastSnapshot.getEffective())) {
             return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
         }
 
         List<Integer> saltIndexesToRotate = pickSaltIndexesToRotate(lastSnapshot, nextEffective, minAges, fraction);
-        if (saltIndexesToRotate.isEmpty()) {
-            return Result.noSnapshot("all salts are below min rotation age");
-        }
 
         var updatedSalts = updateSalts(lastSnapshot.getAllRotatingSalts(), saltIndexesToRotate, nextEffective.toEpochMilli());
 
