@@ -14,6 +14,7 @@ import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
+import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
 import com.uid2.admin.store.reader.RotatingAdminKeysetStore;
