@@ -41,22 +41,22 @@ public class SaltRotation {
         }
 
         // Salts that can be rotated based on their refreshFrom being at target date
-        var rotatableSalts = findRotatableSalts(preRotationSalts, targetDate);
+        var refreshableSalts = findRefreshableSalts(preRotationSalts, targetDate);
 
         var saltsToRotate = pickSaltsToRotate(
-                rotatableSalts,
+                refreshableSalts,
                 targetDate,
                 minAges,
                 getNumSaltsToRotate(preRotationSalts, fraction)
         );
 
         if (saltsToRotate.isEmpty()) {
-            return Result.noSnapshot("all rotatable salts are below min rotation age");
+            return Result.noSnapshot("all refreshable salts are below min rotation age");
         }
 
         var postRotationSalts = rotateSalts(preRotationSalts, saltsToRotate, targetDate);
 
-        logSaltAges("rotatable-salts", targetDate, rotatableSalts);
+        logSaltAges("refreshable-salts", targetDate, refreshableSalts);
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
 
@@ -72,11 +72,11 @@ public class SaltRotation {
         return (int) Math.ceil(preRotationSalts.length * fraction);
     }
 
-    private Set<SaltEntry> findRotatableSalts(SaltEntry[] preRotationSalts, TargetDate targetDate) {
-        return Arrays.stream(preRotationSalts).filter(s -> isRotatable(targetDate, s)).collect(Collectors.toSet());
+    private Set<SaltEntry> findRefreshableSalts(SaltEntry[] preRotationSalts, TargetDate targetDate) {
+        return Arrays.stream(preRotationSalts).filter(s -> isRefreshable(targetDate, s)).collect(Collectors.toSet());
     }
 
-    private boolean isRotatable(TargetDate targetDate, SaltEntry salt) {
+    private boolean isRefreshable(TargetDate targetDate, SaltEntry salt) {
         if (this.isRefreshFromEnabled) {
             return salt.refreshFrom().equals(targetDate.asEpochMs());
         }
@@ -129,7 +129,7 @@ public class SaltRotation {
     }
 
     private List<SaltEntry> pickSaltsToRotate(
-            Set<SaltEntry> rotatableSalts,
+            Set<SaltEntry> refreshableSalts,
             TargetDate targetDate,
             Duration[] minAges,
             int numSaltsToRotate
@@ -146,7 +146,7 @@ public class SaltRotation {
 
             var maxIndexes = numSaltsToRotate - indexesToRotate.size();
             var saltsToRotate = pickSaltsToRotateInTimeWindow(
-                    rotatableSalts,
+                    refreshableSalts,
                     maxIndexes,
                     minLastUpdated.toEpochMilli(),
                     maxLastUpdated.toEpochMilli()
@@ -158,12 +158,12 @@ public class SaltRotation {
     }
 
     private List<SaltEntry> pickSaltsToRotateInTimeWindow(
-            Set<SaltEntry> rotatableSalts,
+            Set<SaltEntry> refreshableSalts,
             int maxIndexes,
             long minLastUpdated,
             long maxLastUpdated
     ) {
-        ArrayList<SaltEntry> candidateSalts = rotatableSalts.stream()
+        ArrayList<SaltEntry> candidateSalts = refreshableSalts.stream()
                 .filter(salt -> minLastUpdated <= salt.lastUpdated() && salt.lastUpdated() < maxLastUpdated)
                 .collect(Collectors.toCollection(ArrayList::new));
 

@@ -355,12 +355,12 @@ public class SaltRotationTest {
 
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        // 5 salts total, 3 rotatable, 2 rotated given 40% fraction
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Rotatable, old enough, rotated
-                        SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(targetDate()), // Rotatable, too new
-                        SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)), // Not rotatable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Rotatable, old enough, rotated
-                        SaltBuilder.start().lastUpdated(daysEarlier(10)).refreshFrom(daysLater(10)) // Not rotatable, too new
+                        // 5 salts total, 3 refreshable, 2 rotated given 40% fraction
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough, rotated
+                        SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(targetDate()), // Refreshable, too new
+                        SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)), // Not refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough, rotated
+                        SaltBuilder.start().lastUpdated(daysEarlier(10)).refreshFrom(daysLater(10)) // Not refreshable, too new
                 )
                 .build();
 
@@ -371,9 +371,9 @@ public class SaltRotationTest {
                 "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=10 salt-count=1",
                 "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=50 salt-count=1",
 
-                // Pre-rotation ages, we want to see at which ages salts become rotatable, post rotation some will be 0
-                "[INFO] salt-count-type=rotatable-salts target-date=2025-01-01 age=5 salt-count=1",
-                "[INFO] salt-count-type=rotatable-salts target-date=2025-01-01 age=65 salt-count=2",
+                // Pre-rotation ages, we want to see at which ages salts become refreshable, post rotation some will be 0
+                "[INFO] salt-count-type=refreshable-salts target-date=2025-01-01 age=5 salt-count=1",
+                "[INFO] salt-count-type=refreshable-salts target-date=2025-01-01 age=65 salt-count=2",
 
                 // Pre-rotation ages, post rotation they will all have age 0
                 "[INFO] salt-count-type=rotated-salts target-date=2025-01-01 age=65 salt-count=2"
