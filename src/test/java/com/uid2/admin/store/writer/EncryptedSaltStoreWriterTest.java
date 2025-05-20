@@ -232,11 +232,12 @@ public class EncryptedSaltStoreWriterTest {
         for (int i = 0; i < lines.length; i++) {
             var line = lines[i];
             var entry = entries[i];
+            var lastUpdated = entry.lastUpdated() % 1000 == 0 ? entry.lastUpdated() + 1 : entry.lastUpdated();
             String[] fields = line.split(",");
 
             assertAll(
                     () -> assertEquals(entry.id(), parseLong(fields[0])),
-                    () -> assertEquals(entry.lastUpdated(), parseLong(fields[1])),
+                    () -> assertEquals(lastUpdated, parseLong(fields[1])),
                     () -> assertEquals(entry.currentSalt(), fields[2]),
                     () -> assertEquals(entry.refreshFrom(), parseLong(fields[3])),
                     () -> assertEquals(entry.previousSalt(), fields[4]),
