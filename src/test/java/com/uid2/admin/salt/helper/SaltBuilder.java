@@ -1,15 +1,15 @@
 package com.uid2.admin.salt.helper;
 
-import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.salt.TargetDate;
 import com.uid2.shared.model.SaltEntry;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SaltBuilder {
-    private static int lastAutoId = 0;
+    private static final AtomicInteger LAST_AUTO_ID = new AtomicInteger(0);
 
-    private int id = lastAutoId++;
+    private int id = LAST_AUTO_ID.incrementAndGet();
     private Instant lastUpdated = Instant.now();
     private Instant refreshFrom = Instant.now();
     private String currentSalt = null;
