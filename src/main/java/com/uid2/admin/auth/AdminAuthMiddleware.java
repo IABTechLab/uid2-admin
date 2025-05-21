@@ -3,7 +3,9 @@ package com.uid2.admin.auth;
 
 import com.okta.jwt.*;
 import com.uid2.admin.AdminConst;
-import com.uid2.admin.model.AuditParams;
+import com.uid2.admin.model.AuditLog;
+import com.uid2.shared.audit.AuditParams;
+import com.uid2.admin.model.AuditService;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -12,22 +14,26 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.uid2.shared.audit.Audit;
 
 import java.time.Instant;
 import java.util.*;
 
 
 public class AdminAuthMiddleware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminAuthMiddleware.class);
     private final AuthProvider authProvider;
     private final String environment;
     private final boolean isAuthDisabled;
+    private final Audit audit;
 
     final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     public AdminAuthMiddleware(AuthProvider authProvider, JsonObject config) {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
         this.isAuthDisabled = config.getBoolean("is_auth_disabled", false);
+        this.audit = new Audit();
         roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER)));
         roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED)));
         roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER)));
@@ -57,52 +63,14 @@ public class AdminAuthMiddleware {
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
+        // change to AdminAuthMiddleware.class.getPackage().getName();
         return this.handle(handler, null, roles);
     }
 
+
     private Handler<RoutingContext> logAndHandle(Handler<RoutingContext> handler, AuditParams params) {
         return ctx -> {
-            long startTime = System.currentTimeMillis();
-
-            ctx.addBodyEndHandler(v -> {
-                long durationMs = System.currentTimeMillis() - startTime;
-                String method = ctx.request().method().name();
-                String path = ctx.request().path();
-                int status = ctx.response().getStatusCode();
-                String userAgent = ctx.request().getHeader("User-Agent");
-                String ip = ctx.request().remoteAddress().host();
-                String requestId = ctx.request().getHeader("X-Amzn-Trace-Id");
-                JsonObject userDetails = ctx.get("userDetails");
-                String requestBody = ctx.getBodyAsString();
-                String queryParams = ctx.request().query();
-                MultiMap queryParamsMap = ctx.request().params();
-                JsonObject queryParamsJson = new JsonObject();
-                queryParamsMap.forEach(entry -> {
-                    if (params.getQueryParams().contains(entry.getKey())) {
-                        queryParamsJson.put(entry.getKey(), entry.getValue());
-                    }
-                });
-                // Structured JSON log
-                JsonObject auditLog = new JsonObject()
-                        .put("timestamp", Instant.now().toString())
-                        .put("method", method)
-                        .put("endpoint", path)
-                        .put("status", status)
-                        .put("duration_ms", durationMs)
-                        .put("request_id", requestId != null ? requestId : "ABUTEST")
-                        .put("ip", ip)
-                        .put("user_agent", userAgent)
-                        .put("user", userDetails);
-                if (params != null)
-                    auditLog.put("params", queryParamsJson);
-
-                if ("POST".equals(method) || "PUT".equals(method)) {
-                    auditLog.put("body", requestBody);
-                }
-
-                // logger.info(auditLog.encode());
-                System.out.println(auditLog.toString());
-            });
+            ctx.addBodyEndHandler(v -> this.audit.log(ctx, params));
             handler.handle(ctx);
         };
     }

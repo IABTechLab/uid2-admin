@@ -2,8 +2,10 @@ package com.uid2.admin.vertx.service;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
+import com.uid2.admin.auth.AuditingHandler;
 import com.uid2.admin.legacy.ILegacyClientKeyProvider;
 import com.uid2.admin.legacy.LegacyClientKey;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.model.ClientType;
 import com.google.common.net.InternetDomainName;
 import com.uid2.admin.store.writer.StoreWriter;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 
 public class SiteService implements IService {
     private final AdminAuthMiddleware auth;
+    private final AuditingHandler auditingHandler;
     private final WriteLock writeLock;
     private final StoreWriter<Collection<Site>> storeWriter;
     private final RotatingSiteStore siteProvider;
@@ -45,6 +48,7 @@ public class SiteService implements IService {
                        RotatingSiteStore siteProvider,
                        ILegacyClientKeyProvider legacyClientKeyProvider) {
         this.auth = auth;
+        auditingHandler = new AuditingHandler(auth);
         this.writeLock = writeLock;
         this.storeWriter = storeWriter;
         this.siteProvider = siteProvider;
@@ -60,9 +64,21 @@ public class SiteService implements IService {
         }, Role.PRIVILEGED));
 
         router.get("/api/site/list").handler(
-            auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT));
+                auditingHandler.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL,
+                        Role.METRICS_EXPORT));
+
+        router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSiteAdd(ctx);
+            }
+        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+
+        // router.get("/api/site/list").handler(
+        // auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL,
+        // Role.METRICS_EXPORT));
         router.get("/api/site/:siteId").handler(
-            auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL));
+                auth.handle(this::handleSiteById, new AuditParams(Arrays.asList("x", "y"), null), Role.MAINTAINER,
+                        Role.SHARING_PORTAL));
         router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
@@ -108,6 +124,7 @@ public class SiteService implements IService {
     private void handleSiteList(RoutingContext rc) {
         try {
             JsonArray ja = new JsonArray();
+            System.out.println((String) rc.get("userAbuTEST"));
             final Collection<Site> sites = this.siteProvider.getAllSites().stream()
                     .sorted(Comparator.comparing(Site::getName))
                     .collect(Collectors.toList());

@@ -1,11 +1,14 @@
 package com.uid2.admin.auth;
 
 import com.okta.jwt.IdTokenVerifier;
+import com.uid2.shared.audit.AuditParams;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.Route;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import com.okta.jwt.AccessTokenVerifier;
@@ -13,6 +16,7 @@ import com.okta.jwt.JwtVerifiers;
 import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
 import java.time.Duration;
 import java.util.List;
+import com.uid2.shared.audit.Audit;
 
 public class OktaAuthProvider implements AuthProvider {
     public static final String OKTA_AUTH_SERVER = "okta_auth_server";
@@ -24,6 +28,8 @@ public class OktaAuthProvider implements AuthProvider {
     private final List<String> scopes = List.of("openid", "email", "uid2.admin.human");
     private final AccessTokenVerifier accessTokenVerifier;
     private final IdTokenVerifier idTokenVerifier;
+    private final Audit audit = new Audit();
+
     public OktaAuthProvider(JsonObject config) {
         this.config = config;
         if(isAuthDisabled(config)) {
@@ -68,6 +74,14 @@ public class OktaAuthProvider implements AuthProvider {
         authHandler.setupCallback(callbackRoute);
         return authHandler;
     }
+
+    private Handler<RoutingContext> logAndHandle(Handler<RoutingContext> handler) {
+        return ctx -> {
+            ctx.addBodyEndHandler(v -> this.audit.log(ctx, null));
+            handler.handle(ctx);
+        };
+    }
+
 
 
     @Override
