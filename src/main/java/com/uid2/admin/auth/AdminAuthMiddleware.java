@@ -56,8 +56,7 @@ public class AdminAuthMiddleware {
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
-        // change to AdminAuthMiddleware.class.getPackage().getName();
-        return this.handle(handler, null, roles);
+        return this.handle(handler, new AuditParams(AdminAuthMiddleware.class.getPackage().getName()), roles);
     }
 
 
