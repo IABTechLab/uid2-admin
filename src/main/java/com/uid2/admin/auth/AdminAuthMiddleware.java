@@ -9,6 +9,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.uid2.shared.audit.AuditParams;
+import com.uid2.shared.audit.Audit;
 
 import java.util.*;
 
@@ -17,6 +19,7 @@ public class AdminAuthMiddleware {
     private final AuthProvider authProvider;
     private final String environment;
     private final boolean isAuthDisabled;
+    private final Audit audit;
 
     final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     public AdminAuthMiddleware(AuthProvider authProvider, JsonObject config) {
@@ -26,6 +29,7 @@ public class AdminAuthMiddleware {
         roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER)));
         roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED)));
         roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER)));
+        this.audit = new Audit();
     }
 
     private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
@@ -40,13 +44,28 @@ public class AdminAuthMiddleware {
         return allOktaGroups;
     }
 
-    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
+    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, AuditParams params, Role... roles) {
         if (isAuthDisabled) return handler;
         if (roles == null || roles.length == 0) {
             throw new IllegalArgumentException("must specify at least one role");
         }
-        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(handler, authProvider, Set.of(roles), environment, roleToOktaGroups);
+        Handler<RoutingContext> loggedHandler = logAndHandle(handler, params);
+        AdminAuthHandler adminAuthHandler = new AdminAuthHandler(loggedHandler, authProvider, Set.of(roles),
+                environment, roleToOktaGroups);
         return adminAuthHandler::handle;
+    }
+
+    public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
+        // change to AdminAuthMiddleware.class.getPackage().getName();
+        return this.handle(handler, null, roles);
+    }
+
+
+    private Handler<RoutingContext> logAndHandle(Handler<RoutingContext> handler, AuditParams params) {
+        return ctx -> {
+            ctx.addBodyEndHandler(v -> this.audit.log(ctx, params));
+            handler.handle(ctx);
+        };
     }
 
     private static class AdminAuthHandler {
@@ -133,6 +152,10 @@ public class AdminAuthMiddleware {
                 return;
             }
             List<String> scopes = (List<String>) jwt.getClaims().get("scp");
+            JsonObject serviceAccountDetails = new JsonObject();
+            serviceAccountDetails.put("scope", (List<String>) jwt.getClaims().get("scp"));
+            serviceAccountDetails.put("client_id", jwt.getClaims().get("client_id"));
+            rc.put("userDetails", serviceAccountDetails);
             if(isAuthorizedService(scopes)) {
                 innerHandler.handle(rc);
             } else {
@@ -154,6 +177,11 @@ public class AdminAuthMiddleware {
                 return;
             }
             List<String> groups = (List<String>) jwt.getClaims().get("groups");
+            JsonObject userDetails = new JsonObject();
+            userDetails.put("groups", (List<String>) jwt.getClaims().get("groups"));
+            userDetails.put("email", jwt.getClaims().get("email"));
+            userDetails.put("sub", jwt.getClaims().get("sub"));
+            rc.put("userDetails", userDetails);
             if(isAuthorizedUser(groups)) {
                 innerHandler.handle(rc);
             } else {
