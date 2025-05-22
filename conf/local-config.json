@@ -35,7 +35,7 @@
   "is_auth_disabled": false,
   "enable_keysets": true,
   "okta_client_id": "0oa1ok419hd6kbKJZ1d8",
-  "okta_client_secret": "AuDG2D-pSro2Brv9S6bgEsDStzOMZLx6O0rreQtMqiVnqC_gs5jtXDgf85OG9QsV",
+  "okta_client_secret": "AuDG2D-ddddd",
   "okta_auth_server": "https://uid2.okta.com/oauth2/aus1oqu660mF7W3hi1d8",
   "okta_audience": "https://api.admin.com/api",
   "okta_callback": "http://localhost:8089/oauth2-callback",
