@@ -151,7 +151,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(6)).getClaims();
         verifyUnauthorized(false);
     }
 
@@ -173,7 +173,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(6)).getClaims();
         verifyUnauthorized(false);
     }
 
@@ -199,7 +199,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(6)).getClaims();
         verify(innerHandler).handle(eq(rc));
     }
 
@@ -251,7 +251,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(5)).getClaims();
         verifyUnauthorized(false);
     }
 
@@ -274,7 +274,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(5)).getClaims();
         verify(innerHandler).handle(eq(rc));
     }
 }
