@@ -184,7 +184,7 @@ public class SaltRotation {
         }
 
         for (var entry : ages.entrySet()) {
-            LOGGER.info("salt-count-type={} target-date={} age={} salt-count={}",
+            LOGGER.info("salt_count_type={} target_date={} age={} salt_count={}",
                     saltCountType,
                     targetDate,
                     entry.getKey(),
