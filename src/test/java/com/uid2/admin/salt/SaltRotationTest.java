@@ -366,17 +366,17 @@ public class SaltRotationTest {
 
         var expected = Set.of(
                 // Post-rotation ages, we want to look at current state
-                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=0 salt-count=2", // The two rotated salts, used to be 65 and 50 days old
-                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=5 salt-count=1",
-                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=10 salt-count=1",
-                "[INFO] salt-count-type=total-salts target-date=2025-01-01 age=50 salt-count=1",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=2", // The two rotated salts, used to be 65 and 50 days old
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=5 salt_count=1",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=10 salt_count=1",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=50 salt_count=1",
 
                 // Pre-rotation ages, we want to see at which ages salts become refreshable, post rotation some will be 0
-                "[INFO] salt-count-type=refreshable-salts target-date=2025-01-01 age=5 salt-count=1",
-                "[INFO] salt-count-type=refreshable-salts target-date=2025-01-01 age=65 salt-count=2",
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=5 salt_count=1",
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=65 salt_count=2",
 
                 // Pre-rotation ages, post rotation they will all have age 0
-                "[INFO] salt-count-type=rotated-salts target-date=2025-01-01 age=65 salt-count=2"
+                "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=65 salt_count=2"
         );
 
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
