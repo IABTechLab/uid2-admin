@@ -296,7 +296,7 @@ public class AdminAuthMiddlewareTest {
         Set<String> scopes = userDetails.getJsonArray("scope").stream()
                 .map(Object::toString)
                 .collect(Collectors.toSet());
-        assertEquals(Set.of(scope.name()), scopes);
+        assertEquals(Set.of(scope.getName()), scopes);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
         verify(jwt, times(4)).getClaims();
