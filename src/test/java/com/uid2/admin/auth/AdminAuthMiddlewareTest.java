@@ -9,6 +9,7 @@ import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -22,10 +23,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -66,6 +68,20 @@ public class AdminAuthMiddlewareTest {
         when(rc.request()).thenReturn(request);
         when(rc.response()).thenReturn(response);
         when(rc.session()).thenReturn(session);
+
+        Map<String, Object> contextData = new HashMap<>();
+
+        when(rc.put(anyString(), any())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            Object value = invocation.getArgument(1);
+            contextData.put(key, value);
+            return rc; // Return rc for chaining
+        });
+
+        when(rc.get(anyString())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            return contextData.get(key);
+        });
 
         when(response.setStatusCode(anyInt())).thenReturn(response);
         when(response.putHeader(anyString(), anyString())).thenReturn(response);
@@ -151,7 +167,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(5)).getClaims();
         verifyUnauthorized(false);
     }
 
@@ -173,7 +189,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(5)).getClaims();
         verifyUnauthorized(false);
     }
 
@@ -197,9 +213,13 @@ public class AdminAuthMiddlewareTest {
 
         Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, endpointRoles);
         handler.handle(rc);
-
+        JsonObject userDetails = rc.get("userDetails");
+        Set<String> groups = userDetails.getJsonArray("groups").stream()
+                .map(Object::toString)
+                .collect(Collectors.toSet());
+        assertEquals(new HashSet<>(userOktaGroups), groups);
         verify(idTokenVerifier).decode(eq("testIdToken"), any());
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(5)).getClaims();
         verify(innerHandler).handle(eq(rc));
     }
 
@@ -251,7 +271,7 @@ public class AdminAuthMiddlewareTest {
         handler.handle(rc);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(4)).getClaims();
         verifyUnauthorized(false);
     }
 
@@ -272,9 +292,14 @@ public class AdminAuthMiddlewareTest {
 
         Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allowedRole);
         handler.handle(rc);
+        JsonObject userDetails = rc.get("userDetails");
+        Set<String> scopes = userDetails.getJsonArray("scope").stream()
+                .map(Object::toString)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of(scope.getName()), scopes);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
-        verify(jwt, times(3)).getClaims();
+        verify(jwt, times(4)).getClaims();
         verify(innerHandler).handle(eq(rc));
     }
 }

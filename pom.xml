@@ -16,7 +16,7 @@
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
         <micrometer.version>1.12.2</micrometer.version>
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
-        <uid2-shared.version>9.2.0</uid2-shared.version>
+        <uid2-shared.version>9.4.11</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
         <image.version>${project.version}</image.version>
     </properties>
