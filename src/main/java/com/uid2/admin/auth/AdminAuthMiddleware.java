@@ -29,7 +29,7 @@ public class AdminAuthMiddleware {
         roleToOktaGroups.put(Role.MAINTAINER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_MAINTAINER)));
         roleToOktaGroups.put(Role.PRIVILEGED, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_PRIVILEGED)));
         roleToOktaGroups.put(Role.SUPER_USER, parseOktaGroups(config.getString(AdminConst.ROLE_OKTA_GROUP_MAP_SUPER_USER)));
-        this.audit = new Audit();
+        this.audit = new Audit(AdminAuthMiddleware.class.getPackage().getName());
     }
 
     private List<OktaGroup> parseOktaGroups(final String oktaGroups) {
@@ -56,7 +56,7 @@ public class AdminAuthMiddleware {
     }
 
     public Handler<RoutingContext> handle(Handler<RoutingContext> handler, Role... roles) {
-        return this.handle(handler, new AuditParams(AdminAuthMiddleware.class.getPackage().getName()), roles);
+        return this.handle(handler, new AuditParams(), roles);
     }
 
 
