@@ -292,6 +292,11 @@ public class AdminAuthMiddlewareTest {
 
         Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allowedRole);
         handler.handle(rc);
+        JsonObject userDetails = rc.get("userDetails");
+        Set<String> scopes = userDetails.getJsonArray("scopes").stream()
+                .map(Object::toString)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of(scope.name()), scopes);
 
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
         verify(jwt, times(4)).getClaims();
