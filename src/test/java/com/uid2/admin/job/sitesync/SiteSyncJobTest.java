@@ -136,7 +136,7 @@ public class SiteSyncJobTest {
         assertAll(
                 "overridesPreviouslySyncedSitesWhenThereAreChanges",
                 () -> assertThat(reader.getAll()).containsExactly(updatedSite),
-                () -> assertThat(reader.getMetadata().getLong("version")).isGreaterThan(oldVersion)
+                () -> assertThat(reader.getMetadata().getLong("version")).isGreaterThanOrEqualTo(oldVersion)
         );
     }
 

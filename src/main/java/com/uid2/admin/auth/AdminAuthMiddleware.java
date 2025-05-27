@@ -152,7 +152,7 @@ public class AdminAuthMiddleware {
             }
             List<String> scopes = (List<String>) jwt.getClaims().get("scp");
             JsonObject serviceAccountDetails = new JsonObject();
-            serviceAccountDetails.put("scope", (List<String>) jwt.getClaims().get("scp"));
+            serviceAccountDetails.put("scope", scopes);
             serviceAccountDetails.put("client_id", jwt.getClaims().get("client_id"));
             rc.put("userDetails", serviceAccountDetails);
             if(isAuthorizedService(scopes)) {
@@ -177,7 +177,7 @@ public class AdminAuthMiddleware {
             }
             List<String> groups = (List<String>) jwt.getClaims().get("groups");
             JsonObject userDetails = new JsonObject();
-            userDetails.put("groups", (List<String>) jwt.getClaims().get("groups"));
+            userDetails.put("groups", groups);
             userDetails.put("email", jwt.getClaims().get("email"));
             userDetails.put("sub", jwt.getClaims().get("sub"));
             rc.put("userDetails", userDetails);
