@@ -56,6 +56,7 @@ public class SaltRotation {
 
         var postRotationSalts = rotateSalts(preRotationSalts, saltsToRotate, targetDate);
 
+        LOGGER.info("Salt rotation complete target_date={}", targetDate);
         logSaltAges("refreshable-salts", targetDate, refreshableSalts);
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
