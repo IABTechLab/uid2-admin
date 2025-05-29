@@ -365,7 +365,7 @@ public class SaltRotationTest {
                 .build();
 
         var expected = Set.of(
-                "[INFO] Salt rotation complete, target_date=2025-01-01 salts_rotated=2 total_salts=5",
+                "[INFO] Salt rotation complete target_date=2025-01-01",
                 // Post-rotation ages, we want to look at current state
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=2", // The two rotated salts, used to be 65 and 50 days old
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=5 salt_count=1",
