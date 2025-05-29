@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SaltRotation {
-    private final static long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
+    private static final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
 
     private final IKeyGenerator keyGenerator;
     private final boolean isRefreshFromEnabled;
@@ -31,8 +31,7 @@ public class SaltRotation {
             SaltSnapshot lastSnapshot,
             Duration[] minAges,
             double fraction,
-            TargetDate targetDate
-    ) throws Exception {
+            TargetDate targetDate) throws Exception {
         var preRotationSalts = lastSnapshot.getAllRotatingSalts();
         var nextEffective = targetDate.asInstant();
         var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
@@ -78,7 +77,7 @@ public class SaltRotation {
 
     private boolean isRefreshable(TargetDate targetDate, SaltEntry salt) {
         if (this.isRefreshFromEnabled) {
-            return salt.refreshFrom().equals(targetDate.asEpochMs());
+            return Instant.ofEpochMilli(salt.refreshFrom()).truncatedTo(ChronoUnit.DAYS).equals(targetDate.asInstant());
         }
 
         return true;
@@ -115,7 +114,7 @@ public class SaltRotation {
 
     private long calculateRefreshFrom(SaltEntry salt, TargetDate targetDate) {
         long multiplier = targetDate.saltAgeInDays(salt) / 30 + 1;
-        return salt.lastUpdated() + (multiplier * THIRTY_DAYS_IN_MS);
+        return Instant.ofEpochMilli(salt.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli() + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
     private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, TargetDate targetDate) {
@@ -132,8 +131,7 @@ public class SaltRotation {
             Set<SaltEntry> refreshableSalts,
             TargetDate targetDate,
             Duration[] minAges,
-            int numSaltsToRotate
-    ) {
+            int numSaltsToRotate) {
         var thresholds = Arrays.stream(minAges)
                 .map(minAge -> targetDate.asInstant().minusSeconds(minAge.getSeconds()))
                 .sorted()
@@ -161,8 +159,7 @@ public class SaltRotation {
             Set<SaltEntry> refreshableSalts,
             int maxIndexes,
             long minLastUpdated,
-            long maxLastUpdated
-    ) {
+            long maxLastUpdated) {
         ArrayList<SaltEntry> candidateSalts = refreshableSalts.stream()
                 .filter(salt -> minLastUpdated <= salt.lastUpdated() && salt.lastUpdated() < maxLastUpdated)
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -194,7 +191,7 @@ public class SaltRotation {
     }
 
     @Getter
-    public static class Result {
+    public static final class Result {
         private final SaltSnapshot snapshot; // can be null if new snapshot is not needed
         private final String reason; // why you are not getting a new snapshot
 
