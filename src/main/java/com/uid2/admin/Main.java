@@ -292,6 +292,12 @@ public class Main {
             }
 
             synchronized (writeLock) {
+                try {
+                    cloudEncryptionKeyManager.backfillKeys();
+                } catch (CloudStorageException e) {
+                    LOGGER.error("Failed to backfill cloud encryption keys", e);
+                }
+                
                 cloudEncryptionKeyManager.backfillKeys();
                 rotatingCloudEncryptionKeyProvider.loadContent();
             }
