@@ -2,8 +2,11 @@ package com.uid2.admin.salt.helper;
 
 import com.uid2.admin.salt.TargetDate;
 
-public class TargetDateUtil {
+public final class TargetDateUtil {
     private static final TargetDate TARGET_DATE = TargetDate.of(2025, 1, 1);
+
+    private TargetDateUtil() {
+    }
 
     public static TargetDate daysEarlier(int days) {
         return TARGET_DATE.minusDays(days);
