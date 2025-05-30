@@ -72,7 +72,6 @@ public class CloudEncryptionKeyManager {
             LOGGER.info("Key backfill complete. Diff: {}", diff);
         } catch (Exception e) {
             LOGGER.error("Key backfill failed", e);
-            throw e;
         }
     }
 
