@@ -295,10 +295,9 @@ public class Main {
                 try {
                     cloudEncryptionKeyManager.backfillKeys();
                 } catch (CloudStorageException e) {
-                    LOGGER.error("Failed to backfill cloud encryption keys", e);
+                    LOGGER.error("Failed to backfill cloud encryption keys in Main", e);
                 }
-                
-                cloudEncryptionKeyManager.backfillKeys();
+
                 rotatingCloudEncryptionKeyProvider.loadContent();
             }
 
