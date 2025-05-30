@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class TargetDate {
-    private final static long DAY_IN_MS = Duration.ofDays(1).toMillis();
+    private static final long DAY_IN_MS = Duration.ofDays(1).toMillis();
 
     private final LocalDate date;
     private final long epochMs;
