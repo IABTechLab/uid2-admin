@@ -1,4 +1,4 @@
 {
   "enable_keysets": false,
-  "enable_salt_rotation_refresh_from": false
+  "enable_salt_rotation_refresh_from": true
 }
