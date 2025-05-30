@@ -7,11 +7,15 @@ import com.uid2.shared.Const;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Keyset;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.shared.model.ClientType;
 
 import java.time.Instant;
 import java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.lang.Math.max;
 
@@ -20,6 +24,8 @@ public class KeysetManager {
     private final RotatingAdminKeysetStore keysetProvider;
     private final AdminKeysetWriter keysetStoreWriter;
     private final IKeysetKeyManager keysetKeyManager;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeysetManager.class);
 
     private final boolean enableKeysets;
 
@@ -165,6 +171,12 @@ public class KeysetManager {
             }
         }
 
-        keysetStoreWriter.upload(collection, null);
+        try{
+           keysetStoreWriter.upload(collection, null);
+        }
+        catch (CloudStorageException e) 
+        {
+            LOGGER.error("Failed to create admin keysets", e);
+        }
     }
 }
