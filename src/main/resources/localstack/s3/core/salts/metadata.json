@@ -1,20 +1,15 @@
 {
   "version" : 1,
-  "generated" : 1670883129,
+  "generated" : 1748111100000,
   "first_level" : "fOGY/aRE44peL23i+cE9MkJrzmEeNZZziNZBfq7qqk8=",
   "id_prefix" : "b",
   "id_secret" : "HF6Qz42HBbVHINxhh191dB09BCuTWyBkNtrNicO4ZCw=",
   "salts" : [
     {
-    "effective" : 1670796729291,
-    "expires" : 1766125493000,
-    "location" : "salts/salts.txt.1670796729291",
-    "size" : 2
-  },{
-      "effective" : 1745907348982,
-      "expires" : 1766720293000,
-      "location" : "salts/salts.txt.1745907348982",
-      "size" : 4
+      "effective" : 1748131200000,
+      "expires" : 1748736000000,
+      "location" : "salts/salts.txt",
+      "size" : 1048576
     }
   ]
 }

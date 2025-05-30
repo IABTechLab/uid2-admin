@@ -58,6 +58,59 @@ public class SaltService implements IService {
                 this.handleSaltRotate(ctx);
             }
         }, Role.SUPER_USER, Role.SECRET_ROTATION));
+
+        router.post("/api/salt/simulate").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSaltSimulate(ctx);
+            }
+        }, Role.SUPER_USER, Role.SECRET_ROTATION));
+    }
+
+    private void handleSaltSimulate(RoutingContext rc) {
+        try {
+            final Optional<Double> iterations = RequestUtil.getDouble(rc, "iterations");
+            if (iterations.isEmpty() || iterations.get() < 1) return;
+            final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
+            if (fraction.isEmpty()) return;
+            final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
+            if (minAges == null) return;
+
+            TargetDate targetDate =
+                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                            .map(TargetDate::new)
+                            .orElse(TargetDate.now().plusDays(1));
+
+            SaltRotation.Result result = null;
+            for (int i = 0; i < iterations.get(); i++) {
+                LOGGER.info("Iteration {}/{}", i + 1, iterations.get());
+
+                // force refresh
+                this.saltProvider.loadContent();
+
+                // mark all the referenced files as ready to archive
+                storageManager.archiveSaltLocations();
+
+                final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
+                final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
+
+                result = saltRotation.rotateSalts(lastSnapshot, minAges, fraction.get(), targetDate);
+                if (!result.hasSnapshot()) {
+                    ResponseUtil.error(rc, 200, result.getReason());
+                    return;
+                }
+
+                storageManager.upload(result.getSnapshot(), i);
+
+                targetDate = targetDate.plusDays(1);
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(toJson(result.getSnapshot()).encode());
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {
@@ -82,12 +135,10 @@ public class SaltService implements IService {
             final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
             if (minAges == null) return;
 
-
             final TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
                             .map(TargetDate::new)
-                            .orElse(TargetDate.now().plusDays(1))
-            ;
+                            .orElse(TargetDate.now().plusDays(1));
 
             // force refresh
             this.saltProvider.loadContent();

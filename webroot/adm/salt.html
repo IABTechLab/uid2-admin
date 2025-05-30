@@ -13,6 +13,10 @@
 
 <h3>Inputs</h3>
 
+<label for="targetDate">Target Date:</label>
+<input type="text" id="targetDate" name="targetDate">
+<label for="iterations">Iterations:</label>
+<input type="text" id="iterations" name="iterations">
 <label for="minAges">Min ages (seconds):</label>
 <input type="text" id="minAges" name="minAges">
 <label for="fraction">Fraction:</label>
@@ -26,6 +30,7 @@
 <ul>
     <li class="ro-sem" style="display: none"><a href="#" id="doSnapshots">List Salt Snapshots</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doRotate">Rotate second level salts (SUPER_USER)</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doSimulate">Simulate second level salts (SUPER_USER)</a></li>
 </ul>
 
 <br>
@@ -47,6 +52,16 @@
             var minAges = encodeURIComponent($('#minAges').val());
             var fraction = encodeURIComponent($('#fraction').val());
             var url = '/api/salt/rotate?min_ages_in_seconds=' + minAges + '&fraction=' + fraction;
+
+            doApiCall('POST', url, '#standardOutput', '#errorOutput');
+        });
+
+        $('#doSimulate').on('click', function () {
+            var targetDate = encodeURIComponent($('#targetDate').val());
+            var iterations = encodeURIComponent($('#iterations').val());
+            var minAges = encodeURIComponent($('#minAges').val());
+            var fraction = encodeURIComponent($('#fraction').val());
+            var url = '/api/salt/simulate?target_date=' + targetDate + '&iterations=' + iterations + '&min_ages_in_seconds=' + minAges + '&fraction=' + fraction;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
         });
