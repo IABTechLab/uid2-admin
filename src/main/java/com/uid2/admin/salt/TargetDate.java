@@ -4,6 +4,7 @@ import com.uid2.shared.model.SaltEntry;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class TargetDate {
@@ -39,7 +40,7 @@ public class TargetDate {
 
     // relative to this date
     public long saltAgeInDays(SaltEntry salt) {
-        return (this.asEpochMs() - salt.lastUpdated()) / DAY_IN_MS;
+        return (this.asEpochMs() - Instant.ofEpochMilli(salt.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli()) / DAY_IN_MS;
     }
 
     public TargetDate plusDays(int days) {
