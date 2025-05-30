@@ -132,6 +132,8 @@ public class SaltRotation {
             TargetDate targetDate,
             Duration[] minAges,
             int numSaltsToRotate) {
+        var maxSaltsPerAge = (int) (numSaltsToRotate * 0.8);
+
         var thresholds = Arrays.stream(minAges)
                 .map(minAge -> targetDate.asInstant().minusSeconds(minAge.getSeconds()))
                 .sorted()
@@ -145,7 +147,7 @@ public class SaltRotation {
             var maxIndexes = numSaltsToRotate - indexesToRotate.size();
             var saltsToRotate = pickSaltsToRotateInTimeWindow(
                     refreshableSalts,
-                    maxIndexes,
+                    Math.min(maxIndexes, maxSaltsPerAge),
                     minLastUpdated.toEpochMilli(),
                     maxLastUpdated.toEpochMilli()
             );
