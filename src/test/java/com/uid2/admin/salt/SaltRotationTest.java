@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 import ch.qos.logback.classic.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SaltRotationTest {
+class SaltRotationTest {
     @Mock
     private IKeyGenerator keyGenerator;
     private SaltRotation saltRotation;
@@ -50,7 +50,7 @@ public class SaltRotationTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void teardown() throws Exception {
         appender.stop();
         mocks.close();
     }
@@ -209,13 +209,16 @@ public class SaltRotationTest {
 
     @ParameterizedTest
     @CsvSource({
-            "5, 30", // Soon after rotation, use 30 days post rotation
-            "40, 60", // >30 days after rotation use the next increment of 30 days
-            "60, 90", // Exactly at multiple of 30 days post rotation, use next increment of 30 days
+            "5, 0, 30", // Soon after rotation, use 30 days post rotation
+            "5, 100, 30", // Soon after rotation, use 30 days post rotation with some offset
+            "40, 0, 60", // >30 days after rotation use the next increment of 30 days
+            "40, 100, 60", // >30 days after rotation use the next increment of 30 days with some offset
+            "60, 0, 90", // Exactly at multiple of 30 days post rotation, use next increment of 30 days
+            "60, 100, 90" // Exactly at multiple of 30 days post rotation, use next increment of 30 days with some offset
     })
-    void testRefreshFromCalculation(int lastRotationDaysAgo, int refreshFromDaysFromRotation) throws Exception {
+    void testRefreshFromCalculation(int lastRotationDaysAgo, int lastRotationMsOffset, int refreshFromDaysFromRotation) throws Exception {
         var lastRotation = daysEarlier(lastRotationDaysAgo);
-        SaltBuilder saltBuilder = SaltBuilder.start().lastUpdated(lastRotation);
+        SaltBuilder saltBuilder = SaltBuilder.start().lastUpdated(lastRotation.asInstant().plusMillis(lastRotationMsOffset));
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(saltBuilder)
                 .build();

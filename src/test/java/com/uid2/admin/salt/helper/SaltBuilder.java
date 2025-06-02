@@ -32,8 +32,18 @@ public class SaltBuilder {
         return this;
     }
 
+    public SaltBuilder lastUpdated(Instant lastUpdated) {
+        this.lastUpdated = lastUpdated;
+        return this;
+    }
+
     public SaltBuilder refreshFrom(TargetDate refreshFrom) {
         this.refreshFrom = refreshFrom.asInstant();
+        return this;
+    }
+
+    public SaltBuilder refreshFrom(Instant refreshFrom) {
+        this.refreshFrom = refreshFrom;
         return this;
     }
 
