@@ -27,6 +27,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.vertx.Endpoints.*;
+
 public class OperatorKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
     private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
@@ -71,44 +73,44 @@ public class OperatorKeyService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/operator/metadata").handler(
+        router.get(API_OPERATOR_METADATA.toString()).handler(
             auth.handle(this::handleOperatorMetadata, Role.MAINTAINER));
-        router.get("/api/operator/list").handler(
+        router.get(API_OPERATOR_LIST.toString()).handler(
             auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT));
-        router.get("/api/operator/reveal").handler(
+        router.get(API_OPERATOR_REVEAL.toString()).handler(
             auth.handle(this::handleOperatorReveal, Role.MAINTAINER));
 
-        router.post("/api/operator/add").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_OPERATOR_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
         }, Role.MAINTAINER));
 
-        router.post("/api/operator/del").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_OPERATOR_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDel(ctx);
             }
         }, Role.SUPER_USER));
 
-        router.post("/api/operator/disable").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_OPERATOR_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDisable(ctx);
             }
         }, Role.PRIVILEGED));
 
-        router.post("/api/operator/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_OPERATOR_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
         }, Role.MAINTAINER));
 
-        router.post("/api/operator/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_OPERATOR_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorUpdate(ctx);
             }
         }, Role.PRIVILEGED));
 
-        router.post("/api/operator/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_OPERATOR_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
             }

@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.vertx.Endpoints.*;
+
 public class EnclaveIdService implements IService {
     private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
@@ -44,17 +46,17 @@ public class EnclaveIdService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/enclave/metadata").handler(
+        router.get(API_ENCLAVE_METADATA.toString()).handler(
             auth.handle(this::handleEnclaveMetadata, Role.MAINTAINER));
-        router.get("/api/enclave/list").handler(
+        router.get(API_ENCLAVE_LIST.toString()).handler(
             auth.handle(this::handleEnclaveList, Role.MAINTAINER));
 
-        router.post("/api/enclave/add").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_ENCLAVE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveAdd(ctx);
             }
         }, Role.PRIVILEGED));
-        router.post("/api/enclave/del").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_ENCLAVE_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveDel(ctx);
             }

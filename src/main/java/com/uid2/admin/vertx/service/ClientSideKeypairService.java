@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWithPrivateKey;
 import static com.uid2.admin.store.writer.ClientSideKeypairStoreWriter.toJsonWithoutPrivateKey;
+import static com.uid2.admin.vertx.Endpoints.*;
 
 public class ClientSideKeypairService implements IService, IKeypairManager {
     private final AdminAuthMiddleware auth;
@@ -64,19 +65,19 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/client_side_keypairs/add").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_SIDE_KEYPAIRS_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleAddKeypair(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post("/api/client_side_keypairs/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_SIDE_KEYPAIRS_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdateKeypair(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.get("/api/client_side_keypairs/list").handler(
+        router.get(API_CLIENT_SIDE_KEYPAIRS_LIST.toString()).handler(
             auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT));
-        router.get("/api/client_side_keypairs/:subscriptionId").handler(
+        router.get(API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID.toString()).handler(
             auth.handle(this::handleListKeypair, Role.MAINTAINER)
         );
     }

@@ -32,6 +32,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.vertx.Endpoints.*;
+
 public class ClientKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyService.class);
     private static final ObjectWriter JSON_WRITER = JsonUtil.createJsonWriter();
@@ -68,72 +70,72 @@ public class ClientKeyService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/client/metadata").handler(
+        router.get(API_CLIENT_METADATA.toString()).handler(
             auth.handle(this::handleClientMetadata, Role.MAINTAINER));
-        router.post("/api/client/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
         }, Role.PRIVILEGED));
 
-        router.get("/api/client/list").handler(
+        router.get(API_CLIENT_LIST.toString()).handler(
             auth.handle(this::handleClientList, Role.MAINTAINER, Role.METRICS_EXPORT));
 
-        router.get("/api/client/list/:siteId").handler(
+        router.get(API_CLIENT_LIST_SITEID.toString()).handler(
             auth.handle(this::handleClientListBySite, Role.MAINTAINER, Role.SHARING_PORTAL));
 
-        router.get("/api/client/keyId").handler(
+        router.get(API_CLIENT_KEYID.toString()).handler(
             auth.handle(this::handleClientByKeyId, Role.MAINTAINER, Role.SHARING_PORTAL));
 
-        router.get("/api/client/contact").handler(
+        router.get(API_CLIENT_CONTACT.toString()).handler(
             auth.handle(this::handleClientByContact, Role.MAINTAINER, Role.SHARING_PORTAL));
 
-        router.get("/api/client/reveal").handler(
+        router.get(API_CLIENT_REVEAL.toString()).handler(
             auth.handle(this::handleClientReveal, Role.PRIVILEGED));
 
-        router.post("/api/client/add").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
 
-        router.post("/api/client/del").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDel(ctx);
             }
         }, Role.SUPER_USER));
 
-        router.post("/api/client/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientUpdate(ctx);
             }
         }, Role.MAINTAINER));
 
-        router.post("/api/client/disable").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDisable(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
 
-        router.post("/api/client/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientEnable(ctx);
             }
         }, Role.MAINTAINER));
 
-        router.post("/api/client/roles").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
             }
         }, Role.PRIVILEGED, Role.SHARING_PORTAL));
 
-        router.post("/api/client/contact").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_CONTACT.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientContact(ctx);
             }
         }, Role.MAINTAINER));
 
-        router.post("/api/client/rename").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_CLIENT_RENAME.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
             }

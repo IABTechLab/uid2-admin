@@ -7,6 +7,9 @@ import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.shared.auth.Role;
 import io.vertx.ext.web.Router;
 
+import static com.uid2.admin.vertx.Endpoints.API_JOB_DISPATCHER_CURRENT_JOB;
+import static com.uid2.admin.vertx.Endpoints.API_JOB_DISPATCHER_JOB_QUEUE;
+
 public class JobDispatcherService implements IService {
     private final ObjectWriter jsonWriter = JsonUtil.createJsonWriter();
     private final AdminAuthMiddleware auth;
@@ -19,7 +22,7 @@ public class JobDispatcherService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/job-dispatcher/current-job").blockingHandler(auth.handle((ctx) -> {
+        router.get(API_JOB_DISPATCHER_CURRENT_JOB.toString()).blockingHandler(auth.handle((ctx) -> {
                     try {
                         ctx.response().end(jsonWriter.writeValueAsString(jobDispatcher.getExecutingJobInfo()));
                     } catch (Exception ex) {
@@ -29,7 +32,7 @@ public class JobDispatcherService implements IService {
                 //can be other role
             Role.MAINTAINER));
 
-        router.get("/api/job-dispatcher/job-queue").blockingHandler(auth.handle((ctx) -> {
+        router.get(API_JOB_DISPATCHER_JOB_QUEUE.toString()).blockingHandler(auth.handle((ctx) -> {
                     try {
                         ctx.response().end(jsonWriter.writeValueAsString(jobDispatcher.getJobQueueInfo()));
                     } catch (Exception ex) {

@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 
+import static com.uid2.admin.vertx.Endpoints.*;
 import static com.uid2.admin.vertx.RequestUtil.getTypes;
 
 import java.net.MalformedURLException;
@@ -53,42 +54,42 @@ public class SiteService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/site/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
         }, Role.PRIVILEGED));
 
-        router.get("/api/site/list").handler(
+        router.get(API_SITE_LIST.toString()).handler(
             auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT));
-        router.get("/api/site/:siteId").handler(
+        router.get(API_SITE_SITEID.toString()).handler(
             auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post("/api/site/add").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post("/api/site/enable").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);
             }
         }, Role.MAINTAINER));
-        router.post("/api/site/set-types").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_SET_TYPES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteTypesSet(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post("/api/site/domain_names").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_DOMAIN_NAMES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteDomains(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post("/api/site/app_names").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_APP_NAMES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAppNames(ctx);
             }
         }, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post("/api/site/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SITE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteUpdate(ctx);
             }

@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.uid2.admin.vertx.Endpoints.API_SALT_ROTATE;
+import static com.uid2.admin.vertx.Endpoints.API_SALT_SNAPSHOTS;
+
 public class SaltService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
 
@@ -47,10 +50,10 @@ public class SaltService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/salt/snapshots").handler(
+        router.get(API_SALT_SNAPSHOTS.toString()).handler(
                 auth.handle(this::handleSaltSnapshots, Role.MAINTAINER));
 
-        router.post("/api/salt/rotate").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SALT_ROTATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSaltRotate(ctx);
             }

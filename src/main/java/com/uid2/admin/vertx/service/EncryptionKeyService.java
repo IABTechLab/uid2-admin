@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
 import static com.uid2.admin.managers.KeysetManager.*;
+import static com.uid2.admin.vertx.Endpoints.*;
 import static java.util.stream.Collectors.*;
 
 public class EncryptionKeyService implements IService, IEncryptionKeyManager, IKeysetKeyManager {
@@ -122,47 +123,47 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/key/list").handler(
+        router.get(API_KEY_LIST.toString()).handler(
             auth.handle(this::handleKeyList, Role.MAINTAINER));
 
         if(enableKeysets) {
-            router.get("/api/key/list_keyset_keys").handler(
+            router.get(API_KEY_LIST_KEYSET_KEYS.toString()).handler(
                 auth.handle(this::handleKeysetKeyList, Role.MAINTAINER));
         }
 
-        router.post("/api/key/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_KEY_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }
         }, Role.PRIVILEGED));
 
-        router.post("/api/key/rotate_master").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_KEY_ROTATE_MASTER.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateMasterKey(ctx);
             }
         }, Role.MAINTAINER, Role.SECRET_ROTATION));
 
-        router.post("/api/key/add").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_KEY_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleAddSiteKey(ctx);
             }
         }, Role.MAINTAINER));
 
-        router.post("/api/key/rotate_site").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_KEY_ROTATE_SITE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateSiteKey(ctx);
             }
         }, Role.MAINTAINER));
 
         if(enableKeysets) {
-            router.post("/api/key/rotate_keyset_key").blockingHandler(auth.handle((ctx) -> {
+            router.post(API_KEY_ROTATE_KEYSET_KEY.toString()).blockingHandler(auth.handle((ctx) -> {
                 synchronized (writeLock) {
                     this.handleRotateKeysetKey(ctx);
                 }
             }, Role.MAINTAINER));
         }
 
-        router.post("/api/key/rotate_all_sites").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_KEY_ROTATE_ALL_SITES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRotateAllSiteKeys(ctx);
             }

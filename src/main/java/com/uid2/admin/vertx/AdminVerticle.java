@@ -23,6 +23,7 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 import java.util.List;
 
 import static com.uid2.admin.auth.AuthUtil.isAuthDisabled;
+import static com.uid2.admin.vertx.Endpoints.*;
 
 public class AdminVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminVerticle.class);
@@ -73,7 +74,7 @@ public class AdminVerticle extends AbstractVerticle {
         final TemplateEngine engine = PebbleTemplateEngine.create(vertx, "html");
         final TemplateHandler templateHandler = TemplateHandler.create(engine, "webroot/adm/", TemplateHandler.DEFAULT_CONTENT_TYPE);
 
-        router.route("/login").handler(oktaHandler);
+        router.route(LOGIN.toString()).handler(oktaHandler);
         router.get("/adm/*").handler(oktaHandler)
                 .handler(ctx -> {
                     ctx.put("ADD_CLIENT_KEY_MESSAGE", config.getString("add_client_key_message"));
@@ -83,10 +84,10 @@ public class AdminVerticle extends AbstractVerticle {
                 .handler(templateHandler);
         router.route("/api/*").handler(tokenRefreshHandler);
 
-        router.get("/login").handler(new RedirectToRootHandler(false));
-        router.get("/logout").handler(new RedirectToRootHandler(true));
-        router.get("/ops/healthcheck").handler(this::handleHealthCheck);
-        router.get("/api/userinfo").handler(this::handleUserinfo);
+        router.get(LOGIN.toString()).handler(new RedirectToRootHandler(false));
+        router.get(LOGOUT.toString()).handler(new RedirectToRootHandler(true));
+        router.get(OPS_HEALTHCHECK.toString()).handler(this::handleHealthCheck);
+        router.get(API_USERINFO.toString()).handler(this::handleUserinfo);
 
         for (IService service : this.services) {
             service.setupRoutes(router);

@@ -26,6 +26,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.vertx.Endpoints.*;
+
 public class SharingService implements IService {
     private final AdminAuthMiddleware auth;
 
@@ -57,26 +59,26 @@ public class SharingService implements IService {
     @Override
     public void setupRoutes(Router router) {
         if(!enableKeysets) return;
-        router.get("/api/sharing/lists").handler(
+        router.get(API_SHARING_LISTS.toString()).handler(
             auth.handle(this::handleListAllAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT)
         );
-        router.get("/api/sharing/list/:siteId").handler(
+        router.get(API_SHARING_LIST_SITEID.toString()).handler(
             auth.handle(this::handleListAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
         );
-        router.post("/api/sharing/list/:siteId").handler(
+        router.post(API_SHARING_LIST_SITEID.toString()).handler(
             auth.handle(this::handleSetAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
         );
 
-        router.get("/api/sharing/keysets").handler(
+        router.get(API_SHARING_KEYSETS.toString()).handler(
             auth.handle(this::handleListAllKeysets, Role.MAINTAINER)
         );
-        router.post("/api/sharing/keyset").handler(
+        router.post(API_SHARING_KEYSET.toString()).handler(
             auth.handle(this::handleSetKeyset, Role.MAINTAINER)
         );
-        router.get("/api/sharing/keyset/:keyset_id").handler(
+        router.get(API_SHARING_KEYSET_KEYSETID.toString()).handler(
             auth.handle(this::handleListKeyset, Role.MAINTAINER)
         );
-        router.get("/api/sharing/keysets/related").handler(
+        router.get(API_SHARING_KEYSETS_RELATED.toString()).handler(
                 auth.handle(this::handleListAllKeysetsRelated, Role.MAINTAINER)
         );
     }
