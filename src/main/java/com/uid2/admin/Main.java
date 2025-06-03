@@ -68,6 +68,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static com.uid2.admin.AdminConst.enableKeysetConfigProp;
+import static com.uid2.admin.AdminConst.throwOnS3WriteException;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -291,8 +292,9 @@ public class Main {
                 }
             }
 
+            boolean bThrowOnS3WriteException = config.getBoolean(throwOnS3WriteException, true);
             synchronized (writeLock) {
-                cloudEncryptionKeyManager.backfillKeys();
+                cloudEncryptionKeyManager.backfillKeys(bThrowOnS3WriteException);
                 rotatingCloudEncryptionKeyProvider.loadContent();
             }
 

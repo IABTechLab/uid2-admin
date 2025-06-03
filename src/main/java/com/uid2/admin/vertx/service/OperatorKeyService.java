@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
+import static com.uid2.admin.AdminConst.throwOnS3WriteException;
 
 public class OperatorKeyService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorKeyService.class);
@@ -48,7 +49,9 @@ public class OperatorKeyService implements IService {
     private final IKeyGenerator keyGenerator;
     private final KeyHasher keyHasher;
     private final String operatorKeyPrefix;
+    
     private final CloudEncryptionKeyManager cloudEncryptionKeyManager;
+    private boolean bThrowOnS3WriteException;
 
     public OperatorKeyService(JsonObject config,
                               AdminAuthMiddleware auth,
@@ -69,6 +72,7 @@ public class OperatorKeyService implements IService {
         this.cloudEncryptionKeyManager = cloudEncryptionKeyManager;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
+        this.bThrowOnS3WriteException = config.getBoolean(throwOnS3WriteException, true);
     }
 
     @Override
@@ -273,7 +277,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             // generate cloud encryption keys as needed
-            cloudEncryptionKeyManager.backfillKeys();
+            cloudEncryptionKeyManager.backfillKeys(bThrowOnS3WriteException);
 
             // respond with new key
             rc.response().end(JSON_WRITER.writeValueAsString(new RevealedKey<>(newOperator, key)));
@@ -412,7 +416,7 @@ public class OperatorKeyService implements IService {
             operatorKeyStoreWriter.upload(operators);
 
             if (siteIdChanged) {
-                cloudEncryptionKeyManager.backfillKeys();
+                cloudEncryptionKeyManager.backfillKeys(bThrowOnS3WriteException);
             }
 
             // return the updated client

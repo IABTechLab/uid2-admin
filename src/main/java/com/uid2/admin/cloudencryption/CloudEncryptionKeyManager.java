@@ -63,7 +63,7 @@ public class CloudEncryptionKeyManager {
     }
 
     // For any site that has an operator, if there are no keys, create a key activating now
-    public void backfillKeys() throws Exception {
+    public void backfillKeys(boolean throwOnS3WriteException) throws Exception {
         try {
             refreshCloudData();
             var desiredKeys = planner.planBackfill(existingKeys, operatorKeys);
@@ -72,7 +72,9 @@ public class CloudEncryptionKeyManager {
             LOGGER.info("Key backfill complete. Diff: {}", diff);
         } catch (Exception e) {
             LOGGER.error("Key backfill failed", e);
-            throw e;
+            if (throwOnS3WriteException) {
+                throw e;
+            }
         }
     }
 

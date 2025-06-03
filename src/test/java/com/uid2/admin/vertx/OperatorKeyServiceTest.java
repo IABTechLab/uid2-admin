@@ -276,7 +276,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorAddGeneratesCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertNotNull(revealedOperator.getAuthorizable()),
-                        () -> verify(cloudEncryptionKeyManager).backfillKeys()
+                        () -> verify(cloudEncryptionKeyManager).backfillKeys(true)
                 );
                 testContext.completeNow();
             } catch (Exception e) {
@@ -301,7 +301,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(5, updatedOperator.getSiteId()),
                         () -> assertNotEquals(1, updatedOperator.getSiteId()),
-                        () -> verify(cloudEncryptionKeyManager).backfillKeys()
+                        () -> verify(cloudEncryptionKeyManager).backfillKeys(true)
                 );
                 testContext.completeNow();
             } catch (Exception e) {
@@ -325,7 +325,7 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                         "operatorUpdateWithoutSiteIdChangeDoesNotGenerateCloudEncryptionKeys",
                         () -> assertEquals(200, response.statusCode()),
                         () -> assertEquals(existingOperator.getSiteId(), updatedOperator.getSiteId()),
-                        () -> verify(cloudEncryptionKeyManager, never()).backfillKeys()
+                        () -> verify(cloudEncryptionKeyManager, never()).backfillKeys(true)
                 );
                 testContext.completeNow();
             } catch (Exception e) {
