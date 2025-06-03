@@ -14,6 +14,8 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import static com.uid2.admin.vertx.Endpoints.API_SEARCH;
+
 public class SearchService implements IService {
     private static final Integer QUERY_PARAMETER_MIN_LENGTH = 6;
 
@@ -33,7 +35,7 @@ public class SearchService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post("/api/search").handler(
+        router.post(API_SEARCH.toString()).handler(
             auth.handle(this::handleSearch, Role.MAINTAINER));
     }
 

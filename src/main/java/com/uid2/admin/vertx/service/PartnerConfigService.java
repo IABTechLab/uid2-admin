@@ -11,6 +11,9 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
+
 public class PartnerConfigService implements IService {
     private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
@@ -29,9 +32,9 @@ public class PartnerConfigService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/partner_config/get").handler(
+        router.get(API_PARTNER_CONFIG_GET.toString()).handler(
             auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
-        router.post("/api/partner_config/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
             }

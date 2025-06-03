@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.uid2.admin.vertx.Endpoints.API_SHARING_KEYSETS_RELATED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
@@ -1275,7 +1276,7 @@ public class SharingServiceTest extends ServiceTestBase {
         doReturn(new Site(8, "test-name", true, new HashSet<>(Arrays.asList(ClientType.DSP)), null)).when(siteProvider).getSite(8);
 
 
-        get(vertx, testContext, "/api/sharing/keysets/related?site_id=8", response -> {
+        get(vertx, testContext, API_SHARING_KEYSETS_RELATED + "?site_id=8", response -> {
             assertEquals(200, response.statusCode());
 
             Set<Integer> expectedKeysetIds = new HashSet<>(Arrays.asList(adminKeyset1.getKeysetId(), adminKeyset2.getKeysetId()));
@@ -1311,7 +1312,7 @@ public class SharingServiceTest extends ServiceTestBase {
         doReturn(new Site(8, "test-name", true,null)).when(siteProvider).getSite(8);
 
 
-        get(vertx, testContext, "/api/sharing/keysets/related?site_id=8", response -> {
+        get(vertx, testContext, API_SHARING_KEYSETS_RELATED +  "?site_id=8", response -> {
             assertEquals(200, response.statusCode());
 
             Set<Integer> expectedKeysetIds = new HashSet<>(Arrays.asList(adminKeyset1.getKeysetId(), adminKeyset2.getKeysetId()));
@@ -1347,7 +1348,7 @@ public class SharingServiceTest extends ServiceTestBase {
         doReturn(new Site(8, "test-name", true,null)).when(siteProvider).getSite(8);
 
 
-        get(vertx, testContext, "/api/sharing/keysets/related?site_id=8", response -> {
+        get(vertx, testContext, API_SHARING_KEYSETS_RELATED +  "?site_id=8", response -> {
             assertEquals(200, response.statusCode());
 
             Set<Integer> expectedKeysetIds = new HashSet<>(Arrays.asList(adminKeyset3.getKeysetId()));
@@ -1388,7 +1389,7 @@ public class SharingServiceTest extends ServiceTestBase {
                         .build());
 
 
-        get(vertx, testContext, "/api/sharing/keysets/related?site_id=8", response -> {
+        get(vertx, testContext, API_SHARING_KEYSETS_RELATED +  "?site_id=8", response -> {
             assertEquals(200, response.statusCode());
 
             Set<Integer> expectedKeysetIds = new HashSet<>(Arrays.asList(adminKeyset3.getKeysetId()));
@@ -1429,7 +1430,7 @@ public class SharingServiceTest extends ServiceTestBase {
                         .build());
 
 
-        get(vertx, testContext, "/api/sharing/keysets/related?site_id=8", response -> {
+        get(vertx, testContext, API_SHARING_KEYSETS_RELATED +  "?site_id=8", response -> {
             assertEquals(200, response.statusCode());
 
             Set<Integer> expectedKeysetIds = new HashSet<>(Arrays.asList(adminKeyset3.getKeysetId()));

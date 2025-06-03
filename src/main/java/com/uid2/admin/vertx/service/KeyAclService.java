@@ -22,6 +22,9 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.*;
 
+import static com.uid2.admin.vertx.Endpoints.API_KEYS_ACL_LIST;
+import static com.uid2.admin.vertx.Endpoints.API_KEYS_ACL_REWRITE_METADATA;
+
 public class KeyAclService implements IService {
     private final AdminAuthMiddleware auth;
     private final WriteLock writeLock;
@@ -47,10 +50,10 @@ public class KeyAclService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/keys_acl/list").handler(
+        router.get(API_KEYS_ACL_LIST.toString()).handler(
             auth.handle(this::handleKeyAclList, Role.MAINTAINER));
 
-        router.post("/api/keys_acl/rewrite_metadata").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_KEYS_ACL_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
             }

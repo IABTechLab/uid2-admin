@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.vertx.Endpoints.*;
+
 public class ServiceService implements IService {
 
     private final AdminAuthMiddleware auth;
@@ -47,19 +49,19 @@ public class ServiceService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/service/list").handler(auth.handle(this::handleServiceListAll, Role.MAINTAINER, Role.METRICS_EXPORT));
-        router.get("/api/service/list/:service_id").handler(auth.handle(this::handleServiceList, Role.MAINTAINER));
-        router.post("/api/service/add").blockingHandler(auth.handle((ctx) -> {
+        router.get(API_SERVICE_LIST.toString()).handler(auth.handle(this::handleServiceListAll, Role.MAINTAINER, Role.METRICS_EXPORT));
+        router.get(API_SERVICE_LIST_SERVICE_ID.toString()).handler(auth.handle(this::handleServiceList, Role.MAINTAINER));
+        router.post(API_SERVICE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceAdd(ctx);
             }
         }, Role.PRIVILEGED));
-        router.post("/api/service/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SERVICE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdate(ctx);
             }
         }, Role.PRIVILEGED));
-        router.post("/api/service/delete").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SERVICE_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleDelete(ctx);
             }

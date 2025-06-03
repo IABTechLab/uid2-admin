@@ -15,6 +15,9 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.uid2.admin.vertx.Endpoints.API_PRIVATE_SITES_REFRESH;
+import static com.uid2.admin.vertx.Endpoints.API_PRIVATE_SITES_REFRESH_NOW;
+
 public class PrivateSiteDataRefreshService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrivateSiteDataRefreshService.class);
 
@@ -37,7 +40,7 @@ public class PrivateSiteDataRefreshService implements IService {
     @Override
     public void setupRoutes(Router router) {
         // this can be called by a scheduled task
-        router.post("/api/private-sites/refresh").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_PRIVATE_SITES_REFRESH.toString()).blockingHandler(auth.handle((ctx) -> {
                     synchronized (writeLock) {
                         this.handlePrivateSiteDataGenerate(ctx);
                     }
@@ -45,7 +48,7 @@ public class PrivateSiteDataRefreshService implements IService {
                 //can be other role
             Role.MAINTAINER, Role.PRIVATE_OPERATOR_SYNC));
 
-        router.post("/api/private-sites/refreshNow").blockingHandler(auth.handle(
+        router.post(API_PRIVATE_SITES_REFRESH_NOW.toString()).blockingHandler(auth.handle(
                 this::handlePrivateSiteDataGenerateNow,
                 //can be other role
             Role.PRIVILEGED));

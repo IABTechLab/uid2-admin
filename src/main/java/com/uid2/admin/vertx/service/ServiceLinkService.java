@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.uid2.admin.vertx.Endpoints.*;
+
 public class ServiceLinkService implements IService {
 
     private final AdminAuthMiddleware auth;
@@ -49,18 +51,18 @@ public class ServiceLinkService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get("/api/service_link/list").handler(auth.handle(this::handleServiceLinkList, Role.MAINTAINER, Role.METRICS_EXPORT));
-        router.post("/api/service_link/add").blockingHandler(auth.handle((ctx) -> {
+        router.get(API_SERVICE_LINK_LIST.toString()).handler(auth.handle(this::handleServiceLinkList, Role.MAINTAINER, Role.METRICS_EXPORT));
+        router.post(API_SERVICE_LINK_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkAdd(ctx);
             }
         }, Role.MAINTAINER));
-        router.post("/api/service_link/update").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SERVICE_LINK_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkUpdate(ctx);
             }
         }, Role.MAINTAINER));
-        router.post("/api/service_link/delete").blockingHandler(auth.handle((ctx) -> {
+        router.post(API_SERVICE_LINK_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkDelete(ctx);
             }
