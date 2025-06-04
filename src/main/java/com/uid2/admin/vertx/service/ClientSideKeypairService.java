@@ -8,6 +8,7 @@ import com.uid2.admin.store.Clock;
 import com.uid2.admin.store.writer.ClientSideKeypairStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientSideKeypair;
 import com.uid2.shared.store.reader.RotatingClientSideKeypairStore;
@@ -69,12 +70,12 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             synchronized (writeLock) {
                 this.handleAddKeypair(ctx);
             }
-        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
         router.post(API_CLIENT_SIDE_KEYPAIRS_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdateKeypair(ctx);
             }
-        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(Collections.emptyList(), List.of("subscription_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
         router.get(API_CLIENT_SIDE_KEYPAIRS_LIST.toString()).handler(
             auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get(API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID.toString()).handler(
