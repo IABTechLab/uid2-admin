@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class SaltRotation {
     private static final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
+    private static final double MAX_SALT_PERCENTAGE = 0.8;
 
     private final IKeyGenerator keyGenerator;
     private final boolean isRefreshFromEnabled;
@@ -133,6 +134,8 @@ public class SaltRotation {
             TargetDate targetDate,
             Duration[] minAges,
             int numSaltsToRotate) {
+        var maxSaltsPerAge = this.isRefreshFromEnabled ? (int) (numSaltsToRotate * MAX_SALT_PERCENTAGE) : numSaltsToRotate;
+
         var thresholds = Arrays.stream(minAges)
                 .map(minAge -> targetDate.asInstant().minusSeconds(minAge.getSeconds()))
                 .sorted()
@@ -146,7 +149,7 @@ public class SaltRotation {
             var maxIndexes = numSaltsToRotate - indexesToRotate.size();
             var saltsToRotate = pickSaltsToRotateInTimeWindow(
                     refreshableSalts,
-                    maxIndexes,
+                    Math.min(maxIndexes, maxSaltsPerAge),
                     minLastUpdated.toEpochMilli(),
                     maxLastUpdated.toEpochMilli()
             );

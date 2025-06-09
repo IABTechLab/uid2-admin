@@ -358,7 +358,7 @@ class SaltRotationTest {
 
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        // 5 salts total, 3 refreshable, 2 rotated given 40% fraction
+                        // 5 salts total, 3 refreshable, 1 rotated given 40% fraction and 80% max salts will rotate at a given age
                         SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough, rotated
                         SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(targetDate()), // Refreshable, too new
                         SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)), // Not refreshable, old enough
@@ -370,17 +370,18 @@ class SaltRotationTest {
         var expected = Set.of(
                 "[INFO] Salt rotation complete target_date=2025-01-01",
                 // Post-rotation ages, we want to look at current state
-                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=2", // The two rotated salts, used to be 65 and 50 days old
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=1",
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=5 salt_count=1",
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=10 salt_count=1",
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=50 salt_count=1",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=65 salt_count=1",
 
                 // Pre-rotation ages, we want to see at which ages salts become refreshable, post rotation some will be 0
                 "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=5 salt_count=1",
                 "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=65 salt_count=2",
 
                 // Pre-rotation ages, post rotation they will all have age 0
-                "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=65 salt_count=2"
+                "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=65 salt_count=1"
         );
 
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
