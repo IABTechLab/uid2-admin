@@ -22,6 +22,7 @@ public enum Endpoints {
 
     API_CLIENT_SIDE_KEYPAIRS_ADD("/api/client_side_keypairs/add"),
     API_CLIENT_SIDE_KEYPAIRS_UPDATE("/api/client_side_keypairs/update"),
+    API_CLIENT_SIDE_KEYPAIRS_DELETE("/api/client_side_keypairs/delete"),
     API_CLIENT_SIDE_KEYPAIRS_LIST("/api/client_side_keypairs/list"),
     API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID("/api/client_side_keypairs/:subscriptionId"),
     API_CLIENT_SIDE_KEYPAIRS_BY_SITE("/api/v2/sites/:siteId/client-side-keypairs"),

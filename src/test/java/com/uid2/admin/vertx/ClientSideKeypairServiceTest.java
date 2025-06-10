@@ -556,6 +556,66 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             testContext.completeNow();
         });
     }
+
+    @Test
+    void deleteKeypairNoSubscriptionId(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.PRIVILEGED);
+
+        setKeypairs(new ArrayList<>());
+
+        JsonObject jo = new JsonObject();
+
+        post(vertx, testContext, "api/client_side_keypairs/delete", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("Required parameters: subscription_id", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteKeypairBadSubscriptionId(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.PRIVILEGED);
+
+        Map<String, ClientSideKeypair> keypairs = new HashMap<>() {{
+            put("89aZ234567", new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test@example.com", Instant.now(), false, name1));
+            put("9aZ2345678", new ClientSideKeypair("9aZ2345678", pub2, priv2, 125, "test@example.com", Instant.now(), false, name2));
+        }};
+        setKeypairs(new ArrayList<>(keypairs.values()));
+
+        JsonObject jo = new JsonObject();
+        jo.put("subscription_id", "bad-id");
+
+        post(vertx, testContext, "api/client_side_keypairs/delete", jo.encode(), response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("Failed to find a keypair for subscription id: bad-id", response.bodyAsJsonObject().getString("message"));
+            verify(keypairStoreWriter, times(0)).upload(any(), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void deleteKeypair(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.PRIVILEGED);
+
+        Instant time = Instant.now();
+        ClientSideKeypair keypairToDelete = new ClientSideKeypair("89aZ234567", pub1, priv1, 124, "test@example.com", time, false, name1);
+        ClientSideKeypair remainingKeypair = new ClientSideKeypair("9aZ2345678", pub2, priv2, 124, "test@example.com", time, false, name2);
+
+        setKeypairs(List.of(keypairToDelete, remainingKeypair));
+        setSites(new Site(124, "test", true));
+
+        JsonObject jo = new JsonObject();
+        jo.put("subscription_id", "89aZ234567");
+
+        post(vertx, testContext, "api/client_side_keypairs/delete", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            assertEquals(true, response.bodyAsJsonObject().getBoolean("success"));
+            validateKeypair(keypairToDelete, "test", response.bodyAsJsonObject().getJsonObject("deleted_keypair"));
+            verify(keypairStoreWriter, times(1)).upload(collectionOfSize(1), isNull());
+            testContext.completeNow();
+        });
+    }
 }
 
 
