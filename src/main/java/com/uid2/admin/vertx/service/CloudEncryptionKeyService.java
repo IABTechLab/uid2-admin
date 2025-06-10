@@ -8,11 +8,15 @@ import com.uid2.admin.cloudencryption.CloudEncryptionKeyRotationJob;
 import com.uid2.admin.job.JobDispatcher;
 import com.uid2.admin.model.CloudEncryptionKeyListResponse;
 import com.uid2.admin.vertx.Endpoints;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+
+import java.util.Collections;
+import java.util.List;
 
 public class CloudEncryptionKeyService implements IService {
     private final AdminAuthMiddleware auth;
@@ -39,7 +43,7 @@ public class CloudEncryptionKeyService implements IService {
         );
 
         router.post(Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE.toString()).handler(
-                auth.handle(this::handleRotate, Role.MAINTAINER, Role.SECRET_ROTATION)
+                auth.handle(this::handleRotate, new AuditParams(List.of("fail"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION)
         );
     }
 

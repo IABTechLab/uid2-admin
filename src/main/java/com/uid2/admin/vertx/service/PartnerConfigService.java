@@ -5,11 +5,15 @@ import com.uid2.admin.store.reader.RotatingPartnerStore;
 import com.uid2.admin.store.writer.PartnerStoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+
+import java.util.Collections;
+import java.util.List;
 
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
@@ -38,7 +42,7 @@ public class PartnerConfigService implements IService {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("partner_id", "config")), Role.PRIVILEGED));
     }
 
     private void handlePartnerConfigGet(RoutingContext rc) {

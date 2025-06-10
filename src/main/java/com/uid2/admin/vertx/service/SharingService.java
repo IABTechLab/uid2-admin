@@ -10,6 +10,7 @@ import com.uid2.admin.vertx.WriteLock;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.shared.Const;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.SiteUtil;
@@ -66,14 +67,14 @@ public class SharingService implements IService {
             auth.handle(this::handleListAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
         );
         router.post(API_SHARING_LIST_SITEID.toString()).handler(
-            auth.handle(this::handleSetAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
+            auth.handle(this::handleSetAllowedSites, new AuditParams(Collections.emptyList(), List.of("hash", "allowed_sites", "allowed_types")), Role.MAINTAINER, Role.SHARING_PORTAL)
         );
 
         router.get(API_SHARING_KEYSETS.toString()).handler(
             auth.handle(this::handleListAllKeysets, Role.MAINTAINER)
         );
         router.post(API_SHARING_KEYSET.toString()).handler(
-            auth.handle(this::handleSetKeyset, Role.MAINTAINER)
+            auth.handle(this::handleSetKeyset, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "allowed_sites", "allowed_types")), Role.MAINTAINER)
         );
         router.get(API_SHARING_KEYSET_KEYSETID.toString()).handler(
             auth.handle(this::handleListKeyset, Role.MAINTAINER)

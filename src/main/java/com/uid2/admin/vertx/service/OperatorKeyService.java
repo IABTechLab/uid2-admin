@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
 import com.uid2.admin.store.writer.OperatorKeyStoreWriter;
@@ -78,43 +79,43 @@ public class OperatorKeyService implements IService {
         router.get(API_OPERATOR_LIST.toString()).handler(
             auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get(API_OPERATOR_REVEAL.toString()).handler(
-            auth.handle(this::handleOperatorReveal, Role.MAINTAINER));
+            auth.handle(this::handleOperatorReveal, new AuditParams(List.of("name"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_OPERATOR_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
-        }, Role.MAINTAINER));
+        }, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_OPERATOR_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDel(ctx);
             }
-        }, Role.SUPER_USER));
+        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.SUPER_USER));
 
         router.post(API_OPERATOR_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDisable(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.PRIVILEGED));
 
         router.post(API_OPERATOR_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
-        }, Role.MAINTAINER));
+        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_OPERATOR_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorUpdate(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(List.of("name", "site_id", "operator_type"), Collections.emptyList()), Role.PRIVILEGED));
 
         router.post(API_OPERATOR_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(List.of("name", "roles"), Collections.emptyList()), Role.PRIVILEGED));
     }
 
     private void handleOperatorMetadata(RoutingContext rc) {

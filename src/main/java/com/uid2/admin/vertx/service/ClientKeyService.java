@@ -11,6 +11,7 @@ import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -26,10 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
@@ -97,37 +95,37 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
-        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.post(API_CLIENT_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDel(ctx);
             }
-        }, Role.SUPER_USER));
+        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.SUPER_USER));
 
         router.post(API_CLIENT_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientUpdate(ctx);
             }
-        }, Role.MAINTAINER));
+        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_CLIENT_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientDisable(ctx);
             }
-        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
 
         router.post(API_CLIENT_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientEnable(ctx);
             }
-        }, Role.MAINTAINER));
+        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_CLIENT_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleClientRoles(ctx);
             }
-        }, Role.PRIVILEGED, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("contact", "roles"), Collections.emptyList()), Role.PRIVILEGED, Role.SHARING_PORTAL));
 
         router.post(API_CLIENT_CONTACT.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
@@ -139,7 +137,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientRename(ctx);
             }
-        }, Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("contact", "newName"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

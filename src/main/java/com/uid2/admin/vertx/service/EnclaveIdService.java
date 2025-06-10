@@ -8,6 +8,7 @@ import com.uid2.admin.vertx.JsonUtil;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.EnclaveIdentifier;
@@ -18,6 +19,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -55,12 +57,12 @@ public class EnclaveIdService implements IService {
             synchronized (writeLock) {
                 this.handleEnclaveAdd(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(List.of("name", "protocol", "enclave_id"), Collections.emptyList()), Role.PRIVILEGED));
         router.post(API_ENCLAVE_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveDel(ctx);
             }
-        }, Role.SUPER_USER));
+        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.SUPER_USER));
     }
 
     private void handleEnclaveMetadata(RoutingContext rc) {
