@@ -4,6 +4,7 @@ import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ServiceLink;
 import com.uid2.shared.store.reader.RotatingServiceLinkStore;
@@ -17,10 +18,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
@@ -56,17 +54,17 @@ public class ServiceLinkService implements IService {
             synchronized (writeLock) {
                 this.handleServiceLinkAdd(ctx);
             }
-        }, Role.MAINTAINER));
+        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
         router.post(API_SERVICE_LINK_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkUpdate(ctx);
             }
-        }, Role.MAINTAINER));
+        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
         router.post(API_SERVICE_LINK_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkDelete(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id")), Role.PRIVILEGED));
     }
 
     private void handleServiceLinkList(RoutingContext rc) {
