@@ -56,7 +56,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsLastSnapshotIsUpToDate() throws Exception {
+    void testRotateSaltsLastSnapshotIsUpToDate() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -74,7 +74,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsAllSaltsUpToDate() throws Exception {
+    void testRotateSaltsAllSaltsUpToDate() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -90,7 +90,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsAllSaltsOld() throws Exception {
+    void testRotateSaltsAllSaltsOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -110,7 +110,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
+    void testRotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(4),
@@ -135,7 +135,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
+    void testRotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(3),
@@ -158,7 +158,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromMultipleBuckets() throws Exception {
+    void testRotateSaltsRotateSaltsFromMultipleBuckets() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(4),
@@ -183,7 +183,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
+    void testRotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(3),
@@ -232,7 +232,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsPopulatePreviousSaltsOnRotation() throws Exception {
+    void testRotateSaltsPopulatePreviousSaltsOnRotation() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(90),
                 Duration.ofDays(60),
@@ -260,7 +260,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsPreservePreviousSaltsLessThan90DaysOld() throws Exception {
+    void testRotateSaltsPreservePreviousSaltsLessThan90DaysOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(60),
         };
@@ -285,7 +285,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRemovePreviousSaltsOver90DaysOld() throws Exception {
+    void testRotateSaltsRemovePreviousSaltsOver90DaysOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(100),
         };
@@ -309,9 +309,8 @@ class SaltRotationTest {
         assertNull(salts[1].previousSalt());
     }
 
-
     @Test
-    void rotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
+    void testRotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
         JsonObject config = new JsonObject();
         config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
@@ -351,7 +350,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void logsSaltAgesOnRotation() throws Exception {
+    void testLogsSaltAgesOnRotation() throws Exception {
         JsonObject config = new JsonObject();
         config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
