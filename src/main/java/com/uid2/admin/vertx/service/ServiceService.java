@@ -4,6 +4,7 @@ import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.store.writer.StoreWriter;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.Service;
 import com.uid2.shared.model.ServiceLink;
@@ -55,17 +56,17 @@ public class ServiceService implements IService {
             synchronized (writeLock) {
                 this.handleServiceAdd(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "roles")), Role.PRIVILEGED));
         router.post(API_SERVICE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdate(ctx);
             }
-        }, Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("service_id", "site_id", "name", "roles")), Role.PRIVILEGED));
         router.post(API_SERVICE_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleDelete(ctx);
             }
-        }, Role.SUPER_USER));
+        }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.SUPER_USER));
     }
 
     private void handleServiceListAll(RoutingContext rc) {
