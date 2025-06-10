@@ -1,6 +1,5 @@
 package com.uid2.admin.salt.helper;
 
-import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.salt.TargetDate;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
@@ -29,6 +28,13 @@ public class SaltSnapshotBuilder {
     public SaltSnapshotBuilder entries(int count, TargetDate lastUpdated) {
         for (int i = 0; i < count; ++i) {
             entries.add(SaltBuilder.start().lastUpdated(lastUpdated).build());
+        }
+        return this;
+    }
+
+    public SaltSnapshotBuilder entries(int count, TargetDate lastUpdated, TargetDate refreshFrom) {
+        for (int i = 0; i < count; ++i) {
+            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).refreshFrom(refreshFrom).build());
         }
         return this;
     }
