@@ -7,6 +7,7 @@ import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
@@ -21,6 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,7 +59,7 @@ public class SaltService implements IService {
             synchronized (writeLock) {
                 this.handleSaltRotate(ctx);
             }
-        }, Role.SUPER_USER, Role.SECRET_ROTATION));
+        }, new AuditParams(List.of("fraction", "min_ages_in_seconds", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {
