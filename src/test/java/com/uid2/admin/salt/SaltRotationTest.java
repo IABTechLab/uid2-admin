@@ -56,7 +56,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsLastSnapshotIsUpToDate() throws Exception {
+    void testRotateSaltsLastSnapshotIsUpToDate() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -74,7 +74,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsAllSaltsUpToDate() throws Exception {
+    void testRotateSaltsAllSaltsUpToDate() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -90,7 +90,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsAllSaltsOld() throws Exception {
+    void testRotateSaltsAllSaltsOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(1),
                 Duration.ofDays(2),
@@ -110,7 +110,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
+    void testRotateSaltsRotateSaltsFromOldestBucketOnly() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(4),
@@ -135,7 +135,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
+    void testRotateSaltsRotateSaltsFromNewerBucketOnly() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(3),
@@ -158,7 +158,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsFromMultipleBuckets() throws Exception {
+    void testRotateSaltsRotateSaltsFromMultipleBuckets() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(4),
@@ -183,7 +183,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
+    void testRotateSaltsRotateSaltsInsufficientOutdatedSalts() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(5),
                 Duration.ofDays(3),
@@ -232,7 +232,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsPopulatePreviousSaltsOnRotation() throws Exception {
+    void testRotateSaltsPopulatePreviousSaltsOnRotation() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(90),
                 Duration.ofDays(60),
@@ -260,7 +260,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsPreservePreviousSaltsLessThan90DaysOld() throws Exception {
+    void testRotateSaltsPreservePreviousSaltsLessThan90DaysOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(60),
         };
@@ -285,7 +285,7 @@ class SaltRotationTest {
     }
 
     @Test
-    void rotateSaltsRemovePreviousSaltsOver90DaysOld() throws Exception {
+    void testRotateSaltsRemovePreviousSaltsOver90DaysOld() throws Exception {
         final Duration[] minAges = {
                 Duration.ofDays(100),
         };
@@ -309,9 +309,8 @@ class SaltRotationTest {
         assertNull(salts[1].previousSalt());
     }
 
-
     @Test
-    void rotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
+    void testRotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
         JsonObject config = new JsonObject();
         config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
@@ -351,18 +350,20 @@ class SaltRotationTest {
     }
 
     @Test
-    void logsSaltAgesOnRotation() throws Exception {
+    void testLogFewSaltAgesOnRotation() throws Exception {
         JsonObject config = new JsonObject();
         config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
 
+        // 7 salts total, 5 refreshable, 3 will rotate (6 * 0.4 rounded up), up to 2 will rotate per age (3 * 0.8)
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        // 5 salts total, 3 refreshable, 2 rotated given 40% fraction
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough, rotated
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough
                         SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(targetDate()), // Refreshable, too new
+                        SaltBuilder.start().lastUpdated(daysEarlier(33)).refreshFrom(targetDate()), // Refreshable, old enough
                         SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)), // Not refreshable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough, rotated
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough
                         SaltBuilder.start().lastUpdated(daysEarlier(10)).refreshFrom(daysLater(10)) // Not refreshable, too new
                 )
                 .build();
@@ -370,21 +371,66 @@ class SaltRotationTest {
         var expected = Set.of(
                 "[INFO] Salt rotation complete target_date=2025-01-01",
                 // Post-rotation ages, we want to look at current state
-                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=2", // The two rotated salts, used to be 65 and 50 days old
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=3",
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=5 salt_count=1",
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=10 salt_count=1",
                 "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=50 salt_count=1",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=65 salt_count=1",
 
                 // Pre-rotation ages, we want to see at which ages salts become refreshable, post rotation some will be 0
                 "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=5 salt_count=1",
-                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=65 salt_count=2",
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=33 salt_count=1",
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=65 salt_count=3",
 
                 // Pre-rotation ages, post rotation they will all have age 0
+                "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=33 salt_count=1",
                 "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=65 salt_count=2"
         );
 
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
         saltRotation.rotateSalts(lastSnapshot, minAges, 0.4, targetDate());
+
+        var actual = appender.list.stream().map(Object::toString).collect(Collectors.toSet());
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void testLogManySaltAgesOnRotation() throws Exception {
+        JsonObject config = new JsonObject();
+        config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
+        saltRotation = new SaltRotation(config, keyGenerator);
+
+        // 50 salts total, 16 refreshable, 10 will rotate (18 * 0.2 rounded up), up to 8 will rotate per age (10 * 0.8)
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(10, daysEarlier(5), targetDate()) // Refreshable, too new
+                .entries(10, daysEarlier(10), daysLater(10)) // Not refreshable, too new
+                .entries(10, daysEarlier(33), targetDate()) // Refreshable, old enough
+                .entries(10, daysEarlier(50), daysLater(1)) // Not refreshable, old enough
+                .entries(10, daysEarlier(65), targetDate()) // Refreshable, old enough
+                .build();
+
+        var expected = Set.of(
+                "[INFO] Salt rotation complete target_date=2025-01-01",
+                // Post-rotation ages, we want to look at current state
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=0 salt_count=10",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=5 salt_count=10",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=10 salt_count=10",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=33 salt_count=8",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=50 salt_count=10",
+                "[INFO] salt_count_type=total-salts target_date=2025-01-01 age=65 salt_count=2",
+
+                // Pre-rotation ages, we want to see at which ages salts become refreshable, post rotation some will be 0
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=5 salt_count=10",
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=33 salt_count=10",
+                "[INFO] salt_count_type=refreshable-salts target_date=2025-01-01 age=65 salt_count=10",
+
+                // Pre-rotation ages, post rotation they will all have age 0
+                "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=33 salt_count=2",
+                "[INFO] salt_count_type=rotated-salts target_date=2025-01-01 age=65 salt_count=8"
+        );
+
+        var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
+        saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate());
 
         var actual = appender.list.stream().map(Object::toString).collect(Collectors.toSet());
         assertThat(actual).isEqualTo(expected);
@@ -397,5 +443,4 @@ class SaltRotationTest {
     private int countEntriesWithLastUpdated(SaltEntry[] entries, Instant lastUpdated) {
         return (int) Arrays.stream(entries).filter(e -> e.lastUpdated() == lastUpdated.toEpochMilli()).count();
     }
-
 }
