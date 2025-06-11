@@ -180,7 +180,7 @@ public class AdminAuthMiddleware {
             userDetails.put("groups", groups);
             userDetails.put("email", jwt.getClaims().get("email"));
             userDetails.put("sub", jwt.getClaims().get("sub"));
-            rc.put("userDetails", userDetails);
+            rc.put("user_details", userDetails);
             if(isAuthorizedUser(groups)) {
                 innerHandler.handle(rc);
             } else {

@@ -292,7 +292,7 @@ public class AdminAuthMiddlewareTest {
 
         Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, allowedRole);
         handler.handle(rc);
-        JsonObject userDetails = rc.get("userDetails");
+        JsonObject userDetails = rc.get("user_details");
         Set<String> scopes = userDetails.getJsonArray("scope").stream()
                 .map(Object::toString)
                 .collect(Collectors.toSet());
