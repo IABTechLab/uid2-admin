@@ -154,7 +154,7 @@ public class AdminAuthMiddleware {
             JsonObject serviceAccountDetails = new JsonObject();
             serviceAccountDetails.put("scope", scopes);
             serviceAccountDetails.put("client_id", jwt.getClaims().get("client_id"));
-            rc.put("userDetails", serviceAccountDetails);
+            rc.put("user_details", serviceAccountDetails);
             if(isAuthorizedService(scopes)) {
                 innerHandler.handle(rc);
             } else {
