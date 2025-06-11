@@ -213,7 +213,7 @@ public class AdminAuthMiddlewareTest {
 
         Handler<RoutingContext> handler = adminAuthMiddleware.handle(innerHandler, endpointRoles);
         handler.handle(rc);
-        JsonObject userDetails = rc.get("userDetails");
+        JsonObject userDetails = rc.get("user_details");
         Set<String> groups = userDetails.getJsonArray("groups").stream()
                 .map(Object::toString)
                 .collect(Collectors.toSet());
