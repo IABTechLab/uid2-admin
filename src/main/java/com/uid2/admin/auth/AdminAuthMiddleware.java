@@ -154,7 +154,7 @@ public class AdminAuthMiddleware {
             JsonObject serviceAccountDetails = new JsonObject();
             serviceAccountDetails.put("scope", scopes);
             serviceAccountDetails.put("client_id", jwt.getClaims().get("client_id"));
-            rc.put("userDetails", serviceAccountDetails);
+            rc.put("user_details", serviceAccountDetails);
             if(isAuthorizedService(scopes)) {
                 innerHandler.handle(rc);
             } else {
@@ -180,7 +180,7 @@ public class AdminAuthMiddleware {
             userDetails.put("groups", groups);
             userDetails.put("email", jwt.getClaims().get("email"));
             userDetails.put("sub", jwt.getClaims().get("sub"));
-            rc.put("userDetails", userDetails);
+            rc.put("user_details", userDetails);
             if(isAuthorizedUser(groups)) {
                 innerHandler.handle(rc);
             } else {
