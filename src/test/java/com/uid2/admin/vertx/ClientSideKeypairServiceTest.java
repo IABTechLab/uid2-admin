@@ -14,10 +14,14 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -613,6 +617,42 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals(true, response.bodyAsJsonObject().getBoolean("success"));
             validateKeypair(keypairToDelete, "test", response.bodyAsJsonObject().getJsonObject("deleted_keypair"));
             verify(keypairStoreWriter, times(1)).upload(collectionOfSize(1), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    private static Stream<Arguments> deleteRoles() {
+        return Stream.of(
+                Arguments.of(Role.MAINTAINER, 401, false),
+                Arguments.of(Role.PRIVILEGED, 200, true),
+                Arguments.of(Role.SHARING_PORTAL, 200, true)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("deleteRoles")
+    void deleteKeypairAuthorization(Role role, int expectedStatus, boolean shouldSucceed, Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(role);
+
+        Instant time = Instant.now();
+        ClientSideKeypair keypairToDelete = new ClientSideKeypair("CC12345678", pub1, priv1, 222, "contact@example.com", time, false, name1);
+        ClientSideKeypair remainingKeypair = new ClientSideKeypair("DD12345678", pub2, priv2, 222, "contact@example.com", time, false, name2);
+
+        setKeypairs(List.of(keypairToDelete, remainingKeypair));
+        setSites(new Site(222, "test", true));
+
+        JsonObject jo = new JsonObject().put("subscription_id", "CC12345678");
+
+        post(vertx, testContext, "api/client_side_keypairs/delete", jo.encode(), response -> {
+            assertEquals(expectedStatus, response.statusCode());
+
+            if (shouldSucceed) {
+                assertTrue(response.bodyAsJsonObject().getBoolean("success"));
+                validateKeypair(keypairToDelete, "test", response.bodyAsJsonObject().getJsonObject("deleted_keypair"));
+                verify(keypairStoreWriter, times(1)).upload(collectionOfSize(1), isNull());
+            } else {
+                verify(keypairStoreWriter, times(0)).upload(any(), isNull());
+            }
             testContext.completeNow();
         });
     }
