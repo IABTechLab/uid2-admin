@@ -76,6 +76,11 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
                 this.handleUpdateKeypair(ctx);
             }
         }, new AuditParams(Collections.emptyList(), List.of("subscription_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
+        router.post(API_CLIENT_SIDE_KEYPAIRS_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleDeleteKeypair(ctx);
+            }
+        }, new AuditParams(Collections.emptyList(), List.of("subscription_id")), Role.PRIVILEGED, Role.SHARING_PORTAL));
         router.get(API_CLIENT_SIDE_KEYPAIRS_LIST.toString()).handler(
             auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get(API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID.toString()).handler(
@@ -119,22 +124,16 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
     }
 
     private void handleUpdateKeypair(RoutingContext rc) {
-        final JsonObject body = rc.body().asJsonObject();
-        final String subscriptionId = body.getString("subscription_id");
+        JsonObject body = getRequestBody(rc);
+        if (body == null) return;
+
         String contact = body.getString("contact");
         Boolean disabled = body.getBoolean("disabled");
         String name = body.getString("name");
 
-        if (subscriptionId == null) {
-            ResponseUtil.error(rc, 400, "Required parameters: subscription_id");
-            return;
-        }
+        ClientSideKeypair keypair = validateAndGetKeypair(rc, body);
+        if (keypair == null) return;
 
-        ClientSideKeypair keypair = this.keypairStore.getSnapshot().getKeypair(subscriptionId);
-        if (keypair == null) {
-            ResponseUtil.error(rc, 404, "Failed to find a keypair for subscription id: " + subscriptionId);
-            return;
-        }
 
         if (contact == null && disabled == null && name == null) {
             ResponseUtil.error(rc, 400, "Updatable parameters: contact, disabled, name");
@@ -177,6 +176,30 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
         final JsonObject json = createKeypairJsonObject(toJsonWithoutPrivateKey(newKeypair));
         rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
+    }
+
+    private void handleDeleteKeypair(RoutingContext rc) {
+        JsonObject body = getRequestBody(rc);
+        if (body == null) return;
+
+        ClientSideKeypair keypair = validateAndGetKeypair(rc, body);
+        if (keypair == null) return;
+
+        Set<ClientSideKeypair> allKeypairs = new HashSet<>(this.keypairStore.getAll());
+        allKeypairs.remove(keypair);
+
+        try {
+            storeWriter.upload(allKeypairs, null);
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "failed to upload keypairs", e);
+            return;
+        }
+
+        JsonObject responseJson = new JsonObject()
+                .put("success", true)
+                .put("deleted_keypair", createKeypairJsonObject(toJsonWithoutPrivateKey(keypair)));
+        rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .end(responseJson.encode());
     }
 
     public Iterable<ClientSideKeypair> getKeypairsBySite(int siteId) {
@@ -242,5 +265,28 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
         return newKeypair;
 
+    }
+
+    private JsonObject getRequestBody(RoutingContext rc) {
+        JsonObject body = rc.body() != null ? rc.body().asJsonObject() : null;
+        if (body == null) {
+            ResponseUtil.error(rc, 400, "json payload required but not provided");
+        }
+        return body;
+    }
+
+    private ClientSideKeypair validateAndGetKeypair(RoutingContext rc, JsonObject body) {
+        String subscriptionId = body.getString("subscription_id");
+        if (subscriptionId == null) {
+            ResponseUtil.error(rc, 400, "Required parameters: subscription_id");
+            return null;
+        }
+
+        ClientSideKeypair keypair = this.keypairStore.getSnapshot().getKeypair(subscriptionId);
+        if (keypair == null) {
+            ResponseUtil.error(rc, 404, "Failed to find a keypair for subscription id: " + subscriptionId);
+            return null;
+        }
+        return keypair;
     }
 }

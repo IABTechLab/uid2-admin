@@ -33,6 +33,7 @@
     <li class="ro-sem" style="display: none"><a href="#" id="doListSubscription">Reveal Keypair By Subscription Id</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doCreate">Create Keypair</a></li>
     <li class="ro-sem" style="display: none"><a href="#" id="doUpdate">Update Keypair</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doDelete">Delete Keypair</a></li>
 </ul>
 
 <br>
@@ -107,6 +108,20 @@
             }
 
             doApiCall('POST', '/api/client_side_keypairs/update', '#standardOutput', '#errorOutput', JSON.stringify(payload));
+        });
+
+        $('#doDelete').on('click', function () {
+            const subscriptionId = $('#subscriptionId').val();
+            if (!subscriptionId) {
+                $('#errorOutput').text("required parameters: subscription_id");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${subscriptionId}?`)) return;
+
+            const payload = {"subscription_id": subscriptionId};
+
+            doApiCall('POST', '/api/client_side_keypairs/delete', '#standardOutput', '#errorOutput', JSON.stringify(payload));
         });
 
     });
