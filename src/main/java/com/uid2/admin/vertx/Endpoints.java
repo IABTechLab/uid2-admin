@@ -67,6 +67,7 @@ public enum Endpoints {
 
     API_SALT_SNAPSHOTS("/api/salt/snapshots"),
     API_SALT_ROTATE("/api/salt/rotate"),
+    API_SALT_ROTATE_ZERO("/api/salt/rotate-zero"),
 
     API_SEARCH("/api/search"),
 

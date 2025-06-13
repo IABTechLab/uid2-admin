@@ -443,4 +443,53 @@ class SaltRotationTest {
     private int countEntriesWithLastUpdated(SaltEntry[] entries, Instant lastUpdated) {
         return (int) Arrays.stream(entries).filter(e -> e.lastUpdated() == lastUpdated.toEpochMilli()).count();
     }
+
+    @Test
+    void testRotateSaltsZeroDoesntRotateSaltsButUpdatesRefreshFrom() throws Exception {
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).refreshFrom(targetDate().minusDays(45)).id(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(targetDate()).id(2),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(30)).refreshFrom(targetDate()).id(3),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(20)).refreshFrom(targetDate().plusDays(10)).id(4)
+                )
+                .effective(daysEarlier(1))
+                .expires(daysLater(6))
+                .build();
+
+        var expected = List.of(
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).refreshFrom(targetDate().plusDays(15)).id(1).build(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(targetDate().plusDays(30)).id(2).build(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(30)).refreshFrom(targetDate().plusDays(30)).id(3).build(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(20)).refreshFrom(targetDate().plusDays(10)).id(4).build()
+                ).toArray();
+
+        var result = saltRotation.rotateSaltsZero(lastSnapshot, targetDate(), targetDate().asInstant());
+        assertThat(result.hasSnapshot()).isTrue();
+
+        // None are rotated, refreshFrom is updated where it is now or in the past - same as regular rotation
+        assertThat(result.getSnapshot().getAllRotatingSalts()).isEqualTo(expected);
+
+        // Effective now
+        assertThat(result.getSnapshot().getEffective()).isEqualTo(targetDate().asInstant());
+
+        // Expires in a week
+        assertThat(result.getSnapshot().getExpires()).isEqualTo(daysLater(7).asInstant());
+    }
+
+    @Test
+    void testRotateSaltsZeroWorksWhenThereIsFutureSaltFile() throws Exception {
+        // In regular salt rotations if there is a salt
+
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(75)))
+                .effective(daysLater(10))
+                .build();
+
+        var result = saltRotation.rotateSaltsZero(lastSnapshot, targetDate(), targetDate().asInstant());
+
+        assertThat(result.hasSnapshot()).isTrue();
+        assertThat(result.getSnapshot().getEffective()).isEqualTo(targetDate().asInstant());
+        assertThat(result.getSnapshot().getExpires()).isEqualTo(daysLater(7).asInstant());
+    }
 }

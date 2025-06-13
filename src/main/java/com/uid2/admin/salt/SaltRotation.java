@@ -4,6 +4,8 @@ import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 
+import com.uid2.shared.store.salt.ISaltProvider;
+import com.uid2.shared.store.salt.ISaltProvider.ISaltSnapshot;
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -68,6 +70,27 @@ public class SaltRotation {
                 lastSnapshot.getFirstLevelSalt());
         return Result.fromSnapshot(nextSnapshot);
     }
+
+    public Result rotateSaltsZero(
+            ISaltSnapshot effectiveSnapshot,
+            TargetDate targetDate,
+            Instant nextEffective
+    ) throws Exception {
+        var preRotationSalts = effectiveSnapshot.getAllRotatingSalts();
+        var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
+
+        var postRotationSalts = rotateSalts(preRotationSalts, List.of(), targetDate);
+
+        LOGGER.info("Zero salt rotation complete target_date={}", targetDate);
+
+        var nextSnapshot = new SaltSnapshot(
+                nextEffective,
+                nextExpires,
+                postRotationSalts,
+                effectiveSnapshot.getFirstLevelSalt());
+        return Result.fromSnapshot(nextSnapshot);
+    }
+
 
     private static int getNumSaltsToRotate(SaltEntry[] preRotationSalts, double fraction) {
         return (int) Math.ceil(preRotationSalts.length * fraction);
