@@ -27,7 +27,7 @@ public class SaltSnapshotBuilder {
 
     public SaltSnapshotBuilder entries(int count, TargetDate lastUpdated) {
         for (int i = 0; i < count; ++i) {
-            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).build());
+            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).refreshFrom(lastUpdated.plusDays(30)).build());
         }
         return this;
     }

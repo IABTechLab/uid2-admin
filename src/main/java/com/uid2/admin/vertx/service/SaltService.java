@@ -26,8 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.uid2.admin.vertx.Endpoints.API_SALT_ROTATE;
-import static com.uid2.admin.vertx.Endpoints.API_SALT_SNAPSHOTS;
+import static com.uid2.admin.vertx.Endpoints.*;
 
 public class SaltService implements IService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltService.class);
@@ -60,6 +59,12 @@ public class SaltService implements IService {
                 this.handleSaltRotate(ctx);
             }
         }, new AuditParams(List.of("fraction", "min_ages_in_seconds", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
+
+        router.post(API_SALT_ROTATE_ZERO.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSaltRotateZero(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {
@@ -101,6 +106,37 @@ public class SaltService implements IService {
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
             final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, fraction.get(), targetDate);
+            if (!result.hasSnapshot()) {
+                ResponseUtil.error(rc, 200, result.getReason());
+                return;
+            }
+
+            storageManager.upload(result.getSnapshot());
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(toJson(result.getSnapshot()).encode());
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSaltRotateZero(RoutingContext rc) {
+        try {
+            Instant now = Instant.now();
+
+            // force refresh
+            this.saltProvider.loadContent();
+
+            // mark all the referenced files as ready to archive
+            storageManager.archiveSaltLocations();
+
+            // Unlike in regular salt rotation, this should be based on the currently effective snapshot.
+            // The latest snapshot may be in the future, and we may have changes that shouldn't be activated yet.
+            var effectiveSnapshot = this.saltProvider.getSnapshot(now);
+
+            var result = saltRotation.rotateSaltsZero(effectiveSnapshot, TargetDate.now(), now);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;
