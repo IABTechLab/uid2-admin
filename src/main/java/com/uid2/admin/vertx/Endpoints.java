@@ -82,6 +82,7 @@ public enum Endpoints {
     API_SERVICE_ADD("/api/service/add"),
     API_SERVICE_UPDATE("/api/service/update"),
     API_SERVICE_DELETE("/api/service/delete"),
+    API_SERVICE_REMOVE_LINK_ID_REGEX("/api/service/remove-link-id-regex"),
 
     API_SHARING_LISTS("/api/sharing/lists"),
     API_SHARING_LIST_SITEID("/api/sharing/list/:siteId"),

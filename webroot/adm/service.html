@@ -22,6 +22,8 @@
     <input type="text" id="serviceName" name="serviceName">
     <label for="roles">Roles:</label>
     <input type="text" id="roles" name="roles">
+    <label for="linkIdRegex">Link Id Regex:</label>
+    <input type="text" id="linkIdRegex" name="linkIdRegex">
 </div>
 
 <br>
@@ -34,6 +36,7 @@
     <li class="ro-cki" style="display: none"><a href="#" id="doListByServiceId">Get Service By Service Id</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service (PRIVILEGED)</a></li>
     <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update Service (PRIVILEGED)</a></li>
+    <li class="ro-cki" style="display: none"><a href="#" id="doRemoveLinkIdRegex">Remove Link Id Regex (PRIVILEGED)</a></li>
 </ul>
 
 <br>
@@ -87,8 +90,9 @@
             }
 
             const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            const linkIdRegex = $('#linkIdRegex').val()
 
-            doApiCall('POST', '/api/service/add', '#standardOutput', '#errorOutput', JSON.stringify({site_id: siteId, name: serviceName, roles: roles}));
+            doApiCall('POST', '/api/service/add', '#standardOutput', '#errorOutput', JSON.stringify({site_id: siteId, name: serviceName, roles: roles, link_id_regex: linkIdRegex}));
         });
 
         $('#doUpdate').on('click', function () {
@@ -98,10 +102,12 @@
                 return
             }
             const siteId = parseInt($('#siteId').val())
-            const serviceName = $('#serviceName').val()
-            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            const serviceName = $('#serviceName').val();
+            let roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
+            roles = roles.length > 0 ? roles : null;
+            const linkIdRegex = $('#linkIdRegex').val()
 
-            doApiCall('POST', '/api/service/update', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, site_id: siteId, name: serviceName, roles: roles}));
+            doApiCall('POST', '/api/service/update', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, site_id: siteId, name: serviceName, roles: roles, link_id_regex: linkIdRegex}));
         });
 
         $('#doDelete').on('click', function () {
@@ -116,6 +122,18 @@
             }
 
             doApiCall('POST', '/api/service/delete', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId}));
+        });
+
+        $('#doRemoveLinkIdRegex').on('click', function () {
+            if (!confirm("Are you sure you want to remove the link id regex?")) {
+                return;
+            }
+            const serviceId = parseInt($('#serviceId').val())
+            if(!serviceId) {
+                $('#errorOutput').text("required parameters: service_id")
+                return
+            }
+            doApiCall('POST', '/api/service/remove-link-id-regex', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId}));
         });
     });
 </script>
