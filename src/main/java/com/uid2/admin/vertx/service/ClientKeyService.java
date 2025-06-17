@@ -258,7 +258,7 @@ public class ClientKeyService implements IService {
         returnObject.put("name", clientKey.getName());
         returnObject.put("contact", clientKey.getContact());
         returnObject.put("roles", RequestUtil.getRolesSpec(clientKey.getRoles()));
-        returnObject.put("created", clientKey.getCreated());
+        returnObject.put("created", clientKey.getCreated() * 1000L); // convert creation timestamp from seconds to milliseconds for JSON display
         returnObject.put("site_id", clientKey.getSiteId());
         returnObject.put("disabled", clientKey.isDisabled());
         returnObject.put("service_id", clientKey.getServiceId());
