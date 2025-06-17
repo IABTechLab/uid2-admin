@@ -78,10 +78,13 @@ function loadSiteCallback(result) {
 }
 
 function loadAPIKeysCallback(result) {
+    console.log('bare result function received', result);
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
-    resultJson = resultJson.map((item) => { 
-        const created = new Date(item.created).toLocaleString();
+    resultJson = resultJson.map((item) => {
+        console.log(`Raw created value: ${item.created}`); // Before formatting
+        const created = new Date(item.created * 1000).toLocaleString();
+        console.log(`Formatted created time: ${created}`); // After formatting
         return { ...item, created };
     });
     const formatted = prettifyJson(JSON.stringify(resultJson));
@@ -97,12 +100,15 @@ function loadKeyPairsCallback(result, siteId) {
 };
 
 function loadEncryptionKeysCallback(result, siteId) {
+    console.log('bare result function received', result);
     const resultJson = JSON.parse(result);
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
     let expirations = [];
     let notActivated = [];
-    filteredResults = filteredResults.map((item) => { 
+    filteredResults = filteredResults.map((item) => {
+        console.log(`Raw created value: ${item.created}`)
         const created = new Date(item.created).toLocaleString();
+        console.log(`Created time: ${created}`);
         const activates = new Date(item.activates).toLocaleString();
         const expires = new Date(item.expires).toLocaleString();
         if (item.expires < Date.now()) {
