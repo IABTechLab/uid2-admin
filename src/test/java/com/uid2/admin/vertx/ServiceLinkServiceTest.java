@@ -633,6 +633,8 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", " XY12345", false), // snowflake invalid, leading whitespace
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345 ", false), // snowflake invalid, trailing whitespace
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY 12345", false), // snowflake invalid, whitespace in the middle
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "", false), // snowflake invalid, empty
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", " ", false), // snowflake invalid, just whitespace
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY_12345", true) // snowflake valid, used underscore
         );
     }
