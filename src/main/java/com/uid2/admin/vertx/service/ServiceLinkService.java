@@ -120,7 +120,7 @@ public class ServiceLinkService implements IService {
             }
 
             String linkIdRegex = serviceProvider.getService(serviceId).getLinkIdRegex();
-            if (!validateLinkIdAgainstServiceRegex(linkId, linkIdRegex)) {
+            if (!isValidLinkId(linkId, linkIdRegex)) {
                 ResponseUtil.error(rc, 400, "link_id " + linkId + " does not match service_id " + serviceId + " link_id_regex: " + linkIdRegex);
                 return;
             }
@@ -278,7 +278,7 @@ public class ServiceLinkService implements IService {
         return roles;
     }
 
-    private boolean validateLinkIdAgainstServiceRegex(String linkId, String serviceRegex) {
+    private boolean isValidLinkId(String linkId, String serviceRegex) {
         if (serviceRegex == null) {
             return true;
         }
