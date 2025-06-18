@@ -33,8 +33,8 @@
 
 <ul>
     <li class="ro-sem" style="display: none"><a href="#" id="doSnapshots">List Salt Snapshots</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotate">Rotate second level salts (SUPER_USER)</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateZero">Rotate zero salts</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRebuild">Rebuild Salts File</a></li>
+    <li class="ro-sem" style="display: none"><a href="#" id="doRotate">Rotate Second Level Salts (SUPER_USER)</a></li>
 </ul>
 
 <br>
@@ -64,6 +64,10 @@
             doApiCall('GET', '/api/salt/snapshots', '#standardOutput', '#errorOutput');
         });
 
+        $('#doRebuild').on('click', function () {
+            doApiCall('POST', '/api/salt/rebuild', '#standardOutput', '#errorOutput');
+        });
+
         $('#doRotate').on('click', function () {
             const minAges = encodeURIComponent($('#minAges').val());
             const fraction = encodeURIComponent($('#fraction').val());
@@ -71,10 +75,6 @@
             const url = '/api/salt/rotate?min_ages_in_seconds=' + minAges + '&fraction=' + fraction + '&target_date=' + targetDate;
 
             doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRotateZero').on('click', function () {
-            doApiCall('POST', '/api/salt/rotate-zero', '#standardOutput', '#errorOutput');
         });
     });
 </script>

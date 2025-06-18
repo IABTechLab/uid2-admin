@@ -67,8 +67,8 @@ public enum Endpoints {
     API_PRIVATE_SITES_REFRESH_NOW("/api/private-sites/refreshNow"),
 
     API_SALT_SNAPSHOTS("/api/salt/snapshots"),
+    API_SALT_REBUILD("/api/salt/rebuild"),
     API_SALT_ROTATE("/api/salt/rotate"),
-    API_SALT_ROTATE_ZERO("/api/salt/rotate-zero"),
 
     API_SEARCH("/api/search"),
 
