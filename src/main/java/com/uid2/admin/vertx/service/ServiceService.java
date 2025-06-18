@@ -58,12 +58,12 @@ public class ServiceService implements IService {
             synchronized (writeLock) {
                 this.handleServiceAdd(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "roles")), Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "roles", "link_id_regex")), Role.PRIVILEGED));
         router.post(API_SERVICE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdate(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("service_id", "site_id", "name", "roles")), Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("service_id", "site_id", "name", "roles", "link_id_regex")), Role.PRIVILEGED));
         router.post(API_SERVICE_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleDelete(ctx);
