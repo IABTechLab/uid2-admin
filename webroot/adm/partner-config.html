@@ -1,98 +1,87 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script type="module" src="/js/dangerModal.js"></script>
+  <script type="module" src="/js/operations.js"></script>
+  <script type="module" src="/js/output.js"></script>
+  <script type="module" src="/js/roleBadge.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Partner Config</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-adm" style="display: none"><a href="#" id="doGet">Get Partner Config</a></li>
-    <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update Partner Config (PRIVILEGED)</a></li>
-</ul>
-
-<br>
-
-<h3>Partner Config</h3>
-
-<textarea id="json" name="json" rows="40" cols="120">
-</textarea>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="standardOutput"></pre>
-    <pre id="errorOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    function getConfig(outputText, errorDiv) {
-        $(outputText).val('');
-        $(errorDiv).text('');
+<script type="module">
+import { initializeOperations } from '/js/operations.js';
+import { initializeOutput } from '/js/output.js';
 
-        $.ajax({
-            type: 'GET',
-            url: '/api/partner_config/get',
-            dataType: 'text',
-            success: function (text) {
-                var pretty = JSON.stringify(JSON.parse(text),null,2);
-                $(outputText).val(pretty);
-            },
-            error: function (err) {
-                $(errorDiv).text('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
-            }
-        });
-    }
-
-    function isJsonString(str) {
-        try {
-            JSON.parse(str);
-        } catch (e) {
-            return false;
+document.addEventListener('DOMContentLoaded', function () {
+  const operationConfig = [
+    {
+      type: 'read-only',
+      title: 'Read Only Operations',
+      operations: [
+        {
+          id: 'doGet',
+          title: 'Get Partner Config',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/partner_config/get'
+          },
+          postProcess: (response) => JSON.parse(JSON.stringify(response, null, 2))
         }
-        return true;
-    }
-
-    function updateConfig(jsonStr, outputDiv, errorDiv) {
-        $(outputDiv).text('');
-        $(errorDiv).text('');
-
-
-        $.ajax({
-            type: 'POST',
-            url: '/api/partner_config/update',
-            dataType: 'text',
-            contentType: 'application/json',
-            data: jsonStr,
-            success: function (text) {
-                var pretty = JSON.stringify(JSON.parse(text),null,2);
-                $(outputDiv).text(pretty);
-            },
-            error: function (err) {
-                $(errorDiv).text('Error: ' + err.status + ': ' + JSON.parse(err).message);
+      ]
+    },
+    {
+      type: 'write',
+      title: 'Write Operations',
+      operations: [
+        {
+          id: 'doUpdate',
+          title: 'Update Partner Config',
+          role: 'elevated',
+          inputs: [
+            {
+              id: 'configData-update',
+              name: 'configData',
+              label: 'Configuration Data',
+              required: true,
+              size: 'multi-line',
+              placeholder: 'Enter JSON configuration data...'
             }
-        });
+          ],
+          preProcess: (inputs) => {
+            // Validate JSON
+            try {
+              JSON.parse(inputs.configData);
+              return inputs;
+            } catch (e) {
+              throw new Error('Invalid JSON format: ' + e.message);
+            }
+          },
+          apiCall: {
+            method: 'POST',
+            url: '/api/partner_config/update',
+            getPayload: (inputs) => inputs.configData
+          }
+        }
+      ]
     }
+  ];
 
-    $(document).ready(function () {
-        $('#doGet').on('click', function () {
-            getConfig('#json', '#errorOutput');
-        });
-
-        $('#doUpdate').on('click', function () {
-            var jsonStr = $('#json').val();
-            updateConfig(jsonStr, '#standardOutput', '#errorOutput');
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

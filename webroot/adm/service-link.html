@@ -1,117 +1,249 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script type="module" src="/js/dangerModal.js"></script>
+  <script type="module" src="/js/operations.js"></script>
+  <script type="module" src="/js/output.js"></script>
+  <script type="module" src="/js/roleBadge.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Service Link Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<div>
-    <label for="linkId">Link Id:</label>
-    <input type="text" id="linkId" name="linkId">
-    <label for="serviceId">Service Id:</label>
-    <input type="text" id="serviceId" name="serviceId">
-    <label for="siteId">Site Id:</label>
-    <input type="text" id="siteId" name="siteId">
-    <label for="linkName">Link Name:</label>
-    <input type="text" id="linkName" name="linkName">
-    <label for="roles">Roles:</label>
-    <input type="text" id="roles" name="roles">
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<br>
+<script type="module">
+import { initializeOperations } from '/js/operations.js';
+import { initializeOutput } from '/js/output.js';
 
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doListAll">List Service Links</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doListBySite">List Service Links By Site Id</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service Link</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update Service Link</a></li>
-</ul>
-
-<br>
-
-<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
-
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doDelete">Delete Service Link (PRIVILEGED)</a></li>
-</ul>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
-</div>
-
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doListAll').on('click', function () {
-            doApiCall('GET', '/api/service_link/list', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doListBySite').on('click', function () {
-            const siteId = parseInt($('#siteId').val())
-            if(!siteId) {
-                $('#errorOutput').text("required parameters: site_id")
-                return
+document.addEventListener('DOMContentLoaded', function () {
+  const operationConfig = [
+    {
+      type: 'read-only',
+      title: 'Read Only Operations',
+      operations: [
+        {
+          id: 'doListAll',
+          title: 'List Service Links',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/service_link/list'
+          }
+        },
+        {
+          id: 'doListBySite',
+          title: 'List Service Links By Site ID',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-listBySite',
+              name: 'siteId',
+              label: 'Site ID',
+              required: true,
+              size: 1,
+              type: 'number'
             }
-            doApiCallWithCallback('GET', '/api/service_link/list', function (text) {
-                let resp = JSON.parse(text)
-                resp = resp.filter(obj => obj.site_id === siteId)
-                $('#standardOutput').text(JSON.stringify(resp, null, 2));
-            }, errorCallback);
-        });
-
-        $('#doAdd').on('click', function () {
-            const linkId = $('#linkId').val()
-            const serviceId = parseInt($('#serviceId').val())
-            const siteId = parseInt($('#siteId').val())
-            const linkName = $('#linkName').val()
-            if(!linkId || !siteId || !serviceId) {
-                $('#errorOutput').text("required parameters: link_id, service_id, site_id")
-                return
+          ],
+          apiCall: {
+            method: 'GET',
+            url: '/api/service_link/list'
+          },
+          postProcess: (response, inputs) => {
+            const siteId = parseInt(inputs.siteId);
+            return response.filter(link => link.site_id === siteId);
+          }
+        }
+      ]
+    },
+    {
+      type: 'write',
+      title: 'Write Operations',
+      operations: [
+        {
+          id: 'doAdd',
+          title: 'Add Service Link',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'linkId-add',
+              name: 'linkId',
+              label: 'Link ID',
+              required: true,
+              size: 1
+            },
+            {
+              id: 'serviceId-add',
+              name: 'serviceId',
+              label: 'Service ID',
+              required: true,
+              size: 1,
+              type: 'number'
+            },
+            {
+              id: 'siteId-add',
+              name: 'siteId',
+              label: 'Site ID',
+              required: true,
+              size: 1,
+              type: 'number'
+            },
+            {
+              id: 'linkName-add',
+              name: 'linkName',
+              label: 'Link Name',
+              required: false,
+              size: 2
+            },
+            {
+              id: 'roles-add',
+              name: 'roles',
+              label: 'Roles',
+              required: false,
+              size: 'multi-line',
+              placeholder: 'Enter roles separated by commas'
             }
-
-            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', '/api/service_link/add', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles}));
-        });
-
-        $('#doUpdate').on('click', function () {
-            const linkId = $('#linkId').val()
-            const serviceId = parseInt($('#serviceId').val())
-            const siteId = parseInt($('#siteId').val())
-            const linkName = $('#linkName').val()
-            if(!siteId || !serviceId || !linkId) {
-                $('#errorOutput').text("required parameters: link_id, service_id, site_id")
-                return
+          ],
+          preProcess: (inputs) => {
+            // Process roles from comma-separated string to array
+            const rolesArray = inputs.roles ? 
+              inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') : 
+              [];
+            return {
+              ...inputs,
+              processedRoles: rolesArray
+            };
+          },
+          apiCall: {
+            method: 'POST',
+            url: '/api/service_link/add',
+            getPayload: (inputs) => ({
+              link_id: inputs.linkId,
+              service_id: parseInt(inputs.serviceId),
+              site_id: parseInt(inputs.siteId),
+              name: inputs.linkName || '',
+              roles: inputs.processedRoles
+            })
+          }
+        },
+        {
+          id: 'doUpdate',
+          title: 'Update Service Link',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'linkId-update',
+              name: 'linkId',
+              label: 'Link ID',
+              required: true,
+              size: 1
+            },
+            {
+              id: 'serviceId-update',
+              name: 'serviceId',
+              label: 'Service ID',
+              required: true,
+              size: 1,
+              type: 'number'
+            },
+            {
+              id: 'siteId-update',
+              name: 'siteId',
+              label: 'Site ID',
+              required: true,
+              size: 1,
+              type: 'number'
+            },
+            {
+              id: 'linkName-update',
+              name: 'linkName',
+              label: 'Link Name',
+              required: false,
+              size: 2
+            },
+            {
+              id: 'roles-update',
+              name: 'roles',
+              label: 'Roles',
+              required: false,
+              size: 'multi-line',
+              placeholder: 'Enter roles separated by commas'
             }
-            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles}));
-        });
-
-        $('#doDelete').on('click', function () {
-            if (!confirm("Are you sure?")) {
-                return;
+          ],
+          preProcess: (inputs) => {
+            // Process roles from comma-separated string to array
+            const rolesArray = inputs.roles ? 
+              inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') : 
+              [];
+            return {
+              ...inputs,
+              processedRoles: rolesArray
+            };
+          },
+          apiCall: {
+            method: 'POST',
+            url: '/api/service_link/update',
+            getPayload: (inputs) => ({
+              link_id: inputs.linkId,
+              service_id: parseInt(inputs.serviceId),
+              site_id: parseInt(inputs.siteId),
+              name: inputs.linkName || '',
+              roles: inputs.processedRoles
+            })
+          }
+        }
+      ]
+    },
+    {
+      type: 'danger-zone',
+      title: '☠️ Danger Zone ☠️',
+      operations: [
+        {
+          id: 'doDelete',
+          title: 'Delete Service Link',
+          role: 'elevated',
+          inputs: [
+            {
+              id: 'linkId-delete',
+              name: 'linkId',
+              label: 'Link ID',
+              required: true,
+              size: 1
+            },
+            {
+              id: 'serviceId-delete',
+              name: 'serviceId',
+              label: 'Service ID',
+              required: true,
+              size: 1,
+              type: 'number'
             }
+          ],
+          description: 'This will permanently delete the service link. This action cannot be undone and may affect service relationships.',
+          apiCall: {
+            method: 'POST',
+            url: '/api/service_link/delete',
+            getPayload: (inputs) => ({
+              link_id: inputs.linkId,
+              service_id: parseInt(inputs.serviceId)
+            })
+          }
+        }
+      ]
+    }
+  ];
 
-            const linkId = $('#linkId').val()
-            const serviceId = parseInt($('#serviceId').val())
-            if(!linkId || !serviceId) {
-                $('#errorOutput').text("required parameters: service_id, link_id")
-                return
-            }
-            doApiCall('POST', '/api/service_link/delete', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId}));
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

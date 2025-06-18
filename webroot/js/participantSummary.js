@@ -6,14 +6,18 @@ searchInput.addEventListener('keyup', searchSitesAutocomplete);
 window.addEventListener('mouseup',function(event){
     var dropdown = document.querySelector('.dropdown-menu');
     if(event.target != dropdown && event.target.parentNode != dropdown){
-        $(dropdown).hide();
+        dropdown.style.display = 'none';
     }
 });  
 
 /* ***** multi-use error handler *** */
 function participantSummaryErrorHandler(err, divContainer) {
     const errorMessage = prettifyJson(err.responseText);
-    $(divContainer).html(errorMessage).show();
+    const element = document.querySelector(divContainer);
+    if (element) {
+        element.innerHTML = errorMessage;
+        element.style.display = 'block';
+    }
 };
 
 function loadAllSitesCallback(result) {
@@ -22,13 +26,12 @@ function loadAllSitesCallback(result) {
 
 function setSearchValue(searchText) {
     document.querySelector('#site-search').value = searchText;
-    $(resultsElement).hide();
-    $('#doSearch').click();
+    resultsElement.style.display = 'none';
+    document.getElementById('doSearch').click();
 }
 
 function searchSitesAutocomplete(e) {
-    
-    searchString = searchInput.value;
+    const searchString = searchInput.value;
     const options = {
         threshold: .2,
         minMatchCharLength: 2,
@@ -45,20 +48,26 @@ function searchSitesAutocomplete(e) {
     }
     resultsElement.innerHTML = resultHtml;
     if (result.length > 0) { 
-        $(resultsElement).show();
+        resultsElement.style.display = 'block';
     } else {
-        $(resultsElement).hide();
+        resultsElement.style.display = 'none';
     }
 }
 
 function rotateKeysetsCallback(result, keyset_id) {
     const resultJson = JSON.parse(result);
     const formatted = prettifyJson(JSON.stringify(resultJson));
-    $('#rotateKeysetsStandardOutput').append(`keyset_id: ${keyset_id} rotated: <br>${formatted}<br>`);
+    const element = document.getElementById('rotateKeysetsStandardOutput');
+    if (element) {
+        element.innerHTML += `keyset_id: ${keyset_id} rotated: <br>${formatted}<br>`;
+    }
 }
 
 function rotateKeysetsErrorHandler(err, keyset_id) {
-    $('#rotateKeysetsErrorOutput').append(`keyset_id: ${keyset_id} rotation failed: <br>${err}<br>`);
+    const element = document.getElementById('rotateKeysetsErrorOutput');
+    if (element) {
+        element.innerHTML += `keyset_id: ${keyset_id} rotation failed: <br>${err}<br>`;
+    }
 }
 
 function loadSiteCallback(result) {
@@ -66,15 +75,20 @@ function loadSiteCallback(result) {
 
     const domainNames = resultJson.domain_names.length > 0 ? resultJson.domain_names : 'none';
     const formattedDomains = prettifyJson(JSON.stringify(domainNames));
-    $('#domainNamesStandardOutput').html(formattedDomains);
+    const domainElement = document.getElementById('domainNamesStandardOutput');
+    if (domainElement) domainElement.innerHTML = formattedDomains;
+    
     const appNames = resultJson.app_names.length > 0 ? resultJson.app_names : 'none';
     const formattedApps = prettifyJson(JSON.stringify(appNames));
-    $('#appNamesStandardOutput').html(formattedApps);
+    const appElement = document.getElementById('appNamesStandardOutput');
+    if (appElement) appElement.innerHTML = formattedApps;
+    
     delete resultJson.domain_names;
     delete resultJson.app_names;
     let formatted = JSON.stringify(resultJson);
     formatted = prettifyJson(formatted);
-    $('#siteStandardOutput').html(formatted);
+    const siteElement = document.getElementById('siteStandardOutput');
+    if (siteElement) siteElement.innerHTML = formatted;
 }
 
 function loadAPIKeysCallback(result) {
@@ -86,14 +100,16 @@ function loadAPIKeysCallback(result) {
     });
     const formatted = prettifyJson(JSON.stringify(resultJson));
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
-    $('#participantKeysStandardOutput').html(highlightedText);
+    const element = document.getElementById('participantKeysStandardOutput');
+    if (element) element.innerHTML = highlightedText;
 };
 
 function loadKeyPairsCallback(result, siteId) {
     let resultJson = JSON.parse(result);
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
     const formatted = prettifyJson(JSON.stringify(filteredResults));
-    $('#keyPairsStandardOutput').html(formatted);
+    const element = document.getElementById('keyPairsStandardOutput');
+    if (element) element.innerHTML = formatted;
 };
 
 function loadEncryptionKeysCallback(result, siteId) {
@@ -122,7 +138,8 @@ function loadEncryptionKeysCallback(result, siteId) {
     notActivated.forEach((item) => {
         highlightedText = highlightedText.replaceAll(item, '<span style="background-color: yellow;">' + item + '</span>');
     });
-    $('#encryptionKeysStandardOutput').html(highlightedText);
+    const element = document.getElementById('encryptionKeysStandardOutput');
+    if (element) element.innerHTML = highlightedText;
 };
 
 function loadOperatorKeysCallback(result, siteId) {
@@ -136,14 +153,16 @@ function loadOperatorKeysCallback(result, siteId) {
 
     const formatted = prettifyJson(JSON.stringify(filteredResults));
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
-    $('#operatorKeysStandardOutput').html(highlightedText);
+    const element = document.getElementById('operatorKeysStandardOutput');
+    if (element) element.innerHTML = highlightedText;
 };
 
 function loadOptoutWebhooksCallback(result, siteName) {
     const resultJson = JSON.parse(result);
     const filteredResults = resultJson.filter((item) => { return item.name === siteName });
     const formatted = prettifyJson(JSON.stringify(filteredResults));
-    $('#webhooksStandardOutput').html(formatted);
+    const element = document.getElementById('webhooksStandardOutput');
+    if (element) element.innerHTML = formatted;
 };
 
 function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
@@ -174,29 +193,39 @@ function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
     highlightedText = highlightedText.replaceAll(`"<allowed_sites_matched>"`, `<span style="background-color: orange;">${siteId}</span>`);
     // Highlight keysets belonging to the leaked site itself
     highlightedText = highlightedText.replaceAll(`"site_id": ${siteId}`, '<span style="background-color: orange;">' + `"site_id": ${siteId}` + '</span>');
-    $('#relatedKeysetsStandardOutput').html(highlightedText);
+    const element = document.getElementById('relatedKeysetsStandardOutput');
+    if (element) element.innerHTML = highlightedText;
 };
 
-$(document).ready(() => {
+document.addEventListener('DOMContentLoaded', () => {
     const sitesUrl = '/api/site/list';
     doApiCallWithCallback('GET', sitesUrl, loadAllSitesCallback, null);
     
-    $('#doSearch').on('click', () => {
-        $('#siteSearchErrorOutput').hide();
-        const siteSearch = $('#site-search').val();
-        let site = null;
-        if (Number.isInteger(Number(siteSearch))) {
-            const foundSite = siteList.find((item) => { return item.id === Number(siteSearch) });
-            site = foundSite;
-        } else {
-            const foundSite = siteList.find((item) => { return item.name === siteSearch  });
-            site = foundSite;
-        }
-        if (!site) {
-            $('#siteSearchErrorOutput').text(`site not found: ${siteSearch}`).show();
-            $('.section').hide();
-            return;
-        }
+    const searchButton = document.getElementById('doSearch');
+    if (searchButton) {
+        searchButton.addEventListener('click', () => {
+            const errorOutput = document.getElementById('siteSearchErrorOutput');
+            if (errorOutput) errorOutput.style.display = 'none';
+            
+            const siteSearchInput = document.getElementById('site-search');
+            const siteSearch = siteSearchInput ? siteSearchInput.value : '';
+            let site = null;
+            if (Number.isInteger(Number(siteSearch))) {
+                const foundSite = siteList.find((item) => { return item.id === Number(siteSearch) });
+                site = foundSite;
+            } else {
+                const foundSite = siteList.find((item) => { return item.name === siteSearch  });
+                site = foundSite;
+            }
+            if (!site) {
+                if (errorOutput) {
+                    errorOutput.textContent = `site not found: ${siteSearch}`;
+                    errorOutput.style.display = 'block';
+                }
+                const sections = document.querySelectorAll('.section');
+                sections.forEach(section => section.style.display = 'none');
+                return;
+            }
 
         let url = `/api/site/${site.id}`;
         doApiCallWithCallback('GET', url, loadSiteCallback, (err) => { participantSummaryErrorHandler(err, '#siteErrorOutput') });
@@ -216,26 +245,35 @@ $(document).ready(() => {
         url = '/api/partner_config/get';
         doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
 
-        url = `/api/sharing/keysets/related?site_id=${site.id}`;
-        doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
-        $('.section').show();
-    });
-
-    $('#doRotateKeysets').on('click', () => {
-        if (!confirm("Are you sure?")) {
-            return;
-        }
-
-        var keysets = $('#relatedKeysetsStandardOutput').text();
-        const ja = JSON.parse(keysets);
-        var rotateKeysetsMessage = '';
-        ja.forEach((keyset) => {
-            var url = `/api/key/rotate_keyset_key?min_age_seconds=1&keyset_id=${keyset.keyset_id}&force=true`;
-            doApiCallWithCallback(
-                'POST',
-                url,
-                (r) => { rotateKeysetsCallback(r, keyset.keyset_id) },
-                (err) => { rotateKeysetsErrorHandler(err, '#rotateKeysetsErrorOutput') });
+            url = `/api/sharing/keysets/related?site_id=${site.id}`;
+            doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => section.style.display = 'block');
         });
-    });
+    }
+
+    const rotateButton = document.getElementById('doRotateKeysets');
+    if (rotateButton) {
+        rotateButton.addEventListener('click', () => {
+            if (!confirm("Are you sure?")) {
+                return;
+            }
+
+            const keysetsElement = document.getElementById('relatedKeysetsStandardOutput');
+            if (keysetsElement) {
+                const keysets = keysetsElement.textContent;
+                const ja = JSON.parse(keysets);
+                ja.forEach((keyset) => {
+                    const url = `/api/key/rotate_keyset_key?min_age_seconds=1&keyset_id=${keyset.keyset_id}&force=true`;
+                    doApiCallWithCallback(
+                        'POST',
+                        url,
+                        (r) => { rotateKeysetsCallback(r, keyset.keyset_id) },
+                        (err) => { rotateKeysetsErrorHandler(err, '#rotateKeysetsErrorOutput') });
+                });
+            }
+        });
+    }
 });
+
+export {};

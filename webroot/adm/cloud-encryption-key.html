@@ -1,193 +1,244 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
-    <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
-    <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
-    <style>
-        .active { color: darkgreen; }
-        .inactive { color: darkred; }
-    </style>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script type="module" src="/js/dangerModal.js"></script>
+  <script type="module" src="/js/operations.js"></script>
+  <script type="module" src="/js/output.js"></script>
+  <script type="module" src="/js/roleBadge.js"></script>
+  <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+  <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Cloud Encryption Key Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<div class="ro-adm" style="display: none">
-    <h3>Operations</h3>
-    <ul>
-        <li><a href="#" id="doMeta">Get Metadata</a></li>
-        <li><a href="#" id="doList">List Cloud Encryption Keys</a></li>
-        <li><a href="#" id="doRotate">Rotate Cloud Encryption Keys</a></li>
-        <li><a href="#" id="doEncrypt">Re-encrypt All S3 Files</a></li>
-    </ul>
-
-    <br>
-
-    <h3>Output</h3>
-    <div id="output">
-        <pre id="errorOutput"></pre>
-        <pre id="standardOutput"></pre>
-    </div>
-    <div id="output-table"></div>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    const grid = new gridjs.Grid({
-        columns: [
-            {
-                name: "Key ID",
-                formatter: (cell, row) => {
-                    return gridjs.html(`<span class="${row.cells[4].data}">${cell}</span>`)
-                }
-            },
-            {
-                name: "Site",
-                formatter: (cell, row) => {
-                    return gridjs.html(`<span class="${row.cells[4].data}">${formatSite(cell)}</span>`)
-                },
-                sort: {
-                    compare: (a, b) => {
-                        const fullA = formatSite(a);
-                        const fullB = formatSite(b);
+<div id="output-table" style="margin: 20px 0; width: 100%;"></div>
 
-                        if (fullA > fullB) {
-                            return 1;
-                        } else if (fullA < fullB) {
-                            return -1;
-                        } else {
-                            return 0;
-                        }
-                    }
-                }
-            },
-            {
-                name: "Activates",
-                formatter: (cell, row) => {
-                    return gridjs.html(`<span class="${row.cells[4].data}">${formatDate(cell)}</span>`)
-                }
-            },
-            {
-                name: "Created",
-                formatter: (cell, row) => {
-                    return gridjs.html(`<span class="${row.cells[4].data}">${formatDate(cell)}</span>`)
-                }
-            },
-            {
-                name: "Style",
-                hidden: true
-            }
-        ],
-        data: [],
-        sort: true,
-        search: {
-            selector: (cell, rowIndex, cellIndex) => {
-                if (cellIndex === 0) {
-                    return cell;
-                } else if (cellIndex === 1) {
-                    return formatSite(cell);
-                }
-            }
+<script type="module">
+import { initializeOperations } from '/js/operations.js';
+import { initializeOutput } from '/js/output.js';
+import { httpClient } from '/js/httpClient.js';
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Initialize GridJS for key display
+  const grid = new gridjs.Grid({
+    columns: [
+      {
+        name: "Key ID",
+        formatter: (cell, row) => {
+          return gridjs.html(`<span class="${row.cells[4].data}">${cell}</span>`)
+        }
+      },
+      {
+        name: "Site",
+        formatter: (cell, row) => {
+          return gridjs.html(`<span class="${row.cells[4].data}">${formatSite(cell)}</span>`)
         },
-        language: {
-            search: {
-                placeholder: "Search by Key ID or Site..."
-            }
+        sort: {
+          compare: (a, b) => {
+            const fullA = formatSite(a);
+            const fullB = formatSite(b);
+            if (fullA > fullB) return 1;
+            else if (fullA < fullB) return -1;
+            else return 0;
+          }
         }
-    })
-        .render(document.getElementById("output-table"));
-
-    const formatDate = (text) => {
-        const date = new Date(text);
-        const options = {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            timeZoneName: "short"
-        };
-        return date.toLocaleString("en-US", options);
-    };
-
-    const formatSite = (site) => {
-        return `${site.siteId} - ${site.siteName}`;
-    };
-
-    const updateGrid = (grid, data) => {
-        const groupedData = data.cloudEncryptionKeys.reduce((acc, key) => {
-            if (!acc[key.siteId]) {
-                acc[key.siteId] = [];
-            }
-            acc[key.siteId].push(key);
-            return acc;
-        }, {});
-
-        const gridData = [];
-        for (const siteId in groupedData) {
-            const keys = groupedData[siteId];
-            const latestKey = keys.reduce((latest, key) => new Date(key.activates) > new Date(latest.activates) ? key : latest);
-
-            keys.forEach((key) => {
-                let style = key === latestKey ? "active" : "inactive";
-
-                gridData.push([ key.id, { siteId: key.siteId, siteName: key.siteName }, key.activates, key.created, style ]);
-            });
+      },
+      {
+        name: "Activates",
+        formatter: (cell, row) => {
+          return gridjs.html(`<span class="${row.cells[4].data}">${formatDate(cell)}</span>`)
         }
+      },
+      {
+        name: "Created",
+        formatter: (cell, row) => {
+          return gridjs.html(`<span class="${row.cells[4].data}">${formatDate(cell)}</span>`)
+        }
+      },
+      {
+        name: "Style",
+        hidden: true
+      }
+    ],
+    data: [],
+    sort: true,
+    search: {
+      selector: (cell, rowIndex, cellIndex) => {
+        if (cellIndex === 0) return cell;
+        else if (cellIndex === 1) return formatSite(cell);
+      }
+    },
+    language: {
+      search: {
+        placeholder: "Search by Key ID or Site..."
+      }
+    }
+  }).render(document.getElementById("output-table"));
 
-        grid
-            .updateConfig({ data: gridData })
-            .forceRender();
+  const formatDate = (text) => {
+    const date = new Date(text);
+    const options = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZoneName: "short"
     };
+    return date.toLocaleString("en-US", options);
+  };
 
-    const clearGrid = (grid) => {
-        grid
-            .updateConfig({ data: [] })
-            .forceRender();
-    };
+  const formatSite = (site) => {
+    return `${site.siteId} - ${site.siteName}`;
+  };
 
-    const doList = () => {
-        clearGrid(grid);
-        doApiCallWithCallback("GET", "/api/site/list", (text) => {
-            const sites = JSON.parse(text);
-            const siteDict = sites.reduce((acc, site) => {
+  const updateGrid = (data) => {
+    const groupedData = data.cloudEncryptionKeys.reduce((acc, key) => {
+      if (!acc[key.siteId]) {
+        acc[key.siteId] = [];
+      }
+      acc[key.siteId].push(key);
+      return acc;
+    }, {});
+
+    const gridData = [];
+    for (const siteId in groupedData) {
+      const keys = groupedData[siteId];
+      const latestKey = keys.reduce((latest, key) => 
+        new Date(key.activates) > new Date(latest.activates) ? key : latest
+      );
+
+      keys.forEach((key) => {
+        let style = key === latestKey ? "active" : "inactive";
+        gridData.push([key.id, { siteId: key.siteId, siteName: key.siteName }, key.activates, key.created, style]);
+      });
+    }
+
+    grid.updateConfig({ data: gridData }).forceRender();
+  };
+
+  const clearGrid = () => {
+    grid.updateConfig({ data: [] }).forceRender();
+  };
+
+  const operationConfig = [
+    {
+      type: 'read-only',
+      title: 'Read Only Operations',
+      operations: [
+        {
+          id: 'doMeta',
+          title: 'Get Metadata',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/cloud-encryption-key/metadata'
+          }
+        },
+        {
+          id: 'doList',
+          title: 'List Cloud Encryption Keys',
+          role: 'maintainer',
+          inputs: [],
+          preProcess: async () => {
+            clearGrid();
+            return {};
+          },
+          postProcess: async (response) => {
+            // First get sites to map site names
+            try {
+              const sites = await httpClient.get('/api/site/list');
+              const siteDict = sites.reduce((acc, site) => {
                 acc[site.id] = site.name;
                 return acc;
-            }, {});
+              }, {});
 
-            doApiCallWithCallback("GET", "/api/cloud-encryption-key/list", (text) => {
-                const data = JSON.parse(text);
-                data.cloudEncryptionKeys.forEach((key) => {
-                    key.siteName = !siteDict[key.siteId] ? "Unknown site" : siteDict[key.siteId]
-                });
-                updateGrid(grid, data);
-            }, errorCallback);
-        }, errorCallback);
-    };
+              // Add site names to keys
+              response.cloudEncryptionKeys.forEach((key) => {
+                key.siteName = siteDict[key.siteId] || "Unknown site";
+              });
 
-    $(document).ready(() => {
-        $("#doMeta").on("click", () => {
-            doApiCall("GET", "/api/cloud-encryption-key/metadata", "#standardOutput", "#errorOutput");
-        });
+              // Update grid - this is the primary output for this operation
+              updateGrid(response);
+              
+              // Return null to prevent standard output display
+              return null;
+            } catch (error) {
+              throw new Error("Failed to load sites data: " + error.message);
+            }
+          },
+          apiCall: {
+            method: 'GET',
+            url: '/api/cloud-encryption-key/list'
+          }
+        }
+      ]
+    },
+    {
+      type: 'write',
+      title: 'Write Operations',
+      operations: [
+        {
+          id: 'doRotate',
+          title: 'Rotate Cloud Encryption Keys',
+          role: 'maintainer',
+          inputs: [],
+          postProcess: async (response) => {
+            // Refresh the list after rotation
+            try {
+              const listData = await httpClient.get('/api/cloud-encryption-key/list');
+              const sites = await httpClient.get('/api/site/list');
+              const siteDict = sites.reduce((acc, site) => {
+                acc[site.id] = site.name;
+                return acc;
+              }, {});
 
-        $("#doList").on("click", () => {
-            doList();
-        });
+              listData.cloudEncryptionKeys.forEach((key) => {
+                key.siteName = siteDict[key.siteId] || "Unknown site";
+              });
 
-        $("#doRotate").on("click", () => {
-            doApiCall("POST", "/api/cloud-encryption-key/rotate", "#standardOutput", "#errorOutput");
-            doList();
-        });
+              updateGrid(listData);
+              return response;
+            } catch (error) {
+              console.error("Failed to refresh list:", error);
+              return response;
+            }
+          },
+          apiCall: {
+            method: 'POST',
+            url: '/api/cloud-encryption-key/rotate'
+          }
+        },
+        {
+          id: 'doEncrypt',
+          title: 'Re-encrypt All S3 Files',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'POST',
+            url: '/api/encrypted-files/syncNow'
+          }
+        }
+      ]
+    }
+  ];
 
-        $("#doEncrypt").on("click", () => {
-            doApiCall("POST", "/api/encrypted-files/syncNow", "#standardOutput", "#errorOutput");
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
+
 </body>
 </html>

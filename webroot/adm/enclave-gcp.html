@@ -1,113 +1,99 @@
 <html>
-
 <head>
+  <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
+  <script type="module" src="/js/dangerModal.js"></script>
+  <script type="module" src="/js/operations.js"></script>
+  <script type="module" src="/js/output.js"></script>
+  <script type="module" src="/js/roleBadge.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
   <style>
-    label.bold {
-      font-weight: bold
+    .gcp-examples-box {
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+    }
+    .gcp-examples-box h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 20px;
+    }
+    .gcp-examples-box label {
+      font-weight: bold;
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .gcp-examples-box pre, .gcp-examples-box textarea {
+      margin-bottom: 15px;
+    }
+    .gcp-examples-box pre {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    #gcloudCli {
+      width: 100%;
+      height: 200px;
+      resize: vertical;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     }
   </style>
 </head>
-
 <body>
-  <h1>UID2 Env - GCP Enclave ID Tool</h1>
+<h1>UID2 Env - GCP Enclave ID Tool</h1>
 
-  <a href="/">Back</a>
+<a href="/">Back</a>
 
-  <br>
-  <br>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
+</div>
 
-  <h3>Inputs</h3>
-
-  <label for="diskUri" class="bold">GCP Disk URI.</label>
-  <br>
-  <label for="diskUri">To get the latest: gcloud compute images list --filter="name~'cos-stable'" --standard-images
-    --uri</label>
-  <br>
-  <input type="text" id="diskUri" name="diskUri" size="100" value="">
-  <br>
-  <br>
-
-  <label for="apiToken" class="bold">Operator Api Key:</label>
-  <br>
-  <label for="apiToken">This can be found here: <a href="operator-key.html">Operator Key Management</a> using Reveal
-    Operator Key</label>
-  <br>
-  <input type="text" id="apiToken" name="apiToken" size="100" value="">
-  <br>
-  <br>
-
-  <label for="imageId" class="bold">Operator Docker Image ID:</label>
-  <br>
-  <label for="imageId">The full digest for the image, with or without 'sha256:'</label>
-  <br>
-  <input type="text" id="imageId" name="imageId" size="100" value="">
-  <br>
-  <br>
-
-  <label for="envId" class="bold">Environment:</label>
-  <br>
-  <select id="envId">
-    <option value="integ">Integration</option>
-    <option value="prod">Production</option>
-  </select>
-  <br>
-  <br>
-
-  <label for="accesstokenId" class="bold">Docker Registry Access Token:</label>
-  <br>
-  <label for="accesstokenId">This is a Personal Access Token that allows read access to ghcr.io where the docker image
-    is to be downloaded from.</label>
-  <br>
-  <input type="text" id="accesstokenId" name="accesstokenId" size="100">
-  <br>
-  <br>
-
-  <h3>Operations</h3>
-
-  <ul>
-    <li><a href="#" id="doGenerate">Generate GCP cloud-init, Enclave ID and gcloud command</a></li>
-  </ul>
-  <br>
-
-  <h3>Outputs</h3>
-
-  <label for="cloudInitSha256">cloud-init sha256, make sure your downloaded cloud-init config matches exactly the value
-    below:</label>
-  <br>
+<!-- GCP Examples Section - positioned below operations and output -->
+<div class="gcp-examples-box">
+  <h3>Generated Examples</h3>
+  
+  <label for="cloudInitSha256">cloud-init sha256, make sure your downloaded cloud-init config matches exactly the value below:</label>
   <pre><label id="cloudInitSha256">TBD</label></pre>
-  <br>
-  <br>
-
+  
   <label for="gcloudCli">Example gcloud command to create GCP Operator Enclave VM:</label>
-  <br>
-  <textarea id="gcloudCli" name="gcloudCli" rows="10" cols="120" readonly>
-</textarea>
-  <br>
-  <br>
-
+  <textarea id="gcloudCli" name="gcloudCli" readonly></textarea>
+  
   <label for="enclaveId">Generated GCP Enclave ID:</label>
-  <br>
   <pre><label id="enclaveId">TBD</label></pre>
-  <br>
-  <br>
+</div>
 
-  <script language="JavaScript">
-    var gcloudCliOrig = '$ sha256sum < ./<CLOUD_INIT_FN> # !!! check if sha256 matches exactly below !!!\\\n\
-<CLOUD_INIT_MD>\n\
-\n\
-$ gcloud compute instances \\\n\
-    create uid2-operator-gcp-01 \\\n\
-    --confidential-compute \\\n\
-    --maintenance-policy Terminate \\\n\
-    --image <DISK_URI> \\\n\
-    --metadata-from-file user-data=./<CLOUD_INIT_FN> \\\n\
-    --tags http-server'
+<script type="module">
+import { initializeOperations } from '/js/operations.js';
+import { initializeOutput } from '/js/output.js';
 
-    $('#gcloudCli').val(gcloudCliOrig);
+document.addEventListener('DOMContentLoaded', function () {
+  const gcloudCliOrig = `$ sha256sum < ./<CLOUD_INIT_FN> # !!! check if sha256 matches exactly below !!!\\
+<CLOUD_INIT_MD>
 
-    const cloudInitInitial = `#cloud-config
+$ gcloud compute instances \\
+    create uid2-operator-gcp-01 \\
+    --confidential-compute \\
+    --maintenance-policy Terminate \\
+    --image <DISK_URI> \\
+    --metadata-from-file user-data=./<CLOUD_INIT_FN> \\
+    --tags http-server`;
+
+  $('#gcloudCli').val(gcloudCliOrig);
+
+  const cloudInitInitial = `#cloud-config
 
 bootcmd:
 - iptables -D INPUT -p tcp -m tcp --dport 22 -j ACCEPT
@@ -161,109 +147,184 @@ write_files:
     }
 `;
 
-    function sha256hex(string) {
-      const utf8 = new TextEncoder().encode(string);
-      return crypto.subtle.digest('SHA-256', utf8).then((hashBuffer) => {
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray
-          .map((bytes) => bytes.toString(16).padStart(2, '0'))
-          .join('');
-        return hashHex;
-      });
-    }
-
-    function sha256base64(string) {
-      const utf8 = new TextEncoder().encode(string);
-      return crypto.subtle.digest('SHA-256', utf8).then((hashBuffer) => {
-        return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
-      });
-    }
-
-    function download(filename, text) {
-      var element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-      element.setAttribute('download', filename);
-
-      element.style.display = 'none';
-      document.body.appendChild(element);
-
-      element.click();
-
-      document.body.removeChild(element);
-    }
-
-    function normalizeCloudInit(text) {
-      return text
-        .replace(/([^\n])$/g, '$1\n')
-        .replace(/\n+$/g, '\n');
-    }
-
-    $(document).ready(function () {
-      $('#doGenerate').on('click', function () {
-        var cloudInit = cloudInitInitial;
-        var env = $('#envId').val();
-        var ghcrAccessToken = $('#accesstokenId').val();
-
-        var ts = Math.floor(new Date() / 1000);
-        var fn = 'cloud-init-' + ts + '.yaml';
-        var diskUri = $('#diskUri').val();
-
-        cloudInit = cloudInit.replaceAll('<environment>', env);
-        cloudInit = cloudInit.replaceAll('<token>', ghcrAccessToken)
-        cloudInit = normalizeCloudInit(cloudInit);
-
-        //var cloudInit = normalizeCloudInit($('#cloudInit').val());
-
-        var apiToken = $('#apiToken').val();
-
-        var imageId = $('#imageId').val();
-        if (imageId.startsWith('sha256:')) {
-          imageId = imageId.replace('sha256:', '');
-        }
-
-        cloudInit = cloudInit
-          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.*?\"$/gm, '$1=' + apiToken + '"')
-          .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.*?\"$/gm, '$1=' + imageId + '"');
-
-        download(fn, cloudInit);
-
-        sha256hex(cloudInit).then(hex => {
-          $('#cloudInitSha256').text(hex);
-
-          var cli = gcloudCliOrig
-            .replaceAll('<CLOUD_INIT_FN>', fn)
-            .replaceAll('<CLOUD_INIT_MD>', hex)
-            .replaceAll('<DISK_URI>', diskUri);
-
-          $('#gcloudCli').val(cli);
-        });
-
-        var tplCloudInit = cloudInit;
-        var enclaveParams = "API_TOKEN,IMAGE_ID";
-        if (env == 'prod') {
-          enclaveParams = "API_TOKEN";
-        }
-        var enclaveParamsList = enclaveParams.split(',');
-
-        enclaveParamsList.forEach(p => {
-          var enclaveParam = "UID2_ENCLAVE_" + p;
-          const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.*?\"$', 'gm');
-          tplCloudInit = tplCloudInit.replace(reMaskParam, '$1=dummy"');
-        });
-
-        //$('#cloudInit').val(tplCloudInit);
-
-        sha256base64(diskUri).then(s1 => {
-          sha256base64(tplCloudInit).then(s2 => {
-            sha256base64(s1 + s2).then(enclaveId => {
-              $('#enclaveId').text(enclaveId);
-            });
-          });
-        });
-      });
+  function sha256hex(string) {
+    const utf8 = new TextEncoder().encode(string);
+    return crypto.subtle.digest('SHA-256', utf8).then((hashBuffer) => {
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray
+        .map((bytes) => bytes.toString(16).padStart(2, '0'))
+        .join('');
+      return hashHex;
     });
-  </script>
+  }
+
+  function sha256base64(string) {
+    const utf8 = new TextEncoder().encode(string);
+    return crypto.subtle.digest('SHA-256', utf8).then((hashBuffer) => {
+      return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
+    });
+  }
+
+  function download(filename, text) {
+    let element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+
+  function normalizeCloudInit(text) {
+    return text
+      .replace(/([^\n])$/g, '$1\n')
+      .replace(/\n+$/g, '\n');
+  }
+
+  const operationConfig = [
+    {
+      type: 'write',
+      title: 'GCP Enclave Operations',
+      operations: [
+        {
+          id: 'doGenerate',
+          title: 'Generate GCP cloud-init, Enclave ID and gcloud command',
+          role: 'elevated',
+          inputs: [
+            {
+              id: 'diskUri-generate',
+              name: 'diskUri',
+              label: 'GCP Disk URI',
+              required: true,
+              size: 3,
+              placeholder: 'To get the latest: gcloud compute images list --filter="name~\'cos-stable\'" --standard-images --uri'
+            },
+            {
+              id: 'apiToken-generate',
+              name: 'apiToken',
+              label: 'Operator Api Key',
+              required: true,
+              size: 3,
+              placeholder: 'Enter the operator API key'
+            },
+            {
+              id: 'imageId-generate',
+              name: 'imageId',
+              label: 'Operator Docker Image ID',
+              required: true,
+              size: 3,
+              placeholder: 'The full digest for the image, with or without \'sha256:\''
+            },
+            {
+              id: 'envId-generate',
+              name: 'envId',
+              label: 'Environment',
+              type: 'select',
+              required: true,
+              size: 1,
+              defaultValue: 'integ',
+              options: [
+                { value: 'integ', label: 'Integration' },
+                { value: 'prod', label: 'Production' }
+              ]
+            },
+            {
+              id: 'accesstokenId-generate',
+              name: 'accesstokenId',
+              label: 'Docker Registry Access Token',
+              required: true,
+              size: 3,
+              placeholder: 'Personal Access Token that allows read access to ghcr.io'
+            }
+          ],
+          description: 'Generates GCP cloud-init configuration file, calculates Enclave ID, and provides gcloud command for VM creation.<br><br><strong>Note:</strong> The Operator Api Key can be found in <a href="operator-key.html">Operator Key Management</a> using the "Reveal Operator Key" operation.',
+          preProcess: async (inputs) => {
+            const env = inputs.envId;
+            const ghcrAccessToken = inputs.accesstokenId;
+            const ts = Math.floor(new Date() / 1000);
+
+            const fn = 'cloud-init-' + ts + '.yaml';
+            const diskUri = inputs.diskUri;
+
+            let cloudInit = cloudInitInitial;
+            cloudInit = cloudInit.replaceAll('<environment>', env);
+            cloudInit = cloudInit.replaceAll('<token>', ghcrAccessToken);
+            cloudInit = normalizeCloudInit(cloudInit);
+
+            const apiToken = inputs.apiToken;
+
+            let imageId = inputs.imageId;
+            if (imageId.startsWith('sha256:')) {
+              imageId = imageId.replace('sha256:', '');
+            }
+
+            cloudInit = cloudInit
+              .replace(/^([ \t]*Environment=.UID2_ENCLAVE_API_TOKEN)=.*?"$/gm, '$1=' + apiToken + '"')
+              .replace(/^([ \t]*Environment=.UID2_ENCLAVE_IMAGE_ID)=.*?"$/gm, '$1=' + imageId + '"');
+
+            // Download the cloud-init file
+            download(fn, cloudInit);
+
+            // Calculate and display cloud-init SHA256
+            const hex = await sha256hex(cloudInit);
+            document.getElementById('cloudInitSha256').textContent = hex;
+
+            // Update gcloud CLI command
+            const cli = gcloudCliOrig
+              .replaceAll('<CLOUD_INIT_FN>', fn)
+              .replaceAll('<CLOUD_INIT_MD>', hex)
+              .replaceAll('<DISK_URI>', diskUri);
+
+            document.getElementById('gcloudCli').value = cli;
+
+            // Calculate Enclave ID
+            let tplCloudInit = cloudInit;
+            let enclaveParams = "API_TOKEN,IMAGE_ID";
+            if (env == 'prod') {
+              enclaveParams = "API_TOKEN";
+            }
+            const enclaveParamsList = enclaveParams.split(',');
+
+            enclaveParamsList.forEach(p => {
+              const enclaveParam = "UID2_ENCLAVE_" + p;
+              const reMaskParam = new RegExp('^([ \t]*Environment=.' + enclaveParam + ')=.*?"$', 'gm');
+              tplCloudInit = tplCloudInit.replace(reMaskParam, '$1=dummy"');
+            });
+
+            const s1 = await sha256base64(diskUri);
+            const s2 = await sha256base64(tplCloudInit);
+            const enclaveId = await sha256base64(s1 + s2);
+            document.getElementById('enclaveId').textContent = enclaveId;
+
+            return {
+              ...inputs,
+              cloudInitFile: fn,
+              cloudInitHash: hex,
+              enclaveId: enclaveId
+            };
+          },
+          // No API call needed - everything is handled in preProcess
+          postProcess: (response, inputs) => {
+            return {
+              message: 'GCP Enclave configuration generated successfully',
+              cloudInitFile: inputs.cloudInitFile,
+              cloudInitHash: inputs.cloudInitHash,
+              enclaveId: inputs.enclaveId,
+              environment: inputs.envId
+            };
+          }
+        }
+      ]
+    }
+  ];
+
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
+</script>
 
 </body>
-
 </html>

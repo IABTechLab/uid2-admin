@@ -1,160 +1,281 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script type="module" src="/js/dangerModal.js"></script>
+  <script type="module" src="/js/operations.js"></script>
+  <script type="module" src="/js/output.js"></script>
+  <script type="module" src="/js/roleBadge.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Operator Key Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<label for="operatorName">Name:</label>
-<input type="text" id="operatorName" name="operatorName">
-<label for="protocol">Protocol:</label>
-<input type="text" id="protocol" name="protocol">
-<label for="roles">Roles:</label>
-<input type="text" id="roles" name="roles">
-<label for="siteId">Site Id:</label>
-<input type="text" id="siteId" name="siteId">
-<label for="operatorType">Public Operator?</label>
-<input type="checkbox" id="operatorType" name="operatorType">
-
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-opm" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doList">List Operator Keys</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doReveal">Reveal Operator Key</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doAdd">Add Operator Key</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doDisable">Disable Operator Key (PRIVILEGED)</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doEnable">Enable Operator Key</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetSite">Update Site</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetOperatorType">Update Public/Private Operator Type (PRIVILEGED)</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doSetRoles">Set Roles (PRIVILEGED)</a></li>
-</ul>
-
-<br>
-
-<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
-
-<ul>
-    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Operator Key (SUPER_USER)</a></li>
-</ul>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doMeta').on('click', function () {
-            doApiCall('GET', '/api/operator/metadata', '#standardOutput', '#errorOutput');
-        });
+<script type="module">
+import { initializeOperations } from '/js/operations.js';
+import { initializeOutput } from '/js/output.js';
 
-        $('#doList').on('click', function () {
-            doApiCall('GET', '/api/operator/list', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doReveal').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var url = '/api/operator/reveal?name=' + operatorName;
-
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doAdd').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var protocol = encodeURIComponent($('#protocol').val());
-            var roles = encodeURIComponent($('#roles').val());
-            var siteId = encodeURIComponent($('#siteId').val());
-            var operatorType = (document.getElementById('operatorType').checked == true)? "public" : "private";
-            var url = '/api/operator/add?name=' + operatorName + '&protocol=' + protocol + '&site_id=' + siteId + '&roles=' + roles + '&operator_type=' + operatorType;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doDel').on('click', function () {
-            if (!confirm("Are you sure?")) {
-                return;
+document.addEventListener('DOMContentLoaded', function () {
+  const operationConfig = {
+    'read-only': [
+        {
+          id: 'doMeta',
+          title: 'Get Metadata',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/operator/metadata'
+          }
+        },
+        {
+          id: 'doList',
+          title: 'List Operator Keys',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/operator/list'
+          }
+        },
+        {
+          id: 'doReveal',
+          title: 'Reveal Operator Key',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'operatorName-reveal',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
             }
-
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var url = '/api/operator/del?name=' + operatorName;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doDisable').on('click', function () {
-            const operatorName = $('#operatorName').val();
-            var encodedOperatorName = encodeURIComponent(operatorName);
-            var url = '/api/operator/disable?name=' + encodedOperatorName;
-            
-            if (!validateOperatorName(encodedOperatorName)) return;
-
-            const confirmationMessage = `Disabling an operator key will keep the private operators running, but will eventually cause the operator to stop serving client requests.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${operatorName}?`;
-            if (!confirm(confirmationMessage)) return;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doEnable').on('click', function () {
-            const operatorName = $('#operatorName').val();
-            var encodedOperatorName = encodeURIComponent(operatorName);
-            var url = '/api/operator/enable?name=' + encodedOperatorName;
-            
-            if (!validateOperatorName(encodedOperatorName)) return;
-
-            const confirmationMessage = `Are you sure you want to enable ${operatorName}?`;
-            if (!confirm(confirmationMessage)) return;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetRoles').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var roles = encodeURIComponent($('#roles').val());
-            var url = '/api/operator/roles?name=' + operatorName + '&roles=' + roles;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetSite').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/operator/update?name=' + operatorName + '&site_id=' + siteId;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetOperatorType').on('click', function () {
-            var operatorName = encodeURIComponent($('#operatorName').val());
-            var operatorType = (document.getElementById('operatorType').checked == true)? "public" : "private";
-            var url = '/api/operator/update?name=' + operatorName + '&operator_type=' + operatorType;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        function validateOperatorName(operatorName) {
-            if (!operatorName) {
-                $('#errorOutput').text("required parameter: name")
-                return false;
-            }
-            return true;
+          ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/operator/reveal?name=${encodeURIComponent(inputs.operatorName)}`
+          }
         }
-    });
+      ],
+    'write': [
+        {
+          id: 'doAdd',
+          title: 'Add Operator Key',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'operatorName-add',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            },
+            {
+              id: 'protocol-add',
+              name: 'protocol',
+              label: 'Protocol',
+              required: true,
+              size: 2
+            },
+            {
+              id: 'siteId-add',
+              name: 'siteId',
+              label: 'Site ID',
+              required: true,
+              size: 1,
+              type: 'number'
+            },
+            {
+              id: 'roles-add',
+              name: 'roles',
+              label: 'Roles',
+              required: false,
+              size: 'multi-line',
+              placeholder: 'Enter roles separated by commas'
+            },
+            {
+              id: 'operatorType-add',
+              name: 'operatorType',
+              label: 'Public Operator',
+              type: 'checkbox',
+              size: 1
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => {
+              const operatorType = inputs.operatorType ? 'public' : 'private';
+              const params = new URLSearchParams({
+                name: inputs.operatorName,
+                protocol: inputs.protocol,
+                site_id: inputs.siteId,
+                roles: inputs.roles || '',
+                operator_type: operatorType
+              });
+              return `/api/operator/add?${params.toString()}`;
+            }
+          }
+        },
+        {
+          id: 'doEnable',
+          title: 'Enable Operator Key',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'operatorName-enable',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            }
+          ],
+          preProcess: (inputs) => {
+            const confirmationMessage = `Are you sure you want to enable ${inputs.operatorName}?`;
+            return confirm(confirmationMessage) ? inputs : null;
+          },
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/operator/enable?name=${encodeURIComponent(inputs.operatorName)}`
+          }
+        },
+        {
+          id: 'doSetSite',
+          title: 'Update Site',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'operatorName-setSite',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            },
+            {
+              id: 'siteId-setSite',
+              name: 'siteId',
+              label: 'Site ID',
+              required: true,
+              size: 1,
+              type: 'number'
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/operator/update?name=${encodeURIComponent(inputs.operatorName)}&site_id=${encodeURIComponent(inputs.siteId)}`
+          }
+        },
+        {
+          id: 'doDisable',
+          title: 'Disable Operator Key',
+          role: 'elevated',
+          inputs: [
+            {
+              id: 'operatorName-disable',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            }
+          ],
+          description: 'Disabling an operator key will keep the private operators running, but will eventually cause the operator to stop serving client requests. Before proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.',
+          preProcess: (inputs) => {
+            const confirmationMessage = `Disabling an operator key will keep the private operators running, but will eventually cause the operator to stop serving client requests.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${inputs.operatorName}?`;
+            return confirm(confirmationMessage) ? inputs : null;
+          },
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/operator/disable?name=${encodeURIComponent(inputs.operatorName)}`
+          }
+        },
+        {
+          id: 'doSetOperatorType',
+          title: 'Update Public/Private Operator Type',
+          role: 'elevated',
+          inputs: [
+            {
+              id: 'operatorName-setType',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            },
+            {
+              id: 'operatorType-setType',
+              name: 'operatorType',
+              label: 'Public Operator',
+              type: 'checkbox',
+              size: 1
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => {
+              const operatorType = inputs.operatorType ? 'public' : 'private';
+              return `/api/operator/update?name=${encodeURIComponent(inputs.operatorName)}&operator_type=${operatorType}`;
+            }
+          }
+        },
+        {
+          id: 'doSetRoles',
+          title: 'Set Roles',
+          role: 'elevated',
+          inputs: [
+            {
+              id: 'operatorName-setRoles',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            },
+            {
+              id: 'roles-setRoles',
+              name: 'roles',
+              label: 'Roles',
+              required: true,
+              size: 'multi-line',
+              placeholder: 'Enter roles separated by commas'
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/operator/roles?name=${encodeURIComponent(inputs.operatorName)}&roles=${encodeURIComponent(inputs.roles)}`
+          }
+        }
+      ],
+    'danger-zone': [
+        {
+          id: 'doDel',
+          title: 'Delete Operator Key',
+          role: 'superuser',
+          inputs: [
+            {
+              id: 'operatorName-delete',
+              name: 'operatorName',
+              label: 'Operator Name',
+              required: true,
+              size: 2
+            }
+          ],
+          description: 'This will permanently delete the operator key. This action cannot be undone and will immediately stop all operations for this operator.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/operator/del?name=${encodeURIComponent(inputs.operatorName)}`
+          }
+        }
+      ]
+  };
+
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

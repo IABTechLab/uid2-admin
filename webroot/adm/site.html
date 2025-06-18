@@ -1,195 +1,346 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
-    <link href="/css/style.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script type="module" src="/js/dangerModal.js"></script>
+  <script type="module" src="/js/operations.js"></script>
+  <script type="module" src="/js/output.js"></script>
+  <script type="module" src="/js/roleBadge.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Site Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
+{% if ADD_SITE_MESSAGE %}
+<p class="message">{{ ADD_SITE_MESSAGE }}</p>
+{% endif %}
 
-<h3>Search</h3>
-<div>
-    <label for="searchSiteId">Site Id:</label>
-    <input type="text" id="searchSiteId" name="siteId">
-</div>
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="searchList">Search Sites by SiteId</a></li>
-</ul>
-
-<h3>Inputs</h3>
-
-<div>
-    <label for="siteName">Name:</label>
-    <input type="text" id="siteName" name="siteName">
-    <label for="siteId">Site Id:</label>
-    <input type="text" id="siteId" name="siteId">
-    <label for="description">Description:</label>
-    <input type="text" id="description" name="description">
-    <label for="types">Client Types:</label>
-    <input type="text" id="types" name="types">
-</div>
-<br>
-<div>
-    <label for="domainNames">Domain Names:</label>
-    <input type="text" id="domainNames" name="domainNames" style="width: 500px;">
-</div>
-<div>
-    <label for="appNames">App Names:</label>
-    <input type="text" id="appNames" name="appNames" style="width: 500px;">
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<br>
-<br>
+<script type="module">
+import { initializeOperations } from '/js/operations.js';
+import { initializeOutput } from '/js/output.js';
 
-<h3>Operations</h3>
+document.addEventListener('DOMContentLoaded', function () {
+  function getTemplateValue(varName, fallback = '') {
+    const value = '{{ ' + varName + ' }}';
+    const isProcessed = value !== ('{{ ' + varName + ' }}');
+    return isProcessed ? value : fallback;
+  }
 
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doList">List Sites</a></li>
-    <li class="ro-cki" style="display: none">
-        {% if ADD_SITE_MESSAGE %}
-        <p class="message">{{ ADD_SITE_MESSAGE }}</p>
-        {% endif %}
-        <a href="#" id="doAdd">Add Site</a>
-    </li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Site</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Site</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetName">Set Name</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetDescription">Set Description</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetTypes">Set Types</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doDomainNames">Set Site Domain Names</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doAppNames">Set Site App Names</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetVisible">Set Visible</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetNotVisible">Set Not Visible</a></li>
-</ul>
+  const addSiteOperation = {
+    id: 'doAdd',
+    title: 'Add Site',
+    role: 'maintainer',
+    inputs: [
+      {
+        id: 'siteName-add',
+        name: 'siteName',
+        label: 'Name',
+        required: true
+      },
+      {
+        id: 'types-add',
+        name: 'types',
+        label: 'Client Types',
+        required: true
+      },
+      {
+        id: 'description-add',
+        name: 'description',
+        label: 'Description',
+        size: "multi-line",
+        required: true
+      },
+      {
+        id: 'domainNames-add',
+        name: 'domainNames',
+        label: 'Domain Names',
+        size: "multi-line"
+      },
+      {
+        id: 'appNames-add',
+        name: 'appNames',
+        label: 'App Names',
+        size: "multi-line"
+      }
+    ],
+    apiCall: {
+      method: 'POST',
+      getUrl: (inputs) => {
+        const siteName = encodeURIComponent(inputs.siteName);
+        const types = encodeURIComponent(inputs.types);
+        const description = encodeURIComponent(inputs.description);
+        return `/api/site/add?name=${siteName}&types=${types}&description=${description}`;
+      },
+      getPayload: (inputs) => {
+        const domainNames = (inputs.domainNames || '').replace(/\s+/g, '').split(',').filter(value => value !== "");
+        const appNames = (inputs.appNames || '').replace(/\s+/g, '').split(',').filter(value => value !== "");
+        return {domain_names: domainNames, app_names: appNames};
+      }
+    }
+  };
 
-<br>
+  const writeOperations = [];
 
-<h3>Output</h3>
+  // To make this work both with and without Jinja templating (when developing).
+  const addSiteMessageExists = getTemplateValue('ADD_SITE_MESSAGE') !== '';
+  if (!addSiteMessageExists) {
+    writeOperations.push(addSiteOperation);
+  }
 
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
-</div>
-
-<script language="JavaScript">
-    $(document).ready(function () {
-
-        $('#searchList').on('click', function () {
-            var siteId = encodeURIComponent($('#searchSiteId').val());
-            if (!siteId) {
-                $('#errorOutput').html("Required Parameters: site_id")
-                return;
+  const operationConfig = [
+    {
+      type: 'read-only',
+      title: 'Read Only Operations',
+      operations: [
+        {
+          id: 'doList',
+          title: 'List Sites',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/site/list'
+          }
+        },
+        {
+          id: 'searchList',
+          title: 'Search Sites by Site Id',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'searchSiteId-search',
+              name: 'searchSiteId',
+              label: 'Site Id',
+              required: true
             }
-            var url = `/api/site/${siteId}`;
-
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doList').on('click', function () {
-            doApiCall('GET', '/api/site/list', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doAdd').on('click', function () {
-            var siteName = encodeURIComponent($('#siteName').val());
-            var types = encodeURIComponent($('#types').val());
-            var description = encodeURIComponent($('#description').val());
-            var url = '/api/site/add?name=' + siteName + '&types=' + types + '&description=' + description;
-
-            let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            let appNames = ($('#appNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({domain_names : domainNames, app_names : appNames}));
-        });
-
-        $('#doDisable').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/site/enable?enabled=false&id=' + siteId;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doEnable').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/site/enable?enabled=true&id=' + siteId;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-        $('#doSetTypes').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var types = encodeURIComponent($('#types').val());
-            if(types.length < 1) {
-                if (!confirm("You are about to set the Client Types of this to empty. Are you sure?")) {
-                    return;
-                }
-                types = ""
+          ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/site/${encodeURIComponent(inputs.searchSiteId)}`
+          }
+        }
+      ]
+    },
+    {
+      type: 'write',
+      title: 'Write Operations',
+      operations: writeOperations.concat([
+        {
+          id: 'doEnable',
+          title: 'Enable Site',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-enable',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
             }
-            var url = '/api/site/set-types?id=' + siteId + '&types=' + types;
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/enable?enabled=true&id=${encodeURIComponent(inputs.siteId)}`
+          }
+        },
+        {
+          id: 'doDisable',
+          title: 'Disable Site',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-disable',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/enable?enabled=false&id=${encodeURIComponent(inputs.siteId)}`
+          }
+        },
+        {
+          id: 'doSetName',
+          title: 'Set Name',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-setName',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            },
+            {
+              id: 'siteName-setName',
+              name: 'siteName',
+              label: 'Name',
+              required: true
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/update?id=${encodeURIComponent(inputs.siteId)}&name=${encodeURIComponent(inputs.siteName)}`
+          }
+        },
+        {
+          id: 'doSetDescription',
+          title: 'Set Description',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-setDesc',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            },
+            {
+              id: 'description-setDesc',
+              name: 'description',
+              label: 'Description',
+              required: true,
+              size: "multi-line"
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/update?id=${encodeURIComponent(inputs.siteId)}&description=${encodeURIComponent(inputs.description)}`
+          }
+        },
+        {
+          id: 'doSetTypes',
+          title: 'Set Types',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-setTypes',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            },
+            {
+              id: 'types-setTypes',
+              name: 'types',
+              label: 'Client Types'
+            }
+          ],
+          preProcess: async (inputs) => {
+            let types = inputs.types || '';
+            if (types.length < 1) {
+              if (!confirm("You are about to set the Client Types of this to empty. Are you sure?")) {
+                return null; // Abort operation
+              }
+              types = "";
+            }
+            return { ...inputs, types };
+          },
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/set-types?id=${encodeURIComponent(inputs.siteId)}&types=${encodeURIComponent(inputs.types)}`
+          }
+        },
+        {
+          id: 'doDomainNames',
+          title: 'Set Site Domain Names',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-domains',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            },
+            {
+              id: 'domainNames-domains',
+              name: 'domainNames',
+              label: 'Domain Names',
+              size: "multi-line"
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/domain_names?id=${encodeURIComponent(inputs.siteId)}`,
+            getPayload: (inputs) => {
+              const domainNames = (inputs.domainNames || '').replace(/\s+/g, '').split(',').filter(value => value !== "");
+              return { domain_names: domainNames };
+            }
+          }
+        },
+        {
+          id: 'doAppNames',
+          title: 'Set Site App Names',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-apps',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            },
+            {
+              id: 'appNames-apps',
+              name: 'appNames',
+              label: 'App Names',
+              size: "multi-line"
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/app_names?id=${encodeURIComponent(inputs.siteId)}`,
+            getPayload: (inputs) => {
+              const appNames = (inputs.appNames || '').replace(/\s+/g, '').split(',').filter(value => value !== "");
+              return { app_names: appNames };
+            }
+          }
+        },
+        {
+          id: 'doSetVisible',
+          title: 'Set Visible',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-visible',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/update?id=${encodeURIComponent(inputs.siteId)}&visible=true`
+          }
+        },
+        {
+          id: 'doSetNotVisible',
+          title: 'Set Not Visible',
+          role: 'maintainer',
+          inputs: [
+            {
+              id: 'siteId-notVisible',
+              name: 'siteId',
+              label: 'Site Id',
+              required: true
+            }
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/update?id=${encodeURIComponent(inputs.siteId)}&visible=false`
+          }
+        }
+      ])
+    }
+  ];
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doDomainNames').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/site/domain_names?id=' + siteId;
-
-            let domainNames = ($('#domainNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-
-            const payload = { domain_names: domainNames }
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
-        });
-
-        $('#doAppNames').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/site/app_names?id=' + siteId;
-
-            let appNames = ($('#appNames').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-
-            const payload = { app_names: appNames }
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
-        });
-
-        $('#doSetName').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-
-            var name = encodeURIComponent($('#siteName').val());
-
-            var url = '/api/site/update?id=' + siteId + '&name=' + name;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetDescription').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-
-            var description = encodeURIComponent($('#description').val());
-
-            var url = '/api/site/update?id=' + siteId + '&description=' + description;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetVisible').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-
-            var url = '/api/site/update?id=' + siteId + '&visible=true';
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetNotVisible').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-
-            var url = '/api/site/update?id=' + siteId + '&visible=false';
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>
