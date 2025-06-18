@@ -106,7 +106,7 @@ function loadEncryptionKeysCallback(result, siteId) {
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
     let expirations = [];
     let notActivated = [];
-    filteredResults = filteredResults.map((item) => {
+    filteredResults = filteredResults.map((item) => { 
         const created = new Date(item.created).toLocaleString();
         const activates = new Date(item.activates).toLocaleString();
         const expires = new Date(item.expires).toLocaleString();
