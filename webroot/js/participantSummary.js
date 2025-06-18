@@ -77,14 +77,16 @@ function loadSiteCallback(result) {
     $('#siteStandardOutput').html(formatted);
 }
 
+function formatUnixDate(unixTime) {
+    const time = unixTime < 1e12 ? unixTime * 1000 : unixTime;
+    return new Date(time).toLocaleString();
+}
+
 function loadAPIKeysCallback(result) {
-    console.log('bare result function received', result);
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
     resultJson = resultJson.map((item) => {
-        console.log(`Raw created value: ${item.created}`); // Before formatting
-        const created = new Date(item.created * 1000).toLocaleString();
-        console.log(`Formatted created time: ${created}`); // After formatting
+        const created = new Date(formatUnixDate(item.created)).toLocaleString();
         return { ...item, created };
     });
     const formatted = prettifyJson(JSON.stringify(resultJson));
