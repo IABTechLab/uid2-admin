@@ -626,7 +626,7 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
                 org.junit.jupiter.params.provider.Arguments.of("link[0-9]+", "link42", true),
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345", true), // snowflake valid
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "UID2_ENVIRONMENT", true), // snowflake valid
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "xy12345", false), // snowflake invalid
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "xy12345", false), // snowflake invalid, lowercase
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X", true), // snowflake valid, minimum length
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(256), true), // snowflake valid, maximum length
                 org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(257), false), // snowflake invalid, exceeds maximum length
