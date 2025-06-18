@@ -79,7 +79,7 @@ function loadSiteCallback(result) {
 
 function formatUnixDate(unixTime) {
     const time = unixTime < 1e12 ? unixTime * 1000 : unixTime;
-    return new Date(time).toLocaleString();
+    return time;
 }
 
 function loadAPIKeysCallback(result) {
@@ -102,15 +102,12 @@ function loadKeyPairsCallback(result, siteId) {
 };
 
 function loadEncryptionKeysCallback(result, siteId) {
-    console.log('bare result function received', result);
     const resultJson = JSON.parse(result);
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
     let expirations = [];
     let notActivated = [];
     filteredResults = filteredResults.map((item) => {
-        console.log(`Raw created value: ${item.created}`)
         const created = new Date(item.created).toLocaleString();
-        console.log(`Created time: ${created}`);
         const activates = new Date(item.activates).toLocaleString();
         const expires = new Date(item.expires).toLocaleString();
         if (item.expires < Date.now()) {
