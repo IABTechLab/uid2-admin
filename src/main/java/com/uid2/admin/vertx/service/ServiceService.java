@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
@@ -67,6 +69,11 @@ public class ServiceService implements IService {
                 this.handleDelete(ctx);
             }
         }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.SUPER_USER));
+        router.post(API_SERVICE_REMOVE_LINK_ID_REGEX.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleRemoveLinkIdRegex(ctx);
+            }
+        }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.PRIVILEGED));
     }
 
     private void handleServiceListAll(RoutingContext rc) {
@@ -113,6 +120,7 @@ public class ServiceService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             JsonArray rolesSpec = body.getJsonArray("roles");
+            String linkIdRegex = body.getString("link_id_regex");
             if (siteId == null || name == null || rolesSpec == null || rolesSpec.isEmpty()) {
                 ResponseUtil.error(rc, 400, "required parameters: site_id, name, roles");
                 return;
@@ -147,11 +155,20 @@ public class ServiceService implements IService {
                 return;
             }
 
+            if (linkIdRegex != null && !linkIdRegex.isBlank()) {
+                if (!isValidRegex(linkIdRegex)) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: link_id_regex; not a valid regex");
+                    return;
+                }
+            } else {
+                linkIdRegex = null;
+            }
+
             final List<Service> services = this.serviceProvider.getAllServices()
                     .stream().sorted(Comparator.comparingInt(Service::getServiceId))
                     .collect(Collectors.toList());
             final int serviceId = 1 + services.stream().mapToInt(Service::getServiceId).max().orElse(0);
-            Service service = new Service(serviceId, siteId, name, roles);
+            Service service = new Service(serviceId, siteId, name, roles, linkIdRegex);
 
             services.add(service);
 
@@ -163,17 +180,17 @@ public class ServiceService implements IService {
         }
     }
 
-    // Can update the site_id, name and roles
+    // Can update the site_id, name, roles, and link_id_regex
     private void handleUpdate(RoutingContext rc) {
         try {
+            serviceProvider.loadContent();
+            Service service = findServiceFromRequest(rc);
+            if (service == null) return; // error already handled
+
             JsonObject body = rc.body().asJsonObject();
-            if (body == null) {
-                ResponseUtil.error(rc, 400, "json payload required but not provided");
-                return;
-            }
-            Integer serviceId = body.getInteger("service_id");
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
+            String linkIdRegex = body.getString("link_id_regex");
 
             JsonArray rolesSpec = null;
             if (body.getString("roles") != null && !body.getString("roles").isEmpty()) {
@@ -185,16 +202,7 @@ public class ServiceService implements IService {
                 }
             }
 
-            if (serviceId == null) {
-                ResponseUtil.error(rc, 400, "required parameters: service_id");
-                return;
-            }
-
-            final Service service = serviceProvider.getService(serviceId);
-            if (service == null) {
-                ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
-                return;
-            }
+            int serviceId = service.getServiceId();
 
             // check that this does not create a duplicate service
             if (siteHasService(siteId, name, serviceId)) {
@@ -226,6 +234,14 @@ public class ServiceService implements IService {
                 service.setRoles(roles);
             }
 
+            if (linkIdRegex != null && !linkIdRegex.isBlank()) {
+                if (!isValidRegex(linkIdRegex)) {
+                    ResponseUtil.error(rc, 400, "invalid parameter: link_id_regex; not a valid regex");
+                    return;
+                }
+                service.setLinkIdRegex(linkIdRegex);
+            }
+
             if (siteId != null && siteId != 0) {
                 service.setSiteId(siteId);
             }
@@ -234,10 +250,7 @@ public class ServiceService implements IService {
                 service.setName(name);
             }
 
-            final List<Service> services = this.serviceProvider.getAllServices()
-                    .stream().sorted(Comparator.comparingInt(Service::getServiceId))
-                    .collect(Collectors.toList());
-
+            List<Service> services = getSortedServices();
 
             storeWriter.upload(services, null);
 
@@ -248,40 +261,31 @@ public class ServiceService implements IService {
     }
 
     private void handleDelete(RoutingContext rc) {
-        final int serviceId;
-        JsonObject body = rc.body() != null ? rc.body().asJsonObject() : null;
-        if (body == null) {
-            ResponseUtil.error(rc, 400, "json payload required but not provided");
-            return;
-        }
-        serviceId = body.getInteger("service_id", -1);
-        if (serviceId == -1) {
-            ResponseUtil.error(rc, 400, "required parameters: service_id");
-            return;
-        }
-
         try {
             serviceProvider.loadContent();
-
-            Service service = serviceProvider.getService(serviceId);
-            if (service == null) {
-                ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
-                return;
-            }
-
-            final List<Service> services = this.serviceProvider.getAllServices()
-                    .stream().sorted(Comparator.comparingInt(Service::getServiceId))
-                    .collect(Collectors.toList());
-
+            Service service = findServiceFromRequest(rc);
+            if (service == null) return; // error already handled
+            List<Service> services = getSortedServices();
             services.remove(service);
-
             storeWriter.upload(services, null);
-
             rc.response().end(toJson(service).encodePrettily());
         } catch (Exception e) {
             ResponseUtil.errorInternal(rc, "Internal Server Error", e);
         }
+    }
 
+    private void handleRemoveLinkIdRegex(RoutingContext rc) {
+        try {
+            serviceProvider.loadContent();
+            Service service = findServiceFromRequest(rc);
+            if (service == null) return; // error already handled
+            service.setLinkIdRegex(null);
+            List<Service> services = getSortedServices();
+            storeWriter.upload(services, null);
+            rc.response().end(toJson(service).encodePrettily());
+        } catch (Exception e) {
+            ResponseUtil.errorInternal(rc, "Internal Server Error", e);
+        }
     }
 
     private JsonObject toJson(Service s) {
@@ -290,6 +294,7 @@ public class ServiceService implements IService {
         jsonObject.put("site_id", s.getSiteId());
         jsonObject.put("name", s.getName());
         jsonObject.put("roles", s.getRoles());
+        jsonObject.put("link_id_regex", s.getLinkIdRegex());
         return jsonObject;
     }
 
@@ -301,5 +306,43 @@ public class ServiceService implements IService {
         return (siteId != null && siteId != 0 && name != null && !name.isEmpty())
                 && serviceProvider.getAllServices().stream().anyMatch(s -> s.getServiceId() != serviceId
                     && s.getSiteId() == siteId && s.getName().equals(name));
+    }
+
+    
+    private Service findServiceFromRequest(RoutingContext rc) {
+        JsonObject body = rc.body() != null ? rc.body().asJsonObject() : null;
+        if (body == null) {
+            ResponseUtil.error(rc, 400, "json payload required but not provided");
+            return null;
+        }
+
+        int serviceId = body.getInteger("service_id", -1);
+        if (serviceId == -1) {
+            ResponseUtil.error(rc, 400, "required parameters: service_id");
+            return null;
+        }
+
+        Service service = serviceProvider.getService(serviceId);
+        if (service == null) {
+            ResponseUtil.error(rc, 404, "failed to find a service for service_id: " + serviceId);
+            return null;
+        }
+        return service;
+    }
+
+    private List<Service> getSortedServices() {
+        return serviceProvider.getAllServices()
+                .stream()
+                .sorted(Comparator.comparingInt(Service::getServiceId))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isValidRegex(String regex) {
+        try {
+            Pattern.compile(regex);
+            return true;
+        } catch (PatternSyntaxException e) {
+            return false;
+        }
     }
 }

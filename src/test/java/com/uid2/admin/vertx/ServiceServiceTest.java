@@ -50,7 +50,8 @@ public class ServiceServiceTest extends ServiceTestBase {
                 () -> {
                     Set<Role> actualRoles = actualService.getJsonArray("roles").stream().map(s -> Role.valueOf((String) s)).collect(Collectors.toSet());
                     assertEquals(expectedService.getRoles(), actualRoles);
-                }
+                },
+                () -> assertEquals(expectedService.getLinkIdRegex(), actualService.getString("link_id_regex"))
         );
     }
 
@@ -274,6 +275,29 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void addServiceBadLinkIdRegex(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        setSites(new Site(123, "name1", false));
+
+        JsonArray ja = new JsonArray();
+        ja.add("GENERATOR");
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", ja);
+        jo.put("link_id_regex", "[unclosed");
+
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("invalid parameter: link_id_regex; not a valid regex", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void addService_emptyRoles_returnsError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
@@ -317,6 +341,32 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void addServiceWithRegex(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        setSites(new Site(123, "name1", false));
+
+        JsonArray ja = new JsonArray();
+        ja.add("GENERATOR");
+        ja.add("ID_READER");
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", ja);
+        jo.put("link_id_regex", "valid");
+
+        post(vertx, testContext, "api/service/add", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            Service expectedService = new Service(1, 123, "name1", Set.of(Role.GENERATOR, Role.ID_READER), "valid");
+            checkServiceJson(expectedService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(expectedService), null);
+            testContext.completeNow();
+        });
+    }
+
+
+    @Test
     void addServiceToExistingList(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
@@ -333,10 +383,11 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("site_id", 123);
         jo.put("name", "name2");
         jo.put("roles", ja);
+        jo.put("link_id_regex", "valid");
 
         post(vertx, testContext, "api/service/add", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
-            Service expectedService = new Service(2, 123, "name2", Set.of(Role.GENERATOR, Role.ID_READER));
+            Service expectedService = new Service(2, 123, "name2", Set.of(Role.GENERATOR, Role.ID_READER), "valid");
             checkServiceJson(expectedService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService, expectedService), null);
             testContext.completeNow();
@@ -344,7 +395,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateRolesMissingPayload(Vertx vertx, VertxTestContext testContext) {
+    void updateMissingPayload(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
         postWithoutBody(vertx, testContext, "api/service/update", response -> {
@@ -357,12 +408,13 @@ public class ServiceServiceTest extends ServiceTestBase {
 
     @ParameterizedTest
     @ValueSource(strings = {"service_id"})
-    void updateRolesMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
+    void updateMissingParameters(String parameter, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
         JsonObject jo = new JsonObject();
         jo.put("service_id", 1);
         jo.put("roles", new JsonArray());
+        jo.put("link_id_regex", "valid");
 
         jo.remove(parameter);
 
@@ -375,7 +427,7 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateRolesBadServiceId(Vertx vertx, VertxTestContext testContext) {
+    void updateBadServiceId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
         setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER)));
@@ -386,6 +438,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         JsonObject jo = new JsonObject();
         jo.put("service_id", 2);
         jo.put("roles", ja);
+        jo.put("link_id_regex", "valid");
 
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(404, response.statusCode());
@@ -434,6 +487,26 @@ public class ServiceServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             existingService.setRoles(Set.of(Role.GENERATOR, Role.PRIVILEGED));
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateLinkIdRegex(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.MAINTAINER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("link_id_regex", "valid");
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setLinkIdRegex("valid");
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
             testContext.completeNow();
@@ -538,6 +611,7 @@ public class ServiceServiceTest extends ServiceTestBase {
         jo.put("service_id", 1);
         jo.put("site_id", null);
         jo.put("name", "");
+        jo.put("link_id_regex", "");
 
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
@@ -624,6 +698,58 @@ public class ServiceServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(400, response.statusCode());
             assertEquals("service name name1 already exists", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void removeRegex(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.MAINTAINER), "valid");
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+
+        post(vertx, testContext, "api/service/remove-link-id-regex", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setLinkIdRegex(null);
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void removeRegexInvalidServiceId(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.MAINTAINER), "valid");
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 2);
+
+        post(vertx, testContext, "api/service/remove-link-id-regex", jo.encode(), response -> {
+            assertEquals(404, response.statusCode());
+            assertEquals("failed to find a service for service_id: 2", response.bodyAsJsonObject().getString("message"));
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void removeRegexNoBody(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.MAINTAINER), "valid");
+        setServices(existingService);
+
+        post(vertx, testContext, "api/service/remove-link-id-regex", "", response -> {
+            assertEquals(400, response.statusCode());
+            assertEquals("json payload required but not provided", response.bodyAsJsonObject().getString("message"));
             verify(serviceStoreWriter, never()).upload(null, null);
             testContext.completeNow();
         });
