@@ -80,8 +80,8 @@ function loadSiteCallback(result) {
 function loadAPIKeysCallback(result) {
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
-    resultJson = resultJson.map((item) => { 
-        const created = new Date(item.created).toLocaleString();
+    resultJson = resultJson.map((item) => {
+        const created = new Date((item.created)*1000).toLocaleString(); // Convert Unix timestamp in seconds to milliseconds for Date constructor
         return { ...item, created };
     });
     const formatted = prettifyJson(JSON.stringify(resultJson));
