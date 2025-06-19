@@ -77,7 +77,6 @@ function loadSiteCallback(result) {
     $('#siteStandardOutput').html(formatted);
 }
 
-
 function loadAPIKeysCallback(result) {
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
