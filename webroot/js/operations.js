@@ -2,8 +2,9 @@ import {initializeDangerModal} from './dangerModal.js';
 import {generateRoleBadge, initializeRoleBadges} from './roleBadge.js';
 import {httpClient} from './httpClient.js';
 
-function createInputField(input) {
-  const { id, name, label, type = 'text', placeholder = '', required = false, defaultValue = '', size = 1, options = [] } = input;
+function createInputField(input, operationId) {
+  const { name, label, type = 'text', placeholder = '', required = false, defaultValue = '', size = 1, options = [] } = input;
+  const id = `${operationId}-${name}`;
   const isMultiLine = size === 'multi-line';
   const gridSpan = isMultiLine ? 3 : (size > 1 ? size : 0);
   const gridStyle = gridSpan > 0 ? ` style="grid-column: span ${gridSpan};"` : '';
@@ -67,7 +68,7 @@ function createOperation(config) {
 
   const badgeHtml = generateRoleBadge(role);
   const inputsHtml = inputs.length > 0 ? 
-    `<div class="accordion-inputs">${inputs.map(input => createInputField(input)).join('')}</div>` : 
+    `<div class="accordion-inputs">${inputs.map(input => createInputField(input, id)).join('')}</div>` : 
     '';
 
   const hasInputs = inputs.length > 0;
@@ -126,38 +127,127 @@ function createOperationsGroup(config) {
   `;
 }
 
-function initializeOperations(config) {
-  let normalizedConfig;
+function normalizeOperationConfig(config) {
+  // Handle new format: { read: [...], write: [...], danger: [...] }
+  const normalizedConfig = [];
+  const sections = [
+    { key: 'read', type: 'read-only', defaultTitle: 'Read Only Operations' },
+    { key: 'write', type: 'write', defaultTitle: 'Write Operations' },
+    { key: 'danger', type: 'danger-zone', defaultTitle: '☠️ Danger Zone ☠️' }
+  ];
   
-  if (Array.isArray(config)) {
-    normalizedConfig = config;
-  } else {
-    normalizedConfig = [];
-    
-    if (config['read-only'] && config['read-only'].length > 0) {
-      normalizedConfig.push({
-        type: 'read-only',
-        title: 'Read Only Operations',
-        operations: config['read-only']
-      });
+  sections.forEach(section => {
+    const sectionConfig = config[section.key];
+    if (sectionConfig) {
+      const processedSection = processSection(sectionConfig, section.defaultTitle);
+      if (processedSection && processedSection.operations.length > 0) {
+        normalizedConfig.push({
+          type: section.type,
+          title: processedSection.title,
+          operations: processedSection.operations
+        });
+      }
     }
-    
-    if (config['write'] && config['write'].length > 0) {
-      normalizedConfig.push({
-        type: 'write',
-        title: 'Write Operations',
-        operations: config['write']
-      });
-    }
-    
-    if (config['danger-zone'] && config['danger-zone'].length > 0) {
-      normalizedConfig.push({
-        type: 'danger-zone',
-        title: '☠️ Danger Zone ☠️',
-        operations: config['danger-zone']
-      });
-    }
+  });
+  
+  return normalizedConfig;
+}
+
+function processSection(sectionConfig, defaultTitle) {
+  if (!sectionConfig) return null;
+  
+  // Handle simple array format
+  if (Array.isArray(sectionConfig)) {
+    return {
+      title: defaultTitle,
+      operations: sectionConfig
+    };
   }
+  
+  // Handle object format with custom title
+  if (sectionConfig.operations) {
+    return {
+      title: sectionConfig.title || defaultTitle,
+      operations: sectionConfig.operations
+    };
+  }
+  
+  // Fallback for invalid format
+  return {
+    title: defaultTitle,
+    operations: sectionConfig
+  };
+}
+
+function validateOperationConfig(config) {
+  if (!config) {
+    throw new Error('Operation configuration is required');
+  }
+  
+  // Validate object format structure
+  if (typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error('Operation configuration must be an object');
+  }
+  
+  // Check if it has valid sections
+  const hasValidSections = config.read || config.write || config.danger;
+  
+  if (!hasValidSections) {
+    console.warn('No valid operation sections found. Expected read/write/danger properties.');
+  }
+  
+  // Validate operations in each section
+  ['read', 'write', 'danger'].forEach(sectionName => {
+    const sectionConfig = config[sectionName];
+    if (sectionConfig) {
+      if (Array.isArray(sectionConfig)) {
+        validateOperations(sectionConfig, sectionName);
+      } else if (sectionConfig.operations && Array.isArray(sectionConfig.operations)) {
+        validateOperations(sectionConfig.operations, sectionName);
+      } else if (typeof sectionConfig === 'object') {
+        // Allow object format for custom titles, but warn if no operations
+        if (!sectionConfig.operations) {
+          console.warn(`Section '${sectionName}' has object format but no operations array`);
+        }
+      }
+    }
+  });
+}
+
+function validateOperations(operations, sectionName) {
+  operations.forEach((operation, index) => {
+    if (!operation.id) {
+      throw new Error(`Operation at index ${index} in ${sectionName} is missing required 'id' property`);
+    }
+    if (!operation.title) {
+      throw new Error(`Operation '${operation.id}' in ${sectionName} is missing required 'title' property`);
+    }
+    if (operation.inputs && !Array.isArray(operation.inputs)) {
+      throw new Error(`Operation '${operation.id}' in ${sectionName} has invalid 'inputs' property (must be array)`);
+    }
+  });
+}
+
+function initializeOperations(config) {
+  try {
+    validateOperationConfig(config);
+  } catch (error) {
+    console.error('Invalid operation configuration:', error.message);
+    const operationsContainer = document.querySelector('.operations-container');
+    if (operationsContainer) {
+      operationsContainer.innerHTML = `
+        <div class="operations-group error">
+          <h4>Configuration Error</h4>
+          <div class="error-message" style="color: #dc3545; padding: 1rem; border: 1px solid #dc3545; border-radius: 4px; background-color: #f8d7da;">
+            <strong>Error:</strong> ${error.message}
+          </div>
+        </div>
+      `;
+    }
+    return;
+  }
+  
+  const normalizedConfig = normalizeOperationConfig(config);
   
   const operationsHtml = normalizedConfig.map(group => createOperationsGroup(group)).join('');
   const operationsContainer = document.querySelector('.operations-container');
@@ -222,7 +312,7 @@ function collectInputValues(operation) {
   const inputs = operation.inputs || [];
   
   inputs.forEach(input => {
-    const element = document.getElementById(input.id);
+    const element = document.getElementById(`${operation.id}-${input.name}`);
     if (!element) return;
     
     if (input.type === 'checkbox') {
@@ -242,7 +332,7 @@ function validateOperation(operation) {
   inputs.forEach(input => {
     if (!input.required) return;
     
-    const element = document.getElementById(input.id);
+    const element = document.getElementById(`${operation.id}-${input.name}`);
     if (!element) return;
     
     let isValid = false;
@@ -384,7 +474,7 @@ function createDangerModal() {
     <div id="dangerModal" class="modal">
       <div class="modal-content">
         <h3>☠️ Danger Zone Operation ☠️</h3>
-        <p>This is a dangerous operation. If used incorrectly it can cause significant damage to the ecosystem.</p>
+        <p class="modal-description"></p>
         <p>Type <strong>"yes"</strong> if you want to proceed:</p>
         <input type="text" id="confirmationInput" class="confirmation-input" placeholder="Type 'yes' to confirm">
         <div class="modal-buttons">
@@ -407,6 +497,8 @@ function initializeInputValidation() {
       if (operationId) {
         updateExecuteButtonState(operationId);
       }
+      // Sync values across inputs with the same name
+      syncSharedInputValues(e.target);
     }
   });
   
@@ -416,6 +508,8 @@ function initializeInputValidation() {
       if (operationId) {
         updateExecuteButtonState(operationId);
       }
+      // Sync values across inputs with the same name
+      syncSharedInputValues(e.target);
     }
   });
 }
@@ -427,6 +521,32 @@ function findOperationForInput(inputElement) {
     return executeButton ? executeButton.id : null;
   }
   return null;
+}
+
+function syncSharedInputValues(changedInput) {
+  const inputName = changedInput.name;
+  if (!inputName) return;
+  
+  const newValue = changedInput.type === 'checkbox' ? changedInput.checked : changedInput.value;
+  
+  // Find all inputs with the same name attribute
+  const sharedInputs = document.querySelectorAll(`input[name="${inputName}"], textarea[name="${inputName}"], select[name="${inputName}"]`);
+  
+  sharedInputs.forEach(input => {
+    if (input === changedInput) return; // Skip the input that changed
+    
+    if (input.type === 'checkbox') {
+      input.checked = newValue;
+    } else {
+      input.value = newValue;
+    }
+    
+    // Trigger validation update for the operation this input belongs to
+    const operationId = findOperationForInput(input);
+    if (operationId) {
+      updateExecuteButtonState(operationId);
+    }
+  });
 }
 
 function syntaxHighlightJson(json) {
@@ -469,9 +589,13 @@ function initializeExecuteHandlers(config) {
         );
         
         if (isDangerZone) {
+          // Find the operation to get custom confirmation text
+          const operation = window.operationConfig[operationId];
+          const customText = operation?.confirmationText;
+          
           // Import and show danger modal
           import('./dangerModal.js').then(module => {
-            module.showDangerModal(() => executeOperation(operationId));
+            module.showDangerModal(() => executeOperation(operationId), customText);
           });
         } else {
           executeOperation(operationId);

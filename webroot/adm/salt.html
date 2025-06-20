@@ -30,79 +30,74 @@ document.addEventListener('DOMContentLoaded', function () {
       String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
       String(tomorrow.getDate()).padStart(2, '0');
 
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
-        {
-          id: 'doSnapshots',
-          title: 'List Salt Snapshots',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'GET',
-            url: '/api/salt/snapshots'
-          }
-        },
-        {
-          id: 'doRebuild',
-          title: 'Rebuild Salts File',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'POST',
-            url: '/api/salt/rebuild'
+  const fractionInput = {
+    name: 'fraction',
+    label: 'Fraction',
+    required: true,
+    defaultValue: (1/365).toFixed(6)
+  };
+
+  const targetDateInput = {
+    name: 'targetDate',
+    label: 'Target Date',
+    type: 'date',
+    required: true,
+    defaultValue: defaultTargetDate
+  };
+
+  const minAgesMultilineInput = {
+    name: 'minAges',
+    label: 'Min Ages (seconds)',
+    required: true,
+    defaultValue: '2592000,5184000,7776000,10368000,12960000,15552000,18144000,20736000,23328000,25920000,28512000,31104000,33696000',
+    size: 'multi-line'
+  };
+
+  const operationConfig = {
+    read: [
+      {
+        id: 'listSaltSnapshots',
+        title: 'List Salt Snapshots',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/salt/snapshots'
+        }
+      },
+      {
+        id: 'rebuildSaltsFile',
+        title: 'Rebuild Salts File',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'POST',
+          url: '/api/salt/rebuild'
+        }
+      }
+    ],
+    danger: [
+      {
+        id: 'rotateSecondLevelSalts',
+        title: 'Rotate Second Level Salts',
+        role: 'superuser',
+        inputs: [
+          fractionInput,
+          targetDateInput,
+          minAgesMultilineInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const minAges = encodeURIComponent(inputs.minAges);
+            const fraction = encodeURIComponent(inputs.fraction);
+            const targetDate = encodeURIComponent(inputs.targetDate);
+            return `/api/salt/rotate?min_ages_in_seconds=${minAges}&fraction=${fraction}&target_date=${targetDate}`;
           }
         }
-      ]
-    },
-    {
-      type: 'danger-zone',
-      title: '☠️ Danger Zone ☠️',
-      operations: [
-        {
-          id: 'doRotate',
-          title: 'Rotate Second Level Salts',
-          role: 'superuser',
-          inputs: [
-            {
-              id: 'fraction-rotate',
-              name: 'fraction',
-              label: 'Fraction',
-              required: true,
-              defaultValue: (1/365).toFixed(6)
-            },
-            {
-              id: 'targetDate-rotate',
-              name: 'targetDate',
-              label: 'Target Date',
-              type: 'date',
-              required: true,
-              defaultValue: defaultTargetDate
-            },
-            {
-              id: 'minAges-rotate',
-              name: 'minAges',
-              label: 'Min Ages (seconds)',
-              required: true,
-              defaultValue: '2592000,5184000,7776000,10368000,12960000,15552000,18144000,20736000,23328000,25920000,28512000,31104000,33696000',
-              size: "multi-line"
-            }
-          ],
-          apiCall: {
-            method: 'POST',
-            getUrl: (inputs) => {
-              const minAges = encodeURIComponent(inputs.minAges);
-              const fraction = encodeURIComponent(inputs.fraction);
-              const targetDate = encodeURIComponent(inputs.targetDate);
-              return `/api/salt/rotate?min_ages_in_seconds=${minAges}&fraction=${fraction}&target_date=${targetDate}`;
-            }
-          }
-        }
-      ]
-    }
-  ];
+      }
+    ]
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

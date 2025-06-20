@@ -24,60 +24,51 @@ import { initializeOperations } from '/js/operations.js';
 import { initializeOutput } from '/js/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
-        {
-          id: 'doGet',
-          title: 'Get Partner Config',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'GET',
-            url: '/api/partner_config/get'
-          },
-          postProcess: (response) => JSON.parse(JSON.stringify(response, null, 2))
-        }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
-        {
-          id: 'doUpdate',
-          title: 'Update Partner Config',
-          role: 'elevated',
-          inputs: [
-            {
-              id: 'configData-update',
-              name: 'configData',
-              label: 'Configuration Data',
-              required: true,
-              size: 'multi-line',
-              placeholder: 'Enter JSON configuration data...'
-            }
-          ],
-          preProcess: (inputs) => {
-            // Validate JSON
+  const configDataMultilineInput = {
+    name: 'configData',
+    label: 'Configuration Data',
+    required: true,
+    size: 'multi-line',
+    placeholder: 'Enter JSON configuration data...'
+  };
+
+  const operationConfig = {
+    read: [
+      {
+        id: 'getPartnerConfig',
+        title: 'Get Partner Config',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/partner_config/get'
+        },
+        postProcess: (response) => JSON.parse(JSON.stringify(response, null, 2))
+      }
+    ],
+    write: [
+      {
+        id: 'updatePartnerConfig',
+        title: 'Update Partner Config',
+        role: 'elevated',
+        inputs: [
+          configDataMultilineInput
+        ],
+        apiCall: {
+          method: 'POST',
+          url: '/api/partner_config/update',
+          getPayload: (inputs) => {
+            // Validate and parse JSON
             try {
-              JSON.parse(inputs.configData);
-              return inputs;
+              return JSON.parse(inputs.configData);
             } catch (e) {
               throw new Error('Invalid JSON format: ' + e.message);
             }
-          },
-          apiCall: {
-            method: 'POST',
-            url: '/api/partner_config/update',
-            getPayload: (inputs) => inputs.configData
           }
         }
-      ]
-    }
-  ];
+      }
+    ]
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

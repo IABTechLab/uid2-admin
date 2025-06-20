@@ -24,105 +24,74 @@ import { initializeOperations } from '/js/operations.js';
 import { initializeOutput } from '/js/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
-        {
-          id: 'doMeta',
-          title: 'Get Metadata',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'GET',
-            url: '/api/enclave/metadata'
-          }
-        },
-        {
-          id: 'doList',
-          title: 'List Enclave IDs',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'GET',
-            url: '/api/enclave/list'
+  const enclaveNameInput = {
+    name: 'enclaveName',
+    label: 'Enclave Name',
+    required: true,
+    size: 2
+  };
+
+  const operationConfig = {
+    read: [
+      {
+        id: 'getEnclaveMetadata',
+        title: 'Get Metadata',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/enclave/metadata'
+        }
+      },
+      {
+        id: 'listEnclaveIds',
+        title: 'List Enclave IDs',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/enclave/list'
+        }
+      }
+    ],
+    write: [
+      {
+        id: 'addEnclaveId',
+        title: 'Add Enclave ID',
+        role: 'elevated',
+        inputs: [
+          enclaveNameInput,
+          protocolInput,
+          enclaveIdInput
+        ],
+        description: 'Add a new enclave identifier to the system. This is a privileged operation.',
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const params = new URLSearchParams({
+              name: inputs.enclaveName,
+              protocol: inputs.protocol,
+              enclave_id: inputs.enclaveId
+            });
+            return `/api/enclave/add?${params.toString()}`;
           }
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
-        {
-          id: 'doAdd',
-          title: 'Add Enclave ID',
-          role: 'elevated',
-          inputs: [
-            {
-              id: 'enclaveName-add',
-              name: 'enclaveName',
-              label: 'Enclave Name',
-              required: true,
-              size: 2
-            },
-            {
-              id: 'protocol-add',
-              name: 'protocol',
-              label: 'Protocol',
-              required: true,
-              size: 2
-            },
-            {
-              id: 'enclaveId-add',
-              name: 'enclaveId',
-              label: 'Enclave ID',
-              required: true,
-              size: 2
-            }
-          ],
-          description: 'Add a new enclave identifier to the system. This is a privileged operation.',
-          apiCall: {
-            method: 'POST',
-            getUrl: (inputs) => {
-              const params = new URLSearchParams({
-                name: inputs.enclaveName,
-                protocol: inputs.protocol,
-                enclave_id: inputs.enclaveId
-              });
-              return `/api/enclave/add?${params.toString()}`;
-            }
-          }
+      }
+    ],
+    danger: [
+      {
+        id: 'deleteEnclaveId',
+        title: 'Delete Enclave ID',
+        role: 'superuser',
+        inputs: [ enclaveNameInput ],
+        description: 'This will permanently delete the enclave identifier. This action cannot be undone and may affect enclave operations.',
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => `/api/enclave/del?name=${encodeURIComponent(inputs.enclaveName)}`
         }
-      ]
-    },
-    {
-      type: 'danger-zone',
-      title: '☠️ Danger Zone ☠️',
-      operations: [
-        {
-          id: 'doDel',
-          title: 'Delete Enclave ID',
-          role: 'superuser',
-          inputs: [
-            {
-              id: 'enclaveName-delete',
-              name: 'enclaveName',
-              label: 'Enclave Name',
-              required: true,
-              size: 2
-            }
-          ],
-          description: 'This will permanently delete the enclave identifier. This action cannot be undone and may affect enclave operations.',
-          apiCall: {
-            method: 'POST',
-            getUrl: (inputs) => `/api/enclave/del?name=${encodeURIComponent(inputs.enclaveName)}`
-          }
-        }
-      ]
-    }
-  ];
+      }
+    ]
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

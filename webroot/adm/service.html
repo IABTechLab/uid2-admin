@@ -24,233 +24,158 @@
     import {initializeOutput} from '/js/output.js';
 
     document.addEventListener('DOMContentLoaded', function () {
-        const operationConfig = [
-            {
-                type: 'read-only',
-                title: 'Read Only Operations',
-                operations: [
-                    {
-                        id: 'doListAll',
-                        title: 'List All Services',
-                        role: 'maintainer',
-                        inputs: [],
-                        apiCall: {
-                            method: 'GET',
-                            url: '/api/service/list'
-                        }
-                    },
-                    {
-                        id: 'doListBySite',
-                        title: 'List Services By Site ID',
-                        role: 'maintainer',
-                        inputs: [
-                            {
-                                id: 'siteId-listBySite',
-                                name: 'siteId',
-                                label: 'Site ID',
-                                required: true,
-                                size: 1,
-                                type: 'number'
-                            }
-                        ],
-                        apiCall: {
-                            method: 'GET',
-                            url: '/api/service/list'
-                        },
-                        postProcess: (response, inputs) => {
-                            const siteId = parseInt(inputs.siteId);
-                            return response.filter(service => service.site_id === siteId);
-                        }
-                    },
-                    {
-                        id: 'doListByServiceId',
-                        title: 'Get Service By Service ID',
-                        role: 'maintainer',
-                        inputs: [
-                            {
-                                id: 'serviceId-get',
-                                name: 'serviceId',
-                                label: 'Service ID',
-                                required: true,
-                                size: 1,
-                                type: 'number'
-                            }
-                        ],
-                        apiCall: {
-                            method: 'GET',
-                            getUrl: (inputs) => `/api/service/list/${inputs.serviceId}`
-                        }
+        const siteIdInput = {
+            name: 'siteId',
+            label: 'Site ID',
+            required: true,
+            type: 'number'
+        };
+
+        const serviceIdInput = {
+            name: 'serviceId',
+            label: 'Service ID',
+            required: true,
+            type: 'number'
+        };
+
+        const serviceNameInput = {
+            name: 'serviceName',
+            label: 'Service Name',
+            required: true,
+            size: 2
+        };
+
+        const rolesMultilineInput = {
+            name: 'roles',
+            label: 'Roles',
+            required: true,
+            size: 'multi-line',
+            placeholder: 'Enter roles separated by commas'
+        };
+
+        const linkIdRegexInput = {
+            name: 'linkIdRegex',
+            label: 'Link Id Regex'
+        };
+
+        const operationConfig = {
+            read: [
+                {
+                    id: 'listAllServices',
+                    title: 'List All Services',
+                    role: 'maintainer',
+                    inputs: [],
+                    apiCall: {
+                        method: 'GET',
+                        url: '/api/service/list'
                     }
-                ]
-            },
-            {
-                type: 'write',
-                title: 'Write Operations',
-                operations: [
-                    {
-                        id: 'doAdd',
-                        title: 'Add Service',
-                        role: 'elevated',
-                        inputs: [
-                            {
-                                id: 'serviceName-add',
-                                name: 'serviceName',
-                                label: 'Service Name',
-                                required: true,
-                                size: 2
-                            },
-                            {
-                                id: 'siteId-add',
-                                name: 'siteId',
-                                label: 'Site ID',
-                                required: true,
-                                size: 1,
-                                type: 'number'
-                            },
-                            {
-                                id: 'roles-add',
-                                name: 'roles',
-                                label: 'Roles',
-                                required: true,
-                                size: 'multi-line',
-                                placeholder: 'Enter roles separated by commas'
-                            },
-                            {
-                                id: 'linkIdRegex',
-                                name: 'linkIdRegex',
-                                label: 'Link Id Regex',
-                            }
-                        ],
-                        apiCall: {
-                            method: 'POST',
-                            url: '/api/service/add',
-                            getPayload: (inputs) => ({
-                                site_id: parseInt(inputs.siteId),
-                                link_id_regex: inputs.linkIdRegex,
-                                name: inputs.serviceName,
-                                roles: inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== ''),
-                            })
-                        }
+                },
+                {
+                    id: 'listServicesBySiteId',
+                    title: 'List Services By Site ID',
+                    role: 'maintainer',
+                    inputs: [ siteIdInput ],
+                    apiCall: {
+                        method: 'GET',
+                        url: '/api/service/list'
                     },
-                    {
-                        id: 'doUpdate',
-                        title: 'Update Service',
-                        role: 'elevated',
-                        inputs: [
-                            {
-                                id: 'serviceId-update',
-                                name: 'serviceId',
-                                label: 'Service ID',
-                                required: true,
-                                size: 1,
-                                type: 'number'
-                            },
-                            {
-                                id: 'serviceName-update',
-                                name: 'serviceName',
-                                label: 'Service Name',
-                                required: false,
-                                size: 2
-                            },
-                            {
-                                id: 'siteId-update',
-                                name: 'siteId',
-                                label: 'Site ID',
-                                required: false,
-                                size: 1,
-                                type: 'number'
-                            },
-                            {
-                                id: 'roles-update',
-                                name: 'roles',
-                                label: 'Roles',
-                                required: false,
-                                size: 'multi-line',
-                                placeholder: 'Enter roles separated by commas'
-                            },
-                            {
-                                id: 'linkIdRegex',
-                                name: 'linkIdRegex',
-                                label: 'Link Id Regex',
-                            }
-                        ],
-                        preProcess: (inputs) => {
-                            // Process roles from comma-separated string to array (if provided)
+                    postProcess: (response, inputs) => {
+                        const siteId = parseInt(inputs.siteId);
+                        return response.filter(service => service.site_id === siteId);
+                    }
+                },
+                {
+                    id: 'getServiceByServiceId',
+                    title: 'Get Service By Service ID',
+                    role: 'maintainer',
+                    inputs: [ serviceIdInput ],
+                    apiCall: {
+                        method: 'GET',
+                        getUrl: (inputs) => `/api/service/list/${inputs.serviceId}`
+                    }
+                }
+            ],
+            write: [
+                {
+                    id: 'addService',
+                    title: 'Add Service',
+                    role: 'elevated',
+                    inputs: [
+                        serviceNameInput,
+                        siteIdInput,
+                        rolesMultilineInput,
+                        linkIdRegexInput
+                    ],
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/add',
+                        getPayload: (inputs) => ({
+                            site_id: parseInt(inputs.siteId),
+                            link_id_regex: inputs.linkIdRegex,
+                            name: inputs.serviceName,
+                            roles: inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== ''),
+                        })
+                    }
+                },
+                {
+                    id: 'updateService',
+                    title: 'Update Service',
+                    role: 'elevated',
+                    inputs: [
+                        serviceIdInput,
+                        {...serviceNameInput, required: false},
+                        {...siteIdInput, required: false},
+                        {...rolesMultilineInput, required: false},
+                        linkIdRegexInput
+                    ],
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/update',
+                        getPayload: (inputs) => {
+                            const payload = { service_id: parseInt(inputs.serviceId) };
+                            if (inputs.serviceName) payload.name = inputs.serviceName;
+                            if (inputs.siteId) payload.site_id = parseInt(inputs.siteId);
                             const rolesArray = inputs.roles ?
                                 inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') :
                                 [];
-                            return {
-                                ...inputs,
-                                processedRoles: rolesArray
-                            };
-                        },
-                        apiCall: {
-                            method: 'POST',
-                            url: '/api/service/update',
-                            getPayload: (inputs) => {
-                                const payload = { service_id: parseInt(inputs.serviceId) };
-                                if (inputs.serviceName) payload.name = inputs.serviceName;
-                                if (inputs.siteId) payload.site_id = parseInt(inputs.siteId);
-                                if (inputs.processedRoles.length > 0) payload.roles = inputs.processedRoles;
-                                if (inputs.linkIdRegex) payload.link_id_regex = inputs.linkIdRegex;
-                                return payload;
-                            }
+                            if (rolesArray.length > 0) payload.roles = rolesArray;
+                            
+                            if (inputs.linkIdRegex) payload.link_id_regex = inputs.linkIdRegex;
+                            return payload;
                         }
                     }
-                ]
-            },
-            {
-                type: 'danger-zone',
-                title: '☠️ Danger Zone ☠️',
-                operations: [
-                    {
-                        id: 'doDelete',
-                        title: 'Delete Service',
-                        role: 'superuser',
-                        inputs: [
-                            {
-                                id: 'serviceId-delete',
-                                name: 'serviceId',
-                                label: 'Service ID',
-                                required: true,
-                                size: 1,
-                                type: 'number'
-                            }
-                        ],
-                        description: 'This will permanently delete the service. This action cannot be undone and may affect related configurations.',
-                        apiCall: {
-                            method: 'POST',
-                            url: '/api/service/delete',
-                            getPayload: (inputs) => ({
-                                service_id: parseInt(inputs.serviceId)
-                            })
-                        }
-                    },
-                    {
-                        id: "doRemoveLinkIdRegex",
-                        title: "Remove Link Id Regex",
-                        role: "superuser",
-                        inputs: [
-                            {
-                                id: 'serviceId-delete',
-                                name: 'serviceId',
-                                label: 'Service ID',
-                                required: true,
-                                size: 1,
-                                type: 'number'
-                            }
-                        ],
-                        apiCall: {
-                            method: 'POST',
-                            url: '/api/service/remove-link-id-regex',
-                            getPayload: (inputs) => ({
-                                service_id: parseInt(inputs.serviceId)
-                            })
-                        }
+                }
+            ],
+            danger: [
+                {
+                    id: 'deleteService',
+                    title: 'Delete Service',
+                    role: 'superuser',
+                    inputs: [ serviceIdInput ],
+                    description: 'This will permanently delete the service. This action cannot be undone and may affect related configurations.',
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/delete',
+                        getPayload: (inputs) => ({
+                            service_id: parseInt(inputs.serviceId)
+                        })
                     }
-                ]
-            }
-        ];
+                },
+                {
+                    id: "doRemoveLinkIdRegex",
+                    title: "Remove Link Id Regex",
+                    role: "superuser",
+                    inputs: [ serviceIdInput ],
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/remove-link-id-regex',
+                        getPayload: (inputs) => ({
+                            service_id: parseInt(inputs.serviceId)
+                        })
+                    }
+                }
+            ]
+        };
 
         initializeOperations(operationConfig);
         initializeOutput();

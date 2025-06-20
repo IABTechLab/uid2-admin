@@ -132,13 +132,10 @@ document.addEventListener('DOMContentLoaded', function () {
     grid.updateConfig({ data: [] }).forceRender();
   };
 
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
+  const operationConfig = {
+    read: [
         {
-          id: 'doMeta',
+          id: 'getCloudEncryptionMetadata',
           title: 'Get Metadata',
           role: 'maintainer',
           inputs: [],
@@ -148,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doList',
+          id: 'listCloudEncryptionKeys',
           title: 'List Cloud Encryption Keys',
           role: 'maintainer',
           inputs: [],
@@ -184,14 +181,10 @@ document.addEventListener('DOMContentLoaded', function () {
             url: '/api/cloud-encryption-key/list'
           }
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
+      ],
+    write: [
         {
-          id: 'doRotate',
+          id: 'rotateCloudEncryptionKeys',
           title: 'Rotate Cloud Encryption Keys',
           role: 'maintainer',
           inputs: [],
@@ -222,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doEncrypt',
+          id: 'reencryptAllS3Files',
           title: 'Re-encrypt All S3 Files',
           role: 'maintainer',
           inputs: [],
@@ -232,8 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       ]
-    }
-  ];
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

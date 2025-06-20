@@ -109,44 +109,18 @@ document.addEventListener('DOMContentLoaded', function () {
     return sha256base64(str);
   }
 
-  const operationConfig = [
-    {
-      type: 'write',
+  const operationConfig = {
+    write: {
       title: 'GCP Enclave V2 Operations',
       operations: [
         {
-          id: 'doGenerate',
+          id: 'generateGcpV2EnclaveConfig',
           title: 'Generate Enclave ID and gcloud command',
           role: 'elevated',
           inputs: [
-            {
-              id: 'imageId-generate',
-              name: 'imageId',
-              label: 'Operator Docker Image ID',
-              required: true,
-              size: 3,
-              placeholder: 'The full digest for the image, with or without \'sha256:\''
-            },
-            {
-              id: 'envId-generate',
-              name: 'envId',
-              label: 'Environment',
-              type: 'select',
-              required: true,
-              size: 1,
-              defaultValue: 'integ',
-              options: [
-                { value: 'integ', label: 'Integration' },
-                { value: 'prod', label: 'Production' }
-              ]
-            },
-            {
-              id: 'debugMode-generate',
-              name: 'debugMode',
-              label: 'Debug Mode (Integration Only)',
-              type: 'checkbox',
-              size: 2
-            }
+            imageIdInput,
+            envIdSelectInput,
+            debugModeCheckboxInput
           ],
           description: 'Set Debug Mode to true if you want to use DebugMode Confidential Space host image in integration env. (You need to generate a new enclaveId.)',
           preProcess: async (inputs) => {
@@ -202,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       ]
     }
-  ];
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

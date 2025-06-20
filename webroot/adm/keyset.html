@@ -25,13 +25,47 @@ import { initializeOutput } from '/js/output.js';
 import { httpClient } from '/js/httpClient.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site Id',
+    required: true
+  };
+
+  const keysetIdInput = {
+    name: 'keysetId',
+    label: 'Keyset Id',
+    required: true
+  };
+
+  const keysetNameInput = {
+    name: 'keysetName',
+    label: 'Set Keyset Name'
+  };
+
+  const addSiteIdsInput = {
+    name: 'addSiteIds',
+    label: 'Add Allowed Sites'
+  };
+
+  const removeSiteIdsInput = {
+    name: 'removeSiteIds',
+    label: 'Remove Allowed Sites'
+  };
+
+  const addTypesInput = {
+    name: 'addTypes',
+    label: 'Add Allowed Types'
+  };
+
+  const removeTypesInput = {
+    name: 'removeTypes',
+    label: 'Remove Allowed Types'
+  };
+
+  const operationConfig = {
+    read: [
         {
-          id: 'doListAll',
+          id: 'listAllKeysets',
           title: 'List All Keysets',
           role: 'maintainer',
           inputs: [],
@@ -41,17 +75,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doListAllBySite',
+          id: 'listAllKeysetsBySiteId',
           title: 'List All Keysets By Site Id',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-listBySite',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            }
-          ],
+          inputs: [siteIdInput],
           apiCall: {
             method: 'GET',
             url: '/api/sharing/keysets'
@@ -59,64 +86,28 @@ document.addEventListener('DOMContentLoaded', function () {
           postProcess: (responseData, inputs) => responseData.filter(keyset => keyset.site_id === parseInt(inputs.siteId))
         },
         {
-          id: 'doShowKeysetById',
+          id: 'showKeysetByKeysetId',
           title: 'Show Keyset By Keyset Id',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'keysetId-show',
-              name: 'keysetId',
-              label: 'Keyset Id',
-              required: true
-            }
-          ],
+          inputs: [keysetIdInput],
           apiCall: {
             method: 'GET',
             getUrl: (inputs) => `/api/sharing/keyset/${parseInt(inputs.keysetId)}`
           }
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
+      ],
+    write: [
         {
-          id: 'doUpdate',
+          id: 'updateKeyset',
           title: 'Update Keyset',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'keysetId-update',
-              name: 'keysetId',
-              label: 'Keyset Id',
-              required: true
-            },
-            {
-              id: 'keysetName-update',
-              name: 'keysetName',
-              label: 'Set Keyset Name'
-            },
-            {
-              id: 'addSiteIds-update',
-              name: 'addSiteIds',
-              label: 'Add Allowed Sites'
-            },
-            {
-              id: 'removeSiteIds-update',
-              name: 'removeSiteIds',
-              label: 'Remove Allowed Sites'
-            },
-            {
-              id: 'addTypes-update',
-              name: 'addTypes',
-              label: 'Add Allowed Types'
-            },
-            {
-              id: 'removeTypes-update',
-              name: 'removeTypes',
-              label: 'Remove Allowed Types'
-            }
+            keysetIdInput,
+            keysetNameInput,
+            addSiteIdsInput,
+            removeSiteIdsInput,
+            addTypesInput,
+            removeTypesInput
           ],
           preProcess: async (inputs) => {
             const keysetId = parseInt(inputs.keysetId);
@@ -164,31 +155,14 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doMakeNew',
+          id: 'makeNewKeyset',
           title: 'Make New Keyset',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-new',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            },
-            {
-              id: 'keysetName-new',
-              name: 'keysetName',
-              label: 'Set Keyset Name'
-            },
-            {
-              id: 'addSiteIds-new',
-              name: 'addSiteIds',
-              label: 'Add Allowed Sites'
-            },
-            {
-              id: 'addTypes-new',
-              name: 'addTypes',
-              label: 'Add Allowed Types'
-            }
+            siteIdInput,
+            keysetNameInput,
+            addSiteIdsInput,
+            addTypesInput
           ],
           apiCall: {
             method: 'POST',
@@ -217,24 +191,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
           }
         }
-      ]
-    },
-    {
-      type: 'danger-zone',
-      title: '☠️ Danger Zone ☠️',
-      operations: [
+      ],
+    danger: [
         {
-          id: 'doResetEmpty',
+          id: 'resetAllowedSitesToEmpty',
           title: 'Reset Allowed Sites To Empty',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'keysetId-resetEmpty',
-              name: 'keysetId',
-              label: 'Keyset Id',
-              required: true
-            }
-          ],
+          inputs: [keysetIdInput],
           apiCall: {
             method: 'POST',
             url: '/api/sharing/keyset',
@@ -245,17 +208,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doResetNull',
+          id: 'resetAllowedSitesToNull',
           title: 'Reset Allowed Sites To Null',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'keysetId-resetNull',
-              name: 'keysetId',
-              label: 'Keyset Id',
-              required: true
-            }
-          ],
+          inputs: [keysetIdInput],
           apiCall: {
             method: 'POST',
             url: '/api/sharing/keyset',
@@ -266,8 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       ]
-    }
-  ];
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

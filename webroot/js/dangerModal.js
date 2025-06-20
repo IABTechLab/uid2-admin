@@ -32,11 +32,17 @@ function initializeDangerModal() {
 
 let pendingDangerOperation = null;
 
-function showDangerModal(operationCallback) {
+function showDangerModal(operationCallback, customText) {
     pendingDangerOperation = operationCallback;
     const modal = document.getElementById('dangerModal');
     const confirmationInput = document.getElementById('confirmationInput');
     const confirmButton = document.getElementById('confirmButton');
+    
+    const modalDescription = modal.querySelector('.modal-description');
+    if (modalDescription) {
+        const defaultWarning = 'This is a dangerous operation. If used incorrectly it can cause significant damage to the ecosystem.';
+        modalDescription.textContent = customText ?? defaultWarning
+    }
     
     modal.style.display = 'block';
     confirmationInput.value = '';

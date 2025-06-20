@@ -11,21 +11,18 @@ class HttpClient {
 
   async parseResponse(response) {
     const contentType = response.headers.get('content-type');
+    const responseText = await response.text();
     
-    if (contentType && contentType.includes('application/json')) {
-      const responseText = await response.text();
-      if (responseText.trim() === '') {
-        return { message: 'Operation successful, no text in response' };
-      } else {
-        try {
-          return JSON.parse(responseText);
-        } catch (jsonError) {
-          throw new Error(`Invalid JSON response: ${responseText}`);
-        }
-      }
-    } else {
-      const responseText = await response.text();
-      return { message: responseText || 'Operation successfulOperation successful, no text in response' };
+    if (responseText.trim() === '') {
+      return { message: 'Operation successful, no text in response' };
+    }
+    
+    // Always try to parse as JSON first, regardless of content-type
+    try {
+      return JSON.parse(responseText);
+    } catch (jsonError) {
+      // If JSON parsing fails, return as plain text message
+      return { message: responseText };
     }
   }
 

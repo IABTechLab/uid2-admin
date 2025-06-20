@@ -24,13 +24,44 @@ import { initializeOperations } from '/js/operations.js';
 import { initializeOutput } from '/js/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site ID',
+    required: true,
+    type: 'number'
+  };
+
+  const keysetIdInput = {
+    name: 'keysetId',
+    label: 'Keyset ID',
+    required: true,
+    type: 'number'
+  };
+
+  const activatesInInput = {
+    name: 'activatesIn',
+    label: 'Activates In (seconds)',
+    required: true,
+    type: 'number'
+  };
+
+  const minAgeInput = {
+    name: 'minAge',
+    label: 'Min Age (seconds)',
+    required: false,
+    type: 'number'
+  };
+
+  const forceInput = {
+    name: 'force',
+    label: 'Force',
+    type: 'checkbox'
+  };
+
+  const operationConfig = {
+    read: [
         {
-          id: 'doListKeys',
+          id: 'listEncryptionKeys',
           title: 'List Keys',
           role: 'maintainer',
           inputs: [],
@@ -41,19 +72,10 @@ document.addEventListener('DOMContentLoaded', function () {
           postProcess: (response) => response.sort((a, b) => a.id - b.id)
         },
         {
-          id: 'doListKeysBySite',
+          id: 'listEncryptionKeysBySite',
           title: 'List Keys By Site',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-listBySite',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            }
-          ],
+          inputs: [siteIdInput],
           apiCall: {
             method: 'GET',
             url: '/api/key/list'
@@ -65,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doListKeysetKeys',
+          id: 'listKeysetKeys',
           title: 'List Keyset Keys',
           role: 'maintainer',
           inputs: [],
@@ -76,19 +98,10 @@ document.addEventListener('DOMContentLoaded', function () {
           postProcess: (response) => response.sort((a, b) => a.id - b.id)
         },
         {
-          id: 'doListKeysetKeysByKeysetId',
+          id: 'listKeysetKeysByKeysetId',
           title: 'List Keyset Keys By Keyset ID',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'keysetId-listByKeyset',
-              name: 'keysetId',
-              label: 'Keyset ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            }
-          ],
+          inputs: [keysetIdInput],
           apiCall: {
             method: 'GET',
             url: '/api/key/list_keyset_keys'
@@ -99,68 +112,23 @@ document.addEventListener('DOMContentLoaded', function () {
             return filtered.sort((a, b) => a.id - b.id);
           }
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
+      ],
+    write: [
         {
-          id: 'doAddSiteKey',
+          id: 'addSiteKey',
           title: 'Add Site Key',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-add',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'activatesIn-add',
-              name: 'activatesIn',
-              label: 'Activates In (seconds)',
-              required: true,
-              size: 1,
-              type: 'number'
-            }
-          ],
+          inputs: [siteIdInput, activatesInInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/key/add?site_id=${inputs.siteId}&activates_in_seconds=${inputs.activatesIn}`
           }
         },
         {
-          id: 'doRotateSite',
+          id: 'rotateSiteKey',
           title: 'Rotate Site Key',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-rotate',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'minAge-rotate',
-              name: 'minAge',
-              label: 'Min Age (seconds)',
-              required: false,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'force-rotate',
-              name: 'force',
-              label: 'Force',
-              type: 'checkbox',
-              size: 1
-            }
-          ],
+          inputs: [siteIdInput, minAgeInput, forceInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => {
@@ -176,34 +144,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doRotateKeysetKey',
+          id: 'rotateKeysetKey',
           title: 'Rotate Keyset Key',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'keysetId-rotateKeyset',
-              name: 'keysetId',
-              label: 'Keyset ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'minAge-rotateKeyset',
-              name: 'minAge',
-              label: 'Min Age (seconds)',
-              required: false,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'force-rotateKeyset',
-              name: 'force',
-              label: 'Force',
-              type: 'checkbox',
-              size: 1
-            }
-          ],
+          inputs: [keysetIdInput, minAgeInput, forceInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => {
@@ -219,26 +163,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doRotateMaster',
+          id: 'rotateMasterKeys',
           title: 'Rotate Master Keys',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'minAge-master',
-              name: 'minAge',
-              label: 'Min Age (seconds)',
-              required: false,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'force-master',
-              name: 'force',
-              label: 'Force',
-              type: 'checkbox',
-              size: 1
-            }
-          ],
+          inputs: [minAgeInput, forceInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => {
@@ -258,26 +186,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doRotateAllSites',
+          id: 'rotateAllSiteKeys',
           title: 'Rotate All Site Keys',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'minAge-all',
-              name: 'minAge',
-              label: 'Min Age (seconds)',
-              required: false,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'force-all',
-              name: 'force',
-              label: 'Force',
-              type: 'checkbox',
-              size: 1
-            }
-          ],
+          inputs: [minAgeInput, forceInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => {
@@ -298,8 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
           postProcess: (response) => response.sort((a, b) => a.id - b.id)
         }
       ]
-    }
-  ];
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

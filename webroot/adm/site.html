@@ -28,6 +28,42 @@ import { initializeOperations } from '/js/operations.js';
 import { initializeOutput } from '/js/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site Id',
+    required: true
+  };
+  
+  const siteNameInput = {
+    name: 'siteName',
+    label: 'Name',
+    required: true
+  };
+  
+  const descriptionInput = {
+    name: 'description',
+    label: 'Description',
+    size: 'multi-line',
+    required: true
+  };
+  
+  const typesInput = {
+    name: 'types',
+    label: 'Client Types',
+    required: true
+  };
+  
+  const domainNamesMultilineInput = {
+    name: 'domainNames',
+    label: 'Domain Names',
+    size: 'multi-line'
+  };
+  
+  const appNamesMultilineInput = {
+    name: 'appNames',
+    label: 'App Names',
+    size: 'multi-line'
+  };
   function getTemplateValue(varName, fallback = '') {
     const value = '{{ ' + varName + ' }}';
     const isProcessed = value !== ('{{ ' + varName + ' }}');
@@ -35,41 +71,15 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const addSiteOperation = {
-    id: 'doAdd',
+    id: 'addSite',
     title: 'Add Site',
     role: 'maintainer',
     inputs: [
-      {
-        id: 'siteName-add',
-        name: 'siteName',
-        label: 'Name',
-        required: true
-      },
-      {
-        id: 'types-add',
-        name: 'types',
-        label: 'Client Types',
-        required: true
-      },
-      {
-        id: 'description-add',
-        name: 'description',
-        label: 'Description',
-        size: "multi-line",
-        required: true
-      },
-      {
-        id: 'domainNames-add',
-        name: 'domainNames',
-        label: 'Domain Names',
-        size: "multi-line"
-      },
-      {
-        id: 'appNames-add',
-        name: 'appNames',
-        label: 'App Names',
-        size: "multi-line"
-      }
+      siteNameInput,
+      typesInput,
+      descriptionInput,
+      domainNamesMultilineInput,
+      appNamesMultilineInput
     ],
     apiCall: {
       method: 'POST',
@@ -87,127 +97,74 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 
-  const writeOperations = [];
-
   // To make this work both with and without Jinja templating (when developing).
   const addSiteMessageExists = getTemplateValue('ADD_SITE_MESSAGE') !== '';
+  const writeOperations = [];
   if (!addSiteMessageExists) {
     writeOperations.push(addSiteOperation);
   }
 
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
-        {
-          id: 'doList',
-          title: 'List Sites',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'GET',
-            url: '/api/site/list'
-          }
-        },
-        {
-          id: 'searchList',
-          title: 'Search Sites by Site Id',
-          role: 'maintainer',
-          inputs: [
-            {
-              id: 'searchSiteId-search',
-              name: 'searchSiteId',
-              label: 'Site Id',
-              required: true
-            }
-          ],
-          apiCall: {
-            method: 'GET',
-            getUrl: (inputs) => `/api/site/${encodeURIComponent(inputs.searchSiteId)}`
-          }
+  const operationConfig = {
+    read: [
+      {
+        id: 'listSites',
+        title: 'List Sites',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/site/list'
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: writeOperations.concat([
+      },
+      {
+        id: 'searchSitesBySiteId',
+        title: 'Search Sites by Site Id',
+        role: 'maintainer',
+        inputs: [ siteIdInput ],
+        apiCall: {
+          method: 'GET',
+          getUrl: (inputs) => `/api/site/${encodeURIComponent(inputs.siteId)}`
+        }
+      }
+    ],
+    write: writeOperations.concat([
         {
-          id: 'doEnable',
+          id: 'enableSite',
           title: 'Enable Site',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-enable',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            }
-          ],
+          inputs: [ siteIdInput ],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/site/enable?enabled=true&id=${encodeURIComponent(inputs.siteId)}`
           }
         },
         {
-          id: 'doDisable',
+          id: 'disableSite',
           title: 'Disable Site',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-disable',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            }
-          ],
+          inputs: [ siteIdInput ],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/site/enable?enabled=false&id=${encodeURIComponent(inputs.siteId)}`
           }
         },
         {
-          id: 'doSetName',
+          id: 'setSiteName',
           title: 'Set Name',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-setName',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            },
-            {
-              id: 'siteName-setName',
-              name: 'siteName',
-              label: 'Name',
-              required: true
-            }
-          ],
+          inputs: [ siteIdInput, siteNameInput ],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/site/update?id=${encodeURIComponent(inputs.siteId)}&name=${encodeURIComponent(inputs.siteName)}`
           }
         },
         {
-          id: 'doSetDescription',
+          id: 'setSiteDescription',
           title: 'Set Description',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-setDesc',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            },
-            {
-              id: 'description-setDesc',
-              name: 'description',
-              label: 'Description',
-              required: true,
-              size: "multi-line"
-            }
+            siteIdInput,
+            descriptionInput
           ],
           apiCall: {
             method: 'POST',
@@ -215,54 +172,12 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doSetTypes',
-          title: 'Set Types',
-          role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-setTypes',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            },
-            {
-              id: 'types-setTypes',
-              name: 'types',
-              label: 'Client Types'
-            }
-          ],
-          preProcess: async (inputs) => {
-            let types = inputs.types || '';
-            if (types.length < 1) {
-              if (!confirm("You are about to set the Client Types of this to empty. Are you sure?")) {
-                return null; // Abort operation
-              }
-              types = "";
-            }
-            return { ...inputs, types };
-          },
-          apiCall: {
-            method: 'POST',
-            getUrl: (inputs) => `/api/site/set-types?id=${encodeURIComponent(inputs.siteId)}&types=${encodeURIComponent(inputs.types)}`
-          }
-        },
-        {
-          id: 'doDomainNames',
+          id: 'setSiteDomainNames',
           title: 'Set Site Domain Names',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-domains',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            },
-            {
-              id: 'domainNames-domains',
-              name: 'domainNames',
-              label: 'Domain Names',
-              size: "multi-line"
-            }
+            siteIdInput,
+            {...domainNamesMultilineInput, required: false}
           ],
           apiCall: {
             method: 'POST',
@@ -274,22 +189,12 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doAppNames',
+          id: 'setSiteAppNames',
           title: 'Set Site App Names',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-apps',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            },
-            {
-              id: 'appNames-apps',
-              name: 'appNames',
-              label: 'App Names',
-              size: "multi-line"
-            }
+            siteIdInput,
+            {...appNamesMultilineInput, required: false}
           ],
           apiCall: {
             method: 'POST',
@@ -301,16 +206,11 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doSetVisible',
+          id: 'setSiteVisible',
           title: 'Set Visible',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-visible',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            }
+            siteIdInput
           ],
           apiCall: {
             method: 'POST',
@@ -318,25 +218,36 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doSetNotVisible',
+          id: 'setSiteNotVisible',
           title: 'Set Not Visible',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-notVisible',
-              name: 'siteId',
-              label: 'Site Id',
-              required: true
-            }
+            siteIdInput
           ],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/site/update?id=${encodeURIComponent(inputs.siteId)}&visible=false`
           }
         }
-      ])
-    }
-  ];
+      ]),
+    danger: [
+        {
+          id: 'setSiteTypes',
+          title: 'Set Site Types (Empty)',
+          role: 'maintainer',
+          inputs: [
+            siteIdInput,
+            {...typesInput, required: false}
+          ],
+          description: 'This will set the client types for the site. Setting empty types may affect site functionality.',
+          confirmationText: 'You are about to set the Client Types of this site to empty. This may affect the site\'s functionality and access permissions.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/site/set-types?id=${encodeURIComponent(inputs.siteId)}&types=${encodeURIComponent(inputs.types || '')}`
+          }
+        }
+      ]
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

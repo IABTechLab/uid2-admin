@@ -184,61 +184,20 @@ write_files:
       .replace(/\n+$/g, '\n');
   }
 
-  const operationConfig = [
-    {
-      type: 'write',
+  const operationConfig = {
+    write: {
       title: 'GCP Enclave Operations',
       operations: [
         {
-          id: 'doGenerate',
+          id: 'generateGcpEnclaveConfig',
           title: 'Generate GCP cloud-init, Enclave ID and gcloud command',
           role: 'elevated',
           inputs: [
-            {
-              id: 'diskUri-generate',
-              name: 'diskUri',
-              label: 'GCP Disk URI',
-              required: true,
-              size: 3,
-              placeholder: 'To get the latest: gcloud compute images list --filter="name~\'cos-stable\'" --standard-images --uri'
-            },
-            {
-              id: 'apiToken-generate',
-              name: 'apiToken',
-              label: 'Operator Api Key',
-              required: true,
-              size: 3,
-              placeholder: 'Enter the operator API key'
-            },
-            {
-              id: 'imageId-generate',
-              name: 'imageId',
-              label: 'Operator Docker Image ID',
-              required: true,
-              size: 3,
-              placeholder: 'The full digest for the image, with or without \'sha256:\''
-            },
-            {
-              id: 'envId-generate',
-              name: 'envId',
-              label: 'Environment',
-              type: 'select',
-              required: true,
-              size: 1,
-              defaultValue: 'integ',
-              options: [
-                { value: 'integ', label: 'Integration' },
-                { value: 'prod', label: 'Production' }
-              ]
-            },
-            {
-              id: 'accesstokenId-generate',
-              name: 'accesstokenId',
-              label: 'Docker Registry Access Token',
-              required: true,
-              size: 3,
-              placeholder: 'Personal Access Token that allows read access to ghcr.io'
-            }
+            diskUriInput,
+            apiTokenInput,
+            imageIdInput,
+            envIdSelectInput,
+            accessTokenInput
           ],
           description: 'Generates GCP cloud-init configuration file, calculates Enclave ID, and provides gcloud command for VM creation.<br><br><strong>Note:</strong> The Operator Api Key can be found in <a href="operator-key.html">Operator Key Management</a> using the "Reveal Operator Key" operation.',
           preProcess: async (inputs) => {
@@ -319,7 +278,7 @@ write_files:
         }
       ]
     }
-  ];
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

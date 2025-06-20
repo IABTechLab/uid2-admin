@@ -24,13 +24,37 @@ import { initializeOperations } from '/js/operations.js';
 import { initializeOutput } from '/js/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site ID',
+    required: true,
+    type: 'number'
+  };
+
+  const subscriptionIdInput = {
+    name: 'subscriptionId',
+    label: 'Subscription ID',
+    required: true,
+    size: 2
+  };
+
+  const keypairNameInput = {
+    name: 'name',
+    label: 'Keypair Name',
+    required: false,
+    size: 2
+  };
+
+  const disableCheckbox = {
+    name: 'disable',
+    label: 'Disable Keypair',
+    type: 'checkbox'
+  };
+
+  const operationConfig = {
+    read: [
         {
-          id: 'doList',
+          id: 'listKeypairs',
           title: 'List Keypairs',
           role: 'maintainer',
           inputs: [],
@@ -40,19 +64,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doListSite',
+          id: 'listKeypairsBySiteId',
           title: 'List Keypairs By Site ID',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-listSite',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            }
-          ],
+          inputs: [ siteIdInput ],
           apiCall: {
             method: 'GET',
             url: '/api/client_side_keypairs/list'
@@ -63,56 +78,25 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          id: 'doListSubscription',
+          id: 'getKeypairBySubscriptionId',
           title: 'Get Keypair By Subscription ID',
           role: 'maintainer',
-          inputs: [
-            {
-              id: 'subscriptionId-get',
-              name: 'subscriptionId',
-              label: 'Subscription ID',
-              required: true,
-              size: 2
-            }
-          ],
+          inputs: [ subscriptionIdInput ],
           apiCall: {
             method: 'GET',
             getUrl: (inputs) => `/api/client_side_keypairs/${encodeURIComponent(inputs.subscriptionId)}`
           }
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
+      ],
+    write: [
         {
-          id: 'doCreate',
+          id: 'addKeypair',
           title: 'Add Keypair',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'siteId-create',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'name-create',
-              name: 'name',
-              label: 'Keypair Name',
-              required: false,
-              size: 2
-            },
-            {
-              id: 'disable-create',
-              name: 'disable',
-              label: 'Disable Keypair',
-              type: 'checkbox',
-              size: 1
-            }
+            siteIdInput,
+            keypairNameInput,
+            disableCheckbox
           ],
           apiCall: {
             method: 'POST',
@@ -124,48 +108,19 @@ document.addEventListener('DOMContentLoaded', function () {
             })
           }
         },
+      ],
+    danger: [
         {
-          id: 'doUpdate',
+          id: 'updateKeypair',
           title: 'Update Keypair',
           role: 'maintainer',
           inputs: [
-            {
-              id: 'subscriptionId-update',
-              name: 'subscriptionId',
-              label: 'Subscription ID',
-              required: true,
-              size: 2
-            },
-            {
-              id: 'name-update',
-              name: 'name',
-              label: 'Keypair Name',
-              required: false,
-              size: 2
-            },
-            {
-              id: 'disable-update',
-              name: 'disable',
-              label: 'Disable Keypair',
-              type: 'checkbox',
-              size: 1
-            }
+            subscriptionIdInput,
+            keypairNameInput,
+            disableCheckbox
           ],
-          preProcess: (inputs) => {
-            // Show confirmation dialog with appropriate message
-            const disabled = inputs.disable;
-            const action = disabled ? 'disable' : 'enable';
-            const baseMessage = `You may ignore this warning if you are not changing the disabled status of this keypair.\n\nAre you sure you want to ${action} ${inputs.subscriptionId}?`;
-            
-            let confirmationMessage;
-            if (disabled) {
-              confirmationMessage = `Disabling this client-side keypair will prevent it from using CSTG.\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\n${baseMessage}`;
-            } else {
-              confirmationMessage = `Enabling this client-side keypair will allow it to use CSTG.\n\n${baseMessage}`;
-            }
-            
-            return confirm(confirmationMessage) ? inputs : null;
-          },
+          description: 'This will update the keypair settings, including its enabled/disabled status.',
+          confirmationText: 'This will update the keypair settings. If you are changing the disabled status, ensure there is no valid traffic, and confirm that the participant has provided consent.',
           apiCall: {
             method: 'POST',
             url: '/api/client_side_keypairs/update',
@@ -180,31 +135,14 @@ document.addEventListener('DOMContentLoaded', function () {
               return payload;
             }
           }
-        }
-      ]
-    },
-    {
-      type: 'danger-zone',
-      title: '☠️ Danger Zone ☠️',
-      operations: [
+        },
         {
-          id: 'doDelete',
+          id: 'deleteKeypair',
           title: 'Delete Keypair',
           role: 'elevated',
-          inputs: [
-            {
-              id: 'subscriptionId-delete',
-              name: 'subscriptionId',
-              label: 'Subscription ID',
-              required: true,
-              size: 2
-            }
-          ],
+          inputs: [ subscriptionIdInput ],
           description: 'This will permanently delete the client-side keypair. This action cannot be undone.',
-          preProcess: (inputs) => {
-            const message = `Are you sure you want to delete ${inputs.subscriptionId}?`;
-            return confirm(message) ? inputs : null;
-          },
+          confirmationText: 'This will permanently delete the client-side keypair. This action cannot be undone.',
           apiCall: {
             method: 'POST',
             url: '/api/client_side_keypairs/delete',
@@ -214,8 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       ]
-    }
-  ];
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();

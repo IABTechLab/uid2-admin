@@ -24,222 +24,146 @@ import { initializeOperations } from '/js/operations.js';
 import { initializeOutput } from '/js/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const operationConfig = [
-    {
-      type: 'read-only',
-      title: 'Read Only Operations',
-      operations: [
-        {
-          id: 'doListAll',
-          title: 'List Service Links',
-          role: 'maintainer',
-          inputs: [],
-          apiCall: {
-            method: 'GET',
-            url: '/api/service_link/list'
-          }
-        },
-        {
-          id: 'doListBySite',
-          title: 'List Service Links By Site ID',
-          role: 'maintainer',
-          inputs: [
-            {
-              id: 'siteId-listBySite',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            }
-          ],
-          apiCall: {
-            method: 'GET',
-            url: '/api/service_link/list'
-          },
-          postProcess: (response, inputs) => {
-            const siteId = parseInt(inputs.siteId);
-            return response.filter(link => link.site_id === siteId);
-          }
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site ID',
+    required: true,
+    type: 'number'
+  };
+
+  const serviceIdInput = {
+    name: 'serviceId',
+    label: 'Service ID',
+    required: true,
+    type: 'number'
+  };
+
+  const linkIdInput = {
+    name: 'linkId',
+    label: 'Link ID',
+    required: true
+  };
+
+  const linkNameInput = {
+    name: 'linkName',
+    label: 'Link Name',
+    required: false,
+    size: 2
+  };
+
+  const rolesMultilineInput = {
+    name: 'roles',
+    label: 'Roles',
+    required: false,
+    size: 'multi-line',
+    placeholder: 'Enter roles separated by commas'
+  };
+
+  const operationConfig = {
+    read: [
+      {
+        id: 'listServiceLinks',
+        title: 'List Service Links',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/service_link/list'
         }
-      ]
-    },
-    {
-      type: 'write',
-      title: 'Write Operations',
-      operations: [
-        {
-          id: 'doAdd',
-          title: 'Add Service Link',
-          role: 'maintainer',
-          inputs: [
-            {
-              id: 'linkId-add',
-              name: 'linkId',
-              label: 'Link ID',
-              required: true,
-              size: 1
-            },
-            {
-              id: 'serviceId-add',
-              name: 'serviceId',
-              label: 'Service ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'siteId-add',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'linkName-add',
-              name: 'linkName',
-              label: 'Link Name',
-              required: false,
-              size: 2
-            },
-            {
-              id: 'roles-add',
-              name: 'roles',
-              label: 'Roles',
-              required: false,
-              size: 'multi-line',
-              placeholder: 'Enter roles separated by commas'
-            }
-          ],
-          preProcess: (inputs) => {
-            // Process roles from comma-separated string to array
-            const rolesArray = inputs.roles ? 
+      },
+      {
+        id: 'listServiceLinksBySiteId',
+        title: 'List Service Links By Site ID',
+        role: 'maintainer',
+        inputs: [ siteIdInput ],
+        apiCall: {
+          method: 'GET',
+          url: '/api/service_link/list'
+        },
+        postProcess: (response, inputs) => {
+          const siteId = parseInt(inputs.siteId);
+          return response.filter(link => link.site_id === siteId);
+        }
+      }
+    ],
+    write: [
+      {
+        id: 'addServiceLink',
+        title: 'Add Service Link',
+        role: 'maintainer',
+        inputs: [
+          linkIdInput,
+          serviceIdInput,
+          siteIdInput,
+          linkNameInput,
+          rolesMultilineInput
+        ],
+        apiCall: {
+          method: 'POST',
+          url: '/api/service_link/add',
+          getPayload: (inputs) => {
+            const rolesArray = inputs.roles ?
               inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') : 
               [];
+            
             return {
-              ...inputs,
-              processedRoles: rolesArray
-            };
-          },
-          apiCall: {
-            method: 'POST',
-            url: '/api/service_link/add',
-            getPayload: (inputs) => ({
               link_id: inputs.linkId,
               service_id: parseInt(inputs.serviceId),
               site_id: parseInt(inputs.siteId),
               name: inputs.linkName || '',
-              roles: inputs.processedRoles
-            })
+              roles: rolesArray
+            };
           }
-        },
-        {
-          id: 'doUpdate',
-          title: 'Update Service Link',
-          role: 'maintainer',
-          inputs: [
-            {
-              id: 'linkId-update',
-              name: 'linkId',
-              label: 'Link ID',
-              required: true,
-              size: 1
-            },
-            {
-              id: 'serviceId-update',
-              name: 'serviceId',
-              label: 'Service ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'siteId-update',
-              name: 'siteId',
-              label: 'Site ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            },
-            {
-              id: 'linkName-update',
-              name: 'linkName',
-              label: 'Link Name',
-              required: false,
-              size: 2
-            },
-            {
-              id: 'roles-update',
-              name: 'roles',
-              label: 'Roles',
-              required: false,
-              size: 'multi-line',
-              placeholder: 'Enter roles separated by commas'
-            }
-          ],
-          preProcess: (inputs) => {
-            // Process roles from comma-separated string to array
-            const rolesArray = inputs.roles ? 
+        }
+      },
+      {
+        id: 'updateServiceLink',
+        title: 'Update Service Link',
+        role: 'maintainer',
+        inputs: [
+          linkIdInput,
+          serviceIdInput,
+          siteIdInput,
+          linkNameInput,
+          rolesMultilineInput
+        ],
+        apiCall: {
+          method: 'POST',
+          url: '/api/service_link/update',
+          getPayload: (inputs) => {
+            const rolesArray = inputs.roles ?
               inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') : 
               [];
+            
             return {
-              ...inputs,
-              processedRoles: rolesArray
-            };
-          },
-          apiCall: {
-            method: 'POST',
-            url: '/api/service_link/update',
-            getPayload: (inputs) => ({
               link_id: inputs.linkId,
               service_id: parseInt(inputs.serviceId),
               site_id: parseInt(inputs.siteId),
               name: inputs.linkName || '',
-              roles: inputs.processedRoles
-            })
+              roles: rolesArray
+            };
           }
         }
-      ]
-    },
-    {
-      type: 'danger-zone',
-      title: '☠️ Danger Zone ☠️',
-      operations: [
-        {
-          id: 'doDelete',
-          title: 'Delete Service Link',
-          role: 'elevated',
-          inputs: [
-            {
-              id: 'linkId-delete',
-              name: 'linkId',
-              label: 'Link ID',
-              required: true,
-              size: 1
-            },
-            {
-              id: 'serviceId-delete',
-              name: 'serviceId',
-              label: 'Service ID',
-              required: true,
-              size: 1,
-              type: 'number'
-            }
-          ],
-          description: 'This will permanently delete the service link. This action cannot be undone and may affect service relationships.',
-          apiCall: {
-            method: 'POST',
-            url: '/api/service_link/delete',
-            getPayload: (inputs) => ({
-              link_id: inputs.linkId,
-              service_id: parseInt(inputs.serviceId)
-            })
-          }
+      }
+    ],
+    danger: [
+      {
+        id: 'deleteServiceLink',
+        title: 'Delete Service Link',
+        role: 'elevated',
+        inputs: [ linkIdInput, serviceIdInput ],
+        description: 'This will permanently delete the service link. This action cannot be undone and may affect service relationships.',
+        apiCall: {
+          method: 'POST',
+          url: '/api/service_link/delete',
+          getPayload: (inputs) => ({
+            link_id: inputs.linkId,
+            service_id: parseInt(inputs.serviceId)
+          })
         }
-      ]
-    }
-  ];
+      }
+    ]
+  };
 
   initializeOperations(operationConfig);
   initializeOutput();
