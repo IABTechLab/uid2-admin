@@ -51,12 +51,28 @@ document.addEventListener('DOMContentLoaded', function () {
     size: 2
   };
 
-  const rolesMultilineInput = {
+  const rolesInput = {
     name: 'roles',
     label: 'Roles',
     required: false,
-    size: 'multi-line',
-    placeholder: 'Enter roles separated by commas'
+    type: 'multi-select',
+    options: [
+      {
+        value: 'MAINTAINER',
+        label: 'MAINTAINER',
+        hint: 'General maintenance and administrative operations'
+      },
+      {
+        value: 'PRIVILEGED',
+        label: 'PRIVILEGED',
+        hint: 'Elevated operations requiring special approval'
+      },
+      {
+        value: 'SECRET_ROTATION',
+        label: 'SECRET_ROTATION',
+        hint: 'Permission to rotate encryption keys and secrets'
+      }
+    ]
   };
 
   const operationConfig = {
@@ -96,14 +112,14 @@ document.addEventListener('DOMContentLoaded', function () {
           serviceIdInput,
           siteIdInput,
           linkNameInput,
-          rolesMultilineInput
+          rolesInput
         ],
         apiCall: {
           method: 'POST',
           url: '/api/service_link/add',
           getPayload: (inputs) => {
             const rolesArray = inputs.roles ?
-              inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') : 
+              inputs.roles.split(',').filter(value => value !== '') : 
               [];
             
             return {
@@ -125,14 +141,14 @@ document.addEventListener('DOMContentLoaded', function () {
           serviceIdInput,
           siteIdInput,
           linkNameInput,
-          rolesMultilineInput
+          rolesInput
         ],
         apiCall: {
           method: 'POST',
           url: '/api/service_link/update',
           getPayload: (inputs) => {
             const rolesArray = inputs.roles ?
-              inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') : 
+              inputs.roles.split(',').filter(value => value !== '') : 
               [];
             
             return {

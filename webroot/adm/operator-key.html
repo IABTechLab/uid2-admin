@@ -45,12 +45,28 @@ document.addEventListener('DOMContentLoaded', function () {
     type: 'number'
   };
 
-  const rolesMultilineInput = {
+  const rolesInput = {
     name: 'roles',
     label: 'Roles',
     required: false,
-    size: 'multi-line',
-    placeholder: 'Enter roles separated by commas'
+    type: 'multi-select',
+    options: [
+      { 
+        value: 'OPERATOR', 
+        label: 'OPERATOR',
+        hint: 'Basic operator functionality for handling UID2 operations and client requests'
+      },
+      { 
+        value: 'OPTOUT', 
+        label: 'OPTOUT',
+        hint: 'Handles individual user opt-out requests and direct opt-out operations'
+      },
+      { 
+        value: 'OPTOUT_SERVICE', 
+        label: 'OPTOUT_SERVICE',
+        hint: 'Manages opt-out service infrastructure, bulk processing, and service-to-service opt-out coordination'
+      }
+    ]
   };
 
   const publicOperatorCheckboxInput = {
@@ -97,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
           id: 'addOperatorKey',
           title: 'Add Operator Key',
           role: 'maintainer',
-          inputs: [operatorNameInput, protocolInput, siteIdInput, rolesMultilineInput, publicOperatorCheckboxInput],
+          inputs: [operatorNameInput, protocolInput, siteIdInput, rolesInput, publicOperatorCheckboxInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => {
@@ -140,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
           id: 'setOperatorRoles',
           title: 'Set Roles',
           role: 'elevated',
-          inputs: [operatorNameInput, rolesMultilineInput],
+          inputs: [operatorNameInput, rolesInput],
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/operator/roles?name=${encodeURIComponent(inputs.operatorName)}&roles=${encodeURIComponent(inputs.roles)}`

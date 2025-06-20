@@ -1,17 +1,18 @@
 import {initializeDangerModal} from './dangerModal.js';
 import {generateRoleBadge, initializeRoleBadges} from './roleBadge.js';
 import {httpClient} from './httpClient.js';
+import {initializeTooltips} from './tooltip.js';
 
 function createInputField(input, operationId) {
   const { name, label, type = 'text', placeholder = '', required = false, defaultValue = '', size = 1, options = [] } = input;
   const id = `${operationId}-${name}`;
-  const isMultiLine = size === 'multi-line';
+  const isMultiLine = type === 'multi-line';
   const gridSpan = isMultiLine ? 3 : (size > 1 ? size : 0);
   const gridStyle = gridSpan > 0 ? ` style="grid-column: span ${gridSpan};"` : '';
   
   if (isMultiLine) {
     return `
-      <div class="input-group"${gridStyle}>
+      <div class="input-group" style="grid-column: span 3;"}>
         <label for="${id}">${label}:${required ? '<span class="required-asterisk">*</span>' : ''}</label>
         <textarea id="${id}" name="${name}" placeholder="${placeholder}" rows="3" ${required ? 'required' : ''}>${defaultValue}</textarea>
       </div>
@@ -45,6 +46,45 @@ function createInputField(input, operationId) {
         <select id="${id}" name="${name}" ${required ? 'required' : ''}>
           ${selectOptions}
         </select>
+      </div>
+    `;
+  }
+  
+  if (type === 'multi-select') {
+    const checkboxOptions = options.map(option => {
+      const optionValue = typeof option === 'string' ? option : option.value;
+      const optionLabel = typeof option === 'string' ? option : option.label;
+      const optionHint = typeof option === 'object' && option.hint ? option.hint : '';
+      const checkboxId = `${id}-${optionValue}`;
+      const defaultValues = Array.isArray(defaultValue) ? defaultValue : (defaultValue ? defaultValue.split(',') : []);
+      const isChecked = defaultValues.includes(optionValue);
+      
+      const infoIcon = optionHint ? `
+        <span class="info-icon" data-tooltip="${optionHint}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+          </svg>
+        </span>
+      ` : '';
+      
+      return `
+        <div class="form-check">
+          <input type="checkbox" id="${checkboxId}" name="${name}" value="${optionValue}" ${isChecked ? 'checked' : ''} class="form-check-input">
+          <label for="${checkboxId}" class="form-check-label">
+            ${optionLabel}
+            ${infoIcon}
+          </label>
+        </div>
+      `;
+    }).join('');
+    
+    return `
+      <div class="input-group multi-select-group"${gridStyle}>
+        <label class="multi-select-label">${label}:${required ? '<span class="required-asterisk">*</span>' : ''}</label>
+        <div class="multi-select-options">
+          ${checkboxOptions}
+        </div>
       </div>
     `;
   }
@@ -264,6 +304,7 @@ function initializeOperations(config) {
   initializeAccordions();
   initializeInputValidation();
   initializeExecuteHandlers(normalizedConfig);
+  initializeTooltips('.info-icon');
 }
 
 function initializeAccordions() {
@@ -312,13 +353,20 @@ function collectInputValues(operation) {
   const inputs = operation.inputs || [];
   
   inputs.forEach(input => {
-    const element = document.getElementById(`${operation.id}-${input.name}`);
-    if (!element) return;
-    
-    if (input.type === 'checkbox') {
-      values[input.name] = element.checked;
+    if (input.type === 'multi-select') {
+      // For multi-select, collect all checked checkboxes with the same name
+      const checkboxes = document.querySelectorAll(`input[name="${input.name}"]:checked`);
+      const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+      values[input.name] = selectedValues.join(','); // Join with comma for backend compatibility
     } else {
-      values[input.name] = element.value;
+      const element = document.getElementById(`${operation.id}-${input.name}`);
+      if (!element) return;
+      
+      if (input.type === 'checkbox') {
+        values[input.name] = element.checked;
+      } else {
+        values[input.name] = element.value;
+      }
     }
   });
   
@@ -332,26 +380,40 @@ function validateOperation(operation) {
   inputs.forEach(input => {
     if (!input.required) return;
     
-    const element = document.getElementById(`${operation.id}-${input.name}`);
-    if (!element) return;
-    
     let isValid = false;
     let value;
     
-    if (input.type === 'checkbox') {
-      value = element.checked;
-      isValid = value === true;
-    } else {
-      value = element.value.trim();
+    if (input.type === 'multi-select') {
+      const checkboxes = document.querySelectorAll(`input[name="${input.name}"]:checked`);
+      value = Array.from(checkboxes).map(cb => cb.value);
       isValid = value.length > 0;
-    }
-    
-    if (!isValid) {
-      errors.push({
-        input: input,
-        element: element,
-        message: `${input.label} is required`
-      });
+      
+      if (!isValid) {
+        errors.push({
+          input: input,
+          element: null,
+          message: `${input.label} is required - please select at least one option`
+        });
+      }
+    } else {
+      const element = document.getElementById(`${operation.id}-${input.name}`);
+      if (!element) return;
+      
+      if (input.type === 'checkbox') {
+        value = element.checked;
+        isValid = value === true;
+      } else {
+        value = element.value.trim();
+        isValid = value.length > 0;
+      }
+      
+      if (!isValid) {
+        errors.push({
+          input: input,
+          element: element,
+          message: `${input.label} is required`
+        });
+      }
     }
   });
   
@@ -527,25 +589,36 @@ function syncSharedInputValues(changedInput) {
   const inputName = changedInput.name;
   if (!inputName) return;
   
-  const newValue = changedInput.type === 'checkbox' ? changedInput.checked : changedInput.value;
-  
-  // Find all inputs with the same name attribute
-  const sharedInputs = document.querySelectorAll(`input[name="${inputName}"], textarea[name="${inputName}"], select[name="${inputName}"]`);
-  
-  sharedInputs.forEach(input => {
-    if (input === changedInput) return; // Skip the input that changed
+  // For multi-select checkboxes, sync the checked state across all checkboxes with the same name and value
+  if (changedInput.type === 'checkbox' && changedInput.closest('.multi-select-group')) {
+    const sharedCheckboxes = document.querySelectorAll(`input[name="${inputName}"][value="${changedInput.value}"]`);
+    sharedCheckboxes.forEach(checkbox => {
+      if (checkbox !== changedInput) {
+        checkbox.checked = changedInput.checked;
+      }
+    });
+  } else {
+    // Regular input syncing
+    const newValue = changedInput.type === 'checkbox' ? changedInput.checked : changedInput.value;
     
-    if (input.type === 'checkbox') {
-      input.checked = newValue;
-    } else {
-      input.value = newValue;
-    }
+    // Find all inputs with the same name attribute
+    const sharedInputs = document.querySelectorAll(`input[name="${inputName}"], textarea[name="${inputName}"], select[name="${inputName}"]`);
     
-    // Trigger validation update for the operation this input belongs to
-    const operationId = findOperationForInput(input);
-    if (operationId) {
-      updateExecuteButtonState(operationId);
-    }
+    sharedInputs.forEach(input => {
+      if (input === changedInput) return; // Skip the input that changed
+      
+      if (input.type === 'checkbox') {
+        input.checked = newValue;
+      } else {
+        input.value = newValue;
+      }
+    });
+  }
+  
+  // Trigger validation update for all operations that might use this input
+  const allOperations = Object.keys(window.operationConfig);
+  allOperations.forEach(operationId => {
+    updateExecuteButtonState(operationId);
   });
 }
 
@@ -604,5 +677,6 @@ function initializeExecuteHandlers(config) {
     });
   }
 }
+
 
 export { createInputField, createOperation, createOperationsGroup, initializeOperations, createDangerModal, executeOperation };

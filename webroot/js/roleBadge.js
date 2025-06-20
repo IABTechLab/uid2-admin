@@ -1,3 +1,5 @@
+import { initializeTooltips } from './tooltip.js';
+
 function getRoleBadgeConfig(role) {
     const configs = {
         maintainer: {
@@ -22,6 +24,10 @@ function generateRoleBadge(role) {
 }
 
 function initializeRoleBadges() {
+    // Initialize tooltips for role badges
+    initializeTooltips('.permission-badge');
+    
+    // Handle click events for role badges
     document.addEventListener('click', function (e) {
         if (e.target && e.target.classList && e.target.classList.contains('permission-badge')) {
             if (e.target.classList.contains('maintainer')) {
@@ -33,46 +39,6 @@ function initializeRoleBadges() {
             }
         }
     });
-
-    document.addEventListener('mouseenter', function (e) {
-        if (e.target && e.target.classList && e.target.classList.contains('permission-badge')) {
-            const tooltipText = e.target.getAttribute('data-tooltip');
-            if (tooltipText) {
-                const tooltip = document.createElement('div');
-                tooltip.className = 'tooltip';
-                tooltip.textContent = tooltipText;
-                document.body.appendChild(tooltip);
-
-                const rect = e.target.getBoundingClientRect();
-                const tooltipRect = tooltip.getBoundingClientRect();
-                const windowWidth = window.innerWidth;
-                const windowHeight = window.innerHeight;
-
-                let top = rect.top - tooltipRect.height - 10;
-                let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-
-                if (left < 10) {
-                    left = 10;
-                } else if (left + tooltipRect.width > windowWidth - 10) {
-                    left = windowWidth - tooltipRect.width - 10;
-                }
-
-                if (top < 10) {
-                    top = rect.bottom + 10;
-                }
-
-                tooltip.style.top = top + 'px';
-                tooltip.style.left = left + 'px';
-            }
-        }
-    }, true);
-
-    document.addEventListener('mouseleave', function (e) {
-        if (e.target && e.target.classList && e.target.classList.contains('permission-badge')) {
-            const tooltips = document.querySelectorAll('.tooltip');
-            tooltips.forEach(tooltip => tooltip.remove());
-        }
-    }, true);
 }
 
 export { generateRoleBadge, initializeRoleBadges };

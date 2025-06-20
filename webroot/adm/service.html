@@ -45,12 +45,32 @@
             size: 2
         };
 
-        const rolesMultilineInput = {
+        const rolesInput = {
             name: 'roles',
             label: 'Roles',
             required: true,
-            size: 'multi-line',
-            placeholder: 'Enter roles separated by commas'
+            type: 'multi-select',
+            options: [
+                {
+                    value: 'MAPPER',
+                    label: 'MAPPER',
+                    hint: 'For Advertisers'
+                },
+                {
+                    value: 'ID_READER',
+                    label: 'ID_READER',
+                    hint: 'For DSPs'
+                },
+                {
+                    value: 'GENERATOR',
+                    label: 'GENERATOR',
+                    hint: 'For Publishers'
+                },
+                {
+                    value: 'SHARER',
+                    label: 'SHARER',
+                },
+            ]
         };
 
         const linkIdRegexInput = {
@@ -103,7 +123,7 @@
                     inputs: [
                         serviceNameInput,
                         siteIdInput,
-                        rolesMultilineInput,
+                        rolesInput,
                         linkIdRegexInput
                     ],
                     apiCall: {
@@ -113,7 +133,7 @@
                             site_id: parseInt(inputs.siteId),
                             link_id_regex: inputs.linkIdRegex,
                             name: inputs.serviceName,
-                            roles: inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== ''),
+                            roles: inputs.roles.split(',').filter(value => value !== ''),
                         })
                     }
                 },
@@ -125,7 +145,7 @@
                         serviceIdInput,
                         {...serviceNameInput, required: false},
                         {...siteIdInput, required: false},
-                        {...rolesMultilineInput, required: false},
+                        {...rolesInput, required: false},
                         linkIdRegexInput
                     ],
                     apiCall: {
@@ -136,7 +156,7 @@
                             if (inputs.serviceName) payload.name = inputs.serviceName;
                             if (inputs.siteId) payload.site_id = parseInt(inputs.siteId);
                             const rolesArray = inputs.roles ?
-                                inputs.roles.replace(/\s+/g, '').split(',').filter(value => value !== '') :
+                                inputs.roles.split(',').filter(value => value !== '') :
                                 [];
                             if (rolesArray.length > 0) payload.roles = rolesArray;
                             

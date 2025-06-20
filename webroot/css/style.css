@@ -3,6 +3,78 @@
   background-color: #FFFF00;
 }
 
+/* Multi-select input styles */
+.multi-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.multi-select-label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.multi-select-options {
+  display: block;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.multi-select-options .form-check {
+  display: block;
+  margin: 0 0 8px 0;
+  padding: 4px;
+  border-radius: 3px;
+}
+
+.multi-select-options .form-check:last-child {
+  margin-bottom: 0;
+}
+
+.multi-select-options .form-check-input {
+  margin: 0 8px 0 0;
+  width: 16px;
+  height: 16px;
+  vertical-align: top;
+  float: none;
+}
+
+.multi-select-options .form-check-label {
+  margin: 0;
+  font-weight: normal;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline;
+  vertical-align: top;
+}
+
+.multi-select-options .form-check:hover {
+  background-color: #f8f9fa;
+}
+
+/* Info icon styling */
+.info-icon {
+  display: inline-block;
+  margin-left: 8px;
+  color: #6c757d;
+  cursor: help;
+  vertical-align: middle;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.info-icon:hover {
+  opacity: 1;
+  color: #495057;
+}
+
+.info-icon svg {
+  vertical-align: top;
+}
+
 /* Keyset Admin Page Styles */
 .permission-badge {
   padding: 4px 8px;

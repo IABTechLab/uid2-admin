@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const descriptionInput = {
     name: 'description',
     label: 'Description',
-    size: 'multi-line',
+    type: 'multi-line',
     required: true
   };
   
@@ -56,13 +56,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const domainNamesMultilineInput = {
     name: 'domainNames',
     label: 'Domain Names',
-    size: 'multi-line'
+    type: 'multi-line'
   };
   
   const appNamesMultilineInput = {
     name: 'appNames',
     label: 'App Names',
-    size: 'multi-line'
+    type: 'multi-line'
   };
   function getTemplateValue(varName, fallback = '') {
     const value = '{{ ' + varName + ' }}';
