@@ -3,10 +3,6 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -20,8 +16,8 @@
 </div>
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   const tomorrow = new Date();
@@ -64,7 +60,9 @@ document.addEventListener('DOMContentLoaded', function () {
           method: 'GET',
           url: '/api/salt/snapshots'
         }
-      },
+      }
+    ],
+    write: [
       {
         id: 'rebuildSaltsFile',
         title: 'Rebuild Salts File',

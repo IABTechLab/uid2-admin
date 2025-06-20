@@ -55,6 +55,19 @@
   background-color: #f8f9fa;
 }
 
+/* Grid layout for multi-select options */
+.multi-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  max-width: 600px;
+  gap: 8px;
+}
+
+.multi-select-grid .form-check {
+  margin: 0;
+  padding: 8px;
+}
+
 /* Info icon styling */
 .info-icon {
   display: inline-block;

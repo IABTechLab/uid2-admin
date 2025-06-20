@@ -3,13 +3,13 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
   <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .active { color: darkgreen; }
+    .inactive { color: darkred; }
+  </style>
 </head>
 <body>
 <h1>UID2 Env - Cloud Encryption Key Management</h1>
@@ -24,8 +24,8 @@
 <div id="output-table" style="margin: 20px 0; width: 100%;"></div>
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 import { httpClient } from '/js/httpClient.js';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -154,7 +154,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return {};
           },
           postProcess: async (response) => {
-            // First get sites to map site names
             try {
               const sites = await httpClient.get('/api/site/list');
               const siteDict = sites.reduce((acc, site) => {
@@ -162,15 +161,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return acc;
               }, {});
 
-              // Add site names to keys
               response.cloudEncryptionKeys.forEach((key) => {
                 key.siteName = siteDict[key.siteId] || "Unknown site";
               });
 
-              // Update grid - this is the primary output for this operation
               updateGrid(response);
               
-              // Return null to prevent standard output display
               return null;
             } catch (error) {
               throw new Error("Failed to load sites data: " + error.message);

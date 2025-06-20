@@ -3,10 +3,6 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -24,8 +20,8 @@
 </div>
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   const siteIdInput = {
@@ -50,7 +46,26 @@ document.addEventListener('DOMContentLoaded', function () {
   const typesInput = {
     name: 'types',
     label: 'Client Types',
-    required: true
+    required: true,
+    type: 'multi-select',
+    options: [
+      {
+        value: 'PUBLISHER',
+        label: 'PUBLISHER',
+      },
+      {
+        value: 'DATA_PROVIDER',
+        label: 'DATA_PROVIDER',
+      },
+      {
+        value: 'DSP',
+        label: 'DSP',
+      },
+      {
+        value: 'ADVERTISER',
+        label: 'ADVERTISER',
+      }
+    ]
   };
   
   const domainNamesMultilineInput = {
@@ -70,10 +85,13 @@ document.addEventListener('DOMContentLoaded', function () {
     return isProcessed ? value : fallback;
   }
 
+  const devSiteNameWarning = '⚠️ Sites for dev/test purposes must be named dev-uid2-&lt;THREE_LETTER_INITIALS|TEAM_NAME&gt;-&lt;JIRA_TICKET&gt;-&lt;BRIEF_DESCRIPTION&gt;. ⚠️';
+
   const addSiteOperation = {
     id: 'addSite',
     title: 'Add Site',
     role: 'maintainer',
+    description: devSiteNameWarning,
     inputs: [
       siteNameInput,
       typesInput,
@@ -152,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
           id: 'setSiteName',
           title: 'Set Name',
           role: 'maintainer',
+          description: devSiteNameWarning,
           inputs: [ siteIdInput, siteNameInput ],
           apiCall: {
             method: 'POST',

@@ -3,10 +3,6 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -20,8 +16,8 @@
 </div>
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   const enclaveNameInput = {
@@ -29,6 +25,20 @@ document.addEventListener('DOMContentLoaded', function () {
     label: 'Enclave Name',
     required: true,
     size: 2
+  };
+
+  const protocolInput = {
+    name: 'protocol',
+    label: 'Protocol',
+    required: true,
+    size: 1
+  };
+
+  const enclaveInput = {
+    name: 'enclaveId',
+    label: 'Enclave ID',
+    required: true,
+    size: 3
   };
 
   const operationConfig = {
@@ -62,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputs: [
           enclaveNameInput,
           protocolInput,
-          enclaveIdInput
+          enclaveInput
         ],
         description: 'Add a new enclave identifier to the system. This is a privileged operation.',
         apiCall: {

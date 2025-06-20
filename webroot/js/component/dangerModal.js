@@ -1,5 +1,3 @@
-import { createDangerModal } from './operations.js';
-
 function initializeDangerModal() {
     document.body.insertAdjacentHTML('beforeend', createDangerModal());
 
@@ -57,6 +55,23 @@ function hideDangerModal() {
     modal.style.display = 'none';
     confirmationInput.value = '';
     pendingDangerOperation = null;
+}
+
+function createDangerModal() {
+    return `
+    <div id="dangerModal" class="modal">
+      <div class="modal-content">
+        <h3>☠️ Danger Zone Operation ☠️</h3>
+        <p class="modal-description"></p>
+        <p>Type <strong>"yes"</strong> if you want to proceed:</p>
+        <input type="text" id="confirmationInput" class="confirmation-input" placeholder="Type 'yes' to confirm">
+        <div class="modal-buttons">
+          <button id="confirmButton" class="confirm-button" disabled>Confirm</button>
+          <button id="cancelButton" class="cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 export { initializeDangerModal, showDangerModal, hideDangerModal };

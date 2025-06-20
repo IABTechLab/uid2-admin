@@ -3,10 +3,6 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .gcp-examples-box {
@@ -58,26 +54,25 @@
 
 <div class="main-content">
   <div class="operations-container"></div>
-  <div class="output-container"></div>
 </div>
 
 <!-- GCP Examples Section - positioned below operations and output -->
 <div class="gcp-examples-box">
   <h3>Generated Examples</h3>
-  
+
   <label for="cloudInitSha256">cloud-init sha256, make sure your downloaded cloud-init config matches exactly the value below:</label>
   <pre><label id="cloudInitSha256">TBD</label></pre>
-  
+
   <label for="gcloudCli">Example gcloud command to create GCP Operator Enclave VM:</label>
   <textarea id="gcloudCli" name="gcloudCli" readonly></textarea>
-  
+
   <label for="enclaveId">Generated GCP Enclave ID:</label>
   <pre><label id="enclaveId">TBD</label></pre>
 </div>
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   const gcloudCliOrig = `$ sha256sum < ./<CLOUD_INIT_FN> # !!! check if sha256 matches exactly below !!!\\
@@ -185,19 +180,53 @@ write_files:
   }
 
   const operationConfig = {
-    write: {
-      title: 'GCP Enclave Operations',
-      operations: [
+    write: [
         {
           id: 'generateGcpEnclaveConfig',
           title: 'Generate GCP cloud-init, Enclave ID and gcloud command',
           role: 'elevated',
           inputs: [
-            diskUriInput,
-            apiTokenInput,
-            imageIdInput,
-            envIdSelectInput,
-            accessTokenInput
+
+            {
+              name: 'diskUri',
+              label: 'GCP Disk URI',
+              required: true,
+              size: 3,
+              placeholder: 'To get the latest: gcloud compute images list --filter="name~\'cos-stable\'" --standard-images --uri'
+            },
+            {
+              name: 'apiToken',
+              label: 'Operator Api Key',
+              required: true,
+              size: 3,
+              placeholder: 'Enter the operator API key'
+            },
+            {
+              name: 'imageId',
+              label: 'Operator Docker Image ID',
+              required: true,
+              size: 3,
+              placeholder: 'The full digest for the image, with or without \'sha256:\''
+            },
+            {
+              name: 'envId',
+              label: 'Environment',
+              type: 'select',
+              required: true,
+              size: 1,
+              defaultValue: 'integ',
+              options: [
+                { value: 'integ', label: 'Integration' },
+                { value: 'prod', label: 'Production' }
+              ]
+            },
+            {
+              name: 'accesstokenId',
+              label: 'Docker Registry Access Token',
+              required: true,
+              size: 3,
+              placeholder: 'Personal Access Token that allows read access to ghcr.io'
+            }
           ],
           description: 'Generates GCP cloud-init configuration file, calculates Enclave ID, and provides gcloud command for VM creation.<br><br><strong>Note:</strong> The Operator Api Key can be found in <a href="operator-key.html">Operator Key Management</a> using the "Reveal Operator Key" operation.',
           preProcess: async (inputs) => {
@@ -277,11 +306,9 @@ write_files:
           }
         }
       ]
-    }
   };
 
   initializeOperations(operationConfig);
-  initializeOutput();
 });
 </script>
 

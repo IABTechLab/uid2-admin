@@ -3,10 +3,6 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <link rel="stylesheet" href="/css/style.css">
   <style>
     label.bold {
@@ -61,7 +57,6 @@
 
 <div class="main-content">
   <div class="operations-container"></div>
-  <div class="output-container"></div>
 </div>
 
 <!-- GCP Examples Section - positioned below operations and output -->
@@ -76,8 +71,8 @@
 </div>
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   const gcloudCli = `$ gcloud compute instances create <INSTANCE_NAME> \\
@@ -110,17 +105,35 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const operationConfig = {
-    write: {
-      title: 'GCP Enclave V2 Operations',
-      operations: [
+    write: [
         {
           id: 'generateGcpV2EnclaveConfig',
           title: 'Generate Enclave ID and gcloud command',
           role: 'elevated',
           inputs: [
-            imageIdInput,
-            envIdSelectInput,
-            debugModeCheckboxInput
+            {
+              name: 'imageId',
+              label: 'Operator Docker Image ID',
+              required: true,
+              size: 3,
+              placeholder: 'The full digest for the image, with or without \'sha256:\''
+            },
+            {
+              name: 'envId',
+              label: 'Environment',
+              type: 'select',
+              required: true,
+              defaultValue: 'integ',
+              options: [
+                { value: 'integ', label: 'Integration' },
+                { value: 'prod', label: 'Production' }
+              ]
+            },
+            {
+              name: 'debugMode',
+              label: 'Debug Mode (Integration Only)',
+              type: 'checkbox',
+            }
           ],
           description: 'Set Debug Mode to true if you want to use DebugMode Confidential Space host image in integration env. (You need to generate a new enclaveId.)',
           preProcess: async (inputs) => {
@@ -175,11 +188,9 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       ]
-    }
   };
 
   initializeOperations(operationConfig);
-  initializeOutput();
 });
 </script>
 

@@ -3,10 +3,6 @@
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
-  <script type="module" src="/js/dangerModal.js"></script>
-  <script type="module" src="/js/operations.js"></script>
-  <script type="module" src="/js/output.js"></script>
-  <script type="module" src="/js/roleBadge.js"></script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -24,8 +20,10 @@
 {% endif %}
 
 <script type="module">
-import { initializeOperations } from '/js/operations.js';
-import { initializeOutput } from '/js/output.js';
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
+
+const devKeyNameWarning = '⚠️ Keys for dev/test purposes must be named dev-uid2-&lt;THREE_LETTER_INITIALS|TEAM_NAME&gt;-&lt;JIRA_TICKET&gt;-&lt;BRIEF_DESCRIPTION&gt;. ⚠️';
 
 document.addEventListener('DOMContentLoaded', function () {
   const siteIdInput = {
@@ -59,7 +57,28 @@ document.addEventListener('DOMContentLoaded', function () {
     name: 'roles',
     label: 'Roles',
     required: true,
-    type: 'multi-line'
+    type: 'multi-select',
+    options: [
+      {
+        value: 'MAPPER',
+        label: 'MAPPER',
+        hint: 'For Advertisers'
+      },
+      {
+        value: 'ID_READER',
+        label: 'ID_READER',
+        hint: 'For DSPs'
+      },
+      {
+        value: 'GENERATOR',
+        label: 'GENERATOR',
+        hint: 'For Publishers'
+      },
+      {
+        value: 'SHARER',
+        label: 'SHARER',
+      },
+    ]
   };
 
   const keyIdInput = {
@@ -139,19 +158,10 @@ document.addEventListener('DOMContentLoaded', function () {
             serviceIdInput,
             rolesInput
           ],
+          description: devKeyNameWarning,
           apiCall: {
             method: 'POST',
             getUrl: (inputs) => `/api/client/add?name=${encodeURIComponent(inputs.name)}&roles=${encodeURIComponent(inputs.roles)}&site_id=${inputs.siteId}&service_id=${inputs.serviceId}`
-          }
-        },
-        {
-          id: 'revealKey',
-          title: 'Reveal Key',
-          role: 'elevated',
-          inputs: [ contactInput ],
-          apiCall: {
-            method: 'GET',
-            getUrl: (inputs) => `/api/client/reveal?contact=${encodeURIComponent(inputs.contact)}`
           }
         },
         {
@@ -183,6 +193,16 @@ document.addEventListener('DOMContentLoaded', function () {
         },
       ],
     danger: [
+        {
+          id: 'revealKey',
+          title: 'Reveal Key',
+          role: 'elevated',
+          inputs: [ contactInput ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/client/reveal?contact=${encodeURIComponent(inputs.contact)}`
+          }
+        },
         {
           id: 'deleteKey',
           title: 'Delete Key',
@@ -226,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
             contactInput,
             {...nameInput, name: 'newName', label: 'New Name'}
           ],
-          description: 'This will change the display name of the client key.',
+          description: 'This will change the display name of the client key.\n' + devKeyNameWarning,
           confirmationText: 'This will rename the client key. Make sure you have confirmed this change with the participant.',
           apiCall: {
             method: 'POST',

@@ -23,41 +23,41 @@ function highlightJSON(json) {
     .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
 }
 
-function displayOutput(data, targetSelector = '#standardOutput', highlight = true) {
-  const target = document.querySelector(targetSelector);
-  if (!target) return;
-  
-  let formattedData;
-  
+function formatOutput(data) {
   if (typeof data === 'string') {
     try {
       // Try to parse as JSON
-      const parsed = JSON.parse(data);
-      formattedData = JSON.stringify(parsed, null, 2);
+      return JSON.stringify(JSON.parse(data), null, 2);
     } catch (e) {
       // If not JSON, use as string
-      formattedData = data;
+      return data;
     }
   } else {
-    formattedData = JSON.stringify(data, null, 2);
-  }
-  
-  if (highlight) {
-    target.innerHTML = highlightJSON(formattedData);
-  } else {
-    target.textContent = formattedData;
+    return JSON.stringify(data, null, 2);
   }
 }
 
-function displayError(message, targetSelector = '#errorOutput') {
-  const target = document.querySelector(targetSelector);
+function displayOutput(output) {
+  const target = document.querySelector('#standardOutput');
+  if (!target) return;
+  target.innerHTML = highlightJSON(formatOutput(output));
+}
+
+function clearOutput() {
+  const target = document.querySelector('#standardOutput');
+  target.innerHTML = '';
+}
+
+function displayError(message) {
+  const target = document.querySelector('#errorOutput');
   if (!target) return;
   
   target.textContent = message;
   target.style.display = 'block';
 }
-function clearError(targetSelector = '#errorOutput') {
-  const target = document.querySelector(targetSelector);
+
+function clearError() {
+  const target = document.querySelector('#errorOutput');
   if (target) {
     target.style.display = 'none';
     target.innerHTML = '';
@@ -85,5 +85,6 @@ export {
   displayOutput, 
   displayError, 
   clearError,
+  clearOutput,
   initializeOutput,
 };
