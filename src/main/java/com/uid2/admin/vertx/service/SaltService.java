@@ -54,23 +54,23 @@ public class SaltService implements IService {
         router.get(API_SALT_SNAPSHOTS.toString()).handler(
                 auth.handle(this::handleSaltSnapshots, Role.MAINTAINER));
 
+        router.post(API_SALT_REBUILD.toString()).blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltRebuild(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER));
+
         router.post(API_SALT_ROTATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSaltRotate(ctx);
             }
         }, new AuditParams(List.of("fraction", "min_ages_in_seconds", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
-
-        router.post(API_SALT_ROTATE_ZERO.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSaltRotateZero(ctx);
-            }
-        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {
         try {
             final JsonArray ja = new JsonArray();
-            this.saltProvider.getSnapshots().stream()
+            saltProvider.getSnapshots().stream()
                     .forEachOrdered(s -> ja.add(toJson(s)));
 
             rc.response()
@@ -82,30 +82,21 @@ public class SaltService implements IService {
         }
     }
 
-    private void handleSaltRotate(RoutingContext rc) {
+    private void handleSaltRebuild(RoutingContext rc) {
         try {
-            final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
-            if (fraction.isEmpty()) return;
-            final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
-            if (minAges == null) return;
-
-
-            final TargetDate targetDate =
-                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
-                            .map(TargetDate::new)
-                            .orElse(TargetDate.now().plusDays(1))
-            ;
+            Instant now = Instant.now();
 
             // force refresh
-            this.saltProvider.loadContent();
+            saltProvider.loadContent();
 
             // mark all the referenced files as ready to archive
             storageManager.archiveSaltLocations();
 
-            final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
-            final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
+            // Unlike in regular salt rotation, this should be based on the currently effective snapshot.
+            // The latest snapshot may be in the future, and we may have changes that shouldn't be activated yet.
+            var effectiveSnapshot = saltProvider.getSnapshot(now);
 
-            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, fraction.get(), targetDate);
+            var result = saltRotation.rotateSaltsZero(effectiveSnapshot, TargetDate.now(), now);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;
@@ -122,21 +113,28 @@ public class SaltService implements IService {
         }
     }
 
-    private void handleSaltRotateZero(RoutingContext rc) {
+    private void handleSaltRotate(RoutingContext rc) {
         try {
-            Instant now = Instant.now();
+            final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
+            if (fraction.isEmpty()) return;
+            final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
+            if (minAges == null) return;
 
-            // force refresh
-            this.saltProvider.loadContent();
+            final TargetDate targetDate =
+                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                            .map(TargetDate::new)
+                            .orElse(TargetDate.now().plusDays(1));
 
-            // mark all the referenced files as ready to archive
+            // Force refresh
+            saltProvider.loadContent();
+
+            // Mark all the referenced files as ready to archive
             storageManager.archiveSaltLocations();
 
-            // Unlike in regular salt rotation, this should be based on the currently effective snapshot.
-            // The latest snapshot may be in the future, and we may have changes that shouldn't be activated yet.
-            var effectiveSnapshot = this.saltProvider.getSnapshot(now);
+            final List<RotatingSaltProvider.SaltSnapshot> snapshots = saltProvider.getSnapshots();
+            final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
-            var result = saltRotation.rotateSaltsZero(effectiveSnapshot, TargetDate.now(), now);
+            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, fraction.get(), targetDate);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;

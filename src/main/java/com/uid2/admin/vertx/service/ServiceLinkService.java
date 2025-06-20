@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
@@ -115,6 +116,12 @@ public class ServiceLinkService implements IService {
 
             if (serviceLinks.stream().anyMatch(sl -> sl.getServiceId() == serviceId && sl.getLinkId().equals(linkId))) {
                 ResponseUtil.error(rc, 400, "service link already exists");
+                return;
+            }
+
+            String linkIdRegex = serviceProvider.getService(serviceId).getLinkIdRegex();
+            if (!isValidLinkId(linkId, linkIdRegex)) {
+                ResponseUtil.error(rc, 400, "link_id " + linkId + " does not match service_id " + serviceId + " link_id_regex: " + linkIdRegex);
                 return;
             }
 
@@ -269,5 +276,12 @@ public class ServiceLinkService implements IService {
             throw new IllegalArgumentException("roles allowed: " + allowedRoles);
         }
         return roles;
+    }
+
+    private boolean isValidLinkId(String linkId, String serviceRegex) {
+        if (serviceRegex == null) {
+            return true;
+        }
+        return Pattern.matches(serviceRegex, linkId);
     }
 }

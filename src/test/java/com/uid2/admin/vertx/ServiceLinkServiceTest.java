@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
@@ -583,5 +584,58 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
             verify(serviceLinkStoreWriter, never()).upload(List.of(existingLink), null);
             testContext.completeNow();
         });
+    }
+
+    @ParameterizedTest
+    @MethodSource("linkIdRegexCases")
+    void addServiceLink_linkIdRegex_validation(String linkIdRegex, String linkId, boolean expectSuccess,
+                                               Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER), linkIdRegex));
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", linkId);
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "name1");
+        jo.put("roles", JsonArray.of(Role.MAINTAINER));
+
+        post(vertx, testContext, "api/service_link/add", jo.encode(), response -> {
+            if (expectSuccess) {
+                assertEquals(200, response.statusCode());
+                ServiceLink expected = new ServiceLink(linkId, 1, 123, "name1", Set.of(Role.MAINTAINER));
+                checkServiceLinkJson(expected, response.bodyAsJsonObject());
+                verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+            } else {
+                assertEquals(400, response.statusCode());
+                String expectedMsg = "link_id " + linkId + " does not match service_id 1 link_id_regex: " + linkIdRegex;
+                assertEquals(expectedMsg, response.bodyAsJsonObject().getString("message"));
+                verify(serviceLinkStoreWriter, never()).upload(any(), any());
+            }
+
+            verify(serviceStoreWriter, never()).upload(null, null);
+            testContext.completeNow();
+        });
+    }
+
+    private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> linkIdRegexCases() {
+        return java.util.stream.Stream.of(
+                org.junit.jupiter.params.provider.Arguments.of("link[0-9]+", "invalidLink", false),
+                org.junit.jupiter.params.provider.Arguments.of("link[0-9]+", "link42", true),
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345", true), // snowflake valid
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "UID2_ENVIRONMENT", true), // snowflake valid
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "xy12345", false), // snowflake invalid, lowercase
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X", true), // snowflake valid, minimum length
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(256), true), // snowflake valid, maximum length
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(257), false), // snowflake invalid, exceeds maximum length
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", " XY12345", false), // snowflake invalid, leading whitespace
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345 ", false), // snowflake invalid, trailing whitespace
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY 12345", false), // snowflake invalid, whitespace in the middle
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "", false), // snowflake invalid, empty
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", " ", false), // snowflake invalid, just whitespace
+                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY_12345", true) // snowflake valid, used underscore
+        );
     }
 }

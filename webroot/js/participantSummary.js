@@ -77,12 +77,12 @@ function loadSiteCallback(result) {
     const formattedDomains = prettifyJson(JSON.stringify(domainNames));
     const domainElement = document.getElementById('domainNamesStandardOutput');
     if (domainElement) domainElement.innerHTML = formattedDomains;
-    
+
     const appNames = resultJson.app_names.length > 0 ? resultJson.app_names : 'none';
     const formattedApps = prettifyJson(JSON.stringify(appNames));
     const appElement = document.getElementById('appNamesStandardOutput');
     if (appElement) appElement.innerHTML = formattedApps;
-    
+
     delete resultJson.domain_names;
     delete resultJson.app_names;
     let formatted = JSON.stringify(resultJson);
@@ -94,8 +94,8 @@ function loadSiteCallback(result) {
 function loadAPIKeysCallback(result) {
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
-    resultJson = resultJson.map((item) => { 
-        const created = new Date(item.created).toLocaleString();
+    resultJson = resultJson.map((item) => {
+        const created = new Date((item.created)*1000).toLocaleString(); // Convert Unix timestamp in seconds to milliseconds for Date constructor
         return { ...item, created };
     });
     const formatted = prettifyJson(JSON.stringify(resultJson));
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchButton.addEventListener('click', () => {
             const errorOutput = document.getElementById('siteSearchErrorOutput');
             if (errorOutput) errorOutput.style.display = 'none';
-            
+
             const siteSearchInput = document.getElementById('site-search');
             const siteSearch = siteSearchInput ? siteSearchInput.value : '';
             let site = null;
