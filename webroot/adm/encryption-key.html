@@ -1,165 +1,216 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Encryption Key Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<label for="siteId">Site id:</label>
-<input type="text" id="siteId" name="siteId">
-<label for="keysetId">Keyset id:</label>
-<input type="text" id="keysetId" name="keysetId">
-<label for="minAge">Min age (seconds):</label>
-<input type="text" id="minAge" name="minAge">
-<label for="activatesIn">Activates in (seconds):</label>
-<input type="text" id="activatesIn" name="activatesIn">
-<label for="force">Force:</label>
-<input type="checkbox" id="force" name="force" value="true">
-
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<h4> Legacy Keys</h4>
-<ul>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListKeys">List Keys</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListKeysBySite">List Keys By Site</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doAddSiteKey">Add Site Key</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateSite">Rotate Site Key</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateAllSites">Rotate All Site Keys</a></li>
-</ul>
-
-<h4>Keyset Keys</h4>
-<ul>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListKeysetKeys">List Keyset Keys</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListKeysetKeysByKeysetId">List Keyset Keys By Keyset Id</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateKeysetKey">Rotate Keyset Key</a></li>
-</ul>
-
-<h4>Master Keys</h4>
-<ul>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotateMaster">Rotate Master Keys</a></li>
-</ul>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    $(document).ready(function () {
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-        function sortKeysCallback(text) {
-            let resp = JSON.parse(text);
-            resp.sort(function(a, b) {
-                return a.id - b.id;
-            });
-            var pretty = JSON.stringify(resp, null, 2);
-            $('#standardOutput').html(pretty);
+document.addEventListener('DOMContentLoaded', function () {
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site ID',
+    required: true,
+    type: 'number'
+  };
+
+  const keysetIdInput = {
+    name: 'keysetId',
+    label: 'Keyset ID',
+    required: true,
+    type: 'number'
+  };
+
+  const activatesInInput = {
+    name: 'activatesIn',
+    label: 'Activates In (seconds)',
+    required: true,
+    type: 'number'
+  };
+
+  const minAgeInput = {
+    name: 'minAge',
+    label: 'Min Age (seconds)',
+    required: true,
+    type: 'number'
+  };
+
+  const forceInput = {
+    name: 'force',
+    label: 'Force',
+    type: 'checkbox'
+  };
+
+  const operationConfig = {
+    read: [
+        {
+          id: 'listEncryptionKeys',
+          title: 'List Keys',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/key/list'
+          },
+          postProcess: (response) => response.sort((a, b) => a.id - b.id)
+        },
+        {
+          id: 'listEncryptionKeysBySite',
+          title: 'List Keys By Site',
+          role: 'maintainer',
+          inputs: [siteIdInput],
+          apiCall: {
+            method: 'GET',
+            url: '/api/key/list'
+          },
+          postProcess: (response, inputs) => {
+            const siteId = parseInt(inputs.siteId);
+            const filtered = response.filter(key => key.site_id === siteId);
+            return filtered.sort((a, b) => a.id - b.id);
+          }
+        },
+        {
+          id: 'listKeysetKeys',
+          title: 'List Keyset Keys',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/key/list_keyset_keys'
+          },
+          postProcess: (response) => response.sort((a, b) => a.id - b.id)
+        },
+        {
+          id: 'listKeysetKeysByKeysetId',
+          title: 'List Keyset Keys By Keyset ID',
+          role: 'maintainer',
+          inputs: [keysetIdInput],
+          apiCall: {
+            method: 'GET',
+            url: '/api/key/list_keyset_keys'
+          },
+          postProcess: (response, inputs) => {
+            const keysetId = parseInt(inputs.keysetId);
+            const filtered = response.filter(key => key.keyset_id === keysetId);
+            return filtered.sort((a, b) => a.id - b.id);
+          }
         }
-
-        $('#doListKeys').on('click', function () {
-            doApiCallWithCallback('GET', '/api/key/list', sortKeysCallback, errorCallback)
-        });
-
-        $('#doListKeysBySite').on('click', function () {
-            const siteId = parseInt($('#siteId').val());
-            if(!siteId) {
-                $('#errorOutput').html("Required Parameters: site_id");
-                return;
+      ],
+    write: [
+        {
+          id: 'addSiteKey',
+          title: 'Add Site Key',
+          role: 'maintainer',
+          inputs: [siteIdInput, activatesInInput],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/key/add?site_id=${inputs.siteId}&activates_in_seconds=${inputs.activatesIn}`
+          }
+        },
+        {
+          id: 'rotateSiteKey',
+          title: 'Rotate Site Key',
+          role: 'maintainer',
+          inputs: [siteIdInput, minAgeInput, forceInput],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => {
+              let url = `/api/key/rotate_site?site_id=${inputs.siteId}`;
+              if (inputs.minAge) {
+                url += `&min_age_seconds=${inputs.minAge}`;
+              }
+              if (inputs.force) {
+                url += '&force=true';
+              }
+              return url;
             }
-            const url = '/api/key/list';
-
-            doApiCallWithCallback('GET', url, (text) => {
-                const ja = JSON.parse(text);
-
-                const filtered = ja.filter(function(key) {
-                    return key.site_id === siteId
-                });
-                sortKeysCallback(JSON.stringify(filtered))
-            }, errorCallback );
-        });
-
-        $('#doListKeysetKeys').on('click', function () {
-            doApiCallWithCallback('GET', '/api/key/list_keyset_keys', sortKeysCallback, errorCallback)
-        });
-
-        $('#doListKeysetKeysByKeysetId').on('click', function () {
-
-            const keysetId = parseInt($('#keysetId').val());
-            if(!keysetId) {
-                $('#errorOutput').html("Required Parameters: keyset_id");
-                return;
+          }
+        },
+        {
+          id: 'rotateKeysetKey',
+          title: 'Rotate Keyset Key',
+          role: 'maintainer',
+          inputs: [keysetIdInput, minAgeInput, forceInput],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => {
+              let url = `/api/key/rotate_keyset_key?keyset_id=${inputs.keysetId}`;
+              if (inputs.minAge) {
+                url += `&min_age_seconds=${inputs.minAge}`;
+              }
+              if (inputs.force) {
+                url += '&force=true';
+              }
+              return url;
             }
-            const url = '/api/key/list_keyset_keys';
+          }
+        },
+        {
+          id: 'rotateMasterKeys',
+          title: 'Rotate Master Keys',
+          role: 'maintainer',
+          inputs: [minAgeInput, forceInput],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => {
+              let url = '/api/key/rotate_master';
+              const params = [];
+              if (inputs.minAge) {
+                params.push(`min_age_seconds=${inputs.minAge}`);
+              }
+              if (inputs.force) {
+                params.push('force=true');
+              }
+              if (params.length > 0) {
+                url += '?' + params.join('&');
+              }
+              return url;
+            }
+          }
+        },
+        {
+          id: 'rotateAllSiteKeys',
+          title: 'Rotate All Site Keys',
+          role: 'maintainer',
+          inputs: [minAgeInput, forceInput],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => {
+              let url = '/api/key/rotate_all_sites';
+              const params = [];
+              if (inputs.minAge) {
+                params.push(`min_age_seconds=${inputs.minAge}`);
+              }
+              if (inputs.force) {
+                params.push('force=true');
+              }
+              if (params.length > 0) {
+                url += '?' + params.join('&');
+              }
+              return url;
+            }
+          },
+          postProcess: (response) => response.sort((a, b) => a.id - b.id)
+        }
+      ]
+  };
 
-            doApiCallWithCallback('GET', url, (text) => {
-                const ja = JSON.parse(text);
-
-                const filtered = ja.filter(function(key) {
-                    return key.keyset_id === keysetId
-                });
-                const pretty = JSON.stringify(filtered,null,2);
-                $('#standardOutput').html(pretty);
-
-            }, errorCallback);
-        });
-
-        $('#doRotateMaster').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var url = '/api/key/rotate_master?min_age_seconds=' + minAge;
-            if ($('#force').is(':checked')) url = url + '&force=true';
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doAddSiteKey').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var activatesIn = encodeURIComponent($('#activatesIn').val());
-            var url = '/api/key/add?site_id=' + siteId + '&activates_in_seconds=' + activatesIn;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRotateSite').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var siteId = encodeURIComponent($('#siteId').val());
-            var url = '/api/key/rotate_site?min_age_seconds=' + minAge + '&site_id=' + siteId;
-            if ($('#force').is(':checked')) url = url + '&force=true';
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRotateAllSites').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var url = '/api/key/rotate_all_sites?min_age_seconds=' + minAge;
-            if ($('#force').is(':checked')) url = url + '&force=true';
-
-            doApiCallWithCallback('POST', url, sortKeysCallback, errorCallback);
-        });
-
-        $('#doRotateKeysetKey').on('click', function () {
-            var minAge = encodeURIComponent($('#minAge').val());
-            var keysetId = encodeURIComponent($('#keysetId').val());
-            var url = '/api/key/rotate_keyset_key?min_age_seconds=' + minAge + "&keyset_id=" + keysetId;
-            if ($('#force').is(':checked')) url = url + '&force=true';
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

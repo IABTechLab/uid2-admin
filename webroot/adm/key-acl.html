@@ -1,7 +1,9 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1><b>Deprecated</b>: UID2 Env - Key ACL Management</h1>
@@ -10,65 +12,35 @@
 
 <a href="/">Back</a>
 
-
-<!--
-<h3>Inputs</h3>
-
-<label for="siteId">Site Id:</label>
-<input type="text" id="siteId" name="siteId">
-<label for="addSiteIds">Add Site Ids:</label>
-<input type="text" id="addSiteIds" name="addSiteIds">
-<label for="removeSiteIds">Remove Site Ids:</label>
-<input type="text" id="removeSiteIds" name="removeSiteIds">
-<label for="aclType">ACL type:</label>
-<select id="aclType">
-    <option value="whitelist">whitelist</option>
-    <option value="blacklist">blacklist</option>
-</select>
--->
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doList">List ACLs</a></li>
-<!--    <li class="ro-cki" style="display: none"><a href="#" id="doReset">Reset ACL</a></li>-->
-<!--    <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update ACL</a></li>-->
-</ul>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doList').on('click', function () {
-            doApiCall('GET', '/api/keys_acl/list', '#standardOutput', '#errorOutput');
-        });
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-        $('#doReset').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var type = encodeURIComponent($('#aclType').val());
-            var url = '/api/keys_acl/reset?site_id=' + siteId + "&type=" + type;
+document.addEventListener('DOMContentLoaded', function () {
+  const operationConfig = {
+    read: [
+      {
+        id: 'listAcls',
+        title: 'List ACLs',
+        role: 'maintainer',
+        inputs: [],
+        description: 'Lists all Key ACL entries. This is a legacy read-only operation.',
+        apiCall: {
+          method: 'GET',
+          url: '/api/keys_acl/list'
+        }
+      }
+    ]
+  };
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doUpdate').on('click', function () {
-            var siteId = encodeURIComponent($('#siteId').val());
-            var added = encodeURIComponent($('#addSiteIds').val());
-            var removed = encodeURIComponent($('#removeSiteIds').val());
-            var url = '/api/keys_acl/update?site_id=' + siteId + "&add=" + added + "&remove=" + removed;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

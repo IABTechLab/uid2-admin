@@ -1,142 +1,158 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Client Side Keypair Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<label for="subscriptionId">Subscription id:</label>
-<input type="text" id="subscriptionId" name="subscriptionId">
-<label for="siteId">Site id:</label>
-<input type="text" id="siteId" name="siteId">
-<label for="name">Keypair Name:</label>
-<input type="text" id="name" name="name">
-<label for="disable">Disable Keypair:</label>
-<input type="checkbox" id="disable" name="disable" value="true">
-
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-sem" style="display: none"><a href="#" id="doList">List Keypairs</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListSite">List Keypairs By Site Id</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doListSubscription">Reveal Keypair By Subscription Id</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doCreate">Create Keypair</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doUpdate">Update Keypair</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doDelete">Delete Keypair</a></li>
-</ul>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doList').on('click', function () {
-            doApiCall('GET', '/api/client_side_keypairs/list', '#standardOutput', '#errorOutput');
-        });
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-        $('#doListSite').on('click', function () {
-            const siteId = parseInt($('#siteId').val())
-            if(!siteId) {
-                $('#errorOutput').text("required parameters: site_id")
-                return
-            }
-            doApiCallWithCallback('GET', '/api/client_side_keypairs/list', function (text) {
-                let resp = JSON.parse(text)
-                resp = resp.filter(obj => obj.site_id === siteId)
-                $('#standardOutput').text(JSON.stringify(resp, null, 2));
-            }, errorCallback);
-        });
+document.addEventListener('DOMContentLoaded', function () {
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site ID',
+    required: true,
+    type: 'number'
+  };
 
-        $('#doListSubscription').on('click', function () {
-            const subscriptionId = $('#subscriptionId').val()
-            if(!subscriptionId) {
-                $('#errorOutput').text("required parameters: subscription_id")
-                return
-            }
-            const url = '/api/client_side_keypairs/' + encodeURIComponent(subscriptionId);
+  const subscriptionIdInput = {
+    name: 'subscriptionId',
+    label: 'Subscription ID',
+    required: true,
+    size: 2
+  };
 
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
+  const keypairNameInput = {
+    name: 'name',
+    label: 'Keypair Name',
+    required: false,
+    size: 2
+  };
 
-        $('#doCreate').on('click', function () {
-            const siteId = $('#siteId').val();
-            const name = $('#name').val();
-            const disabled = ($('#disable').is(':checked'));
-            if (!siteId) {
-                $('#errorOutput').text("required parameters: site_id")
-                return
-            }
+  const disableCheckbox = {
+    name: 'disable',
+    label: 'Disable Keypair',
+    type: 'checkbox'
+  };
 
-            const payload = {"site_id": parseInt(siteId), "name": name, "disabled": disabled}
-
-            doApiCall('POST', '/api/client_side_keypairs/add', '#standardOutput', '#errorOutput', JSON.stringify(payload));
-        });
-
-        $('#doUpdate').on('click', function () {
-            const subscriptionId = $('#subscriptionId').val()
-            const name = $('#name').val();
-            const disabled = ($('#disable').is(':checked'));
-
-            if (!subscriptionId) {
-                $('#errorOutput').text("required parameters: subscription_id")
-                return
-            }
-
-            const confirmationMessage = getUpdateKeypairConfirmationMessage(disabled, subscriptionId);
-            if (!confirm(confirmationMessage)) return;
-
-            const payload = {"subscription_id": subscriptionId, "disabled" : disabled}
-            if (name) {
-                payload["name"] = name
-            }
-
-            doApiCall('POST', '/api/client_side_keypairs/update', '#standardOutput', '#errorOutput', JSON.stringify(payload));
-        });
-
-        $('#doDelete').on('click', function () {
-            const subscriptionId = $('#subscriptionId').val();
-            if (!subscriptionId) {
-                $('#errorOutput').text("required parameters: subscription_id");
-                return;
-            }
-
-            if (!confirm(`Are you sure you want to delete ${subscriptionId}?`)) return;
-
-            const payload = {"subscription_id": subscriptionId};
-
-            doApiCall('POST', '/api/client_side_keypairs/delete', '#standardOutput', '#errorOutput', JSON.stringify(payload));
-        });
-
-    });
-
-    function getUpdateKeypairConfirmationMessage(disabled, subscriptionId) {
-        let action = disabled ? 'disable' : 'enable';
-        let confirmationMessage = `You may ignore this warning if you are not changing the disabled status of this keypair.\n\nAre you sure you want to ${action} ${subscriptionId}?`;
-
-        if (disabled) {
-            confirmationMessage = `Disabling this client-side keypair will prevent it from using CSTG.\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\n${confirmationMessage}`;
-        } else {
-            confirmationMessage = `Enabling this client-side keypair will allow it to use CSTG.\n\n${confirmationMessage}`;
+  const operationConfig = {
+    read: [
+        {
+          id: 'listKeypairs',
+          title: 'List Keypairs',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/client_side_keypairs/list'
+          }
+        },
+        {
+          id: 'listKeypairsBySiteId',
+          title: 'List Keypairs By Site ID',
+          role: 'maintainer',
+          inputs: [ siteIdInput ],
+          apiCall: {
+            method: 'GET',
+            url: '/api/client_side_keypairs/list'
+          },
+          postProcess: (response, inputs) => {
+            const siteId = parseInt(inputs.siteId);
+            return response.filter(keypair => keypair.site_id === siteId);
+          }
+        },
+        {
+          id: 'getKeypairBySubscriptionId',
+          title: 'Get Keypair By Subscription ID',
+          role: 'maintainer',
+          inputs: [ subscriptionIdInput ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/client_side_keypairs/${encodeURIComponent(inputs.subscriptionId)}`
+          }
         }
-        return confirmationMessage;
-    }
+      ],
+    write: [
+        {
+          id: 'addKeypair',
+          title: 'Add Keypair',
+          role: 'maintainer',
+          inputs: [
+            siteIdInput,
+            keypairNameInput,
+            disableCheckbox
+          ],
+          apiCall: {
+            method: 'POST',
+            url: '/api/client_side_keypairs/add',
+            getPayload: (inputs) => ({
+              site_id: parseInt(inputs.siteId),
+              name: inputs.name || '',
+              disabled: inputs.disable || false
+            })
+          }
+        },
+      ],
+    danger: [
+        {
+          id: 'updateKeypair',
+          title: 'Update Keypair',
+          role: 'maintainer',
+          inputs: [
+            subscriptionIdInput,
+            keypairNameInput,
+            disableCheckbox
+          ],
+          description: 'This will update the keypair settings, including its enabled/disabled status.',
+          confirmationText: 'This will update the keypair settings. If you are changing the disabled status, ensure there is no valid traffic, and confirm that the participant has provided consent.',
+          apiCall: {
+            method: 'POST',
+            url: '/api/client_side_keypairs/update',
+            getPayload: (inputs) => {
+              const payload = {
+                subscription_id: inputs.subscriptionId,
+                disabled: inputs.disable || false
+              };
+              if (inputs.name) {
+                payload.name = inputs.name;
+              }
+              return payload;
+            }
+          }
+        },
+        {
+          id: 'deleteKeypair',
+          title: 'Delete Keypair',
+          role: 'elevated',
+          inputs: [ subscriptionIdInput ],
+          description: 'This will permanently delete the client-side keypair. This action cannot be undone.',
+          confirmationText: 'This will permanently delete the client-side keypair. This action cannot be undone.',
+          apiCall: {
+            method: 'POST',
+            url: '/api/client_side_keypairs/delete',
+            getPayload: (inputs) => ({
+              subscription_id: inputs.subscriptionId
+            })
+          }
+        }
+      ]
+  };
+
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

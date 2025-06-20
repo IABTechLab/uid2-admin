@@ -1,82 +1,106 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Salt Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<div>
-    <label for="fraction">Fraction:</label>
-    <input type="text" id="fraction" name="fraction" style="width: 120px;">
-    
-    <label for="targetDate" style="margin-left: 20px;">Target date:</label>
-    <input type="date" id="targetDate" name="targetDate">
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<div style="margin-top: 15px;">
-    <label for="minAges">Min ages (seconds):</label><br>
-    <input type="text" id="minAges" name="minAges" style="width: 100%; margin-top: 5px;">
-</div>
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-<br>
-<br>
+document.addEventListener('DOMContentLoaded', function () {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultTargetDate = tomorrow.getFullYear() + '-' +
+      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
+      String(tomorrow.getDate()).padStart(2, '0');
 
-<h3>Operations</h3>
+  const fractionInput = {
+    name: 'fraction',
+    label: 'Fraction',
+    required: true,
+    defaultValue: (1/365).toFixed(6)
+  };
 
-<ul>
-    <li class="ro-sem" style="display: none"><a href="#" id="doSnapshots">List Salt Snapshots</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRebuild">Rebuild Salts File</a></li>
-    <li class="ro-sem" style="display: none"><a href="#" id="doRotate">Rotate Second Level Salts (SUPER_USER)</a></li>
-</ul>
+  const targetDateInput = {
+    name: 'targetDate',
+    label: 'Target Date',
+    type: 'date',
+    required: true,
+    defaultValue: defaultTargetDate
+  };
 
-<br>
+  const minAgesMultilineInput = {
+    name: 'minAges',
+    label: 'Min Ages (seconds)',
+    required: true,
+    defaultValue: '2592000,5184000,7776000,10368000,12960000,15552000,18144000,20736000,23328000,25920000,28512000,31104000,33696000',
+    type: 'multi-line'
+  };
 
-<h3>Output</h3>
+  const operationConfig = {
+    read: [
+      {
+        id: 'listSaltSnapshots',
+        title: 'List Salt Snapshots',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/salt/snapshots'
+        }
+      }
+    ],
+    write: [
+      {
+        id: 'rebuildSaltsFile',
+        title: 'Rebuild Salts File',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'POST',
+          url: '/api/salt/rebuild'
+        }
+      }
+    ],
+    danger: [
+      {
+        id: 'rotateSecondLevelSalts',
+        title: 'Rotate Second Level Salts',
+        role: 'superuser',
+        inputs: [
+          fractionInput,
+          targetDateInput,
+          minAgesMultilineInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const minAges = encodeURIComponent(inputs.minAges);
+            const fraction = encodeURIComponent(inputs.fraction);
+            const targetDate = encodeURIComponent(inputs.targetDate);
+            return `/api/salt/rotate?min_ages_in_seconds=${minAges}&fraction=${fraction}&target_date=${targetDate}`;
+          }
+        }
+      }
+    ]
+  };
 
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
-</div>
+  initializeOperations(operationConfig);
+  initializeOutput();
 
-<script language="JavaScript">
-    $(document).ready(function () {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const defaultTargetDate = tomorrow.getFullYear() + '-' +
-            String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
-            String(tomorrow.getDate()).padStart(2, '0');
-        $('#targetDate').val(defaultTargetDate);
-        $('#fraction').val((1/365).toFixed(6));
-
-        // 30 days, 60 days, 90 days... 390 days in seconds
-        $('#minAges').val('2592000,5184000,7776000,10368000,12960000,15552000,18144000,20736000,23328000,25920000,28512000,31104000,33696000');
-
-        $('#doSnapshots').on('click', function () {
-            doApiCall('GET', '/api/salt/snapshots', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRebuild').on('click', function () {
-            doApiCall('POST', '/api/salt/rebuild', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRotate').on('click', function () {
-            const minAges = encodeURIComponent($('#minAges').val());
-            const fraction = encodeURIComponent($('#fraction').val());
-            const targetDate = encodeURIComponent($('#targetDate').val());
-            const url = '/api/salt/rotate?min_ages_in_seconds=' + minAges + '&fraction=' + fraction + '&target_date=' + targetDate;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-    });
+});
 </script>
 
 </body>

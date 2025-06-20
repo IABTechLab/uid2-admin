@@ -1,201 +1,228 @@
 <html>
 <head>
+  <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Keyset Access Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-<div>
-  <label for="keysetId">Keyset Id:</label>
-  <input type="text" id="keysetId" name="keysetId">
-  <label for="siteId">Site Id:</label>
-  <input type="text" id="siteId" name="siteId">
-</div>
-<br>
-<div>
-  <label for="keysetName">Set Keyset Name:</label>
-  <input type="text" id="keysetName" name="keysetName">
-  <label for="addSiteIds">Add Allowed Sites:</label>
-  <input type="text" id="addSiteIds" name="addSiteIds">
-  <label for="removeSiteIds">Remove Allowed Sites:</label>
-  <input type="text" id="removeSiteIds" name="removeSiteIds">
-  <label for="addTypes">Add Allowed Types:</label>
-  <input type="text" id="addTypes" name="addSiteIds">
-  <label for="removeTypes">Remove Allowed Types:</label>
-  <input type="text" id="removeTypes" name="removeSiteIds">
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<br>
-<br>
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
+import { httpClient } from '/js/httpClient.js';
 
-<h3>Operations</h3>
+document.addEventListener('DOMContentLoaded', function () {
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site Id',
+    required: true
+  };
 
-<ul>
-  <li class="ro-adm" style="display: none"><a href="#" id="doListAll">List All Keysets</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doListAllBySite">List All Keysets By Site Id</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doShowKeysetById">Show Keyset By Keyset Id</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doResetEmpty">Reset Allowed Sites To Empty</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doResetNull">Reset Allowed Sites To Null</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update Keyset</a></li>
-  <li class="ro-adm" style="display: none"><a href="#" id="doMakeNew">Make New Keyset</a></li>
-</ul>
+  const keysetIdInput = {
+    name: 'keysetId',
+    label: 'Keyset Id',
+    required: true
+  };
 
-<br>
+  const keysetNameInput = {
+    name: 'keysetName',
+    label: 'Set Keyset Name'
+  };
 
-<h3>Output</h3>
+  const addSiteIdsInput = {
+    name: 'addSiteIds',
+    label: 'Add Allowed Sites'
+  };
 
-<div id="output">
-  <pre id="errorOutput"></pre>
-  <pre id="standardOutput"></pre>
-</div>
+  const removeSiteIdsInput = {
+    name: 'removeSiteIds',
+    label: 'Remove Allowed Sites'
+  };
 
-<script language="JavaScript">
-  $(document).ready(function () {
-    $('#doListAll').on('click', function () {
-      doApiCall('GET', '/api/sharing/keysets', '#standardOutput', '#errorOutput');
-    });
+  const addTypesInput = {
+    name: 'addTypes',
+    label: 'Add Allowed Types'
+  };
 
-    $('#doListAllBySite').on('click', function () {
-      const siteId = parseInt($('#siteId').val());
-      if(!siteId) {
-        $('#errorOutput').html("Required Parameters: site_id")
-        return;
-      }
-      const url = '/api/sharing/keysets';
+  const removeTypesInput = {
+    name: 'removeTypes',
+    label: 'Remove Allowed Types'
+  };
 
-      doApiCallWithCallback('GET', url, (text) => {
-        const ja = JSON.parse(text);
-
-        const filtered = ja.filter(function(keyset) {
-          return keyset.site_id === siteId
-        });
-        const pretty = JSON.stringify(filtered,null,2);
-        $('#standardOutput').html(pretty);
-
-      }, errorCallback );
-    });
-
-    $('#doShowKeysetById').on('click', function () {
-      const keysetId = parseInt($('#keysetId').val());
-      if(!keysetId) {
-        $('#errorOutput').html("Required Parameters: keyset_id")
-        return;
-      }
-      doApiCall('GET', '/api/sharing/keyset/' + keysetId, '#standardOutput', '#errorOutput');
-    });
-
-    $('#doResetEmpty').on('click', function () {
-      const keysetId = parseInt($('#keysetId').val());
-      if(!keysetId) {
-        $('#errorOutput').html("Required Parameters: keyset_id")
-        return;
-      }
-      const url = '/api/sharing/keyset';
-      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({allowed_sites: [], keyset_id : keysetId}))
-    });
-
-    $('#doResetNull').on('click', function () {
-      const keysetId = parseInt($('#keysetId').val());
-      if(!keysetId) {
-        $('#errorOutput').html("Required Parameters: keyset_id")
-        return;
-      }
-      const url = '/api/sharing/keyset';
-      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify({allowed_sites: null, keyset_id : keysetId}))
-    });
-
-    $('#doUpdate').on('click', function () {
-      const keysetId = parseInt($('#keysetId').val());
-      if(!keysetId) {
-        $('#errorOutput').html("Required Parameters: keyset_id")
-        return;
-      }
-      let name = $('#keysetName').val();
-      const url = '/api/sharing/keyset/' + keysetId.toString();
-
-      const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
-      const remove = ($('#removeSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
-
-      const addTypes = ($('#addTypes').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(String);
-      const removeTypes = ($('#removeTypes').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(String);
-
-      doApiCallWithCallback('GET', url, (text) => {
-        const jo = JSON.parse(text);
-        let allowedSites = jo.allowed_sites;
-        let allowedTypes = jo.allowed_types;
-
-        const url = '/api/sharing/keyset';
-
-        let payload = {keyset_id: keysetId}
-
-        if((add && add.length !== 0) || (remove && remove.length !== 0)) {
-          if(allowedSites == null) {
-            $('#errorOutput').html('cannot add/remove sites from null. If this was intentional, please reset allowed_sites to empty then try again.')
-            return
+  const operationConfig = {
+    read: [
+        {
+          id: 'listAllKeysets',
+          title: 'List All Keysets',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/sharing/keysets'
           }
-          allowedSites = allowedSites.filter((value, _, __) => !remove.includes(value))
-          allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
-        }
-
-        if((addTypes && addTypes.length !== 0) || (removeTypes && removeTypes.length !== 0)) {
-          if(allowedTypes == null) {
-            $('#errorOutput').html('cannot add/remove types from null. If this was intentional, please reset allowed_sites to empty then try again.')
-            return
+        },
+        {
+          id: 'listAllKeysetsBySiteId',
+          title: 'List All Keysets By Site Id',
+          role: 'maintainer',
+          inputs: [siteIdInput],
+          apiCall: {
+            method: 'GET',
+            url: '/api/sharing/keysets'
+          },
+          postProcess: (responseData, inputs) => responseData.filter(keyset => keyset.site_id === parseInt(inputs.siteId))
+        },
+        {
+          id: 'showKeysetByKeysetId',
+          title: 'Show Keyset By Keyset Id',
+          role: 'maintainer',
+          inputs: [keysetIdInput],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/sharing/keyset/${parseInt(inputs.keysetId)}`
           }
-          allowedTypes = allowedTypes.filter((value, _, __) => !removeTypes.includes(value))
-          allowedTypes = allowedTypes.concat(addTypes.filter((value, _, __) => !allowedTypes.includes(value)))
         }
-
-        payload["allowed_sites"] = allowedSites
-        payload['allowed_types'] = allowedTypes
-
-        if(name && (name = $.trim(name))) {
-          payload["name"] = name
+      ],
+    write: [
+        {
+          id: 'updateKeyset',
+          title: 'Update Keyset',
+          role: 'maintainer',
+          inputs: [
+            keysetIdInput,
+            keysetNameInput,
+            addSiteIdsInput,
+            removeSiteIdsInput,
+            addTypesInput,
+            removeTypesInput
+          ],
+          preProcess: async (inputs) => {
+            const keysetId = parseInt(inputs.keysetId);
+            
+            const currentKeyset = await httpClient.get(`/api/sharing/keyset/${keysetId}`);
+            
+            let allowedSites = currentKeyset.allowed_sites;
+            let allowedTypes = currentKeyset.allowed_types;
+            
+            const add = (inputs.addSiteIds || '').replace(/\s+/g, '').split(',').filter(value => value !== "").map(Number);
+            const remove = (inputs.removeSiteIds || '').replace(/\s+/g, '').split(',').filter(value => value !== "").map(Number);
+            
+            if ((add && add.length !== 0) || (remove && remove.length !== 0)) {
+              if (allowedSites == null) {
+                throw new Error('cannot add/remove sites from null. If this was intentional, please reset allowed_sites to empty then try again.');
+              }
+              allowedSites = allowedSites.filter(value => !remove.includes(value));
+              allowedSites = allowedSites.concat(add.filter(value => !allowedSites.includes(value)));
+            }
+            
+            const addTypes = (inputs.addTypes || '').replace(/\s+/g, '').split(',').filter(value => value !== "").map(String);
+            const removeTypes = (inputs.removeTypes || '').replace(/\s+/g, '').split(',').filter(value => value !== "").map(String);
+            
+            if ((addTypes && addTypes.length !== 0) || (removeTypes && removeTypes.length !== 0)) {
+              if (allowedTypes == null) {
+                throw new Error('cannot add/remove types from null. If this was intentional, please reset allowed_sites to empty then try again.');
+              }
+              allowedTypes = allowedTypes.filter(value => !removeTypes.includes(value));
+              allowedTypes = allowedTypes.concat(addTypes.filter(value => !allowedTypes.includes(value)));
+            }
+            
+            let payload = {keyset_id: keysetId, allowed_sites: allowedSites, allowed_types: allowedTypes};
+            
+            let name = inputs.keysetName;
+            if (name && (name = name.trim())) {
+              payload.name = name;
+            }
+            
+            return {...inputs, payload};
+          },
+          apiCall: {
+            method: 'POST',
+            url: '/api/sharing/keyset',
+            getPayload: (inputs) => inputs.payload
+          }
+        },
+        {
+          id: 'makeNewKeyset',
+          title: 'Make New Keyset',
+          role: 'maintainer',
+          inputs: [
+            siteIdInput,
+            keysetNameInput,
+            addSiteIdsInput,
+            addTypesInput
+          ],
+          apiCall: {
+            method: 'POST',
+            url: '/api/sharing/keyset',
+            getPayload: (inputs) => {
+              const siteId = parseInt(inputs.siteId);
+              let payload = {site_id: siteId};
+              
+              let name = inputs.keysetName;
+              if (name && (name = name.trim())) {
+                payload.name = name;
+              }
+              
+              let allowedSites = [];
+              const add = (inputs.addSiteIds || '').replace(/\s+/g, '').split(',').filter(value => value !== "").map(Number);
+              const addTypes = (inputs.addTypes || '').replace(/\s+/g, '').split(',').filter(value => value !== "").map(String);
+              
+              if (add && add.length !== 0) {
+                allowedSites = allowedSites.concat(add.filter(value => !allowedSites.includes(value)));
+              }
+              
+              payload.allowed_sites = allowedSites;
+              payload.allowed_types = addTypes;
+              
+              return payload;
+            }
+          }
         }
+      ],
+    danger: [
+        {
+          id: 'resetAllowedSitesToEmpty',
+          title: 'Reset Allowed Sites To Empty',
+          role: 'maintainer',
+          inputs: [keysetIdInput],
+          apiCall: {
+            method: 'POST',
+            url: '/api/sharing/keyset',
+            getPayload: (inputs) => ({
+              allowed_sites: [],
+              keyset_id: parseInt(inputs.keysetId)
+            })
+          }
+        },
+        {
+          id: 'resetAllowedSitesToNull',
+          title: 'Reset Allowed Sites To Null',
+          role: 'maintainer',
+          inputs: [keysetIdInput],
+          apiCall: {
+            method: 'POST',
+            url: '/api/sharing/keyset',
+            getPayload: (inputs) => ({
+              allowed_sites: null,
+              keyset_id: parseInt(inputs.keysetId)
+            })
+          }
+        }
+      ]
+  };
 
-        doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload))
-      }, errorCallback );
-
-    });
-    $('#doMakeNew').on('click', function () {
-      const siteId = parseInt($('#siteId').val());
-      if(!siteId) {
-        $('#errorOutput').html("Required Parameters: site_id")
-        return;
-      }
-      let name = $('#keysetName').val();
-      const url = '/api/sharing/keyset';
-
-      let payload = {site_id: siteId}
-      if(name && (name = $.trim(name))) {
-        payload['name'] = name
-      }
-
-      let allowedSites = []
-      const add = ($('#addSiteIds').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(Number);
-      const addTypes = ($('#addTypes').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "").map(String);
-      if(add && add.length !== 0) {
-        allowedSites = allowedSites.concat(add.filter((value, _, __) => !allowedSites.includes(value)))
-      }
-      payload['allowed_sites'] = allowedSites
-      payload['allowed_types'] = addTypes
-
-      doApiCall('POST', url, '#standardOutput', '#errorOutput', JSON.stringify(payload));
-    });
-  });
-
-  function checkTypes(type) {
-    let allowed_types = ["DSP", "PUBLISHER", "ADVERTISER", "DATA_PROVIDER"];
-
-  }
-
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

@@ -2,3 +2,629 @@
   font-weight: bold;
   background-color: #FFFF00;
 }
+
+/* Multi-select input styles */
+.multi-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.multi-select-label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.multi-select-options {
+  display: block;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.multi-select-options .form-check {
+  display: block;
+  margin: 0 0 8px 0;
+  padding: 4px;
+  border-radius: 3px;
+}
+
+.multi-select-options .form-check:last-child {
+  margin-bottom: 0;
+}
+
+.multi-select-options .form-check-input {
+  margin: 0 8px 0 0;
+  width: 16px;
+  height: 16px;
+  vertical-align: top;
+  float: none;
+}
+
+.multi-select-options .form-check-label {
+  margin: 0;
+  font-weight: normal;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline;
+  vertical-align: top;
+}
+
+.multi-select-options .form-check:hover {
+  background-color: #f8f9fa;
+}
+
+/* Grid layout for multi-select options */
+.multi-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  max-width: 600px;
+  gap: 8px;
+}
+
+.multi-select-grid .form-check {
+  margin: 0;
+  padding: 8px;
+}
+
+/* Info icon styling */
+.info-icon {
+  display: inline-block;
+  margin-left: 8px;
+  color: #6c757d;
+  cursor: help;
+  vertical-align: middle;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.info-icon:hover {
+  opacity: 1;
+  color: #495057;
+}
+
+.info-icon svg {
+  vertical-align: top;
+}
+
+/* Keyset Admin Page Styles */
+.permission-badge {
+  padding: 4px 8px;
+  margin: 3px 5px 3px 0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  text-transform: none;
+  letter-spacing: 0.4px;
+  min-width: 75px;
+  text-align: center;
+  position: relative;
+  cursor: help;
+  margin-right: 15px;
+}
+
+.tooltip {
+  position: absolute;
+  background-color: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10000;
+  font-weight: normal;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+.permission-badge.maintainer {
+  background-color: #2196f3;
+}
+
+.permission-badge.elevated {
+  background-color: #ff9800;
+}
+
+.permission-badge.superuser {
+  background-color: #f44336;
+}
+
+.permission-badge.maintainer,
+.permission-badge.elevated,
+.permission-badge.superuser {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.permission-badge.maintainer:hover {
+  background-color: #1976d2;
+}
+
+.permission-badge.elevated:hover {
+  background-color: #f57c00;
+}
+
+.permission-badge.superuser:hover {
+  background-color: #d32f2f;
+}
+
+h3 {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 8px 0 4px 0;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-group label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  flex: 1;
+  font-family: inherit;
+  font-size: inherit;
+  resize: vertical;
+}
+
+.input-group textarea {
+  min-height: 60px;
+}
+
+.checkbox-input-group label {
+  margin-left: 12px;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  min-height: auto;
+  padding: 0;
+  margin-left: -8px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.input-group input.error,
+.input-group textarea.error,
+.input-group select.error {
+  border: 2px solid #f44336;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.4);
+  background-color: #ffebee;
+}
+
+.accordion-section {
+  margin: 8px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.accordion-header {
+  background-color: #f5f5f5;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.accordion-header.executable-header {
+  cursor: default;
+}
+
+.accordion-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accordion-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accordion-header:hover {
+  background-color: #e8e8e8;
+}
+
+.accordion-header.active {
+  background-color: #e3f2fd;
+}
+
+.accordion-arrow {
+  transition: transform 0.3s ease;
+  font-size: 14px;
+  min-width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accordion-header.active .accordion-arrow {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  display: none;
+  padding: 12px;
+  background-color: #fafafa;
+}
+
+.execute-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.accordion-content.active {
+  display: block;
+}
+
+.accordion-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.execute-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.execute-button:hover {
+  background-color: #388e3c;
+}
+
+.execute-button:active {
+  background-color: #2e7d32;
+}
+
+.execute-button:disabled {
+  background-color: #cccccc !important;
+  color: #666666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+.execute-button:disabled:hover {
+  background-color: #cccccc !important;
+}
+
+.operations-group {
+  margin: 16px 0;
+}
+
+.operations-group h4 {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 4px 0 8px 0;
+}
+
+.read-only h4 {
+  color: #4caf50;
+}
+
+.write h4 {
+  color: #ff9800;
+}
+
+.danger-zone h4 {
+  color: #f44336;
+}
+
+.read-only .accordion-header {
+  border-left: 4px solid #4caf50;
+}
+
+.read-only .accordion-header:hover {
+  background-color: #e8f5e9;
+}
+
+.write .accordion-header {
+  border-left: 4px solid #ff9800;
+}
+
+.write .accordion-header:hover {
+  background-color: #fff3e0;
+}
+
+.danger-zone .accordion-header {
+  border-left: 4px solid #f44336;
+}
+
+.danger-zone .accordion-header:hover {
+  background-color: #ffebee;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 30px;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.modal h3 {
+  color: #f44336;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.modal p {
+  margin-bottom: 25px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.confirmation-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.confirmation-input:focus {
+  outline: none;
+  border-color: #f44336;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.confirm-button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: all 0.2s ease;
+}
+
+.confirm-button:enabled {
+  opacity: 1;
+}
+
+.confirm-button:enabled:hover {
+  background-color: #d32f2f;
+}
+
+.cancel-button {
+  background-color: #666;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cancel-button:hover {
+  background-color: #555;
+}
+
+.main-content {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.operations-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.output-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+@media (max-width: 1600px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .operations-container {
+    width: 100%;
+  }
+  
+  .output-container {
+    width: 100%;
+  }
+}
+
+#output {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 16px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+#output pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#errorOutput {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: none;
+}
+
+#standardOutput {
+  color: #495057;
+}
+
+.json-key {
+  color: #0066cc;
+  font-weight: bold;
+}
+
+.json-string {
+  color: #d14;
+}
+
+.json-number {
+  color: #905;
+}
+
+.json-boolean {
+  color: #1e90ff;
+}
+
+.json-null {
+  color: #999;
+}
+
+.required-asterisk {
+  color: #f44336;
+  margin-left: 2px;
+}
+
+.execute-button-inline {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.execute-button-inline:hover {
+  background-color: #388e3c;
+}
+
+.execute-button-inline:active {
+  background-color: #2e7d32;
+}
+
+.execute-button-inline:disabled {
+  background-color: #cccccc !important;
+  color: #666666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+.execute-button-inline:disabled:hover {
+  background-color: #cccccc !important;
+}
+
+.executable-header {
+  cursor: pointer;
+}
+
+.executable-header:hover {
+  background-color: #e8f5e8 !important;
+}
+
+.no-accordion .accordion-header {
+  border-left-width: 4px;
+}
+
+/* Checkbox styling */
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.checkbox-option input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.input-group fieldset {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 0;
+}
+
+.input-group legend {
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+  padding: 0 8px;
+}
+
+/* Single checkbox styling */
+.input-group label input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}

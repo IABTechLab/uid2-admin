@@ -1,98 +1,74 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Partner Config</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-adm" style="display: none"><a href="#" id="doGet">Get Partner Config</a></li>
-    <li class="ro-adm" style="display: none"><a href="#" id="doUpdate">Update Partner Config (PRIVILEGED)</a></li>
-</ul>
-
-<br>
-
-<h3>Partner Config</h3>
-
-<textarea id="json" name="json" rows="40" cols="120">
-</textarea>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="standardOutput"></pre>
-    <pre id="errorOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    function getConfig(outputText, errorDiv) {
-        $(outputText).val('');
-        $(errorDiv).text('');
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-        $.ajax({
-            type: 'GET',
-            url: '/api/partner_config/get',
-            dataType: 'text',
-            success: function (text) {
-                var pretty = JSON.stringify(JSON.parse(text),null,2);
-                $(outputText).val(pretty);
-            },
-            error: function (err) {
-                $(errorDiv).text('Error: ' + err.status + ': ' + (isJsonString(err.responseText) ? JSON.parse(err.responseText).message : (err.responseText ? err.responseText : err.statusText)));
+document.addEventListener('DOMContentLoaded', function () {
+  const configDataMultilineInput = {
+    name: 'configData',
+    label: 'Configuration Data',
+    required: true,
+    type: 'multi-line',
+    placeholder: 'Enter JSON configuration data...'
+  };
+
+  const operationConfig = {
+    read: [
+      {
+        id: 'getPartnerConfig',
+        title: 'Get Partner Config',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/partner_config/get'
+        },
+        postProcess: (response) => JSON.parse(JSON.stringify(response, null, 2))
+      }
+    ],
+    write: [
+      {
+        id: 'updatePartnerConfig',
+        title: 'Update Partner Config',
+        role: 'elevated',
+        inputs: [
+          configDataMultilineInput
+        ],
+        apiCall: {
+          method: 'POST',
+          url: '/api/partner_config/update',
+          getPayload: (inputs) => {
+            // Validate and parse JSON
+            try {
+              return JSON.parse(inputs.configData);
+            } catch (e) {
+              throw new Error('Invalid JSON format: ' + e.message);
             }
-        });
-    }
-
-    function isJsonString(str) {
-        try {
-            JSON.parse(str);
-        } catch (e) {
-            return false;
+          }
         }
-        return true;
-    }
+      }
+    ]
+  };
 
-    function updateConfig(jsonStr, outputDiv, errorDiv) {
-        $(outputDiv).text('');
-        $(errorDiv).text('');
-
-
-        $.ajax({
-            type: 'POST',
-            url: '/api/partner_config/update',
-            dataType: 'text',
-            contentType: 'application/json',
-            data: jsonStr,
-            success: function (text) {
-                var pretty = JSON.stringify(JSON.parse(text),null,2);
-                $(outputDiv).text(pretty);
-            },
-            error: function (err) {
-                $(errorDiv).text('Error: ' + err.status + ': ' + JSON.parse(err).message);
-            }
-        });
-    }
-
-    $(document).ready(function () {
-        $('#doGet').on('click', function () {
-            getConfig('#json', '#errorOutput');
-        });
-
-        $('#doUpdate').on('click', function () {
-            var jsonStr = $('#json').val();
-            updateConfig(jsonStr, '#standardOutput', '#errorOutput');
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>
