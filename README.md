@@ -50,7 +50,7 @@ Per the above setup steps, the UI runs on `http://localhost:8089/`. To see your 
 <!--   Operations and controls will be added by `initializeOperations` here -->
    <div class="operations-container"></div>
    
-<!--   Both success and error output will be added by `initializeOutput` hedre -->
+<!--   Both success and error output will be added by `initializeOutput` here -->
    <div class="output-container"></div>
 </div>
 
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
       write: [ // Write operations (modify data)
           // ...
       ],   
-      danger: [// Dangerous operations (require explicit confirmation modal)
+      danger: [ // Dangerous operations (require explicit confirmation modal)
           // ...
       ]   
    }
@@ -105,7 +105,7 @@ const myOperation = {
           return { field1: inputs.field1 };
       }
   },                 
-  preProcess: async (inputs) => inputs,    // Optional: Run before getUrl/getPayload and the API call
+  preProcess: async (inputs) => inputs,     // Optional: Run before getUrl/getPayload and the API call
   postProcess: async (data, inputs) => data // Optional: Run after apiCall, if you want to adjust the response 
 };
 
@@ -120,7 +120,7 @@ Basic small text input
 const myText = {
   name: 'fieldName',
   label: 'Field Label',
-  required: true,              // Optional: If required, Execute won't be enable until filled. Default false.
+  required: true,              // Optional: Exclude button won't be enabled until all fields with requireds are filled. Default false.
   size: 2,                     // Optional: grid span 1-3, grid has 3 columns. Default 1.
   placeholder: 'Enter text',   // Optional
   defaultValue: 'default'      // Optional 
@@ -177,7 +177,7 @@ const myDropdown = {
   type: 'select',
   label: 'Select Option',
   options: [
-    'simple',                  // Can pass as string if option values are same as UI text
+    'simple',                           // Can pass as string if option values are same as UI text
     { value: 'val', label: 'Display' }  // Or as Objects if they are different
   ],
   defaultValue: 'val'
