@@ -24,6 +24,8 @@
     <input type="text" id="roles" name="roles">
     <label for="linkIdRegex">Link Id Regex:</label>
     <input type="text" id="linkIdRegex" name="linkIdRegex">
+    <label for="disabled">Disable Service:</label>
+    <input type="checkbox" id="disabled" name="disabled">
 </div>
 
 <br>
@@ -106,8 +108,9 @@
             let roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
             roles = roles.length > 0 ? roles : null;
             const linkIdRegex = $('#linkIdRegex').val()
+            const disabled = $('#disabled').is(':checked')
 
-            doApiCall('POST', '/api/service/update', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, site_id: siteId, name: serviceName, roles: roles, link_id_regex: linkIdRegex}));
+            doApiCall('POST', '/api/service/update', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, site_id: siteId, name: serviceName, roles: roles, link_id_regex: linkIdRegex, disabled: disabled}));
         });
 
         $('#doDelete').on('click', function () {

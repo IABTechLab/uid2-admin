@@ -581,6 +581,26 @@ public class ServiceServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void updateDisabled(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.MAINTAINER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("disabled", true);
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setDisabled(true);
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void updateSiteId(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.PRIVILEGED);
 
@@ -594,6 +614,32 @@ public class ServiceServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/service/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
             existingService.setSiteId(456);
+            checkServiceJson(existingService, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateNameDisabledSiteIdRoles(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+
+        Service existingService = new Service(1, 123, "name1", Set.of(Role.MAINTAINER));
+        setServices(existingService);
+
+        JsonObject jo = new JsonObject();
+        jo.put("service_id", 1);
+        jo.put("site_id", 456);
+        jo.put("name", "newname");
+        jo.put("disabled", true);
+        jo.put("roles", JsonArray.of(Role.MAINTAINER, Role.MAPPER, Role.SHARER));
+
+        post(vertx, testContext, "api/service/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            existingService.setSiteId(456);
+            existingService.setName("newname");
+            existingService.setDisabled(true);
+            existingService.setRoles(Set.of(Role.MAINTAINER, Role.MAPPER, Role.SHARER));
             checkServiceJson(existingService, response.bodyAsJsonObject());
             verify(serviceStoreWriter, times(1)).upload(List.of(existingService), null);
             testContext.completeNow();

@@ -162,6 +162,7 @@ public class ServiceLinkService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             JsonArray rolesJson = body.getJsonArray("roles");
+            Boolean disabled = body.getBoolean("disabled");
 
             if (siteId == null || serviceId == null || linkId == null || linkId.isEmpty()) {
                 ResponseUtil.error(rc, 400, "required parameters: site_id, service_id, link_id");
@@ -193,6 +194,10 @@ public class ServiceLinkService implements IService {
 
             if (name != null && !name.isEmpty()) {
                 serviceLink.setName(name);
+            }
+
+            if (disabled != null) {
+                serviceLink.setDisabled(disabled);
             }
 
             if (rolesJson != null && !rolesJson.isEmpty()) {
@@ -259,6 +264,7 @@ public class ServiceLinkService implements IService {
         jsonObject.put("site_id", s.getSiteId());
         jsonObject.put("name", s.getName());
         jsonObject.put("roles", s.getRoles());
+        jsonObject.put("disabled", s.isDisabled());
         return jsonObject;
     }
 

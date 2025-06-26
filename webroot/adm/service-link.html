@@ -24,6 +24,8 @@
     <input type="text" id="linkName" name="linkName">
     <label for="roles">Roles:</label>
     <input type="text" id="roles" name="roles">
+    <label for="disabled">Disable Service Link:</label>
+    <input type="checkbox" id="disabled" name="disabled">
 </div>
 
 <br>
@@ -95,7 +97,8 @@
                 return
             }
             const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles}));
+            const disabled = $('#disabled').is(':checked')
+            doApiCall('POST', '/api/service_link/update', '#standardOutput', '#errorOutput', JSON.stringify({link_id: linkId, service_id: serviceId, site_id: siteId, name: linkName, roles: roles, disabled: disabled}));
         });
 
         $('#doDelete').on('click', function () {

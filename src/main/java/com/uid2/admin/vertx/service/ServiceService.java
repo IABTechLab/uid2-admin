@@ -191,6 +191,7 @@ public class ServiceService implements IService {
             Integer siteId = body.getInteger("site_id");
             String name = body.getString("name");
             String linkIdRegex = body.getString("link_id_regex");
+            Boolean disabled = body.getBoolean("disabled");
 
             JsonArray rolesSpec = null;
             if (body.getString("roles") != null && !body.getString("roles").isEmpty()) {
@@ -240,6 +241,10 @@ public class ServiceService implements IService {
                     return;
                 }
                 service.setLinkIdRegex(linkIdRegex);
+            }
+
+            if (disabled != null) {
+                service.setDisabled(disabled);
             }
 
             if (siteId != null && siteId != 0) {
@@ -295,6 +300,7 @@ public class ServiceService implements IService {
         jsonObject.put("name", s.getName());
         jsonObject.put("roles", s.getRoles());
         jsonObject.put("link_id_regex", s.getLinkIdRegex());
+        jsonObject.put("disabled", s.isDisabled());
         return jsonObject;
     }
 

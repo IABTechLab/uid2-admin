@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -388,6 +389,34 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void updateServiceLink_updateDisabledOnly_succeeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER, Role.MAPPER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("disabled", true);
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        expected.setDisabled(true);
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void updateServiceLink_updateRoleOnly_succeeds(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
@@ -431,6 +460,35 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
         jo.put("roles", JsonArray.of(Role.MAPPER, Role.SHARER));
 
         ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.MAPPER, Role.SHARER));
+
+        post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+            checkServiceLinkJson(expected, response.bodyAsJsonObject());
+            verify(serviceStoreWriter, never()).upload(null, null);
+            verify(serviceLinkStoreWriter, times(1)).upload(List.of(expected), null);
+
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updateServiceLink_updateRoleNameDisabled_succeeds(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        setSites(new Site(123, "name1", false));
+        setServices(new Service(1, 123, "name1", Set.of(Role.MAINTAINER, Role.MAPPER, Role.SHARER)));
+        ServiceLink existingLink = new ServiceLink("link1", 1, 123, "name1", Set.of(Role.MAPPER));
+        setServiceLinks(existingLink);
+
+        JsonObject jo = new JsonObject();
+        jo.put("link_id", "link1");
+        jo.put("service_id", 1);
+        jo.put("site_id", 123);
+        jo.put("name", "newname");
+        jo.put("roles", JsonArray.of(Role.MAPPER, Role.SHARER));
+        jo.put("disabled", true);
+
+        ServiceLink expected = new ServiceLink("link1", 1, 123, "newname", Set.of(Role.MAPPER, Role.SHARER), true);
 
         post(vertx, testContext, "api/service_link/update", jo.encode(), response -> {
             assertEquals(200, response.statusCode());
@@ -622,20 +680,20 @@ public class ServiceLinkServiceTest extends ServiceTestBase {
 
     private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> linkIdRegexCases() {
         return java.util.stream.Stream.of(
-                org.junit.jupiter.params.provider.Arguments.of("link[0-9]+", "invalidLink", false),
-                org.junit.jupiter.params.provider.Arguments.of("link[0-9]+", "link42", true),
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345", true), // snowflake valid
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "UID2_ENVIRONMENT", true), // snowflake valid
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "xy12345", false), // snowflake invalid, lowercase
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X", true), // snowflake valid, minimum length
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(256), true), // snowflake valid, maximum length
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(257), false), // snowflake invalid, exceeds maximum length
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", " XY12345", false), // snowflake invalid, leading whitespace
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345 ", false), // snowflake invalid, trailing whitespace
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY 12345", false), // snowflake invalid, whitespace in the middle
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "", false), // snowflake invalid, empty
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", " ", false), // snowflake invalid, just whitespace
-                org.junit.jupiter.params.provider.Arguments.of("^[A-Z0-9_]{1,256}$", "XY_12345", true) // snowflake valid, used underscore
+                Arguments.of("link[0-9]+", "invalidLink", false),
+                Arguments.of("link[0-9]+", "link42", true),
+                Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345", true), // snowflake valid
+                Arguments.of("^[A-Z0-9_]{1,256}$", "UID2_ENVIRONMENT", true), // snowflake valid
+                Arguments.of("^[A-Z0-9_]{1,256}$", "xy12345", false), // snowflake invalid, lowercase
+                Arguments.of("^[A-Z0-9_]{1,256}$", "X", true), // snowflake valid, minimum length
+                Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(256), true), // snowflake valid, maximum length
+                Arguments.of("^[A-Z0-9_]{1,256}$", "X".repeat(257), false), // snowflake invalid, exceeds maximum length
+                Arguments.of("^[A-Z0-9_]{1,256}$", " XY12345", false), // snowflake invalid, leading whitespace
+                Arguments.of("^[A-Z0-9_]{1,256}$", "XY12345 ", false), // snowflake invalid, trailing whitespace
+                Arguments.of("^[A-Z0-9_]{1,256}$", "XY 12345", false), // snowflake invalid, whitespace in the middle
+                Arguments.of("^[A-Z0-9_]{1,256}$", "", false), // snowflake invalid, empty
+                Arguments.of("^[A-Z0-9_]{1,256}$", " ", false), // snowflake invalid, just whitespace
+                Arguments.of("^[A-Z0-9_]{1,256}$", "XY_12345", true) // snowflake valid, used underscore
         );
     }
 }
