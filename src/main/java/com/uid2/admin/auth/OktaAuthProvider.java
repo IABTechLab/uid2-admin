@@ -1,11 +1,15 @@
 package com.uid2.admin.auth;
 
 import com.okta.jwt.IdTokenVerifier;
+import com.uid2.shared.audit.Audit;
+import com.uid2.shared.audit.AuditParams;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.Route;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import com.okta.jwt.AccessTokenVerifier;
@@ -24,8 +28,11 @@ public class OktaAuthProvider implements AuthProvider {
     private final List<String> scopes = List.of("openid", "email", "uid2.admin.human");
     private final AccessTokenVerifier accessTokenVerifier;
     private final IdTokenVerifier idTokenVerifier;
+    private final Audit audit;
+
     public OktaAuthProvider(JsonObject config) {
         this.config = config;
+        this.audit = new Audit(OktaAuthProvider.class.getPackage().getName());
         if(isAuthDisabled(config)) {
             this.accessTokenVerifier = null;
             this.idTokenVerifier = null;
@@ -66,6 +73,9 @@ public class OktaAuthProvider implements AuthProvider {
         OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(vertx, oktaAuth, this.config.getString(OKTA_CALLBACK));
         authHandler.extraParams(new JsonObject(String.format("{\"scope\":\"%s\"}", String.join(" ", this.scopes))));
         authHandler.setupCallback(callbackRoute);
+        callbackRoute.handler(ctx -> {
+            ctx.addBodyEndHandler(v -> this.audit.log(ctx, new AuditParams()));
+        });
         return authHandler;
     }
 
