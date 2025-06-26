@@ -74,7 +74,8 @@ public class OktaAuthProvider implements AuthProvider {
         authHandler.extraParams(new JsonObject(String.format("{\"scope\":\"%s\"}", String.join(" ", this.scopes))));
         authHandler.setupCallback(callbackRoute);
         callbackRoute.handler(ctx -> {
-            ctx.addBodyEndHandler(v -> this.audit.log(ctx, new AuditParams()));
+            this.audit.log(ctx, new AuditParams());
+            ctx.next();
         });
         return authHandler;
     }
