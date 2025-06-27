@@ -72,11 +72,13 @@ public class OktaAuthProvider implements AuthProvider {
         );
         OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(vertx, oktaAuth, this.config.getString(OKTA_CALLBACK));
         authHandler.extraParams(new JsonObject(String.format("{\"scope\":\"%s\"}", String.join(" ", this.scopes))));
-        authHandler.setupCallback(callbackRoute);
         callbackRoute.handler(ctx -> {
+            System.out.println("AUDIT START - Path: " + ctx.request().path());
+            System.out.println("Query: " + ctx.request().query());
             this.audit.log(ctx, new AuditParams());
             ctx.next();
         });
+        authHandler.setupCallback(callbackRoute);
         return authHandler;
     }
 
