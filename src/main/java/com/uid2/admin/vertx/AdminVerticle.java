@@ -6,6 +6,8 @@ import com.uid2.admin.vertx.api.V2Router;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
+import com.uid2.shared.audit.Audit;
+import com.uid2.shared.audit.AuditParams;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerOptions;
@@ -34,6 +36,7 @@ public class AdminVerticle extends AbstractVerticle {
     private final TokenRefreshHandler tokenRefreshHandler;
     private final IService[] services;
     private final V2Router v2Router;
+    private final Audit audit;
 
     public AdminVerticle(JsonObject config,
                          AuthProvider authProvider,
@@ -45,6 +48,7 @@ public class AdminVerticle extends AbstractVerticle {
         this.tokenRefreshHandler = tokenRefreshHandler;
         this.services = services;
         this.v2Router = v2Router;
+        this.audit = new Audit("admin");
     }
 
     public void start(Promise<Void> startPromise) {
@@ -113,6 +117,16 @@ public class AdminVerticle extends AbstractVerticle {
             List<String> groups = (List<String>) idJwt.getClaims().get("groups");
             jo.put("groups", new JsonArray(groups));
             jo.put("email", idJwt.getClaims().get("email"));
+
+            JsonObject userDetails = new JsonObject();
+            userDetails.put("email", idJwt.getClaims().get("email"));
+            userDetails.put("sub", idJwt.getClaims().get("sub"));
+            userDetails.put("path", "/login");
+
+            LOGGER.info("Authenticated user accessing admin page - User: {}", userDetails.toString());
+            rc.put("user_details", userDetails);
+            this.audit.log(rc, new AuditParams());
+
             rc.response().setStatusCode(200).end(jo.toString());
         } catch (Exception e) {
             if (rc.session() !=  null) {
