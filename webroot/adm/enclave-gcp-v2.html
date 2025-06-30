@@ -1,145 +1,93 @@
 <html>
-
 <head>
+  <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
   <style>
     label.bold {
       font-weight: bold
     }
+    .gcp-examples-box {
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+    }
+    .gcp-examples-box h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 20px;
+    }
+    .gcp-examples-box label {
+      font-weight: bold;
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .gcp-examples-box pre, .gcp-examples-box textarea {
+      margin-bottom: 15px;
+    }
+    .gcp-examples-box pre {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    #gcloudCli {
+      width: 100%;
+      height: 200px;
+      resize: vertical;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
   </style>
 </head>
-
 <body>
 <h1>UID2 Env - GCP Enclave ID Tool(V2)</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
+<div class="main-content">
+  <div class="operations-container"></div>
+</div>
 
-<h3>Inputs</h3>
+<!-- GCP Examples Section - positioned below operations and output -->
+<div class="gcp-examples-box">
+  <h3>Generated Examples</h3>
+  
+  <label for="gcloudCli">Example gcloud command to bring up Confidential Space VM:</label>
+  <textarea id="gcloudCli" name="gcloudCli" readonly></textarea>
+  
+  <label for="enclaveId">Generated GCP Enclave ID:</label>
+  <pre><label id="enclaveId">TBD</label></pre>
+</div>
 
-<label for="imageId" class="bold">Operator Docker Image ID:</label>
-<br>
-<label for="imageId">The full digest for the image, with or without 'sha256:'</label>
-<br>
-<input type="text" id="imageId" name="imageId" size="100" value="">
-<br>
-<br>
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-<label for="envId" class="bold">Environment:</label>
-<br>
-<select id="envId">
-  <option value="integ">Integration</option>
-  <option value="prod">Production</option>
-</select>
-<br>
-<br>
-
-<label for="debugMode" class="bold">DebugMode:</label>
-<br>
-<label for="debugMode">
-  Set this to true if you want to use DebugMode Confidential Space host image in integration env.
-  (You need to generate a new enclaveId.)
-</label>
-<br>
-<select id="debugMode">
-  <option value="false">False</option>
-  <option value="true">True</option>
-</select>
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-  <li><a href="#" id="doGenerate">Generate Enclave ID and gcloud command</a></li>
-</ul>
-<br>
-
-<h3>Outputs</h3>
-
-<label for="gcloudCli">Example gcloud command to bring up Confidential Space VM:</label>
-<br>
-<textarea id="gcloudCli" name="gcloudCli" rows="10" cols="120" readonly>
-</textarea>
-<br>
-<br>
-
-<label for="enclaveId">Generated GCP Enclave ID:</label>
-<br>
-<pre><label id="enclaveId">TBD</label></pre>
-<br>
-<br>
-
-<script language="JavaScript">
-  const gcloudCli = '$ gcloud compute instances create <INSTANCE_NAME> \\\n\
-    --zone <ZONE> \\\n\
-    --machine-type <MACHINE_TYPE> \\\n\
-    --confidential-compute \\\n\
-    --shielded-secure-boot \\\n\
-    --maintenance-policy Terminate \\\n\
-    --scopes cloud-platform \\\n\
-    --image-project confidential-space-images \\\n\
-    --image-family <IMAGE_FAMILY> \\\n\
-    --service-account <SERVICE_ACCOUNT> \\\n\
-    --metadata ^~^tee-image-reference=us-docker.pkg.dev/uid2-prod-project/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-container-log-redirect=true~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN_SECRET_NAME=<API_TOKEN_SECRET_NAME>'
+document.addEventListener('DOMContentLoaded', function () {
+  const gcloudCli = `$ gcloud compute instances create <INSTANCE_NAME> \\
+    --zone <ZONE> \\
+    --machine-type <MACHINE_TYPE> \\
+    --confidential-compute \\
+    --shielded-secure-boot \\
+    --maintenance-policy Terminate \\
+    --scopes cloud-platform \\
+    --image-project confidential-space-images \\
+    --image-family <IMAGE_FAMILY> \\
+    --service-account <SERVICE_ACCOUNT> \\
+    --metadata ^~^tee-image-reference=us-docker.pkg.dev/uid2-prod-project/iabtechlab/uid2-operator@<IMAGE_SHA>~tee-restart-policy=Never~tee-container-log-redirect=true~tee-env-DEPLOYMENT_ENVIRONMENT=<DEPLOYMENT_ENVIRONMENT>~tee-env-API_TOKEN_SECRET_NAME=<API_TOKEN_SECRET_NAME>`;
 
   $('#gcloudCli').val(gcloudCli);
-
-  $(document).ready(function () {
-    onEnvChange();
-    $('#envId').on('change', function () {
-      onEnvChange();
-    });
-
-    $('#doGenerate').on('click', function () {
-      onGenerate();
-    });
-  });
-
-  function onEnvChange() {
-    const env = $('#envId').val();
-    const $debugMode = $('#debugMode');
-    $debugMode.val('false');
-    if (env === 'prod') {
-      $debugMode.prop('disabled', true);
-    } else {
-      $debugMode.prop('disabled', false);
-    }
-  }
-
-  function onGenerate() {
-    let imageSha = $('#imageId').val();
-    if (!imageSha) {
-      alert("Operator Docker Image ID is empty");
-      return;
-    }
-    if (!imageSha.startsWith('sha256:')) {
-      imageSha = 'sha256:' + imageSha;
-    }
-
-    const env = $('#envId').val();
-    const isDebug = $('#debugMode').val() === 'true';
-    const isProd = env === 'prod';
-
-    // generate and show enclaveId
-    generateEnclaveId(imageSha, isDebug).then(enclaveId => {
-      $('#enclaveId').text(enclaveId);
-    });
-
-    // update gcloud Cli
-    const imageFamily = isDebug ? 'confidential-space-debug' : 'confidential-space';
-    const machineType = isProd ? 'n2d-standard-16' : 'n2d-standard-2';
-    let cli = gcloudCli
-            .replaceAll('<MACHINE_TYPE>', machineType)
-            .replaceAll('<IMAGE_FAMILY>', imageFamily)
-            .replaceAll('<IMAGE_SHA>', imageSha)
-            .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
-
-    $('#gcloudCli').val(cli);
-  }
 
   function sha256base64(string) {
     const utf8 = new TextEncoder().encode(string);
@@ -155,8 +103,96 @@
     const str = 'V1,' + isDebug + "," + imageSha;
     return sha256base64(str);
   }
+
+  const operationConfig = {
+    write: [
+        {
+          id: 'generateGcpV2EnclaveConfig',
+          title: 'Generate Enclave ID and gcloud command',
+          role: 'elevated',
+          inputs: [
+            {
+              name: 'imageId',
+              label: 'Operator Docker Image ID',
+              required: true,
+              size: 3,
+              placeholder: 'The full digest for the image, with or without \'sha256:\''
+            },
+            {
+              name: 'envId',
+              label: 'Environment',
+              type: 'select',
+              required: true,
+              defaultValue: 'integ',
+              options: [
+                { value: 'integ', label: 'Integration' },
+                { value: 'prod', label: 'Production' }
+              ]
+            },
+            {
+              name: 'debugMode',
+              label: 'Debug Mode (Integration Only)',
+              type: 'checkbox',
+            }
+          ],
+          description: 'Set Debug Mode to true if you want to use DebugMode Confidential Space host image in integration env. (You need to generate a new enclaveId.)',
+          preProcess: async (inputs) => {
+            if (!inputs.imageId) {
+              throw new Error('Operator Docker Image ID is required');
+            }
+
+            let imageSha = inputs.imageId;
+            if (!imageSha.startsWith('sha256:')) {
+              imageSha = 'sha256:' + imageSha;
+            }
+
+            const env = inputs.envId;
+            const isDebug = inputs.debugMode && env !== 'prod'; // Debug mode only allowed for non-prod
+            const isProd = env === 'prod';
+
+            // Generate and display enclave ID
+            const enclaveId = await generateEnclaveId(imageSha, isDebug);
+            document.getElementById('enclaveId').textContent = enclaveId;
+
+            // Update gcloud CLI command
+            const imageFamily = isDebug ? 'confidential-space-debug' : 'confidential-space';
+            const machineType = isProd ? 'n2d-standard-16' : 'n2d-standard-2';
+            let cli = gcloudCli
+              .replaceAll('<MACHINE_TYPE>', machineType)
+              .replaceAll('<IMAGE_FAMILY>', imageFamily)
+              .replaceAll('<IMAGE_SHA>', imageSha)
+              .replaceAll('<DEPLOYMENT_ENVIRONMENT>', env);
+
+            document.getElementById('gcloudCli').value = cli;
+
+            return {
+              ...inputs,
+              processedImageSha: imageSha,
+              enclaveId: enclaveId,
+              isDebug: isDebug,
+              machineType: machineType,
+              imageFamily: imageFamily
+            };
+          },
+          // No API call needed - everything is handled in preProcess
+          postProcess: (response, inputs) => {
+            return {
+              message: 'GCP Enclave V2 configuration generated successfully',
+              imageSha: inputs.processedImageSha,
+              enclaveId: inputs.enclaveId,
+              environment: inputs.envId,
+              debugMode: inputs.isDebug,
+              machineType: inputs.machineType,
+              imageFamily: inputs.imageFamily
+            };
+          }
+        }
+      ]
+  };
+
+  initializeOperations(operationConfig);
+});
 </script>
 
 </body>
-
 </html>
