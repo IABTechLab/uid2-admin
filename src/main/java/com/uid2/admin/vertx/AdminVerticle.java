@@ -113,13 +113,15 @@ public class AdminVerticle extends AbstractVerticle {
                 JsonObject.of("groups", JsonArray.of("developer", "developer-elevated", "infra-admin", "admin"), "email", "test.user@unifiedid.com").toString());
         try {
             Jwt idJwt = this.authProvider.getIdTokenVerifier().decode(rc.user().principal().getString("id_token"), null);
+            JsonArray groups = new JsonArray((List<String>) idJwt.getClaims().get("groups"));
+            String email = idJwt.getClaims().get("email").toString();
+
             JsonObject jo = new JsonObject();
-            List<String> groups = (List<String>) idJwt.getClaims().get("groups");
-            jo.put("groups", new JsonArray(groups));
-            jo.put("email", idJwt.getClaims().get("email"));
+            jo.put("groups", groups);
+            jo.put("email", email);
 
             JsonObject userDetails = new JsonObject();
-            userDetails.put("email", idJwt.getClaims().get("email"));
+            userDetails.put("email", email);
             userDetails.put("sub", idJwt.getClaims().get("sub"));
             userDetails.put("path", "/login");
 
