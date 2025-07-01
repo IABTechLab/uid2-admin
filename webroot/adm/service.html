@@ -1,143 +1,208 @@
 <html>
 <head>
+    <meta charset="UTF-8">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="/js/main.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Service Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<div>
-    <label for="serviceId">Service Id:</label>
-    <input type="text" id="serviceId" name="serviceId">
-    <label for="siteId">Site Id:</label>
-    <input type="text" id="siteId" name="siteId">
-    <label for="serviceName">Service Name:</label>
-    <input type="text" id="serviceName" name="serviceName">
-    <label for="roles">Roles:</label>
-    <input type="text" id="roles" name="roles">
-    <label for="linkIdRegex">Link Id Regex:</label>
-    <input type="text" id="linkIdRegex" name="linkIdRegex">
-    <label for="disabled">Disable Service:</label>
-    <input type="checkbox" id="disabled" name="disabled">
+<div class="main-content">
+    <div class="operations-container"></div>
+    <div class="output-container"></div>
 </div>
 
-<br>
+<script type="module">
+    import {initializeOperations} from '/js/component/operations.js';
+    import {initializeOutput} from '/js/component/output.js';
 
-<h3>Operations</h3>
+    document.addEventListener('DOMContentLoaded', function () {
+        const siteIdInput = {
+            name: 'siteId',
+            label: 'Site ID',
+            required: true,
+            type: 'number'
+        };
 
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doListAll">List Services</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doListBySite">List Services By Site Id</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doListByServiceId">Get Service By Service Id</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doAdd">Add Service (PRIVILEGED)</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doUpdate">Update Service (PRIVILEGED)</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doRemoveLinkIdRegex">Remove Link Id Regex (PRIVILEGED)</a></li>
-</ul>
+        const serviceIdInput = {
+            name: 'serviceId',
+            label: 'Service ID',
+            required: true,
+            type: 'number'
+        };
 
-<br>
-<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
+        const serviceNameInput = {
+            name: 'serviceName',
+            label: 'Service Name',
+            required: true,
+            size: 2
+        };
 
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doDelete">Delete Service (SUPER_USER)</a></li>
-</ul>
+        const rolesInput = {
+            name: 'roles',
+            label: 'Roles',
+            required: true,
+            type: 'multi-select',
+            options: [
+                {
+                    value: 'MAPPER',
+                    label: 'MAPPER',
+                    hint: 'For Advertisers'
+                },
+                {
+                    value: 'ID_READER',
+                    label: 'ID_READER',
+                    hint: 'For DSPs'
+                },
+                {
+                    value: 'GENERATOR',
+                    label: 'GENERATOR',
+                    hint: 'For Publishers'
+                },
+                {
+                    value: 'SHARER',
+                    label: 'SHARER',
+                },
+            ]
+        };
 
-<h3>Output</h3>
+        const linkIdRegexInput = {
+            name: 'linkIdRegex',
+            label: 'Link Id Regex'
+        };
 
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
-</div>
+        const disabledInput = {
+            name: 'disabled',
+            label: 'Disable Service',
+            type: 'checkbox'
+        };
 
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doListAll').on('click', function () {
-            doApiCall('GET', '/api/service/list', '#standardOutput', '#errorOutput');
-        });
+        const operationConfig = {
+            read: [
+                {
+                    id: 'listAllServices',
+                    title: 'List All Services',
+                    role: 'maintainer',
+                    inputs: [],
+                    apiCall: {
+                        method: 'GET',
+                        url: '/api/service/list'
+                    }
+                },
+                {
+                    id: 'listServicesBySiteId',
+                    title: 'List Services By Site ID',
+                    role: 'maintainer',
+                    inputs: [ siteIdInput ],
+                    apiCall: {
+                        method: 'GET',
+                        url: '/api/service/list'
+                    },
+                    postProcess: (response, inputs) => {
+                        const siteId = parseInt(inputs.siteId);
+                        return response.filter(service => service.site_id === siteId);
+                    }
+                },
+                {
+                    id: 'getServiceByServiceId',
+                    title: 'Get Service By Service ID',
+                    role: 'maintainer',
+                    inputs: [ serviceIdInput ],
+                    apiCall: {
+                        method: 'GET',
+                        getUrl: (inputs) => `/api/service/list/${inputs.serviceId}`
+                    }
+                }
+            ],
+            write: [
+                {
+                    id: 'addService',
+                    title: 'Add Service',
+                    role: 'elevated',
+                    inputs: [
+                        serviceNameInput,
+                        siteIdInput,
+                        rolesInput,
+                        linkIdRegexInput
+                    ],
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/add',
+                        getPayload: (inputs) => ({
+                            site_id: parseInt(inputs.siteId),
+                            link_id_regex: inputs.linkIdRegex,
+                            name: inputs.serviceName,
+                            roles: inputs.roles.split(',').filter(value => value !== ''),
+                        })
+                    }
+                },
+                {
+                    id: 'updateService',
+                    title: 'Update Service',
+                    role: 'elevated',
+                    inputs: [
+                        serviceIdInput,
+                        {...serviceNameInput, required: false},
+                        {...siteIdInput, required: false},
+                        {...rolesInput, required: false},
+                        linkIdRegexInput,
+                        disabledInput
+                    ],
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/update',
+                        getPayload: (inputs) => {
+                            const payload = { service_id: parseInt(inputs.serviceId) };
+                            if (inputs.serviceName) payload.name = inputs.serviceName;
+                            if (inputs.siteId) payload.site_id = parseInt(inputs.siteId);
+                            const rolesArray = inputs.roles ?
+                                inputs.roles.split(',').filter(value => value !== '') :
+                                [];
+                            if (rolesArray.length > 0) payload.roles = rolesArray;
+                            
+                            if (inputs.linkIdRegex) payload.link_id_regex = inputs.linkIdRegex;
+                            if (typeof inputs.disabled === 'boolean') payload.disabled = inputs.disabled;
+                            return payload;
+                        }
+                    }
+                }
+            ],
+            danger: [
+                {
+                    id: 'deleteService',
+                    title: 'Delete Service',
+                    role: 'superuser',
+                    inputs: [ serviceIdInput ],
+                    description: 'This will permanently delete the service. This action cannot be undone and may affect related configurations.',
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/delete',
+                        getPayload: (inputs) => ({
+                            service_id: parseInt(inputs.serviceId)
+                        })
+                    }
+                },
+                {
+                    id: "doRemoveLinkIdRegex",
+                    title: "Remove Link Id Regex",
+                    role: "elevated",
+                    inputs: [ serviceIdInput ],
+                    apiCall: {
+                        method: 'POST',
+                        url: '/api/service/remove-link-id-regex',
+                        getPayload: (inputs) => ({
+                            service_id: parseInt(inputs.serviceId)
+                        })
+                    }
+                }
+            ]
+        };
 
-        $('#doListBySite').on('click', function () {
-            const siteId = parseInt($('#siteId').val())
-            if(!siteId) {
-                $('#errorOutput').text("required parameters: site_id")
-                return
-            }
-            doApiCallWithCallback('GET', '/api/service/list', function (text) {
-                let resp = JSON.parse(text)
-                resp = resp.filter(obj => obj.site_id === siteId)
-                $('#standardOutput').text(JSON.stringify(resp, null, 2));
-            }, errorCallback);
-        });
-
-        $('#doListByServiceId').on('click', function () {
-            const serviceId = $('#serviceId').val()
-            if(!serviceId) {
-                $('#errorOutput').text("required parameters: service_id")
-                return
-            }
-            doApiCall('GET', '/api/service/list/' + serviceId, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doAdd').on('click', function () {
-            const siteId = parseInt($('#siteId').val())
-            const serviceName = $('#serviceName').val()
-            if(!siteId || !serviceName) {
-                $('#errorOutput').text("required parameters: site_id, name")
-                return
-            }
-
-            const roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            const linkIdRegex = $('#linkIdRegex').val()
-
-            doApiCall('POST', '/api/service/add', '#standardOutput', '#errorOutput', JSON.stringify({site_id: siteId, name: serviceName, roles: roles, link_id_regex: linkIdRegex}));
-        });
-
-        $('#doUpdate').on('click', function () {
-            const serviceId = parseInt($('#serviceId').val())
-            if(!serviceId) {
-                $('#errorOutput').text("required parameters: service_id")
-                return
-            }
-            const siteId = parseInt($('#siteId').val())
-            const serviceName = $('#serviceName').val();
-            let roles = ($('#roles').val()).replace(/\s+/g, '').split(',').filter( (value, _, __) => value !== "");
-            roles = roles.length > 0 ? roles : null;
-            const linkIdRegex = $('#linkIdRegex').val()
-            const disabled = $('#disabled').is(':checked')
-
-            doApiCall('POST', '/api/service/update', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId, site_id: siteId, name: serviceName, roles: roles, link_id_regex: linkIdRegex, disabled: disabled}));
-        });
-
-        $('#doDelete').on('click', function () {
-            if (!confirm("Are you sure?")) {
-                return;
-            }
-
-            const serviceId = parseInt($('#serviceId').val())
-            if(!serviceId) {
-                $('#errorOutput').text("required parameters: service_id")
-                return
-            }
-
-            doApiCall('POST', '/api/service/delete', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId}));
-        });
-
-        $('#doRemoveLinkIdRegex').on('click', function () {
-            if (!confirm("Are you sure you want to remove the link id regex?")) {
-                return;
-            }
-            const serviceId = parseInt($('#serviceId').val())
-            if(!serviceId) {
-                $('#errorOutput').text("required parameters: service_id")
-                return
-            }
-            doApiCall('POST', '/api/service/remove-link-id-regex', '#standardOutput', '#errorOutput', JSON.stringify({service_id: serviceId}));
-        });
+        initializeOperations(operationConfig);
+        initializeOutput();
     });
 </script>
 

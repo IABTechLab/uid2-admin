@@ -440,7 +440,7 @@ public class Main {
         // retrieve image version (will unify when uid2-common is used)
         String version = Optional.ofNullable(System.getenv("IMAGE_VERSION")).orElse("unknown");
         Gauge appStatus = Gauge
-                .builder("app.status", () -> 1)
+                .builder("app_status", () -> 1)
                 .description("application version and status")
                 .tags("version", version)
                 .register(Metrics.globalRegistry);

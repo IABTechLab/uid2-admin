@@ -1,101 +1,111 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Enclave Identifier Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
-
-<h3>Inputs</h3>
-
-<label for="enclaveName">Name:</label>
-<input type="text" id="enclaveName" name="enclaveName">
-<label for="protocol">Protocol:</label>
-<input type="text" id="protocol" name="protocol">
-<label for="enclaveId">Enclave ID:</label>
-<input type="text" id="enclaveId" name="enclaveId">
-
-<br>
-<br>
-
-<h3>Operations</h3>
-
-<ul>
-    <li class="ro-opm" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doList">List Enclave IDs</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doAdd">Add Enclave ID (PRIVILEGED)</a></li>
-    <!--
-    <li class="ro-opm" style="display: none"><a href="#" id="doDisable">Disable Enclave ID</a></li>
-    <li class="ro-opm" style="display: none"><a href="#" id="doEnable">Enable Enclave ID</a></li>
-    -->
-</ul>
-
-<br>
-
-<h3>Low Level Operations - Do Not Use Unless Necessary</h3>
-
-<ul>
-    <li class="ro-adm" style="display: none"><a href="#" id="doDel">Delete Enclave ID (SUPER_USER)</a></li>
-</ul>
-
-<br>
-
-<h3>Output</h3>
-
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
 </div>
 
-<script language="JavaScript">
-    $(document).ready(function () {
-        $('#doMeta').on('click', function () {
-            doApiCall('GET', '/api/enclave/metadata', '#standardOutput', '#errorOutput');
-        });
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-        $('#doList').on('click', function () {
-            doApiCall('GET', '/api/enclave/list', '#standardOutput', '#errorOutput');
-        });
+document.addEventListener('DOMContentLoaded', function () {
+  const enclaveNameInput = {
+    name: 'enclaveName',
+    label: 'Enclave Name',
+    required: true,
+    size: 2
+  };
 
-        $('#doAdd').on('click', function () {
-            var enclaveName = encodeURIComponent($('#enclaveName').val());
-            var protocol = encodeURIComponent($('#protocol').val());
-            var enclaveId = encodeURIComponent($('#enclaveId').val());
-            var url = '/api/enclave/add?name=' + enclaveName + '&protocol=' + protocol + '&enclave_id=' + enclaveId;
+  const protocolInput = {
+    name: 'protocol',
+    label: 'Protocol',
+    required: true,
+    size: 1
+  };
 
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
+  const enclaveInput = {
+    name: 'enclaveId',
+    label: 'Enclave ID',
+    required: true,
+    size: 3
+  };
 
-        $('#doDel').on('click', function () {
-            if (!confirm("Are you sure?")) {
-                return;
-            }
+  const operationConfig = {
+    read: [
+      {
+        id: 'getEnclaveMetadata',
+        title: 'Get Metadata',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/enclave/metadata'
+        }
+      },
+      {
+        id: 'listEnclaveIds',
+        title: 'List Enclave IDs',
+        role: 'maintainer',
+        inputs: [],
+        apiCall: {
+          method: 'GET',
+          url: '/api/enclave/list'
+        }
+      }
+    ],
+    write: [
+      {
+        id: 'addEnclaveId',
+        title: 'Add Enclave ID',
+        role: 'elevated',
+        inputs: [
+          enclaveNameInput,
+          protocolInput,
+          enclaveInput
+        ],
+        description: 'Add a new enclave identifier to the system. This is a privileged operation.',
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const params = new URLSearchParams({
+              name: inputs.enclaveName,
+              protocol: inputs.protocol,
+              enclave_id: inputs.enclaveId
+            });
+            return `/api/enclave/add?${params.toString()}`;
+          }
+        }
+      }
+    ],
+    danger: [
+      {
+        id: 'deleteEnclaveId',
+        title: 'Delete Enclave ID',
+        role: 'superuser',
+        inputs: [ enclaveNameInput ],
+        description: 'This will permanently delete the enclave identifier. This action cannot be undone and may affect enclave operations.',
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => `/api/enclave/del?name=${encodeURIComponent(inputs.enclaveName)}`
+        }
+      }
+    ]
+  };
 
-            var enclaveName = encodeURIComponent($('#enclaveName').val());
-            var url = '/api/enclave/del?name=' + enclaveName;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doEnable').on('click', function () {
-            var enclaveName = encodeURIComponent($('#enclaveName').val());
-            var url = '/api/enclave/enable?name=' + enclaveName;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doDisable').on('click', function () {
-            var enclaveName = encodeURIComponent($('#enclaveName').val());
-            var url = '/api/enclave/enable?name=' + enclaveName;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-    });
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>

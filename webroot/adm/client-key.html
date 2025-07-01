@@ -1,256 +1,284 @@
 <html>
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
-    <link href="/css/style.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>UID2 Env - Client Key Management</h1>
 
 <a href="/">Back</a>
 
-<br>
-<br>
+<div class="main-content">
+  <div class="operations-container"></div>
+  <div class="output-container"></div>
+</div>
 
-<h3>Search</h3>
-<ul>
-    <li>
-        <form id="searchBySiteForm">
-            <label for="searchBySiteId">Site Id:</label>
-            <input type="text" id="searchBySiteId" name="searchBySiteId">
-            <button type="button" id="searchSiteId">Search Keys by SiteId</button>
-        </form>
-    </li>
-    <li>
-        <form id="searchByKeyIdForm">
-            <label for="searchByKeyId">Key Id:</label>
-            <input type="text" id="searchByKeyId" name="searchByKeyId">
-            <button type="button" id="searchKeyId">Search Key by KeyId</button>
-        </form>
-    </li>
-    <li>
-        <form id="searchByContactForm">
-            <label for="searchByContact">Contact:</label>
-            <input type="text" id="searchByContact" name="searchByContact">
-            <button type="button" id="searchContact">Search Key by Contact</button>
-        </form>
-    </li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doList">List Client Keys</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doMeta">Get Metadata</a></li>
-</ul>
-
-<h3>Add Key</h3>
 {% if ADD_CLIENT_KEY_MESSAGE %}
 <p class="message">{{ ADD_CLIENT_KEY_MESSAGE }}</p>
 {% endif %}
-<form id="addKeyForm">
-    <label for="addClientName">Name:</label>
-    <input type="text" id="addClientName" name="addClientName">
-    <label for="addRoles">Roles:</label>
-    <input type="text" id="addRoles" name="addRoles">
-    <label for="addSiteId">Site Id:</label>
-    <input type="text" id="addSiteId" name="addSiteId" value="1">
-    <label for="addServiceId">Service Id:</label>
-    <input type="text" id="addServiceId" name="addServiceId" value="0">
-    <button type="button" id="doAdd">Add Client Key</button>
-</form>
 
-<h3>Edit Key</h3>
-<label for="clientContact">Contact:</label>
-<input type="text" id="clientContact" name="clientContact">
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doReveal">Reveal Client Key (PRIVILEGED)</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doDisable">Disable Client Key</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doEnable">Enable Client Key</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetRoles">Set Roles (PRIVILEGED)</a></li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetSiteAndServiceId">
-        Update Site ID and Service ID</a>
-    </li>
-    <li class="ro-cki" style="display: none"><a href="#" id="doRename">Rename Client Key</a></li>
-</ul>
+<script type="module">
+import { initializeOperations } from '/js/component/operations.js';
+import { initializeOutput } from '/js/component/output.js';
 
-<h4>Low Level Operations - Do Not Use Unless Necessary</h4>
-<ul>
-    <li class="ro-cki" style="display: none"><a href="#" id="doSetContact">Set Contact</a></li>
-</ul>
+const devKeyNameWarning = '⚠️ Keys for dev/test purposes must be named dev-uid2-&lt;THREE_LETTER_INITIALS|TEAM_NAME&gt;-&lt;JIRA_TICKET&gt;-&lt;BRIEF_DESCRIPTION&gt;. ⚠️';
 
-<h3>Output</h3>
+document.addEventListener('DOMContentLoaded', function () {
+  const siteIdInput = {
+    name: 'siteId',
+    label: 'Site ID',
+    required: true
+  };
 
-<div id="output">
-    <pre id="errorOutput"></pre>
-    <pre id="standardOutput"></pre>
-</div>
+  const serviceIdInput = {
+    name: 'serviceId',
+    label: 'Service ID',
+    required: true,
+    defaultValue: '0'
+  };
 
-<script language="JavaScript">
-    $(document).ready(function () {
+  const contactInput = {
+    name: 'contact',
+    label: 'Contact',
+    required: true,
+    size: 2
+  };
 
-        $('#searchSiteId').on('click', function () {
-            var siteId = encodeURIComponent($('#searchBySiteId').val());
-            if (!siteId) {
-                $('#errorOutput').html("Required Parameter: site_id")
-                return;
-            }
-            var url = `/api/client/list/${siteId}`;
+  const nameInput = {
+    name: 'name',
+    label: 'Name',
+    required: true,
+    size: 2
+  };
 
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
+  const rolesInput = {
+    name: 'roles',
+    label: 'Roles',
+    required: true,
+    type: 'multi-select',
+    options: [
+      {
+        value: 'MAPPER',
+        label: 'MAPPER',
+        hint: 'For Advertisers'
+      },
+      {
+        value: 'ID_READER',
+        label: 'ID_READER',
+        hint: 'For DSPs'
+      },
+      {
+        value: 'GENERATOR',
+        label: 'GENERATOR',
+        hint: 'For Publishers'
+      },
+      {
+        value: 'SHARER',
+        label: 'SHARER',
+      },
+    ]
+  };
 
-        $('#searchKeyId').on('click', function () {
-            var keyId = encodeURIComponent($('#searchByKeyId').val());
-            if (!keyId) {
-                $('#errorOutput').html("Required Parameter: key_id")
-                return;
-            }
-            var url = `/api/client/keyId?keyId=${keyId}`;
+  const keyIdInput = {
+    name: 'keyId',
+    label: 'Key ID',
+    required: true,
+    size: 2
+  };
 
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
+  function getTemplateValue(varName, fallback = '') {
+    const value = '{{ ' + varName + ' }}';
+    const isProcessed = value !== ('{{ ' + varName + ' }}');
+    return isProcessed ? value : fallback;
+  }
 
-        $('#searchContact').on('click', function () {
-            var contact = encodeURIComponent($('#searchByContact').val());
-            if (!contact) {
-                $('#errorOutput').html("Required Parameter: contact")
-                return;
-            }
-            var url = `/api/client/contact?contact=${contact}`;
-
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doMeta').on('click', function () {
-            doApiCall('GET', '/api/client/metadata', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doList').on('click', function () {
-            doApiCall('GET', '/api/client/list', '#standardOutput', '#errorOutput');
-        });
-
-        $('#doReveal').on('click', function () {
-            var clientContact = encodeURIComponent($('#clientContact').val());
-            var url = '/api/client/reveal?contact=' + clientContact;
-
-            doApiCall('GET', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doAdd').on('click', function () {
-            var clientName = encodeURIComponent($('#addClientName').val());
-            var roles = encodeURIComponent($('#addRoles').val());
-            var siteId = encodeURIComponent($('#addSiteId').val());
-            var serviceId = encodeURIComponent($('#addServiceId').val());
-            var url = '/api/client/add?name=' + clientName + '&roles=' + roles + '&site_id=' + siteId + '&service_id=' + serviceId;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doDel').on('click', function () {
-            if (!confirm("Are you sure?")) {
-                return;
-            }
-
-            var clientContact = encodeURIComponent($('#clientContact').val());
-            var url = '/api/client/del?contact=' + clientContact;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetRoles').on('click', function () {
-            var clientContact = encodeURIComponent($('#clientContact').val());
-            var roles = prompt("Enter the new roles", "");
-            if (!roles){
-                if (roles === '') $('#errorOutput').html("Required Parameter: new roles");
-                return;
-            }
-
-            var url = '/api/client/roles?contact=' + clientContact + '&roles=' + roles;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetSiteAndServiceId').on('click', function () {
-            var clientContact = encodeURIComponent($('#clientContact').val());
-
-            var siteId = prompt("Enter the new siteId", "");
-            if (!siteId){
-                if (siteId === '') $('#errorOutput').html("Required Parameter: siteId");
-                return;
-            }
-            var serviceId = prompt("Enter the new serviceId", "0");
-            if (!serviceId){
-                if (serviceId === '') $('#errorOutput').html("Required Parameter: serviceId");
-                return;
-            }
-
-            var url = '/api/client/update?contact=' + clientContact + '&site_id=' + siteId + '&service_id=' + serviceId;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doDisable').on('click', function () {
-            const clientContact = encodeURIComponent($('#clientContact').val());
-            var encodedClientContact = encodeURIComponent(clientContact);
-            var url = '/api/client/disable?contact=' + encodedClientContact;
-    
-            if (!validateClientContact(encodedClientContact)) return;
-
-            const confirmationMessage = `Disabling this client key will prevent this key from generating UID2s in a server-side integration.\n\nBefore proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.\n\nAre you sure you want to disable ${clientContact}?`;
-            if (!confirm(confirmationMessage)) return;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doEnable').on('click', function () {
-            const clientContact = encodeURIComponent($('#clientContact').val());
-            var encodedClientContact = encodeURIComponent(clientContact);
-            var url = '/api/client/enable?contact=' + encodedClientContact;
-
-            if (!validateClientContact(encodedClientContact)) return;
-
-            const confirmationMessage = `Enabling this client key will allow this key to generate UID2s in a server-side integration.\n\nAre you sure you want to enable ${clientContact}?`;
-            if (!confirm(confirmationMessage)) return;
-
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doRename').on('click', function () {
-            var clientContact = encodeURIComponent($('#clientContact').val());
-            var newClientName = prompt("Enter the new name", "");
-            if (!newClientName){
-                if (newClientName === '') $('#errorOutput').html("Required Parameter: name");
-                return;
-            }
-
-            if (!confirm("Are you sure you want to rename the key with contact: " + clientContact + " to: " + newClientName)) {
-                return;
-            }
-
-            var url = '/api/client/rename?contact=' + clientContact + '&newName=' + newClientName;
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        $('#doSetContact').on('click', function () {
-            var newClientContact = prompt("Enter the new contact", "");
-            if (!newClientContact){
-                if (newClientContact === '') $('#errorOutput').html("Required Parameter: new contact");
-                return;
-            }
-
-            var oldClientContact = encodeURIComponent($('#clientContact').val());
-
-            const confirmationMessage = `Confirm changing the contact to: ` + newClientContact;
-            if (!confirm(confirmationMessage)) return;
-
-            var url = '/api/client/contact?oldContact=' + oldClientContact + '&newContact=' + newClientContact;
-            doApiCall('POST', url, '#standardOutput', '#errorOutput');
-        });
-
-        function validateClientContact(clientContact) {
-            if (!clientContact) {
-                $('#errorOutput').text("required parameter: contact")
-                return false;
-            }
-            return true;
+  const operationConfig = {
+    read: [
+        {
+          id: 'getMetadata',
+          title: 'Get Metadata',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/client/metadata'
+          }
+        },
+        {
+          id: 'listAllKeys',
+          title: 'List All Keys',
+          role: 'maintainer',
+          inputs: [],
+          apiCall: {
+            method: 'GET',
+            url: '/api/client/list'
+          }
+        },
+        {
+          id: 'searchBySiteId',
+          title: 'Search by Site ID',
+          role: 'maintainer',
+          inputs: [ siteIdInput ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/client/list/${inputs.siteId}`
+          }
+        },
+        {
+          id: 'searchByKeyId',
+          title: 'Search by Key ID',
+          role: 'maintainer',
+          inputs: [ keyIdInput ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/client/keyId?keyId=${inputs.keyId}`
+          }
+        },
+        {
+          id: 'searchByContact',
+          title: 'Search by Contact',
+          role: 'maintainer',
+          inputs: [ contactInput ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/client/contact?contact=${inputs.contact}`
+          }
         }
-    });
+      ],
+    write: [
+        {
+          id: 'addKey',
+          title: 'Add Key',
+          role: 'maintainer',
+          inputs: [
+            nameInput,
+            siteIdInput,
+            serviceIdInput,
+            rolesInput
+          ],
+          description: devKeyNameWarning,
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/add?name=${encodeURIComponent(inputs.name)}&roles=${encodeURIComponent(inputs.roles)}&site_id=${inputs.siteId}&service_id=${inputs.serviceId}`
+          }
+        },
+        {
+          id: 'updateRoles',
+          title: 'Update Roles',
+          role: 'elevated',
+          inputs: [
+            contactInput,
+            {...rolesInput, name: 'newRoles', label: 'New Roles'}
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/roles?contact=${encodeURIComponent(inputs.contact)}&roles=${encodeURIComponent(inputs.newRoles)}`
+          }
+        },
+        {
+          id: 'updateSiteIdAndServiceId',
+          title: 'Update Site ID and Service ID',
+          role: 'maintainer',
+          inputs: [
+            contactInput,
+            {...siteIdInput, name: 'newSiteId', label: 'New Site ID'},
+            {...serviceIdInput, name: 'newServiceId', label: 'New Service ID'}
+          ],
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/update?contact=${encodeURIComponent(inputs.contact)}&site_id=${inputs.newSiteId}&service_id=${inputs.newServiceId}`
+          }
+        },
+      ],
+    danger: [
+        {
+          id: 'revealKey',
+          title: 'Reveal Key',
+          role: 'elevated',
+          inputs: [ contactInput ],
+          apiCall: {
+            method: 'GET',
+            getUrl: (inputs) => `/api/client/reveal?contact=${encodeURIComponent(inputs.contact)}`
+          }
+        },
+        {
+          id: 'deleteKey',
+          title: 'Delete Key',
+          role: 'superuser',
+          inputs: [ contactInput ],
+          description: 'This will permanently delete the client key. This action cannot be undone.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/del?contact=${encodeURIComponent(inputs.contact)}`
+          }
+        },
+        {
+          id: 'enableKey',
+          title: 'Enable Key',
+          role: 'maintainer',
+          inputs: [ contactInput ],
+          description: 'Enabling this client key will allow this key to generate UID2s in a server-side integration.',
+          confirmationText: 'Enabling this client key will allow this key to generate UID2s in a server-side integration. This is a significant change that affects the key\'s capabilities.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/enable?contact=${encodeURIComponent(inputs.contact)}`
+          }
+        },
+        {
+          id: 'disableKey',
+          title: 'Disable Key',
+          role: 'maintainer',
+          inputs: [ contactInput ],
+          description: 'Disabling this client key will prevent this key from generating UID2s in a server-side integration. Before proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.',
+          confirmationText: 'Disabling this client key will prevent this key from generating UID2s in a server-side integration. Before proceeding, ensure there is no valid traffic, and confirm that the participant has provided consent.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/disable?contact=${encodeURIComponent(inputs.contact)}`
+          }
+        },
+        {
+          id: 'renameKey',
+          title: 'Rename Key',
+          role: 'maintainer',
+          inputs: [
+            contactInput,
+            {...nameInput, name: 'newName', label: 'New Name'}
+          ],
+          description: 'This will change the display name of the client key.\n' + devKeyNameWarning,
+          confirmationText: 'This will rename the client key. Make sure you have confirmed this change with the participant.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/rename?contact=${encodeURIComponent(inputs.contact)}&newName=${encodeURIComponent(inputs.newName)}`
+          }
+        },
+        {
+          id: 'updateContact',
+          title: 'Update Contact',
+          role: 'maintainer',
+          inputs: [
+            {...contactInput, name: 'oldContact', label: 'Old Contact'},
+            {...contactInput, name: 'newContact', label: 'New Contact'}
+          ],
+          description: 'Low Level Operation - Do Not Use Unless Necessary. This will change the contact identifier for the key.',
+          confirmationText: 'This will change the contact identifier for the key. This is a low-level operation that should only be used when absolutely necessary.',
+          apiCall: {
+            method: 'POST',
+            getUrl: (inputs) => `/api/client/contact?oldContact=${encodeURIComponent(inputs.oldContact)}&newContact=${encodeURIComponent(inputs.newContact)}`
+          }
+        }
+      ]
+  };
+
+  const addKeyMessageExists = getTemplateValue('ADD_CLIENT_KEY_MESSAGE') !== '';
+  if (addKeyMessageExists) {
+    operationConfig[1].operations = operationConfig[1].operations.filter(op => op.id !== 'doAdd');
+  }
+
+  initializeOperations(operationConfig);
+  initializeOutput();
+});
 </script>
 
 </body>
