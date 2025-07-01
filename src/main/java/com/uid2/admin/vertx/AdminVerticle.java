@@ -122,7 +122,6 @@ public class AdminVerticle extends AbstractVerticle {
                 JsonObject userDetails = new JsonObject();
                 userDetails.put("email", idJwt.getClaims().get("email"));
                 userDetails.put("sub", idJwt.getClaims().get("sub"));
-                userDetails.put("path", "/login");
     
                 LOGGER.info("Authenticated user accessing admin page - User: {}", userDetails.toString());
                 rc.put("user_details", userDetails);
