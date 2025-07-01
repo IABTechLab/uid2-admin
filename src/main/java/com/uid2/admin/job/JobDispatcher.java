@@ -39,7 +39,7 @@ public class JobDispatcher {
         this.maxRetries = maxRetries;
         this.clock = clock;
 
-        Gauge.builder("uid2.job_dispatcher.execution_duration_ms", this::getExecutionDuration)
+        Gauge.builder("uid2_job_dispatcher_execution_duration_ms", this::getExecutionDuration)
                 .tag("job_dispatcher", id)
                 .description("gauge for " + id + " execution time")
                 .register(Metrics.globalRegistry);
