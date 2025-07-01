@@ -74,6 +74,12 @@
             label: 'Link Id Regex'
         };
 
+        const disabledInput = {
+            name: 'disabled',
+            label: 'Disable Service',
+            type: 'checkbox'
+        };
+
         const operationConfig = {
             read: [
                 {
@@ -142,7 +148,8 @@
                         {...serviceNameInput, required: false},
                         {...siteIdInput, required: false},
                         {...rolesInput, required: false},
-                        linkIdRegexInput
+                        linkIdRegexInput,
+                        disabledInput
                     ],
                     apiCall: {
                         method: 'POST',
@@ -157,6 +164,7 @@
                             if (rolesArray.length > 0) payload.roles = rolesArray;
                             
                             if (inputs.linkIdRegex) payload.link_id_regex = inputs.linkIdRegex;
+                            if (typeof inputs.disabled === 'boolean') payload.disabled = inputs.disabled;
                             return payload;
                         }
                     }

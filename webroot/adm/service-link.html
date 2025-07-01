@@ -75,6 +75,12 @@ document.addEventListener('DOMContentLoaded', function () {
     ]
   };
 
+  const disabledInput = {
+    name: 'disabled',
+    label: 'Disable Service Link',
+    type: 'checkbox'
+  };
+
   const operationConfig = {
     read: [
       {
@@ -141,7 +147,8 @@ document.addEventListener('DOMContentLoaded', function () {
           serviceIdInput,
           siteIdInput,
           linkNameInput,
-          rolesInput
+          rolesInput,
+          disabledInput,
         ],
         apiCall: {
           method: 'POST',
@@ -156,7 +163,8 @@ document.addEventListener('DOMContentLoaded', function () {
               service_id: parseInt(inputs.serviceId),
               site_id: parseInt(inputs.siteId),
               name: inputs.linkName || '',
-              roles: rolesArray
+              roles: rolesArray,
+              disabled: typeof inputs.disabled === 'boolean' ? inputs.disabled : undefined,
             };
           }
         }
