@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
           serviceIdInput,
           siteIdInput,
           linkNameInput,
-          rolesInput,
+          rolesInput
         ],
         apiCall: {
           method: 'POST',
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
               service_id: parseInt(inputs.serviceId),
               site_id: parseInt(inputs.siteId),
               name: inputs.linkName || '',
-              roles: rolesArray,
+              roles: rolesArray
             };
           }
         }
