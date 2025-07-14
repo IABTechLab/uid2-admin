@@ -23,11 +23,17 @@ public class SaltRotation {
 
     private final IKeyGenerator keyGenerator;
     private final boolean isRefreshFromEnabled;
+    private final boolean isCustomAgeThresholdEnabled;
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
 
     public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
         this.isRefreshFromEnabled = config.getBoolean(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, false);
+        this.isCustomAgeThresholdEnabled = config.getBoolean(AdminConst.ENABLE_SALT_ROTATION_CUSTOM_AGE_THRESHOLDS, false);
+    }
+
+    public boolean isCustomAgeThresholdEnabled() {
+        return this.isCustomAgeThresholdEnabled;
     }
 
     public Result rotateSalts(

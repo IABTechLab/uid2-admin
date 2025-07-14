@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx.service;
 
+import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.salt.TargetDate;
@@ -21,10 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.uid2.admin.vertx.Endpoints.*;
 
@@ -36,6 +34,7 @@ public class SaltService implements IService {
     private final SaltStoreWriter storageManager;
     private final RotatingSaltProvider saltProvider;
     private final SaltRotation saltRotation;
+    private final Duration[] defaultSaltRotationAgeThresholds;
 
     public SaltService(AdminAuthMiddleware auth,
                        WriteLock writeLock,
@@ -47,6 +46,7 @@ public class SaltService implements IService {
         this.storageManager = storageManager;
         this.saltProvider = saltProvider;
         this.saltRotation = saltRotation;
+        this.defaultSaltRotationAgeThresholds = generateThresholds(30, 390, 30);
     }
 
     @Override
@@ -117,8 +117,15 @@ public class SaltService implements IService {
         try {
             final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
             if (fraction.isEmpty()) return;
-            final Duration[] minAges = RequestUtil.getDurations(rc, "min_ages_in_seconds");
-            if (minAges == null) return;
+
+            final Duration[] ageThresholds;
+            if (saltRotation.isCustomAgeThresholdEnabled()) {
+                 ageThresholds = RequestUtil.getDurations(rc, "min_ages_in_seconds");
+                 if (ageThresholds == null) return;
+            } else {
+                ageThresholds = defaultSaltRotationAgeThresholds;
+            }
+
 
             final TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
@@ -134,7 +141,7 @@ public class SaltService implements IService {
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
-            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, minAges, fraction.get(), targetDate);
+            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, ageThresholds, fraction.get(), targetDate);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;
@@ -149,6 +156,14 @@ public class SaltService implements IService {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
         }
+    }
+
+    private Duration[] generateThresholds(int minAge, int maxAge, int interval) {
+        List<Duration> thresholds = new ArrayList<>();
+        for (int i = minAge; i <= maxAge; i += interval) {
+            thresholds.add(Duration.ofDays(i));
+        }
+        return thresholds.toArray(new Duration[0]);
     }
 
     private JsonObject toJson(RotatingSaltProvider.SaltSnapshot snapshot) {

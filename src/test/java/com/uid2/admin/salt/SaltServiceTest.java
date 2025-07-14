@@ -11,7 +11,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
@@ -129,6 +129,72 @@ public class SaltServiceTest extends ServiceTestBase {
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2&target_date=2025-01-01", "", response -> {
             assertEquals(200, response.statusCode());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void rotateSaltsWithCustomAgeThresholdsEnabled(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.SUPER_USER);
+        
+        when(saltRotation.isCustomAgeThresholdEnabled()).thenReturn(true);
+
+        final SaltSnapshotBuilder lastSnapshot = SaltSnapshotBuilder.start().effective(daysEarlier(1)).expires(daysLater(6)).entries(1, daysEarlier(1));
+        setSnapshots(lastSnapshot);
+
+        var result = SaltRotation.Result.fromSnapshot(SaltSnapshotBuilder.start().effective(targetDate()).expires(daysEarlier(7)).entries(1, targetDate()).build());
+
+        Duration[] expectedCustomAgeThresholds = new Duration[]{
+            Duration.ofSeconds(50), 
+            Duration.ofSeconds(60), 
+            Duration.ofSeconds(70)
+        };
+
+        when(saltRotation.rotateSalts(any(), eq(expectedCustomAgeThresholds), eq(0.2), eq(utcTomorrow))).thenReturn(result);
+
+        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+            assertEquals(200, response.statusCode());
+            testContext.completeNow();
+        });
+    }
+
+        @Test
+    void rotateSaltsWithCustomAgeThresholdsDisabled(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.SUPER_USER);
+        
+        when(saltRotation.isCustomAgeThresholdEnabled()).thenReturn(false);
+
+        final SaltSnapshotBuilder lastSnapshot = SaltSnapshotBuilder.start().effective(daysEarlier(1)).expires(daysLater(6)).entries(1, daysEarlier(1));
+        setSnapshots(lastSnapshot);
+
+        var result = SaltRotation.Result.fromSnapshot(SaltSnapshotBuilder.start().effective(targetDate()).expires(daysEarlier(7)).entries(1, targetDate()).build());
+        
+        Duration[] expectedDefaultAgeThresholds = new Duration[]{
+            Duration.ofDays(30), Duration.ofDays(60), Duration.ofDays(90), Duration.ofDays(120),
+            Duration.ofDays(150), Duration.ofDays(180), Duration.ofDays(210), Duration.ofDays(240),
+            Duration.ofDays(270), Duration.ofDays(300), Duration.ofDays(330), Duration.ofDays(360),
+            Duration.ofDays(390)
+        };
+
+        when(saltRotation.rotateSalts(any(), eq(expectedDefaultAgeThresholds), eq(0.2), eq(utcTomorrow))).thenReturn(result);
+
+        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+            assertEquals(200, response.statusCode());
+            testContext.completeNow();
+        });
+    }
+
+        @Test
+    void rotateSaltsWithCustomAgeThresholdsEnabledButMissingParameter(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.SUPER_USER);
+        
+        when(saltRotation.isCustomAgeThresholdEnabled()).thenReturn(true);
+
+        final SaltSnapshotBuilder lastSnapshot = SaltSnapshotBuilder.start().effective(daysEarlier(1)).expires(daysLater(6)).entries(1, daysEarlier(1));
+        setSnapshots(lastSnapshot);
+
+        post(vertx, testContext, "api/salt/rotate?fraction=0.2", "", response -> {
+            assertEquals(400, response.statusCode());
             testContext.completeNow();
         });
     }
