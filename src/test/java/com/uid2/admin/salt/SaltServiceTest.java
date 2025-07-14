@@ -111,7 +111,7 @@ public class SaltServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void rotateSaltsWitnSpecificTargetDate(Vertx vertx, VertxTestContext testContext) throws Exception {
+    void rotateSaltsWithSpecificTargetDate(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SUPER_USER);
         final SaltSnapshotBuilder[] snapshots = {
                 SaltSnapshotBuilder.start().effective(daysEarlier(5)).expires(daysEarlier(4)).entries(10, daysEarlier(5)),
@@ -158,8 +158,8 @@ public class SaltServiceTest extends ServiceTestBase {
         });
     }
 
-        @Test
-    void rotateSaltsWithCustomAgeThresholdsDisabled(Vertx vertx, VertxTestContext testContext) throws Exception {
+    @Test
+    void rotateSaltsWithDefaultAgeThresholds(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(Role.SUPER_USER);
         
         when(saltRotation.isCustomAgeThresholdEnabled()).thenReturn(false);
@@ -184,8 +184,8 @@ public class SaltServiceTest extends ServiceTestBase {
         });
     }
 
-        @Test
-    void rotateSaltsWithCustomAgeThresholdsEnabledButMissingParameter(Vertx vertx, VertxTestContext testContext) throws Exception {
+    @Test
+    void rotateSaltsWithCustomAgeThresholdsEnabledButMissingParameter(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SUPER_USER);
         
         when(saltRotation.isCustomAgeThresholdEnabled()).thenReturn(true);

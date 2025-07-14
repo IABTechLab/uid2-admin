@@ -1,6 +1,5 @@
 package com.uid2.admin.vertx.service;
 
-import com.uid2.admin.AdminConst;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.salt.TargetDate;
