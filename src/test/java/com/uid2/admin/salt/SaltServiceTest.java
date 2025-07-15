@@ -153,6 +153,7 @@ public class SaltServiceTest extends ServiceTestBase {
         when(saltRotation.rotateSalts(any(), eq(expectedCustomAgeThresholds), eq(0.2), eq(utcTomorrow))).thenReturn(result);
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+            verify(saltRotation).rotateSalts(any(), eq(expectedCustomAgeThresholds), eq(0.2), eq(utcTomorrow));
             assertEquals(200, response.statusCode());
             testContext.completeNow();
         });
@@ -179,6 +180,7 @@ public class SaltServiceTest extends ServiceTestBase {
         when(saltRotation.rotateSalts(any(), eq(expectedDefaultAgeThresholds), eq(0.2), eq(utcTomorrow))).thenReturn(result);
 
         post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+            verify(saltRotation).rotateSalts(any(), eq(expectedDefaultAgeThresholds), eq(0.2), eq(utcTomorrow));
             assertEquals(200, response.statusCode());
             testContext.completeNow();
         });
@@ -194,6 +196,7 @@ public class SaltServiceTest extends ServiceTestBase {
         setSnapshots(lastSnapshot);
 
         post(vertx, testContext, "api/salt/rotate?fraction=0.2", "", response -> {
+            verify(saltRotation, never()).rotateSalts(any(), any(), anyDouble(), any());
             assertEquals(400, response.statusCode());
             testContext.completeNow();
         });
