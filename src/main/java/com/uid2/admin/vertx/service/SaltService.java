@@ -22,6 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
 
@@ -138,7 +139,7 @@ public class SaltService implements IService {
             } else {
                 ageThresholds = SALT_ROTATION_AGE_THRESHOLDS;
             }
-            LOGGER.info("Salt rotation age thresholds: {}", Arrays.toString(ageThresholds));
+            LOGGER.info("Salt rotation age thresholds in seconds: {}", Arrays.stream(ageThresholds).map(Duration::toSeconds).collect(Collectors.toList()));
 
             final TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
