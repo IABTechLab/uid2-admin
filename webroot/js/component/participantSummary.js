@@ -24,11 +24,11 @@ function loadAllSitesCallback(result) {
     siteList = JSON.parse(result).map((item) => { return { name: item.name, id: item.id, clientTypes: item.clientTypes } });
 };
 
-function setSearchValue(searchText) {
+window.setSearchValue = function(searchText) {
     document.querySelector('#site-search').value = searchText;
     resultsElement.style.display = 'none';
     document.getElementById('doSearch').click();
-}
+};
 
 function searchSitesAutocomplete(e) {
     const searchString = searchInput.value;
