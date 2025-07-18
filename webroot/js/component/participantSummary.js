@@ -352,9 +352,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const sections = document.querySelectorAll(".section");
       sections.forEach((section) => (section.style.display = "block"));
 
-        const apiKeyUsageGrafanaUrl = `https://uid2.grafana.net/d/JaOQgV7Iz/api-key-usage?orgId=1&from=now-6h&to=now&timezone=browser&var-SiteId=${site.id}&var-Env=prod`;
-        const apiKeyUsageElement = document.getElementById("grafanaApiKeyUsage");
-        apiKeyUsageElement.href = apiKeyUsageGrafanaUrl;
+      let currentEnv;
+      if (window.location.origin.includes("prod")) {
+        currentEnv = "prod";
+      } else if (window.location.origin.includes("integ")) {
+        currentEnv = "integ";
+      } else {
+        currentEnv = "test";
+      }
+
+      let uidType = "uid2";
+      if (window.location.origin.includes("UID2")) {
+        uidType = "euid";
+      }
+
+      const apiKeyUsageGrafanaUrl = `https://${uidType}.grafana.net/d/JaOQgV7Iz/api-key-usage?orgId=1&from=now-6h&to=now&timezone=browser&var-SiteId=${site.id}&var-Env=${currentEnv}`;
+      const apiKeyUsageElement = document.getElementById("grafanaApiKeyUsage");
+      apiKeyUsageElement.href = apiKeyUsageGrafanaUrl;
     });
   }
 
@@ -387,8 +401,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-
-
 });
 
 export {};
