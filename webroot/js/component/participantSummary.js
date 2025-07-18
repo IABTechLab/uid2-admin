@@ -177,6 +177,13 @@ function loadOperatorKeysCallback(result, siteId) {
   );
   const element = document.getElementById("operatorKeysStandardOutput");
   if (element) element.innerHTML = highlightedText;
+
+  if (filteredResults.length !== 0) {
+    const el = document.getElementById("operatorDashboard");
+    el.innerText = "Operator Dashboard";
+    const operatorDashboardUrl = `https://${uidType}.grafana.net/d/nnz7mb9Mk/operator-dashboard?orgId=1&from=now-24h&to=now&timezone=browser&var-_APP=uid2-operator&var-CLUSTER=uid2-prod-opr-use2-auto&var-ENV=${currentEnv}&var-_STORE=$__all`;
+    el.href = operatorDashboardUrl;
+  }
 }
 
 function loadOptoutWebhooksCallback(result, siteName) {
@@ -187,6 +194,13 @@ function loadOptoutWebhooksCallback(result, siteName) {
   const formatted = prettifyJson(JSON.stringify(filteredResults));
   const element = document.getElementById("webhooksStandardOutput");
   if (element) element.innerHTML = formatted;
+
+  if (filteredResults.length !== 0) {
+    const el = document.getElementById("optOutDashboard");
+    el.innerText = "Opt Out Dashboard";
+    const optOutDashboardUrl = `https://${uidType}.grafana.net/d/a3-KG_rGz/optout-dashboard?orgId=1&from=now-1h&to=now&timezone=browser&var-_APP=uid2-optout&var-CLUSTER=uid2-us-east-2&var-ENV=${currentEnv}&var-_STORE=operators`;
+    el.href = optOutDashboardUrl;
+  }
 }
 
 function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
@@ -369,6 +383,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const apiKeyUsageGrafanaUrl = `https://${uidType}.grafana.net/d/JaOQgV7Iz/api-key-usage?orgId=1&from=now-6h&to=now&timezone=browser&var-SiteId=${site.id}&var-Env=${currentEnv}`;
       const apiKeyUsageElement = document.getElementById("grafanaApiKeyUsage");
       apiKeyUsageElement.href = apiKeyUsageGrafanaUrl;
+
+      const cstgGrafanaUrl = `https://${uidType}.grafana.net/d/J22t4ykIz/cstg-client-side-token-generation-dashboard?orgId=1&from=now-2d&to=now&timezone=browser&var-env=${currentEnv}&var-cluster=$__all&var-site_name=${site.name}&var-platform_type=$__all&refresh=15m`;
+      const cstgElement = document.getElementById("grafanaCstg");
+      cstgElement.href = cstgGrafanaUrl;
     });
   }
 
