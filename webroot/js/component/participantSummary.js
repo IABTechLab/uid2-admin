@@ -142,7 +142,7 @@ function loadEncryptionKeysCallback(result, siteId) {
     if (element) element.innerHTML = highlightedText;
 };
 
-function loadOperatorKeysCallback(result, siteId) {
+function loadOperatorKeysCallback(result, siteId, uidType, currentEnv) {
     const textToHighlight = '"disabled": true';
     const resultJson = JSON.parse(result);
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
@@ -158,13 +158,13 @@ function loadOperatorKeysCallback(result, siteId) {
 
 				if (filteredResults.length !== 0) {
 						const el = document.getElementById("operatorDashboard");
-						el.innerText = "Operator Dashboard";
+						el.style.visibility = "visible";
 						const operatorDashboardUrl = `https://${uidType}.grafana.net/d/nnz7mb9Mk/operator-dashboard?orgId=1&from=now-24h&to=now&timezone=browser&var-_APP=uid2-operator&var-CLUSTER=uid2-prod-opr-use2-auto&var-ENV=${currentEnv}&var-_STORE=$__all`;
 						el.href = operatorDashboardUrl;
 				}
 };
 
-function loadOptoutWebhooksCallback(result, siteName) {
+function loadOptoutWebhooksCallback(result, siteName, uidType, currentEnv) {
     const resultJson = JSON.parse(result);
     const filteredResults = resultJson.filter((item) => { return item.name === siteName });
     const formatted = prettifyJson(JSON.stringify(filteredResults));
@@ -173,7 +173,7 @@ function loadOptoutWebhooksCallback(result, siteName) {
 
 				if (filteredResults.length !== 0) {
 						const el = document.getElementById("optOutDashboard");
-						el.innerText = "Opt Out Dashboard";
+						el.style.visibility = "visible";
 						const optOutDashboardUrl = `https://${uidType}.grafana.net/d/a3-KG_rGz/optout-dashboard?orgId=1&from=now-1h&to=now&timezone=browser&var-_APP=uid2-optout&var-CLUSTER=uid2-us-east-2&var-ENV=${currentEnv}&var-_STORE=operators`;
 						el.href = optOutDashboardUrl;
 				}
@@ -241,30 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-        let url = `/api/site/${site.id}`;
-        doApiCallWithCallback('GET', url, loadSiteCallback, (err) => { participantSummaryErrorHandler(err, '#siteErrorOutput') });
-
-        url = `/api/client/list/${site.id}`;
-        doApiCallWithCallback('GET', url, loadAPIKeysCallback, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
-
-        url = `/api/client_side_keypairs/list`;
-        doApiCallWithCallback('GET', url, (r) => { loadKeyPairsCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#keyPairsErrorOutput') });
-
-        url = '/api/key/list';
-        doApiCallWithCallback('GET', url, (r) => { loadEncryptionKeysCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#encryptionKeysErrorOutput') });
-
-        url = '/api/operator/list';
-        doApiCallWithCallback('GET', url, (r) => { loadOperatorKeysCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#operatorKeysErrorOutput') });
-
-        url = '/api/partner_config/get';
-        doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
-
-            url = `/api/sharing/keysets/related?site_id=${site.id}`;
-            doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
-            const sections = document.querySelectorAll('.section');
-            sections.forEach(section => section.style.display = 'block');
-
-								let currentEnv;
+        let currentEnv;
 								if (window.location.origin.includes("prod")) {
 										currentEnv = "prod";
 								} else if (window.location.origin.includes("integ")) {
@@ -277,6 +254,29 @@ document.addEventListener('DOMContentLoaded', () => {
 								if (window.location.origin.includes("UID2")) {
 										uidType = "euid";
 								}
+								
+								let url = `/api/site/${site.id}`;
+        doApiCallWithCallback('GET', url, loadSiteCallback, (err) => { participantSummaryErrorHandler(err, '#siteErrorOutput') });
+
+        url = `/api/client/list/${site.id}`;
+        doApiCallWithCallback('GET', url, loadAPIKeysCallback, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
+
+        url = `/api/client_side_keypairs/list`;
+        doApiCallWithCallback('GET', url, (r) => { loadKeyPairsCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#keyPairsErrorOutput') });
+
+        url = '/api/key/list';
+        doApiCallWithCallback('GET', url, (r) => { loadEncryptionKeysCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#encryptionKeysErrorOutput') });
+
+        url = '/api/operator/list';
+        doApiCallWithCallback('GET', url, (r) => { loadOperatorKeysCallback(r, site.id, uidType, currentEnv) }, (err) => { participantSummaryErrorHandler(err, '#operatorKeysErrorOutput') });
+
+        url = '/api/partner_config/get';
+        doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name, uidType, currentEnv) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
+
+								url = `/api/sharing/keysets/related?site_id=${site.id}`;
+								doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
+								const sections = document.querySelectorAll('.section');
+								sections.forEach(section => section.style.display = 'block');
 
 								const apiKeyUsageGrafanaUrl = `https://${uidType}.grafana.net/d/JaOQgV7Iz/api-key-usage?orgId=1&from=now-6h&to=now&timezone=browser&var-SiteId=${site.id}&var-Env=${currentEnv}`;
 								const apiKeyUsageElement = document.getElementById("grafanaApiKeyUsage");
