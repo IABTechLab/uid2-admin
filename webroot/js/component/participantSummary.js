@@ -91,14 +91,19 @@ function loadSiteCallback(result) {
     if (siteElement) siteElement.innerHTML = formatted;
 }
 
-function loadAPIKeysCallback(result) {
+function loadAPIKeysCallback(result, uidType, currentEnv) {
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
     resultJson = resultJson.map((item) => {
         const created = new Date((item.created)*1000).toLocaleString(); // Convert Unix timestamp in seconds to milliseconds for Date constructor
-        return { ...item, created };
+								const apiCallsUrl = `https://${uidType}.grafana.net/d/I-_c3zx7k/api-calls?orgId=1&from=now-6h&to=now&timezone=browser&var-Env=${currentEnv}&var-Path=\\$__all&var-Host=\\$__all&var-Cluster=\\$__all&var-Method=\\$__all&var-Application=\\$__all&var-Contact=${item.contact}`;
+        const dashboardLink = `<a href="${apiCallsUrl}" target="_blank">API Calls by Key</a>`;
+								return { ...item, created, "Dashboard": dashboardLink };
     });
-    const formatted = prettifyJson(JSON.stringify(resultJson));
+				const resultJsonMinusDashboard = resultJson.map(({ Dashboard, ...rest }) => rest);
+    const formatted = resultJson.map((r, index) => { 
+						return  `<pre>${prettifyJson(JSON.stringify(resultJsonMinusDashboard[index])).trim().slice(0, -2)},\n  "Dashboard": ${r.Dashboard}\n}</pre>`;
+				}).join("\n");
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
     const element = document.getElementById('participantKeysStandardOutput');
     if (element) element.innerHTML = highlightedText;
@@ -259,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doApiCallWithCallback('GET', url, loadSiteCallback, (err) => { participantSummaryErrorHandler(err, '#siteErrorOutput') });
 
         url = `/api/client/list/${site.id}`;
-        doApiCallWithCallback('GET', url, loadAPIKeysCallback, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
+        doApiCallWithCallback('GET', url, (r) => { loadAPIKeysCallback(r, uidType, currentEnv) }, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
 
         url = `/api/client_side_keypairs/list`;
         doApiCallWithCallback('GET', url, (r) => { loadKeyPairsCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#keyPairsErrorOutput') });
