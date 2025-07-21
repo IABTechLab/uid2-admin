@@ -91,14 +91,19 @@ function loadSiteCallback(result) {
     if (siteElement) siteElement.innerHTML = formatted;
 }
 
-function loadAPIKeysCallback(result) {
+function loadAPIKeysCallback(result, uidType, currentEnv) {
     const textToHighlight = '"disabled": true';
     let resultJson = JSON.parse(result);
     resultJson = resultJson.map((item) => {
         const created = new Date((item.created)*1000).toLocaleString(); // Convert Unix timestamp in seconds to milliseconds for Date constructor
-        return { ...item, created };
+								const apiCallsUrl = `https://${uidType}.grafana.net/d/I-_c3zx7k/api-calls?orgId=1&from=now-6h&to=now&timezone=browser&var-Env=${currentEnv}&var-Path=\\$__all&var-Host=\\$__all&var-Cluster=\\$__all&var-Method=\\$__all&var-Application=\\$__all&var-Contact=${item.contact}`;
+        const dashboardLink = `<a href="${apiCallsUrl}" target="_blank">API Calls by Key</a>`;
+								return { ...item, created, "Dashboard": dashboardLink };
     });
-    const formatted = prettifyJson(JSON.stringify(resultJson));
+				const resultJsonMinusDashboard = resultJson.map(({ Dashboard, ...rest }) => rest);
+    const formatted = resultJson.map((r, index) => { 
+						return  `<pre>${prettifyJson(JSON.stringify(resultJsonMinusDashboard[index])).trim().slice(0, -2)},\n  "Dashboard": ${r.Dashboard}\n}</pre>`;
+				}).join("\n");
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
     const element = document.getElementById('participantKeysStandardOutput');
     if (element) element.innerHTML = highlightedText;
@@ -142,7 +147,7 @@ function loadEncryptionKeysCallback(result, siteId) {
     if (element) element.innerHTML = highlightedText;
 };
 
-function loadOperatorKeysCallback(result, siteId) {
+function loadOperatorKeysCallback(result, siteId, uidType, currentEnv) {
     const textToHighlight = '"disabled": true';
     const resultJson = JSON.parse(result);
     let filteredResults = resultJson.filter((item) => { return item.site_id === siteId });
@@ -155,14 +160,28 @@ function loadOperatorKeysCallback(result, siteId) {
     const highlightedText = formatted.replaceAll(textToHighlight, '<span style="background-color: orange;">' + textToHighlight + '</span>');
     const element = document.getElementById('operatorKeysStandardOutput');
     if (element) element.innerHTML = highlightedText;
+
+				if (filteredResults.length !== 0) {
+						const el = document.getElementById("operatorDashboard");
+						el.style.visibility = "visible";
+						const operatorDashboardUrl = `https://${uidType}.grafana.net/d/nnz7mb9Mk/operator-dashboard?orgId=1&from=now-24h&to=now&timezone=browser&var-_APP=uid2-operator&var-CLUSTER=uid2-prod-opr-use2-auto&var-ENV=${currentEnv}&var-_STORE=$__all`;
+						el.href = operatorDashboardUrl;
+				}
 };
 
-function loadOptoutWebhooksCallback(result, siteName) {
+function loadOptoutWebhooksCallback(result, siteName, uidType, currentEnv) {
     const resultJson = JSON.parse(result);
     const filteredResults = resultJson.filter((item) => { return item.name === siteName });
     const formatted = prettifyJson(JSON.stringify(filteredResults));
     const element = document.getElementById('webhooksStandardOutput');
     if (element) element.innerHTML = formatted;
+
+				if (filteredResults.length !== 0) {
+						const el = document.getElementById("optOutDashboard");
+						el.style.visibility = "visible";
+						const optOutDashboardUrl = `https://${uidType}.grafana.net/d/a3-KG_rGz/optout-dashboard?orgId=1&from=now-1h&to=now&timezone=browser&var-_APP=uid2-optout&var-CLUSTER=uid2-us-east-2&var-ENV=${currentEnv}&var-_STORE=operators`;
+						el.href = optOutDashboardUrl;
+				}
 };
 
 function loadRelatedKeysetsCallback(result, siteId, clientTypes) {
@@ -227,11 +246,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-        let url = `/api/site/${site.id}`;
+        let currentEnv;
+								if (window.location.origin.includes("prod")) {
+										currentEnv = "prod";
+								} else if (window.location.origin.includes("integ")) {
+										currentEnv = "integ";
+								} else {
+										currentEnv = "test";
+								}
+
+								let uidType = "uid2";
+								if (window.location.origin.includes("UID2")) {
+										uidType = "euid";
+								}
+								
+								let url = `/api/site/${site.id}`;
         doApiCallWithCallback('GET', url, loadSiteCallback, (err) => { participantSummaryErrorHandler(err, '#siteErrorOutput') });
 
         url = `/api/client/list/${site.id}`;
-        doApiCallWithCallback('GET', url, loadAPIKeysCallback, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
+        doApiCallWithCallback('GET', url, (r) => { loadAPIKeysCallback(r, uidType, currentEnv) }, (err) => { participantSummaryErrorHandler(err, '#participantKeysErrorOutput') });
 
         url = `/api/client_side_keypairs/list`;
         doApiCallWithCallback('GET', url, (r) => { loadKeyPairsCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#keyPairsErrorOutput') });
@@ -240,16 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
         doApiCallWithCallback('GET', url, (r) => { loadEncryptionKeysCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#encryptionKeysErrorOutput') });
 
         url = '/api/operator/list';
-        doApiCallWithCallback('GET', url, (r) => { loadOperatorKeysCallback(r, site.id) }, (err) => { participantSummaryErrorHandler(err, '#operatorKeysErrorOutput') });
+        doApiCallWithCallback('GET', url, (r) => { loadOperatorKeysCallback(r, site.id, uidType, currentEnv) }, (err) => { participantSummaryErrorHandler(err, '#operatorKeysErrorOutput') });
 
         url = '/api/partner_config/get';
-        doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
+        doApiCallWithCallback('GET', url, (r) => { loadOptoutWebhooksCallback(r, site.name, uidType, currentEnv) }, (err) => { participantSummaryErrorHandler(err, '#webhooksErrorOutput') });
 
-            url = `/api/sharing/keysets/related?site_id=${site.id}`;
-            doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
-            const sections = document.querySelectorAll('.section');
-            sections.forEach(section => section.style.display = 'block');
-        });
+								url = `/api/sharing/keysets/related?site_id=${site.id}`;
+								doApiCallWithCallback('GET', url, (r) => { loadRelatedKeysetsCallback(r, site.id, site.clientTypes) }, (err) => { participantSummaryErrorHandler(err, '#relatedKeysetsErrorOutput') });
+								const sections = document.querySelectorAll('.section');
+								sections.forEach(section => section.style.display = 'block');
+
+								const apiKeyUsageGrafanaUrl = `https://${uidType}.grafana.net/d/JaOQgV7Iz/api-key-usage?orgId=1&from=now-6h&to=now&timezone=browser&var-SiteId=${site.id}&var-Env=${currentEnv}`;
+								const apiKeyUsageElement = document.getElementById("grafanaApiKeyUsage");
+								apiKeyUsageElement.href = apiKeyUsageGrafanaUrl;
+
+								const cstgGrafanaUrl = `https://${uidType}.grafana.net/d/J22t4ykIz/cstg-client-side-token-generation-dashboard?orgId=1&from=now-2d&to=now&timezone=browser&var-env=${currentEnv}&var-cluster=$__all&var-site_name=${site.name}&var-platform_type=$__all&refresh=15m`;
+								const cstgElement = document.getElementById("grafanaCstg");
+								cstgElement.href = cstgGrafanaUrl;
+    	});
     }
 
     const rotateButton = document.getElementById('doRotateKeysets');
@@ -275,5 +316,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-export {};
