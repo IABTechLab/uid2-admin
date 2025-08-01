@@ -96,7 +96,7 @@ public class EnclaveIdServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Role.class, names = {"PRIVILEGED", "SUPER_USER"}, mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = Role.class, names = {"PRIVILEGED", "SUPER_USER", "ENCLAVE_REGISTRAR"}, mode = EnumSource.Mode.EXCLUDE)
     public void enclaveId_Add_NotAuthorized(Role role, Vertx vertx, VertxTestContext vertxTestContext) {
         fakeAuth(role);
 

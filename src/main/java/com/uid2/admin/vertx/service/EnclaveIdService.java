@@ -57,7 +57,7 @@ public class EnclaveIdService implements IService {
             synchronized (writeLock) {
                 this.handleEnclaveAdd(ctx);
             }
-        }, new AuditParams(List.of("name", "protocol", "enclave_id"), Collections.emptyList()), Role.PRIVILEGED));
+        }, new AuditParams(List.of("name", "protocol", "enclave_id"), Collections.emptyList()), Role.PRIVILEGED, Role.ENCLAVE_REGISTRAR));
         router.post(API_ENCLAVE_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleEnclaveDel(ctx);
