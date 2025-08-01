@@ -2,13 +2,16 @@
 # See https://aquasecurity.github.io/trivy/v0.35/docs/vulnerability/examples/filter/ 
 # for more details
 
-# https://thetradedesk.atlassian.net/browse/UID2-5186
+# UID2-5186
 CVE-2024-8176 exp:2025-06-03
 
 # This is a false positive CVE
-# See: https://thetradedesk.atlassian.net/browse/UID2-5492
+# See: UID2-5492
 CVE-2022-37767
 
 # This is a false positive CVE
-# See: https://thetradedesk.atlassian.net/browse/UID2-5493
+# See: UID2-5493
 CVE-2025-1686
+
+# UID2-5864
+CVE-2025-6965 exp:2025-10-01
