@@ -11,6 +11,7 @@ public enum OktaCustomScope {
     SECRET_ROTATION("uid2.admin.secret-rotation", Role.SECRET_ROTATION),
     SITE_SYNC("uid2.admin.site-sync", Role.PRIVATE_OPERATOR_SYNC),
     METRICS_EXPORT("uid2.admin.metrics-export", Role.METRICS_EXPORT),
+    ENCLAVE_REGISTRAR("uid2.admin.enclave-registrar", Role.ENCLAVE_REGISTRAR),
     INVALID("invalid", Role.UNKNOWN);
     private final String name;
     private final Role role;
