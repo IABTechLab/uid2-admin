@@ -238,4 +238,27 @@ public class EnclaveIdServiceTest extends ServiceTestBase {
         });
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/enclave/list",
+            "/api/enclave/metadata",
+            "/api/enclave/del?name=some-name",
+    })
+    public void enclaveId_Endpoints_NotAuthorized_ForEnclaveRegistrar(String url, Vertx vertx, VertxTestContext vertxTestContext) {
+        fakeAuth(Role.ENCLAVE_REGISTRAR);
+
+        // Use GET for list/metadata, POST for delete
+        if (url.contains("/del")) {
+            post(vertx, vertxTestContext, url, "", response -> {
+                assertEquals(401, response.statusCode());
+                vertxTestContext.completeNow();
+            });
+        } else {
+            get(vertx, vertxTestContext, url, response -> {
+                assertEquals(401, response.statusCode());
+                vertxTestContext.completeNow();
+            });
+        }
+    }
+
 }
