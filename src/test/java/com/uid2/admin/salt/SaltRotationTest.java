@@ -312,7 +312,6 @@ class SaltRotationTest {
     @Test
     void testRotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
         JsonObject config = new JsonObject();
-        config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
 
         final Duration[] minAges = {
@@ -352,7 +351,6 @@ class SaltRotationTest {
     @Test
     void testLogFewSaltAgesOnRotation() throws Exception {
         JsonObject config = new JsonObject();
-        config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
 
         // 7 salts total, 5 refreshable, 3 will rotate (6 * 0.4 rounded up), up to 2 will rotate per age (3 * 0.8)
@@ -397,7 +395,6 @@ class SaltRotationTest {
     @Test
     void testLogManySaltAgesOnRotation() throws Exception {
         JsonObject config = new JsonObject();
-        config.put(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, Boolean.TRUE);
         saltRotation = new SaltRotation(config, keyGenerator);
 
         // 50 salts total, 16 refreshable, 10 will rotate (18 * 0.2 rounded up), up to 8 will rotate per age (10 * 0.8)
