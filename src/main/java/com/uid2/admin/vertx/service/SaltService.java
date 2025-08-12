@@ -132,14 +132,7 @@ public class SaltService implements IService {
             final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
             if (fraction.isEmpty()) return;
 
-            final Duration[] ageThresholds;
-            if (saltRotation.isCustomAgeThresholdEnabled()) {
-                 ageThresholds = RequestUtil.getDurations(rc, "min_ages_in_seconds");
-                 if (ageThresholds == null) return;
-            } else {
-                ageThresholds = SALT_ROTATION_AGE_THRESHOLDS;
-            }
-            LOGGER.info("Salt rotation age thresholds in seconds: {}", Arrays.stream(ageThresholds).map(Duration::toSeconds).collect(Collectors.toList()));
+            LOGGER.info("Salt rotation age thresholds in seconds: {}", Arrays.stream(SALT_ROTATION_AGE_THRESHOLDS).map(Duration::toSeconds).collect(Collectors.toList()));
 
             final TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
@@ -155,7 +148,7 @@ public class SaltService implements IService {
             final List<RotatingSaltProvider.SaltSnapshot> snapshots = saltProvider.getSnapshots();
             final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
 
-            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, ageThresholds, fraction.get(), targetDate);
+            final SaltRotation.Result result = saltRotation.rotateSalts(lastSnapshot, SALT_ROTATION_AGE_THRESHOLDS, fraction.get(), targetDate);
             if (!result.hasSnapshot()) {
                 ResponseUtil.error(rc, 200, result.getReason());
                 return;
