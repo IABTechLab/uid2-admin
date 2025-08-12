@@ -5,7 +5,6 @@ import com.uid2.shared.secret.IKeyGenerator;
 
 import com.uid2.shared.store.salt.ISaltProvider.ISaltSnapshot;
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
-import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,7 @@ public class SaltRotation {
     private final IKeyGenerator keyGenerator;
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
 
-    public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
+    public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
     }
 
@@ -86,7 +85,6 @@ public class SaltRotation {
                 effectiveSnapshot.getFirstLevelSalt());
         return Result.fromSnapshot(nextSnapshot);
     }
-
 
     private static int getNumSaltsToRotate(SaltEntry[] preRotationSalts, double fraction) {
         return (int) Math.ceil(preRotationSalts.length * fraction);
