@@ -247,6 +247,7 @@ public class AdminAuthMiddlewareTest {
         verify(accessTokenVerifier).decode(eq("testAccessToken"));
         verify(jwt, times(2)).getClaims();
         verifyUnauthorized(false);
+        verify(innerHandler).handle(eq(rc)); // inner handler just has audit.log handler assigned.
     }
 
     private static Stream<Arguments> testAccessTokenUnauthorizedData() {

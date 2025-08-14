@@ -91,53 +91,53 @@ public class ClientKeyService implements IService {
         router.get(API_CLIENT_REVEAL.toString()).handler(
             auth.handle(this::handleClientReveal, Role.PRIVILEGED));
 
-        router.post(API_CLIENT_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientAdd(ctx);
-            }
-        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
-
-        router.post(API_CLIENT_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientDel(ctx);
-            }
-        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.SUPER_USER));
-
-        router.post(API_CLIENT_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientUpdate(ctx);
-            }
-        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER));
-
-        router.post(API_CLIENT_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientDisable(ctx);
-            }
-        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
-
-        router.post(API_CLIENT_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientEnable(ctx);
-            }
-        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER));
-
-        router.post(API_CLIENT_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientRoles(ctx);
-            }
-        }, new AuditParams(List.of("contact", "roles"), Collections.emptyList()), Role.PRIVILEGED, Role.SHARING_PORTAL));
-
-        router.post(API_CLIENT_CONTACT.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientContact(ctx);
-            }
-        }, Role.MAINTAINER));
-
-        router.post(API_CLIENT_RENAME.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleClientRename(ctx);
-            }
-        }, new AuditParams(List.of("contact", "newName"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_CLIENT_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientAdd(ctx);
+//            }
+//        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
+//
+//        router.post(API_CLIENT_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientDel(ctx);
+//            }
+//        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.SUPER_USER));
+//
+//        router.post(API_CLIENT_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientUpdate(ctx);
+//            }
+//        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER));
+//
+//        router.post(API_CLIENT_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientDisable(ctx);
+//            }
+//        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
+//
+//        router.post(API_CLIENT_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientEnable(ctx);
+//            }
+//        }, new AuditParams(List.of("contact"), Collections.emptyList()), Role.MAINTAINER));
+//
+//        router.post(API_CLIENT_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientRoles(ctx);
+//            }
+//        }, new AuditParams(List.of("contact", "roles"), Collections.emptyList()), Role.PRIVILEGED, Role.SHARING_PORTAL));
+//
+//        router.post(API_CLIENT_CONTACT.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientContact(ctx);
+//            }
+//        }, Role.MAINTAINER));
+//
+//        router.post(API_CLIENT_RENAME.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleClientRename(ctx);
+//            }
+//        }, new AuditParams(List.of("contact", "newName"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

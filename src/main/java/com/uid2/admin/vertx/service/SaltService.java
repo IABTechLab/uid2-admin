@@ -68,17 +68,17 @@ public class SaltService implements IService {
         router.get(API_SALT_SNAPSHOTS.toString()).handler(
                 auth.handle(this::handleSaltSnapshots, Role.MAINTAINER));
 
-        router.post(API_SALT_REBUILD.toString()).blockingHandler(auth.handle(ctx -> {
-            synchronized (writeLock) {
-                this.handleSaltRebuild(ctx);
-            }
-        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER));
-
-        router.post(API_SALT_ROTATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSaltRotate(ctx);
-            }
-        }, new AuditParams(List.of("fraction", "min_ages_in_seconds", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
+//        router.post(API_SALT_REBUILD.toString()).blockingHandler(auth.handle(ctx -> {
+//            synchronized (writeLock) {
+//                this.handleSaltRebuild(ctx);
+//            }
+//        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER));
+//
+//        router.post(API_SALT_ROTATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSaltRotate(ctx);
+//            }
+//        }, new AuditParams(List.of("fraction", "min_ages_in_seconds", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {

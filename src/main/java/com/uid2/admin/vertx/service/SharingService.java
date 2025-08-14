@@ -66,16 +66,16 @@ public class SharingService implements IService {
         router.get(API_SHARING_LIST_SITEID.toString()).handler(
             auth.handle(this::handleListAllowedSites, Role.MAINTAINER, Role.SHARING_PORTAL)
         );
-        router.post(API_SHARING_LIST_SITEID.toString()).handler(
-            auth.handle(this::handleSetAllowedSites, new AuditParams(Collections.emptyList(), List.of("hash", "allowed_sites", "allowed_types")), Role.MAINTAINER, Role.SHARING_PORTAL)
-        );
+//        router.post(API_SHARING_LIST_SITEID.toString()).handler(
+//            auth.handle(this::handleSetAllowedSites, new AuditParams(Collections.emptyList(), List.of("hash", "allowed_sites", "allowed_types")), Role.MAINTAINER, Role.SHARING_PORTAL)
+//        );
 
         router.get(API_SHARING_KEYSETS.toString()).handler(
             auth.handle(this::handleListAllKeysets, Role.MAINTAINER)
         );
-        router.post(API_SHARING_KEYSET.toString()).handler(
-            auth.handle(this::handleSetKeyset, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "allowed_sites", "allowed_types")), Role.MAINTAINER)
-        );
+//        router.post(API_SHARING_KEYSET.toString()).handler(
+//            auth.handle(this::handleSetKeyset, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "allowed_sites", "allowed_types")), Role.MAINTAINER)
+//        );
         router.get(API_SHARING_KEYSET_KEYSETID.toString()).handler(
             auth.handle(this::handleListKeyset, Role.MAINTAINER)
         );

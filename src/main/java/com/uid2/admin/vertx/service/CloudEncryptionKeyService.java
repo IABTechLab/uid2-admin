@@ -42,9 +42,9 @@ public class CloudEncryptionKeyService implements IService {
                 auth.handle(this::handleList, Role.MAINTAINER)
         );
 
-        router.post(Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE.toString()).handler(
-                auth.handle(this::handleRotate, new AuditParams(List.of("fail"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION)
-        );
+//        router.post(Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE.toString()).handler(
+//                auth.handle(this::handleRotate, new AuditParams(List.of("fail"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION)
+//        );
     }
 
     private void handleMetadata(RoutingContext rc) {

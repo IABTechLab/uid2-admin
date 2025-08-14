@@ -30,6 +30,7 @@ import com.uid2.admin.vertx.api.V2RouterModule;
 import com.uid2.admin.vertx.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
+import com.uid2.shared.audit.Audit;
 import com.uid2.shared.secret.KeyHasher;
 import com.uid2.shared.secret.SecureKeyGenerator;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
@@ -259,7 +260,7 @@ public class Main {
                     clientSideKeypairService,
                     new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider, serviceLinkProvider),
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
-                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager),
+                    new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager, new Audit(Main.class.getPackage().getName())),
                     new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),

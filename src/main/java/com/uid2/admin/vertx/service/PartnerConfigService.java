@@ -38,11 +38,11 @@ public class PartnerConfigService implements IService {
     public void setupRoutes(Router router) {
         router.get(API_PARTNER_CONFIG_GET.toString()).handler(
             auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
-        router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handlePartnerConfigUpdate(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("partner_id", "config")), Role.PRIVILEGED));
+//        router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handlePartnerConfigUpdate(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("partner_id", "config")), Role.PRIVILEGED));
     }
 
     private void handlePartnerConfigGet(RoutingContext rc) {

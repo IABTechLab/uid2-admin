@@ -54,26 +54,26 @@ public class ServiceService implements IService {
     public void setupRoutes(Router router) {
         router.get(API_SERVICE_LIST.toString()).handler(auth.handle(this::handleServiceListAll, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get(API_SERVICE_LIST_SERVICE_ID.toString()).handler(auth.handle(this::handleServiceList, Role.MAINTAINER));
-        router.post(API_SERVICE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleServiceAdd(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "roles", "link_id_regex")), Role.PRIVILEGED));
-        router.post(API_SERVICE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleUpdate(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("service_id", "site_id", "name", "roles", "link_id_regex")), Role.PRIVILEGED));
-        router.post(API_SERVICE_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleDelete(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.SUPER_USER));
-        router.post(API_SERVICE_REMOVE_LINK_ID_REGEX.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleRemoveLinkIdRegex(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.PRIVILEGED));
+//        router.post(API_SERVICE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleServiceAdd(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "roles", "link_id_regex")), Role.PRIVILEGED));
+//        router.post(API_SERVICE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleUpdate(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("service_id", "site_id", "name", "roles", "link_id_regex")), Role.PRIVILEGED));
+//        router.post(API_SERVICE_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleDelete(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.SUPER_USER));
+//        router.post(API_SERVICE_REMOVE_LINK_ID_REGEX.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleRemoveLinkIdRegex(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("service_id")), Role.PRIVILEGED));
     }
 
     private void handleServiceListAll(RoutingContext rc) {

@@ -144,25 +144,25 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             }
         }, Role.MAINTAINER, Role.SECRET_ROTATION));
 
-        router.post(API_KEY_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleAddSiteKey(ctx);
-            }
-        }, new AuditParams(List.of("site_id", "activates_in_seconds"), Collections.emptyList()), Role.MAINTAINER));
-
-        router.post(API_KEY_ROTATE_SITE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleRotateSiteKey(ctx);
-            }
-        }, new AuditParams(List.of("site_id"), Collections.emptyList()), Role.MAINTAINER));
-
-        if(enableKeysets) {
-            router.post(API_KEY_ROTATE_KEYSET_KEY.toString()).blockingHandler(auth.handle((ctx) -> {
-                synchronized (writeLock) {
-                    this.handleRotateKeysetKey(ctx);
-                }
-            }, new AuditParams(List.of("keyset_id"), Collections.emptyList()), Role.MAINTAINER));
-        }
+//        router.post(API_KEY_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleAddSiteKey(ctx);
+//            }
+//        }, new AuditParams(List.of("site_id", "activates_in_seconds"), Collections.emptyList()), Role.MAINTAINER));
+//
+//        router.post(API_KEY_ROTATE_SITE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleRotateSiteKey(ctx);
+//            }
+//        }, new AuditParams(List.of("site_id"), Collections.emptyList()), Role.MAINTAINER));
+//
+//        if(enableKeysets) {
+//            router.post(API_KEY_ROTATE_KEYSET_KEY.toString()).blockingHandler(auth.handle((ctx) -> {
+//                synchronized (writeLock) {
+//                    this.handleRotateKeysetKey(ctx);
+//                }
+//            }, new AuditParams(List.of("keyset_id"), Collections.emptyList()), Role.MAINTAINER));
+//        }
 
         router.post(API_KEY_ROTATE_ALL_SITES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

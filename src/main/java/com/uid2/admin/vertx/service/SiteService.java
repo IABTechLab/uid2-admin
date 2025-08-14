@@ -65,36 +65,36 @@ public class SiteService implements IService {
             auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT));
         router.get(API_SITE_SITEID.toString()).handler(
             auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_SITE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSiteAdd(ctx);
-            }
-        }, new AuditParams(List.of("name", "enable", "types", "description"), List.of("domain_names", "app_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_SITE_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSiteEnable(ctx);
-            }
-        }, new AuditParams(List.of("enabled"), Collections.emptyList()), Role.MAINTAINER));
-        router.post(API_SITE_SET_TYPES.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSiteTypesSet(ctx);
-            }
-        }, new AuditParams(List.of("types"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_SITE_DOMAIN_NAMES.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSiteDomains(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("domain_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_SITE_APP_NAMES.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSiteAppNames(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("app_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_SITE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleSiteUpdate(ctx);
-            }
-        }, new AuditParams(List.of("description", "visible", "name"), Collections.emptyList()), Role.MAINTAINER));
+//        router.post(API_SITE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSiteAdd(ctx);
+//            }
+//        }, new AuditParams(List.of("name", "enable", "types", "description"), List.of("domain_names", "app_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_SITE_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSiteEnable(ctx);
+//            }
+//        }, new AuditParams(List.of("enabled"), Collections.emptyList()), Role.MAINTAINER));
+//        router.post(API_SITE_SET_TYPES.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSiteTypesSet(ctx);
+//            }
+//        }, new AuditParams(List.of("types"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_SITE_DOMAIN_NAMES.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSiteDomains(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("domain_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_SITE_APP_NAMES.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSiteAppNames(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("app_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_SITE_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleSiteUpdate(ctx);
+//            }
+//        }, new AuditParams(List.of("description", "visible", "name"), Collections.emptyList()), Role.MAINTAINER));
     }
 
     private void handleRewriteMetadata(RoutingContext rc) {

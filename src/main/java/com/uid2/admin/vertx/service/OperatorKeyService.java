@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.admin.auth.AdminAuthMiddleware;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
+import com.uid2.shared.audit.Audit;
 import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.secret.IKeyGenerator;
@@ -50,6 +51,7 @@ public class OperatorKeyService implements IService {
     private final KeyHasher keyHasher;
     private final String operatorKeyPrefix;
     private final CloudEncryptionKeyManager cloudEncryptionKeyManager;
+    private final Audit audit;
 
     public OperatorKeyService(JsonObject config,
                               AdminAuthMiddleware auth,
@@ -59,7 +61,8 @@ public class OperatorKeyService implements IService {
                               RotatingSiteStore siteProvider,
                               IKeyGenerator keyGenerator,
                               KeyHasher keyHasher,
-                              CloudEncryptionKeyManager cloudEncryptionKeyManager) {
+                              CloudEncryptionKeyManager cloudEncryptionKeyManager,
+                              Audit audit) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.operatorKeyStoreWriter = operatorKeyStoreWriter;
@@ -70,6 +73,8 @@ public class OperatorKeyService implements IService {
         this.cloudEncryptionKeyManager = cloudEncryptionKeyManager;
 
         this.operatorKeyPrefix = config.getString("operator_key_prefix");
+        this.audit = audit;
+//        this.audit = new Audit(AdminAuthMiddleware.class.getPackage().getName());
     }
 
     @Override
@@ -79,43 +84,50 @@ public class OperatorKeyService implements IService {
         router.get(API_OPERATOR_LIST.toString()).handler(
             auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get(API_OPERATOR_REVEAL.toString()).handler(
-            auth.handle(this::handleOperatorReveal, new AuditParams(List.of("name"), Collections.emptyList()), Role.MAINTAINER));
+            auth.handle(this::handleOperatorReveal, Role.MAINTAINER))
+                .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name"), Collections.emptyList())));
 
         router.post(API_OPERATOR_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
-            }
-        }, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList()), Role.MAINTAINER));
+            }}, Role.MAINTAINER))
+            .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList())));
 
         router.post(API_OPERATOR_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDel(ctx);
             }
-        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.SUPER_USER));
+        }, Role.SUPER_USER))
+            .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name"), Collections.emptyList())));
 
         router.post(API_OPERATOR_DISABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorDisable(ctx);
             }
-        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.PRIVILEGED));
+        }, Role.PRIVILEGED))
+            .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name"), Collections.emptyList())));
 
         router.post(API_OPERATOR_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorEnable(ctx);
             }
-        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.MAINTAINER));
+        }, Role.MAINTAINER))
+            .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name"), Collections.emptyList())));
 
         router.post(API_OPERATOR_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorUpdate(ctx);
             }
-        }, new AuditParams(List.of("name", "site_id", "operator_type"), Collections.emptyList()), Role.PRIVILEGED));
+        }, Role.PRIVILEGED))
+            .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name", "site_id", "operator_type"), Collections.emptyList())));
 
         router.post(API_OPERATOR_ROLES.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleOperatorRoles(ctx);
+                ctx.next();
             }
-        }, new AuditParams(List.of("name", "roles"), Collections.emptyList()), Role.PRIVILEGED));
+        }, Role.PRIVILEGED))
+        .handler(ctx -> audit.log(ctx, new AuditParams(List.of("name", "roles"), Collections.emptyList())));
     }
 
     private void handleOperatorMetadata(RoutingContext rc) {

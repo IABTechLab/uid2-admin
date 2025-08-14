@@ -66,21 +66,21 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
 
     @Override
     public void setupRoutes(Router router) {
-        router.post(API_CLIENT_SIDE_KEYPAIRS_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleAddKeypair(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_CLIENT_SIDE_KEYPAIRS_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleUpdateKeypair(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("subscription_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
-        router.post(API_CLIENT_SIDE_KEYPAIRS_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleDeleteKeypair(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("subscription_id")), Role.PRIVILEGED, Role.SHARING_PORTAL));
+//        router.post(API_CLIENT_SIDE_KEYPAIRS_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleAddKeypair(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_CLIENT_SIDE_KEYPAIRS_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleUpdateKeypair(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("subscription_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
+//        router.post(API_CLIENT_SIDE_KEYPAIRS_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleDeleteKeypair(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("subscription_id")), Role.PRIVILEGED, Role.SHARING_PORTAL));
         router.get(API_CLIENT_SIDE_KEYPAIRS_LIST.toString()).handler(
             auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT));
         router.get(API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID.toString()).handler(

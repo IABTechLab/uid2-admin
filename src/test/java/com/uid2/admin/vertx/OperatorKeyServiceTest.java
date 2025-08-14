@@ -1,5 +1,9 @@
 package com.uid2.admin.vertx;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.RevealedKey;
@@ -7,6 +11,7 @@ import com.uid2.admin.cloudencryption.CloudEncryptionKeyManager;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.OperatorKeyService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
+import com.uid2.shared.audit.Audit;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
@@ -16,14 +21,18 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 public class OperatorKeyServiceTest extends ServiceTestBase {
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
@@ -31,6 +40,11 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
     private static final String EXPECTED_OPERATOR_KEY_HASH = "abcdefabcdefabcdefabcdef";
     private static final String EXPECTED_OPERATOR_KEY_SALT = "ghijklghijklghijklghijkl";
     private CloudEncryptionKeyManager cloudEncryptionKeyManager;
+    private Logger logger;
+    private ListAppender<ILoggingEvent> listAppender;
+    @Spy
+    private Audit audit = Mockito.spy(new Audit("Admin"));
+//    private Audit audit = new Audit("Admin");
 
     @Override
     protected IService createService() {
@@ -38,11 +52,16 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
         this.config.put("cloud_encryption_key_activates_in_seconds", 3600L);
         this.config.put("cloud_encryption_key_count_per_site", 5);
         this.cloudEncryptionKeyManager = Mockito.mock(CloudEncryptionKeyManager.class);
-        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager);
+        return new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager, audit);
     }
 
     @BeforeEach
     public void setup() {
+        MockitoAnnotations.openMocks(this);
+        logger = (Logger) LoggerFactory.getLogger(OperatorKeyServiceTest.class);
+        listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
         setSites(new Site(1, "original_site", true), new Site(5, "new_site", true));
     }
 
@@ -200,6 +219,17 @@ public class OperatorKeyServiceTest extends ServiceTestBase {
                     () -> verify(operatorKeyStoreWriter).upload(collectionOfSize(1)));
             testContext.completeNow();
         });
+    }
+
+    @Test
+    public void operatorKeySetRoleAuthFailure(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setOperatorKeys(new OperatorBuilder().build());
+        post(vertx, testContext, "api/operator/roles?name=test_operator&roles=optout", "", expectHttpStatus(testContext, 401));
+        assertThat(listAppender.list.stream()
+                .anyMatch(event -> event.getFormattedMessage().contains("audit")))
+                .isTrue();
+//        verify(audit).log(any(), any());
     }
 
     @Test

@@ -53,16 +53,16 @@ public class EnclaveIdService implements IService {
         router.get(API_ENCLAVE_LIST.toString()).handler(
             auth.handle(this::handleEnclaveList, Role.MAINTAINER));
 
-        router.post(API_ENCLAVE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleEnclaveAdd(ctx);
-            }
-        }, new AuditParams(List.of("name", "protocol", "enclave_id"), Collections.emptyList()), Role.PRIVILEGED));
-        router.post(API_ENCLAVE_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleEnclaveDel(ctx);
-            }
-        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.SUPER_USER));
+//        router.post(API_ENCLAVE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleEnclaveAdd(ctx);
+//            }
+//        }, new AuditParams(List.of("name", "protocol", "enclave_id"), Collections.emptyList()), Role.PRIVILEGED));
+//        router.post(API_ENCLAVE_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleEnclaveDel(ctx);
+//            }
+//        }, new AuditParams(List.of("name"), Collections.emptyList()), Role.SUPER_USER));
     }
 
     private void handleEnclaveMetadata(RoutingContext rc) {

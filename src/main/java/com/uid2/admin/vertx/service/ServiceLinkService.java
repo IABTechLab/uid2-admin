@@ -51,21 +51,21 @@ public class ServiceLinkService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_SERVICE_LINK_LIST.toString()).handler(auth.handle(this::handleServiceLinkList, Role.MAINTAINER, Role.METRICS_EXPORT));
-        router.post(API_SERVICE_LINK_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleServiceLinkAdd(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
-        router.post(API_SERVICE_LINK_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleServiceLinkUpdate(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
-        router.post(API_SERVICE_LINK_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
-            synchronized (writeLock) {
-                this.handleServiceLinkDelete(ctx);
-            }
-        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id")), Role.PRIVILEGED));
+//        router.post(API_SERVICE_LINK_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleServiceLinkAdd(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
+//        router.post(API_SERVICE_LINK_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleServiceLinkUpdate(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
+//        router.post(API_SERVICE_LINK_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
+//            synchronized (writeLock) {
+//                this.handleServiceLinkDelete(ctx);
+//            }
+//        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id")), Role.PRIVILEGED));
     }
 
     private void handleServiceLinkList(RoutingContext rc) {
