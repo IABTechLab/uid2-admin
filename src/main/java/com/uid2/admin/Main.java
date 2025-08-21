@@ -233,7 +233,7 @@ public class Main {
             WriteLock writeLock = new WriteLock();
             KeyHasher keyHasher = new KeyHasher();
             IKeypairGenerator keypairGenerator = new SecureKeypairGenerator();
-            SaltRotation saltRotation = new SaltRotation(config, keyGenerator);
+            SaltRotation saltRotation = new SaltRotation(keyGenerator);
             EncryptionKeyService encryptionKeyService = new EncryptionKeyService(
                     config, auth, writeLock, encryptionKeyStoreWriter, keysetKeyStoreWriter, keyProvider, keysetKeysProvider, adminKeysetProvider, adminKeysetStoreWriter, keyGenerator, clock);
             KeysetManager keysetManager = new KeysetManager(

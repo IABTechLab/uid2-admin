@@ -1,13 +1,10 @@
 package com.uid2.admin.salt;
 
-import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 
-import com.uid2.shared.store.salt.ISaltProvider;
 import com.uid2.shared.store.salt.ISaltProvider.ISaltSnapshot;
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
-import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,18 +19,10 @@ public class SaltRotation {
     private static final double MAX_SALT_PERCENTAGE = 0.8;
 
     private final IKeyGenerator keyGenerator;
-    private final boolean isRefreshFromEnabled;
-    private final boolean isCustomAgeThresholdEnabled;
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
 
-    public SaltRotation(JsonObject config, IKeyGenerator keyGenerator) {
+    public SaltRotation(IKeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
-        this.isRefreshFromEnabled = config.getBoolean(AdminConst.ENABLE_SALT_ROTATION_REFRESH_FROM, false);
-        this.isCustomAgeThresholdEnabled = config.getBoolean(AdminConst.ENABLE_SALT_ROTATION_CUSTOM_AGE_THRESHOLDS, false);
-    }
-
-    public boolean isCustomAgeThresholdEnabled() {
-        return this.isCustomAgeThresholdEnabled;
     }
 
     public Result rotateSalts(
@@ -97,7 +86,6 @@ public class SaltRotation {
         return Result.fromSnapshot(nextSnapshot);
     }
 
-
     private static int getNumSaltsToRotate(SaltEntry[] preRotationSalts, double fraction) {
         return (int) Math.ceil(preRotationSalts.length * fraction);
     }
@@ -107,11 +95,7 @@ public class SaltRotation {
     }
 
     private boolean isRefreshable(TargetDate targetDate, SaltEntry salt) {
-        if (this.isRefreshFromEnabled) {
-            return Instant.ofEpochMilli(salt.refreshFrom()).truncatedTo(ChronoUnit.DAYS).equals(targetDate.asInstant());
-        }
-
-        return true;
+        return Instant.ofEpochMilli(salt.refreshFrom()).truncatedTo(ChronoUnit.DAYS).equals(targetDate.asInstant());
     }
 
     private SaltEntry[] rotateSalts(SaltEntry[] oldSalts, List<SaltEntry> saltsToRotate, TargetDate targetDate) throws Exception {
@@ -163,7 +147,7 @@ public class SaltRotation {
             TargetDate targetDate,
             Duration[] minAges,
             int numSaltsToRotate) {
-        var maxSaltsPerAge = this.isRefreshFromEnabled ? (int) (numSaltsToRotate * MAX_SALT_PERCENTAGE) : numSaltsToRotate;
+        var maxSaltsPerAge = (int) (numSaltsToRotate * MAX_SALT_PERCENTAGE);
 
         var thresholds = Arrays.stream(minAges)
                 .map(minAge -> targetDate.asInstant().minusSeconds(minAge.getSeconds()))
