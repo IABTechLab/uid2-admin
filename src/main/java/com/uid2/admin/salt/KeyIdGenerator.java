@@ -1,52 +1,45 @@
 package com.uid2.admin.salt;
 
 import com.uid2.shared.model.SaltEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class KeyIdGenerator {
     private static final int MAX_KEY_ID = 16777215; // 3 bytes
-    private int lastActiveKeyId;
+    private final AtomicInteger lastActiveKeyId;
 
     public KeyIdGenerator(SaltEntry[] salts) {
-        this.lastActiveKeyId = getLastActiveKeyId(salts);
+        this.lastActiveKeyId = new AtomicInteger(getLastActiveKeyId(salts));
     }
 
     private int getLastActiveKeyId(SaltEntry[] salts) {
-        SaltEntry[] sortedSaltsByLastUpdated = Arrays.stream(salts).sorted(Comparator.comparingLong(SaltEntry::lastUpdated)).toArray(SaltEntry[]::new);
-        var lastUpdated = sortedSaltsByLastUpdated[sortedSaltsByLastUpdated.length - 1].lastUpdated();
-
-        var sortedKeyIds = Arrays.stream(sortedSaltsByLastUpdated)
-                .filter(s -> s.lastUpdated() == lastUpdated)
-                .filter(s -> s.currentKey() != null)
+        long maxLastUpdated = Arrays.stream(salts).mapToLong(SaltEntry::lastUpdated).max().orElse(0);
+        int[] lastActiveKeyIds = Arrays.stream(salts)
+                .filter(s -> s.lastUpdated() == maxLastUpdated && s.currentKey() != null)
                 .mapToInt(s -> s.currentKey().id())
                 .sorted()
                 .toArray();
 
-        if (sortedKeyIds.length == 0) return MAX_KEY_ID;
+        if (lastActiveKeyIds.length == 0) return MAX_KEY_ID; // so that next ID will start at 0
 
-        if (sortedKeyIds[sortedKeyIds.length - 1] == MAX_KEY_ID) {
-            if (sortedKeyIds[0] == 0) {
-                for (int i = 1; i < sortedKeyIds.length; i++) {
-                    if (sortedKeyIds[i] - sortedKeyIds[i - 1] > 1) {
-                        return sortedKeyIds[i - 1];
-                    }
-                }
-                return 0;
+        int highestId = lastActiveKeyIds[lastActiveKeyIds.length - 1];
+
+        if (highestId < MAX_KEY_ID) return highestId;
+
+        // Wrapped case - find the last consecutive ID
+        for (int i = 0; i < lastActiveKeyIds.length - 1; i++) {
+            if (lastActiveKeyIds[i + 1] - lastActiveKeyIds[i] > 1) {
+                return lastActiveKeyIds[i];
             }
-            return MAX_KEY_ID;
         }
-        return sortedKeyIds[sortedKeyIds.length - 1];
+
+        return highestId;
     }
 
     public int getNextKeyId() {
-        this.lastActiveKeyId += 1;
-        if (this.lastActiveKeyId > MAX_KEY_ID) {
-            this.lastActiveKeyId = 0;
-        }
-        return this.lastActiveKeyId;
+        return lastActiveKeyId.updateAndGet(id ->
+                id + 1 > MAX_KEY_ID ? 0 : id + 1
+        );
     }
 }
