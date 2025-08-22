@@ -2,21 +2,27 @@ package com.uid2.admin.salt;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.uid2.admin.AdminConst;
 import com.uid2.admin.salt.helper.SaltBuilder;
 import com.uid2.admin.salt.helper.SaltSnapshotBuilder;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
+import com.uid2.shared.secret.SecureKeyGenerator;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.uid2.admin.salt.helper.TargetDateUtil.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -43,7 +49,7 @@ class SaltRotationTest {
         appender.start();
         ((Logger) LoggerFactory.getLogger(SaltRotation.class)).addAppender(appender);
 
-        saltRotation = new SaltRotation(keyGenerator);
+        saltRotation = new SaltRotation(keyGenerator, new JsonObject());
     }
 
     @AfterEach
@@ -215,7 +221,7 @@ class SaltRotationTest {
     })
     void testRefreshFromCalculation(int lastRotationDaysAgo, int lastRotationMsOffset, int refreshFromDaysFromRotation) throws Exception {
         var lastRotation = daysEarlier(lastRotationDaysAgo);
-        SaltBuilder saltBuilder = SaltBuilder.start().lastUpdated(lastRotation.asInstant().plusMillis(lastRotationMsOffset)).refreshFrom(targetDate());
+        SaltBuilder saltBuilder = SaltBuilder.start().lastUpdated(lastRotation.asInstant().plusMillis(lastRotationMsOffset)).refreshFrom(targetDate()).currentSalt();
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(saltBuilder, saltBuilder, saltBuilder, saltBuilder)
                 .build();
@@ -292,8 +298,8 @@ class SaltRotationTest {
         var validForRotation = daysEarlier(120);
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        SaltBuilder.start().lastUpdated(exactly90Days).refreshFrom(targetDate()).previousSalt("90DaysOld"),
-                        SaltBuilder.start().lastUpdated(over90Days).refreshFrom(targetDate()).previousSalt("over90DaysOld")
+                        SaltBuilder.start().lastUpdated(exactly90Days).refreshFrom(targetDate()).currentSalt().previousSalt("90DaysOld"),
+                        SaltBuilder.start().lastUpdated(over90Days).refreshFrom(targetDate()).currentSalt().previousSalt("over90DaysOld")
                 )
                 .entries(1, validForRotation, targetDate())
                 .build();
@@ -308,7 +314,7 @@ class SaltRotationTest {
 
     @Test
     void testRotateSaltsRotateWhenRefreshFromIsTargetDate() throws Exception {
-        saltRotation = new SaltRotation(keyGenerator);
+        saltRotation = new SaltRotation(keyGenerator,  new JsonObject());
 
         final Duration[] minAges = {
                 Duration.ofDays(90),
@@ -323,9 +329,9 @@ class SaltRotationTest {
 
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        SaltBuilder.start().lastUpdated(validForRotation1).refreshFrom(refreshNow),
-                        SaltBuilder.start().lastUpdated(notValidForRotation).refreshFrom(refreshNow),
-                        SaltBuilder.start().lastUpdated(validForRotation2).refreshFrom(refreshLater)
+                        SaltBuilder.start().lastUpdated(validForRotation1).refreshFrom(refreshNow).currentSalt(),
+                        SaltBuilder.start().lastUpdated(notValidForRotation).refreshFrom(refreshNow).currentSalt(),
+                        SaltBuilder.start().lastUpdated(validForRotation2).refreshFrom(refreshLater).currentSalt()
                 )
                 .build();
 
@@ -346,18 +352,18 @@ class SaltRotationTest {
 
     @Test
     void testLogFewSaltAgesOnRotation() throws Exception {
-        saltRotation = new SaltRotation(keyGenerator);
+        saltRotation = new SaltRotation(keyGenerator,  new JsonObject());
 
         // 7 salts total, 5 refreshable, 3 will rotate (6 * 0.4 rounded up), up to 2 will rotate per age (3 * 0.8)
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(targetDate()), // Refreshable, too new
-                        SaltBuilder.start().lastUpdated(daysEarlier(33)).refreshFrom(targetDate()), // Refreshable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)), // Not refreshable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()), // Refreshable, old enough
-                        SaltBuilder.start().lastUpdated(daysEarlier(10)).refreshFrom(daysLater(10)) // Not refreshable, too new
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()).currentSalt(), // Refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(5)).refreshFrom(targetDate()).currentSalt(), // Refreshable, too new
+                        SaltBuilder.start().lastUpdated(daysEarlier(33)).refreshFrom(targetDate()).currentSalt(), // Refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(50)).refreshFrom(daysLater(1)).currentSalt(), // Not refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()).currentSalt(), // Refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(65)).refreshFrom(targetDate()).currentSalt(), // Refreshable, old enough
+                        SaltBuilder.start().lastUpdated(daysEarlier(10)).refreshFrom(daysLater(10)).currentSalt() // Not refreshable, too new
                 )
                 .build();
 
@@ -389,7 +395,7 @@ class SaltRotationTest {
 
     @Test
     void testLogManySaltAgesOnRotation() throws Exception {
-        saltRotation = new SaltRotation(keyGenerator);
+        saltRotation = new SaltRotation(keyGenerator,  new JsonObject());
 
         // 50 salts total, 16 refreshable, 10 will rotate (18 * 0.2 rounded up), up to 8 will rotate per age (10 * 0.8)
         var lastSnapshot = SaltSnapshotBuilder.start()
@@ -439,20 +445,20 @@ class SaltRotationTest {
     void testRotateSaltsZeroDoesntRotateSaltsButUpdatesRefreshFrom() throws Exception {
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).refreshFrom(targetDate().minusDays(45)).id(1),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(targetDate()).id(2),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(30)).refreshFrom(targetDate()).id(3),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(20)).refreshFrom(targetDate().plusDays(10)).id(4)
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).refreshFrom(targetDate().minusDays(45)).id(1).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(targetDate()).id(2).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(30)).refreshFrom(targetDate()).id(3).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(20)).refreshFrom(targetDate().plusDays(10)).id(4).currentSalt()
                 )
                 .effective(daysEarlier(1))
                 .expires(daysLater(6))
                 .build();
 
         var expected = List.of(
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).refreshFrom(targetDate().plusDays(15)).id(1).build(),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(targetDate().plusDays(30)).id(2).build(),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(30)).refreshFrom(targetDate().plusDays(30)).id(3).build(),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(20)).refreshFrom(targetDate().plusDays(10)).id(4).build()
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).refreshFrom(targetDate().plusDays(15)).id(1).currentSalt().build(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(targetDate().plusDays(30)).id(2).currentSalt().build(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(30)).refreshFrom(targetDate().plusDays(30)).id(3).currentSalt().build(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(20)).refreshFrom(targetDate().plusDays(10)).id(4).currentSalt().build()
                 ).toArray();
 
         var result = saltRotation.rotateSaltsZero(lastSnapshot, targetDate(), targetDate().asInstant());
@@ -473,7 +479,7 @@ class SaltRotationTest {
         // In regular salt rotations if there is a salt
 
         var lastSnapshot = SaltSnapshotBuilder.start()
-                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(75)))
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(75)).currentSalt())
                 .effective(daysLater(10))
                 .build();
 
@@ -482,5 +488,242 @@ class SaltRotationTest {
         assertThat(result.hasSnapshot()).isTrue();
         assertThat(result.getSnapshot().getEffective()).isEqualTo(targetDate().asInstant());
         assertThat(result.getSnapshot().getExpires()).isEqualTo(daysLater(7).asInstant());
+    }
+
+    @Test
+    void testRotateFromSaltToKey() throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+        when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn("random-key-string");
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt("salt1"),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentSalt())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+
+        assertThat(result.hasSnapshot()).isTrue();
+
+        var salt = result.getSnapshot().getAllRotatingSalts()[0];
+
+        assertThat(salt.currentSalt()).isNull();
+        assertThat(salt.previousSalt()).isEqualTo("salt1");
+        assertThat(salt.currentKey()).isNotNull();
+        assertThat(salt.currentKey().id()).isEqualTo(0);
+        assertThat(salt.currentKey().key()).isNotNull();
+        assertThat(salt.currentKey().salt()).isNotNull();
+        assertThat(salt.previousKey()).isNull();
+    }
+
+    @Test
+    void testKeyRotationInitialKeyIdPopulation() throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentSalt())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertEquals(0, salts[0].currentKey().id());
+        assertEquals(1, salts[1].currentKey().id());
+        assertEquals(2, salts[2].currentKey().id());
+        assertNull(salts[3].currentKey());
+    }
+
+    @Test
+    void testKeyRotationKeyIdIncrementation() throws Exception {
+        SecureKeyGenerator keyGenerator = new SecureKeyGenerator();
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(0),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertEquals(0, salts[0].currentKey().id());
+        assertEquals(1, salts[1].currentKey().id());
+        assertEquals(2, salts[2].currentKey().id());
+        assertEquals(3, salts[3].currentKey().id());
+    }
+
+    private static Stream<Arguments> getKeyIdArguments() {
+        return Stream.of(
+                Arguments.of(new int[]{16777212, 16777213, 16777214}, new int[]{16777215, 0, 1}),
+                Arguments.of(new int[]{16777213, 16777214, 16777215}, new int[]{0, 1, 2}),
+                Arguments.of(new int[]{16777215, 0, 1}, new int[]{2, 3, 4})
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getKeyIdArguments")
+    void testKeyRotationKeyIdWrap(int[] existingIds, int[] nextIds) throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(existingIds[0]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(existingIds[1]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(existingIds[2]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertEquals(existingIds[0], salts[0].currentKey().id());
+        assertEquals(existingIds[1], salts[1].currentKey().id());
+        assertEquals(existingIds[2], salts[2].currentKey().id());
+        assertEquals(nextIds[0], salts[3].currentKey().id());
+        assertEquals(nextIds[1], salts[4].currentKey().id());
+        assertEquals(nextIds[2], salts[5].currentKey().id());
+    }
+
+    @Test
+    void testKeyRotationKeyIdWrapManyBuckets() throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+
+        final Duration[] minAges = {
+                Duration.ofDays(390),
+                Duration.ofDays(360),
+                Duration.ofDays(330)
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(390)).refreshFrom(willRefresh).currentKey(16777200),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(390)).refreshFrom(willRefresh).currentKey(16777209),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(390)).refreshFrom(willNotRefresh).currentKey(16777210),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(330)).refreshFrom(willNotRefresh).currentKey(16777212),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(330)).refreshFrom(willNotRefresh).currentKey(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(330)).refreshFrom(willNotRefresh).currentKey(4),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(300)).refreshFrom(willNotRefresh).currentKey(6),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(300)).refreshFrom(willNotRefresh).currentKey(7),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(300)).refreshFrom(willNotRefresh).currentKey(8))
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        var expectedKeyIds = new int[]{9, 10, 16777210, 16777212, 1, 4, 6, 7, 8};
+        assertArrayEquals(expectedKeyIds, Arrays.stream(salts).mapToInt(s -> s.currentKey().id()).toArray());
+    }
+
+    @Test
+    void testKeyRotationPopulatePreviousKey() throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKey(0, "keyKey", "keySalt"),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(2))
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertEquals(3, salts[0].currentKey().id());
+        assertEquals(1, salts[1].currentKey().id());
+        assertEquals(2, salts[2].currentKey().id());
+        verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
+
+        assertEquals(0, salts[0].previousKey().id());
+        assertEquals("keyKey", salts[0].previousKey().key());
+        assertEquals("keySalt", salts[0].previousKey().salt());
+
+        assertNull(salts[1].previousKey());
+        assertNull(salts[2].previousKey());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "89, true",
+            "90, false",
+            "91, false"
+    })
+    void testKeyRotationPreviousKeyVisibleFor90Days(int lastUpdatedDaysAgo, boolean hasPreviousKey) throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, true));
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(lastUpdatedDaysAgo)).refreshFrom(willNotRefresh).currentKey(2).previousKey(0),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(lastUpdatedDaysAgo)).refreshFrom(willRefresh).currentKey(1)) // for sake of getting snapshot
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertEquals(hasPreviousKey, salts[0].previousKey() != null);
+    }
+
+    @Test
+    void testKeyRotationSaltToKeyRotation() throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, false));
+        when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn("random-key-string");
+
+        final Duration[] minAges = {
+                Duration.ofDays(30),
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKey(0, "keyKey1", "keySalt1"),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentSalt())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+        var salts = result.getSnapshot().getAllRotatingSalts();
+
+        assertThat(salts[0].currentKey()).isNull();
+        assertThat(salts[0].previousKey()).isEqualTo(new SaltEntry.KeyMaterial(0, "keyKey1", "keySalt1"));
+        assertThat(salts[0].currentSalt()).isNotNull();
+        assertThat(salts[0].previousSalt()).isNull();
     }
 }

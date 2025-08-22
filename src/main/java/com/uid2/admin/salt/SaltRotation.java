@@ -1,10 +1,12 @@
 package com.uid2.admin.salt;
 
+import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 
 import com.uid2.shared.store.salt.ISaltProvider.ISaltSnapshot;
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +19,15 @@ import java.util.stream.Collectors;
 public class SaltRotation {
     private static final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
     private static final double MAX_SALT_PERCENTAGE = 0.8;
+    private final boolean ENABLE_V4_RAW_UID;
 
     private final IKeyGenerator keyGenerator;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
 
-    public SaltRotation(IKeyGenerator keyGenerator) {
+    public SaltRotation(IKeyGenerator keyGenerator, JsonObject config) {
         this.keyGenerator = keyGenerator;
+        this.ENABLE_V4_RAW_UID = config.getBoolean(AdminConst.ENABLE_V4_RAW_UID, false);
     }
 
     public Result rotateSalts(
@@ -99,21 +104,24 @@ public class SaltRotation {
     }
 
     private SaltEntry[] rotateSalts(SaltEntry[] oldSalts, List<SaltEntry> saltsToRotate, TargetDate targetDate) throws Exception {
+        var keyIdGenerator = new KeyIdGenerator(oldSalts);
         var saltIdsToRotate = saltsToRotate.stream().map(SaltEntry::id).collect(Collectors.toSet());
 
         var updatedSalts = new SaltEntry[oldSalts.length];
         for (int i = 0; i < oldSalts.length; i++) {
             var shouldRotate = saltIdsToRotate.contains(oldSalts[i].id());
-            updatedSalts[i] = updateSalt(oldSalts[i], targetDate, shouldRotate);
+            updatedSalts[i] = updateSalt(oldSalts[i], targetDate, shouldRotate, keyIdGenerator);
         }
         return updatedSalts;
     }
 
-    private SaltEntry updateSalt(SaltEntry oldSalt, TargetDate targetDate, boolean shouldRotate) throws Exception {
-        var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
+    private SaltEntry updateSalt(SaltEntry oldSalt, TargetDate targetDate, boolean shouldRotate, KeyIdGenerator keyIdGenerator) throws Exception {
         var lastUpdated = shouldRotate ? targetDate.asEpochMs() : oldSalt.lastUpdated();
         var refreshFrom = calculateRefreshFrom(oldSalt, targetDate);
+        var currentSalt = calculateCurrentSalt(oldSalt, shouldRotate);
         var previousSalt = calculatePreviousSalt(oldSalt, shouldRotate, targetDate);
+        var currentKey = calculateCurrentKey(oldSalt, shouldRotate, keyIdGenerator);
+        var previousKey = calculatePreviousKey(oldSalt,shouldRotate, targetDate);
 
         return new SaltEntry(
                 oldSalt.id(),
@@ -122,8 +130,8 @@ public class SaltRotation {
                 currentSalt,
                 refreshFrom,
                 previousSalt,
-                null,
-                null
+                currentKey,
+                previousKey
         );
     }
 
@@ -132,12 +140,43 @@ public class SaltRotation {
         return Instant.ofEpochMilli(salt.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli() + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
+    private String calculateCurrentSalt(SaltEntry salt, boolean shouldRotate) throws Exception {
+        return shouldRotate ?
+                ENABLE_V4_RAW_UID ? null : this.keyGenerator.generateRandomKeyString(32)
+            : salt.currentSalt();
+    }
+
     private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, TargetDate targetDate) {
         if (shouldRotate) {
             return salt.currentSalt();
         }
         if (targetDate.saltAgeInDays(salt) < 90) {
             return salt.previousSalt();
+        }
+        return null;
+    }
+
+    private SaltEntry.KeyMaterial calculateCurrentKey(SaltEntry salt, boolean shouldRotate, KeyIdGenerator keyIdGenerator) throws Exception {
+        if (shouldRotate) {
+            if (ENABLE_V4_RAW_UID) {
+                return new SaltEntry.KeyMaterial(
+                        keyIdGenerator.getNextKeyId(),
+                        this.keyGenerator.generateRandomKeyString(32),
+                        this.keyGenerator.generateRandomKeyString(32)
+                );
+            } else {
+                return null;
+            }
+        }
+        return salt.currentKey();
+    }
+
+    private SaltEntry.KeyMaterial calculatePreviousKey(SaltEntry salt, boolean shouldRotate, TargetDate targetDate) {
+        if (shouldRotate) {
+            return salt.currentKey();
+        }
+        if (targetDate.saltAgeInDays(salt) < 90) {
+            return salt.previousKey();
         }
         return null;
     }
