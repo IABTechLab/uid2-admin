@@ -62,7 +62,7 @@ public class SaltRotation {
         logSaltAges("refreshable-salts", targetDate, refreshableSalts);
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
-        logKeyBucketCount(targetDate, preRotationSalts, postRotationSalts);
+        logBucketFormatCount(targetDate, preRotationSalts, postRotationSalts);
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -247,18 +247,20 @@ public class SaltRotation {
         }
     }
 
-    private void logKeyBucketCount(TargetDate targetDate, SaltEntry[] preRotationSalts, SaltEntry[] postRotationSalts) {
-        int newKeyBucketCounter = 0;
-        int totalKeyBucketCounter = 0;
+    private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] preRotationSalts, SaltEntry[] postRotationSalts) {
+        int newKeyBucketCounter = 0, totalKeyBucketCounter = 0, totalSaltBucketCounter = 0;
+
         for (int i = 0; i < preRotationSalts.length && i < postRotationSalts.length; i++) {
             var oldSalt = preRotationSalts[i];
             var updatedSalt = postRotationSalts[i];
 
             if (updatedSalt.currentKey() != null) totalKeyBucketCounter++;
+            if (updatedSalt.currentSalt() != null) totalSaltBucketCounter++;
             if (updatedSalt.currentKey() != null && oldSalt.currentSalt() != null) newKeyBucketCounter++;
         }
-        LOGGER.info("salt_bucket_count_type={} target_date={} bucket_count={}", "new-key-buckets", targetDate, newKeyBucketCounter);
-        LOGGER.info("salt_bucket_count_type={} target_date={} bucket_count={}", "total-key-buckets", targetDate, totalKeyBucketCounter);
+
+        LOGGER.info("Salt rotation bucket format: target_date={} new_key_bucket_count={} total_key_bucket_count={} total_salt_bucket_count={}",
+                targetDate, newKeyBucketCounter, totalKeyBucketCounter, totalSaltBucketCounter);
     }
 
     @Getter
