@@ -247,20 +247,22 @@ public class SaltRotation {
         }
     }
 
-    private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] preRotationSalts, SaltEntry[] postRotationSalts) {
-        int newKeyBucketCounter = 0, totalKeyBucketCounter = 0, totalSaltBucketCounter = 0;
 
-        for (int i = 0; i < preRotationSalts.length && i < postRotationSalts.length; i++) {
-            var oldSalt = preRotationSalts[i];
-            var updatedSalt = postRotationSalts[i];
+    /** Logging to monitor migration of buckets from salts to keys **/
+    private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] preRotationBuckets, SaltEntry[] postRotationBuckets) {
+        int migratedKeyBucketCounter = 0, totalKeyBucketCounter = 0, totalSaltBucketCounter = 0;
 
-            if (updatedSalt.currentKey() != null) totalKeyBucketCounter++;
-            if (updatedSalt.currentSalt() != null) totalSaltBucketCounter++;
-            if (updatedSalt.currentKey() != null && oldSalt.currentSalt() != null) newKeyBucketCounter++;
+        for (int i = 0; i < preRotationBuckets.length && i < postRotationBuckets.length; i++) {
+            var oldBucket = preRotationBuckets[i];
+            var updatedBucket = postRotationBuckets[i];
+
+            if (updatedBucket.currentKey() != null) totalKeyBucketCounter++;
+            if (updatedBucket.currentSalt() != null) totalSaltBucketCounter++;
+            if (updatedBucket.currentKey() != null && oldBucket.currentSalt() != null) migratedKeyBucketCounter++;
         }
 
-        LOGGER.info("Salt rotation bucket format: target_date={} new_key_bucket_count={} total_key_bucket_count={} total_salt_bucket_count={}",
-                targetDate, newKeyBucketCounter, totalKeyBucketCounter, totalSaltBucketCounter);
+        LOGGER.info("Rotation bucket format: target_date={} migrated_key_bucket_count={} total_key_bucket_count={} total_salt_bucket_count={}",
+                targetDate, migratedKeyBucketCounter, totalKeyBucketCounter, totalSaltBucketCounter);
     }
 
     @Getter

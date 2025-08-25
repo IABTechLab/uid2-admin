@@ -732,7 +732,7 @@ class SaltRotationTest {
             "true, 1, 3, 1",
             "false, 0, 1, 3"
     })
-    void testKeyRotationLogKeyBuckets(boolean v4Enabled, int expectedNewKeyBuckets, int expectedTotalKeyBuckets, int expectedTotalSaltBuckets) throws Exception {
+    void testKeyRotationLogBucketFormat(boolean v4Enabled, int expectedNewKeyBuckets, int expectedTotalKeyBuckets, int expectedTotalSaltBuckets) throws Exception {
         saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, v4Enabled));
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn("random-key-string");
 
@@ -752,10 +752,10 @@ class SaltRotationTest {
         saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
 
         var expected = Set.of(
-                String.format("[INFO] Salt rotation bucket format: target_date=2025-01-01 new_key_bucket_count=%d total_key_bucket_count=%d total_salt_bucket_count=%d",
+                String.format("[INFO] Rotation bucket format: target_date=2025-01-01 migrated_key_bucket_count=%d total_key_bucket_count=%d total_salt_bucket_count=%d",
                         expectedNewKeyBuckets, expectedTotalKeyBuckets, expectedTotalSaltBuckets)
         );
-        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("Salt rotation bucket format")).collect(Collectors.toSet());
+        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("Rotation bucket format")).collect(Collectors.toSet());
         assertThat(actual).isEqualTo(expected);
     }
 }
