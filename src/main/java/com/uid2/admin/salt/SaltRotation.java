@@ -62,6 +62,7 @@ public class SaltRotation {
         logSaltAges("refreshable-salts", targetDate, refreshableSalts);
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
+        logKeyBucketCount(targetDate, preRotationSalts, postRotationSalts);
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -244,6 +245,20 @@ public class SaltRotation {
                     entry.getValue()
             );
         }
+    }
+
+    private void logKeyBucketCount(TargetDate targetDate, SaltEntry[] preRotationSalts, SaltEntry[] postRotationSalts) {
+        int newKeyBucketCounter = 0;
+        int totalKeyBucketCounter = 0;
+        for (int i = 0; i < preRotationSalts.length && i < postRotationSalts.length; i++) {
+            var oldSalt = preRotationSalts[i];
+            var updatedSalt = postRotationSalts[i];
+
+            if (updatedSalt.currentKey() != null) totalKeyBucketCounter++;
+            if (updatedSalt.currentKey() != null && oldSalt.currentSalt() != null) newKeyBucketCounter++;
+        }
+        LOGGER.info("salt_bucket_count_type={} target_date={} bucket_count={}", "new-key-buckets", targetDate, newKeyBucketCounter);
+        LOGGER.info("salt_bucket_count_type={} target_date={} bucket_count={}", "total-key-buckets", targetDate, totalKeyBucketCounter);
     }
 
     @Getter

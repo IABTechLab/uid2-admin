@@ -389,7 +389,7 @@ class SaltRotationTest {
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
         saltRotation.rotateSalts(lastSnapshot, minAges, 0.4, targetDate());
 
-        var actual = appender.list.stream().map(Object::toString).collect(Collectors.toSet());
+        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("salt_count_type") || s.contains("Salt rotation complete")).collect(Collectors.toSet());
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -429,7 +429,7 @@ class SaltRotationTest {
         var minAges = new Duration[]{Duration.ofDays(30), Duration.ofDays(60)};
         saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate());
 
-        var actual = appender.list.stream().map(Object::toString).collect(Collectors.toSet());
+        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("salt_count_type") || s.contains("Salt rotation complete")).collect(Collectors.toSet());
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -725,5 +725,36 @@ class SaltRotationTest {
         assertThat(salts[0].previousKey()).isEqualTo(new SaltEntry.KeyMaterial(0, "keyKey1", "keySalt1"));
         assertThat(salts[0].currentSalt()).isNotNull();
         assertThat(salts[0].previousSalt()).isNull();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "true, 1, 3",
+            "false, 0, 1"
+    })
+    void testKeyRotationLogKeyBuckets(boolean v4Enabled, int expectedNewKeyBuckets, int expectedTotalKeyBuckets) throws Exception {
+        saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, v4Enabled));
+
+        final Duration[] minAges = {
+                Duration.ofDays(30)
+        };
+
+        var willRefresh = targetDate();
+        var willNotRefresh = targetDate().plusDays(30);
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentSalt(),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKey(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(2))
+                .build();
+
+        saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
+
+        var expected = Set.of(
+                "[INFO] salt_bucket_count_type=new-key-buckets target_date=2025-01-01 bucket_count=" + expectedNewKeyBuckets,
+                "[INFO] salt_bucket_count_type=total-key-buckets target_date=2025-01-01 bucket_count=" + expectedTotalKeyBuckets
+        );
+        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("salt_bucket_count_type")).collect(Collectors.toSet());
+        assertThat(actual).isEqualTo(expected);
     }
 }
