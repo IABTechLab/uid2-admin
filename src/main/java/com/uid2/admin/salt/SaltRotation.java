@@ -250,19 +250,22 @@ public class SaltRotation {
 
     /** Logging to monitor migration of buckets from salts (old format - v2/v3) to encryption keys (new format - v4) **/
     private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] preRotationBuckets, SaltEntry[] postRotationBuckets) {
-        int migratedKeyBucketCounter = 0, totalKeyBucketCounter = 0, totalSaltBucketCounter = 0;
+        int migratedKeyBuckets = 0, totalKeys = 0, totalSalts = 0, totalPreviousKeys = 0, totalPreviousSalts = 0;
 
         for (int i = 0; i < preRotationBuckets.length && i < postRotationBuckets.length; i++) {
             var oldBucket = preRotationBuckets[i];
             var updatedBucket = postRotationBuckets[i];
 
-            if (updatedBucket.currentKey() != null) totalKeyBucketCounter++;
-            if (updatedBucket.currentSalt() != null) totalSaltBucketCounter++;
-            if (updatedBucket.currentKey() != null && oldBucket.currentSalt() != null) migratedKeyBucketCounter++;
+            if (updatedBucket.currentKey() != null) totalKeys++;
+            if (updatedBucket.currentSalt() != null) totalSalts++;
+            if (updatedBucket.previousKey() != null) totalPreviousKeys++;
+            if (updatedBucket.previousSalt() != null) totalPreviousSalts++;
+            if (updatedBucket.currentKey() != null && oldBucket.currentSalt() != null) migratedKeyBuckets++;
         }
 
-        LOGGER.info("Rotation bucket format: target_date={} migrated_key_bucket_count={} total_key_bucket_count={} total_salt_bucket_count={}",
-                targetDate, migratedKeyBucketCounter, totalKeyBucketCounter, totalSaltBucketCounter);
+        LOGGER.info("UID bucket format: target_date={} migrated_key_bucket_count={} total_key_bucket_count={} total_salt_bucket_count={} " +
+                        "total_previous_key_count={} total_previous_salt_count={}",
+                targetDate, migratedKeyBuckets, totalKeys, totalSalts, totalPreviousKeys, totalPreviousSalts);
     }
 
     @Getter

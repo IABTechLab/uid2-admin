@@ -752,10 +752,11 @@ class SaltRotationTest {
         saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
 
         var expected = Set.of(
-                String.format("[INFO] Rotation bucket format: target_date=2025-01-01 migrated_key_bucket_count=%d total_key_bucket_count=%d total_salt_bucket_count=%d",
-                        expectedNewKeyBuckets, expectedTotalKeyBuckets, expectedTotalSaltBuckets)
+                String.format("[INFO] UID bucket format: target_date=2025-01-01 migrated_key_bucket_count=%d total_key_bucket_count=%d total_salt_bucket_count=%d " +
+                                "total_previous_key_count=%d total_previous_salt_count=%d",
+                        expectedNewKeyBuckets, expectedTotalKeyBuckets, expectedTotalSaltBuckets, 1, 1)
         );
-        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("Rotation bucket format")).collect(Collectors.toSet());
+        var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("UID bucket format")).collect(Collectors.toSet());
         assertThat(actual).isEqualTo(expected);
     }
 }
