@@ -248,7 +248,7 @@ public class SaltRotation {
     }
 
 
-    /** Logging to monitor migration of buckets from salts to keys **/
+    /** Logging to monitor migration of buckets from salts (old format - v2/v3) to encryption keys (new format - v4) **/
     private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] preRotationBuckets, SaltEntry[] postRotationBuckets) {
         int migratedKeyBucketCounter = 0, totalKeyBucketCounter = 0, totalSaltBucketCounter = 0;
 
