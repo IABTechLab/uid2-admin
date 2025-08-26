@@ -553,10 +553,10 @@ class SaltRotationTest {
         var willNotRefresh = targetDate().plusDays(30);
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(90)).refreshFrom(willNotRefresh).currentKey(existingIds[0]),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(existingIds[1]),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(existingIds[2]),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(existingIds[3]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(90)).refreshFrom(willNotRefresh).currentKeySalt(existingIds[0]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKeySalt(existingIds[1]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKeySalt(existingIds[2]),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKeySalt(existingIds[3]),
                         SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
                         SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
                         SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt())
@@ -585,9 +585,9 @@ class SaltRotationTest {
         var willRefresh = targetDate();
         var willNotRefresh = targetDate().plusDays(30);
         var lastSnapshot = SaltSnapshotBuilder.start()
-                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKey(0, "keyKey", "keySalt"),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(1),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(2))
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKeySalt(0, "keyKey", "keySalt"),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKeySalt(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKeySalt(2))
                 .build();
 
         var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
@@ -622,8 +622,8 @@ class SaltRotationTest {
         var willRefresh = targetDate();
         var willNotRefresh = targetDate().plusDays(30);
         var lastSnapshot = SaltSnapshotBuilder.start()
-                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(lastUpdatedDaysAgo)).refreshFrom(willNotRefresh).currentKey(2).previousKey(0),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(lastUpdatedDaysAgo)).refreshFrom(willRefresh).currentKey(1)) // for sake of getting snapshot
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(lastUpdatedDaysAgo)).refreshFrom(willNotRefresh).currentKeySalt(2).previousKeySalt(0),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(lastUpdatedDaysAgo)).refreshFrom(willRefresh).currentKeySalt(1)) // for sake of getting snapshot
                 .build();
 
         var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
@@ -644,7 +644,7 @@ class SaltRotationTest {
         var willRefresh = targetDate();
         var willNotRefresh = targetDate().plusDays(30);
         var lastSnapshot = SaltSnapshotBuilder.start()
-                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKey(0, "keyKey1", "keySalt1"),
+                .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKeySalt(0, "keyKey1", "keySalt1"),
                         SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentSalt())
                 .build();
 

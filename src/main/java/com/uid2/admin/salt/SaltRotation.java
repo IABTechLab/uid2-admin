@@ -135,12 +135,12 @@ public class SaltRotation {
         );
     }
 
-    private long calculateRefreshFrom(SaltEntry salt, TargetDate targetDate) {
-        long multiplier = targetDate.saltAgeInDays(salt) / 30 + 1;
-        return Instant.ofEpochMilli(salt.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli() + (multiplier * THIRTY_DAYS_IN_MS);
+    private long calculateRefreshFrom(SaltEntry bucket, TargetDate targetDate) {
+        long multiplier = targetDate.saltAgeInDays(bucket) / 30 + 1;
+        return Instant.ofEpochMilli(bucket.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli() + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
-    private String calculateCurrentSalt(SaltEntry salt, boolean shouldRotate) throws Exception {
+    private String calculateCurrentSalt(SaltEntry bucket, boolean shouldRotate) throws Exception {
         if (shouldRotate) {
             if (ENABLE_V4_RAW_UID) {
                 return null;
@@ -149,15 +149,15 @@ public class SaltRotation {
                 return this.keyGenerator.generateRandomKeyString(32);
             }
         }
-        return salt.currentSalt();
+        return bucket.currentSalt();
     }
 
-    private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, TargetDate targetDate) {
+    private String calculatePreviousSalt(SaltEntry bucket, boolean shouldRotate, TargetDate targetDate) {
         if (shouldRotate) {
-            return salt.currentSalt();
+            return bucket.currentSalt();
         }
-        if (targetDate.saltAgeInDays(salt) < 90) {
-            return salt.previousSalt();
+        if (targetDate.saltAgeInDays(bucket) < 90) {
+            return bucket.previousSalt();
         }
         return null;
     }
