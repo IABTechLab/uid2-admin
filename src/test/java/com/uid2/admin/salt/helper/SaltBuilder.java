@@ -14,8 +14,8 @@ public class SaltBuilder {
     private Instant refreshFrom = Instant.now();
     private String currentSalt = null;
     private String previousSalt = null;
-    private SaltEntry.KeyMaterial currentKey = null;
-    private SaltEntry.KeyMaterial previousKey = null;
+    private SaltEntry.KeyMaterial currentKeySalt = null;
+    private SaltEntry.KeyMaterial previousKeySalt = null;
 
     private SaltBuilder() {
     }
@@ -64,21 +64,21 @@ public class SaltBuilder {
         return this;
     }
 
-    public SaltBuilder currentKey(int keyId) {
-        return this.currentKey(keyId, "currentKeyKey" + id, "currentKeySalt" + id);
+    public SaltBuilder currentKeySalt(int keyId) {
+        return this.currentKeySalt(keyId, "currentKeyKey" + id, "currentKeySalt" + id);
     }
 
-    public SaltBuilder previousKey(int keyId) {
-        return this.previousKey(keyId, "previousKeyKey" + id, "previousKeySalt" + id);
+    public SaltBuilder previousKeySalt(int keyId) {
+        return this.previousKeySalt(keyId, "previousKeyKey" + id, "previousKeySalt" + id);
     }
 
-    public SaltBuilder currentKey(int keyId, String key, String salt) {
-        this.currentKey = new SaltEntry.KeyMaterial(keyId, key, salt);
+    public SaltBuilder currentKeySalt(int keyId, String key, String salt) {
+        this.currentKeySalt = new SaltEntry.KeyMaterial(keyId, key, salt);
         return this;
     }
 
-    public SaltBuilder previousKey(int keyId, String key, String salt) {
-        this.previousKey = new SaltEntry.KeyMaterial(keyId, key, salt);
+    public SaltBuilder previousKeySalt(int keyId, String key, String salt) {
+        this.previousKeySalt = new SaltEntry.KeyMaterial(keyId, key, salt);
         return this;
     }
 
@@ -90,8 +90,8 @@ public class SaltBuilder {
                 currentSalt,
                 refreshFrom.toEpochMilli(),
                 previousSalt,
-                currentKey,
-                previousKey
+                currentKeySalt,
+                previousKeySalt
         );
     }
 }
