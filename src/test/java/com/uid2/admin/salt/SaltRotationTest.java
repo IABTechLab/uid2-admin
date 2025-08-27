@@ -514,22 +514,22 @@ class SaltRotationTest {
 
         assertThat(buckets[0].currentSalt()).isNull();
         assertThat(buckets[0].previousSalt()).isEqualTo("salt1");
-        assertThat(buckets[0].currentKey().id()).isEqualTo(0);
-        assertThat(buckets[0].currentKey().key()).isNotNull();
-        assertThat(buckets[0].currentKey().salt()).isNotNull();
-        assertThat(buckets[0].previousKey()).isNull();
+        assertThat(buckets[0].currentKeySalt().id()).isEqualTo(0);
+        assertThat(buckets[0].currentKeySalt().key()).isNotNull();
+        assertThat(buckets[0].currentKeySalt().salt()).isNotNull();
+        assertThat(buckets[0].previousKeySalt()).isNull();
 
         assertThat(buckets[1].currentSalt()).isNull();
         assertThat(buckets[1].previousSalt()).isEqualTo("salt2");
-        assertThat(buckets[1].currentKey().id()).isEqualTo(1);
-        assertThat(buckets[1].currentKey().key()).isNotNull();
-        assertThat(buckets[1].currentKey().salt()).isNotNull();
-        assertThat(buckets[1].previousKey()).isNull();
+        assertThat(buckets[1].currentKeySalt().id()).isEqualTo(1);
+        assertThat(buckets[1].currentKeySalt().key()).isNotNull();
+        assertThat(buckets[1].currentKeySalt().salt()).isNotNull();
+        assertThat(buckets[1].previousKeySalt()).isNull();
 
         assertThat(buckets[2].currentSalt()).isEqualTo("salt3");
         assertThat(buckets[2].previousSalt()).isNull();
-        assertThat(buckets[2].currentKey()).isNull();
-        assertThat(buckets[2].previousKey()).isNull();
+        assertThat(buckets[2].currentKeySalt()).isNull();
+        assertThat(buckets[2].previousKeySalt()).isNull();
     }
 
     private static Stream<Arguments> getKeyIdArguments() {
@@ -565,13 +565,13 @@ class SaltRotationTest {
         var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
         var buckets = result.getSnapshot().getAllRotatingSalts();
 
-        assertEquals(existingIds[0], buckets[0].currentKey().id());
-        assertEquals(existingIds[1], buckets[1].currentKey().id());
-        assertEquals(existingIds[2], buckets[2].currentKey().id());
-        assertEquals(existingIds[3], buckets[3].currentKey().id());
-        assertEquals(nextIds[0], buckets[4].currentKey().id());
-        assertEquals(nextIds[1], buckets[5].currentKey().id());
-        assertEquals(nextIds[2], buckets[6].currentKey().id());
+        assertEquals(existingIds[0], buckets[0].currentKeySalt().id());
+        assertEquals(existingIds[1], buckets[1].currentKeySalt().id());
+        assertEquals(existingIds[2], buckets[2].currentKeySalt().id());
+        assertEquals(existingIds[3], buckets[3].currentKeySalt().id());
+        assertEquals(nextIds[0], buckets[4].currentKeySalt().id());
+        assertEquals(nextIds[1], buckets[5].currentKeySalt().id());
+        assertEquals(nextIds[2], buckets[6].currentKeySalt().id());
     }
 
     @Test
@@ -593,17 +593,17 @@ class SaltRotationTest {
         var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
         var buckets = result.getSnapshot().getAllRotatingSalts();
 
-        assertEquals(3, buckets[0].currentKey().id());
-        assertEquals(1, buckets[1].currentKey().id());
-        assertEquals(2, buckets[2].currentKey().id());
+        assertEquals(3, buckets[0].currentKeySalt().id());
+        assertEquals(1, buckets[1].currentKeySalt().id());
+        assertEquals(2, buckets[2].currentKeySalt().id());
         verify(keyGenerator, times(2)).generateRandomKeyString(anyInt());
 
-        assertEquals(0, buckets[0].previousKey().id());
-        assertEquals("keyKey", buckets[0].previousKey().key());
-        assertEquals("keySalt", buckets[0].previousKey().salt());
+        assertEquals(0, buckets[0].previousKeySalt().id());
+        assertEquals("keyKey", buckets[0].previousKeySalt().key());
+        assertEquals("keySalt", buckets[0].previousKeySalt().salt());
 
-        assertNull(buckets[1].previousKey());
-        assertNull(buckets[2].previousKey());
+        assertNull(buckets[1].previousKeySalt());
+        assertNull(buckets[2].previousKeySalt());
     }
 
     @ParameterizedTest
@@ -629,7 +629,7 @@ class SaltRotationTest {
         var result = saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
         var buckets = result.getSnapshot().getAllRotatingSalts();
 
-        assertEquals(hasPreviousKey, buckets[0].previousKey() != null);
+        assertEquals(hasPreviousKey, buckets[0].previousKeySalt() != null);
     }
 
     @Test
@@ -653,8 +653,8 @@ class SaltRotationTest {
 
         assertThat(buckets[0].currentSalt()).isNotNull();
         assertThat(buckets[0].previousSalt()).isNull();
-        assertThat(buckets[0].currentKey()).isNull();
-        assertThat(buckets[0].previousKey()).isEqualTo(new SaltEntry.KeyMaterial(0, "keyKey1", "keySalt1"));
+        assertThat(buckets[0].currentKeySalt()).isNull();
+        assertThat(buckets[0].previousKeySalt()).isEqualTo(new SaltEntry.KeyMaterial(0, "keyKey1", "keySalt1"));
     }
 
     @ParameterizedTest
