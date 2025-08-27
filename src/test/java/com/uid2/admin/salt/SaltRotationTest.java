@@ -675,8 +675,8 @@ class SaltRotationTest {
         var lastSnapshot = SaltSnapshotBuilder.start()
                 .entries(SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentSalt(),
                         SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentSalt(),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKey(1),
-                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKey(2))
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willRefresh).currentKeySalt(1),
+                        SaltBuilder.start().lastUpdated(targetDate().minusDays(60)).refreshFrom(willNotRefresh).currentKeySalt(2))
                 .build();
 
         saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
