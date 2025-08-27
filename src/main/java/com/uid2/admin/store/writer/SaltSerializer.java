@@ -30,8 +30,8 @@ public final class SaltSerializer {
         stringBuilder.append(",");
         stringBuilder.append(serializeNullable(entry.previousSalt()));
 
-        appendKey(stringBuilder, entry.currentKey());
-        appendKey(stringBuilder, entry.previousKey());
+        appendKey(stringBuilder, entry.currentKeySalt());
+        appendKey(stringBuilder, entry.previousKeySalt());
 
         stringBuilder.append("\n");
     }

@@ -174,15 +174,15 @@ public class SaltRotation {
                 return null;
             }
         }
-        return bucket.currentKey();
+        return bucket.currentKeySalt();
     }
 
     private SaltEntry.KeyMaterial calculatePreviousKeySalt(SaltEntry bucket, boolean shouldRotate, TargetDate targetDate) {
         if (shouldRotate) {
-            return bucket.currentKey();
+            return bucket.currentKeySalt();
         }
         if (targetDate.saltAgeInDays(bucket) < 90) {
-            return bucket.previousKey();
+            return bucket.previousKeySalt();
         }
         return null;
     }

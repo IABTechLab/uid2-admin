@@ -24,12 +24,12 @@ public class KeyIdGenerator {
     }
 
     private static int getNextActiveKeyId(SaltEntry[] buckets) {
-        long lastUpdatedTimestampWithKey = Arrays.stream(buckets).filter(s -> s.currentKey() != null).mapToLong(SaltEntry::lastUpdated).max().orElse(0);
+        long lastUpdatedTimestampWithKey = Arrays.stream(buckets).filter(s -> s.currentKeySalt() != null).mapToLong(SaltEntry::lastUpdated).max().orElse(0);
         if (lastUpdatedTimestampWithKey == 0) return 0;
 
         int[] lastActiveKeyIdsSorted = Arrays.stream(buckets)
-                .filter(s -> s.lastUpdated() == lastUpdatedTimestampWithKey && s.currentKey() != null)
-                .mapToInt(s -> s.currentKey().id())
+                .filter(s -> s.lastUpdated() == lastUpdatedTimestampWithKey && s.currentKeySalt() != null)
+                .mapToInt(s -> s.currentKeySalt().id())
                 .sorted()
                 .toArray();
 

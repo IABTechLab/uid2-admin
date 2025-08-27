@@ -118,4 +118,26 @@ class SaltSerializerTest {
 
         assertThat(actual).isEqualTo(expected);
     }
+
+    @Test
+    void toCsv_mixedNullsInKeysAndSalts() {
+        var expected = """
+1,100,,1000,previousSalt,0,currentKeyKey,currentKeySalt,,,
+2,200,,2000,,0,currentKeyKey,currentKeySalt,1,previousKeyKey,previousKeySalt
+3,300,salt,3000,,,,,1,previousKeyKey,previousKeySalt
+4,400,,4000,,0,currentKeyKey,currentKeySalt,,,
+""";
+        var currentKey = new KeyMaterial(0, "currentKeyKey", "currentKeySalt");
+        var previousKey = new KeyMaterial(1, "previousKeyKey", "previousKeySalt");
+
+        var salts = new SaltEntry[]{
+            new SaltEntry(1, "hashedId1", 100, null, 1000L, "previousSalt", currentKey, null),
+            new SaltEntry(2, "hashedId2", 200, null, 2000L, null, currentKey, previousKey),
+            new SaltEntry(3, "hashedId3", 300, "salt", 3000L, null, null, previousKey),
+            new SaltEntry(4, "hashedId4", 400, null, 4000L, null, currentKey, null),
+        };
+        var actual = SaltSerializer.toCsv(salts);
+
+        assertThat(actual).isEqualTo(expected);
+    }
 }

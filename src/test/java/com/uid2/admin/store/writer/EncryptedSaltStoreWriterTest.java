@@ -241,12 +241,12 @@ public class EncryptedSaltStoreWriterTest {
                     () -> assertEquals(entry.currentSalt(), fields[2]),
                     () -> assertEquals(entry.refreshFrom(), parseLong(fields[3])),
                     () -> assertEquals(entry.previousSalt(), fields[4]),
-                    () -> assertEquals(entry.currentKey().id(), parseLong(fields[5])),
-                    () -> assertEquals(entry.currentKey().key(), fields[6]),
-                    () -> assertEquals(entry.currentKey().salt(), fields[7]),
-                    () -> assertEquals(entry.previousKey().id(), parseLong(fields[8])),
-                    () -> assertEquals(entry.previousKey().key(), fields[9]),
-                    () -> assertEquals(entry.previousKey().salt(), fields[10])
+                    () -> assertEquals(entry.currentKeySalt().id(), parseLong(fields[5])),
+                    () -> assertEquals(entry.currentKeySalt().key(), fields[6]),
+                    () -> assertEquals(entry.currentKeySalt().salt(), fields[7]),
+                    () -> assertEquals(entry.previousKeySalt().id(), parseLong(fields[8])),
+                    () -> assertEquals(entry.previousKeySalt().key(), fields[9]),
+                    () -> assertEquals(entry.previousKeySalt().salt(), fields[10])
             );
         }
     }
