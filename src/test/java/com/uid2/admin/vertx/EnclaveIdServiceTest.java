@@ -96,7 +96,7 @@ public class EnclaveIdServiceTest extends ServiceTestBase {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Role.class, names = {"PRIVILEGED", "SUPER_USER"}, mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = Role.class, names = {"PRIVILEGED", "SUPER_USER", "ENCLAVE_REGISTRAR"}, mode = EnumSource.Mode.EXCLUDE)
     public void enclaveId_Add_NotAuthorized(Role role, Vertx vertx, VertxTestContext vertxTestContext) {
         fakeAuth(role);
 
@@ -236,6 +236,29 @@ public class EnclaveIdServiceTest extends ServiceTestBase {
             assertEquals(401, response.statusCode());
             vertxTestContext.completeNow();
         });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/enclave/list",
+            "/api/enclave/metadata",
+            "/api/enclave/del?name=some-name",
+    })
+    public void enclaveId_Endpoints_NotAuthorized_ForEnclaveRegistrar(String url, Vertx vertx, VertxTestContext vertxTestContext) {
+        fakeAuth(Role.ENCLAVE_REGISTRAR);
+
+        // Use GET for list/metadata, POST for delete
+        if (url.contains("/del")) {
+            post(vertx, vertxTestContext, url, "", response -> {
+                assertEquals(401, response.statusCode());
+                vertxTestContext.completeNow();
+            });
+        } else {
+            get(vertx, vertxTestContext, url, response -> {
+                assertEquals(401, response.statusCode());
+                vertxTestContext.completeNow();
+            });
+        }
     }
 
 }
