@@ -50,7 +50,6 @@ public class SaltService implements IService {
     private final RotatingSaltProvider saltProvider;
     private final SaltRotation saltRotation;
 
-
     public SaltService(AdminAuthMiddleware auth,
                        WriteLock writeLock,
                        SaltStoreWriter storageManager,

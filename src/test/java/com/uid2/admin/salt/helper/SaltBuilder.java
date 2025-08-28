@@ -6,7 +6,7 @@ import com.uid2.shared.model.SaltEntry;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SaltBuilder {
+public final class SaltBuilder {
     private static final AtomicInteger LAST_AUTO_ID = new AtomicInteger(0);
 
     private int id = LAST_AUTO_ID.incrementAndGet();
