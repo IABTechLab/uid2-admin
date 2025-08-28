@@ -62,6 +62,7 @@ public class SaltRotation {
         logSaltAges("refreshable-salts", targetDate, refreshableSalts);
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
+        logBucketFormatCount(targetDate, postRotationSalts);
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -250,6 +251,24 @@ public class SaltRotation {
                     entry.getValue()
             );
         }
+    }
+
+
+    /** Logging to monitor migration of buckets from salts (old format - v2/v3) to encryption keys (new format - v4) **/
+    private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] postRotationBuckets) {
+        int totalKeys = 0, totalSalts = 0, totalPreviousKeys = 0, totalPreviousSalts = 0;
+
+        for (SaltEntry bucket : postRotationBuckets) {
+            if (bucket.currentKeySalt() != null) totalKeys++;
+            if (bucket.currentSalt() != null) totalSalts++;
+            if (bucket.previousKeySalt() != null) totalPreviousKeys++;
+            if (bucket.previousSalt() != null) totalPreviousSalts++;
+        }
+
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-current-key-buckets", totalKeys);
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-current-salt-buckets", totalSalts);
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-previous-key-buckets", totalPreviousKeys);
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-previous-salt-buckets", totalPreviousSalts);
     }
 
     @Getter
