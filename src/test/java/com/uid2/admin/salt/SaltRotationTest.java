@@ -659,10 +659,10 @@ class SaltRotationTest {
 
     @ParameterizedTest
     @CsvSource({
-            "true, 1, 3, 1",
-            "false, 0, 1, 3"
+            "true, 3, 1",
+            "false, 1, 3"
     })
-    void testKeyRotationLogBucketFormat(boolean v4Enabled, int expectedNewKeyBuckets, int expectedTotalKeyBuckets, int expectedTotalSaltBuckets) throws Exception {
+    void testKeyRotationLogBucketFormat(boolean v4Enabled, int expectedTotalKeyBuckets, int expectedTotalSaltBuckets) throws Exception {
         saltRotation = new SaltRotation(keyGenerator, JsonObject.of(AdminConst.ENABLE_V4_RAW_UID, v4Enabled));
         when(keyGenerator.generateRandomKeyString(anyInt())).thenReturn("random-key-string");
 
@@ -682,9 +682,10 @@ class SaltRotationTest {
         saltRotation.rotateSalts(lastSnapshot, minAges, 1, targetDate());
 
         var expected = Set.of(
-                String.format("[INFO] UID bucket format: target_date=2025-01-01 migrated_key_bucket_count=%d total_key_bucket_count=%d total_salt_bucket_count=%d " +
-                                "total_previous_key_count=%d total_previous_salt_count=%d",
-                        expectedNewKeyBuckets, expectedTotalKeyBuckets, expectedTotalSaltBuckets, 1, 1)
+                String.format("[INFO] UID bucket format: target_date=2025-01-01 bucket_format=total-current-key-buckets bucket_count=%d", expectedTotalKeyBuckets),
+                String.format("[INFO] UID bucket format: target_date=2025-01-01 bucket_format=total-current-salt-buckets bucket_count=%d", expectedTotalSaltBuckets),
+                String.format("[INFO] UID bucket format: target_date=2025-01-01 bucket_format=total-previous-key-buckets bucket_count=%d", 1),
+                String.format("[INFO] UID bucket format: target_date=2025-01-01 bucket_format=total-previous-salt-buckets bucket_count=%d", 1)
         );
         var actual = appender.list.stream().map(Object::toString).filter(s -> s.contains("UID bucket format")).collect(Collectors.toSet());
         assertThat(actual).isEqualTo(expected);
