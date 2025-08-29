@@ -27,14 +27,14 @@ public class SaltSnapshotBuilder {
 
     public SaltSnapshotBuilder entries(int count, TargetDate lastUpdated) {
         for (int i = 0; i < count; ++i) {
-            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).refreshFrom(lastUpdated.plusDays(30)).build());
+            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).refreshFrom(lastUpdated.plusDays(30)).currentSalt().build());
         }
         return this;
     }
 
     public SaltSnapshotBuilder entries(int count, TargetDate lastUpdated, TargetDate refreshFrom) {
         for (int i = 0; i < count; ++i) {
-            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).refreshFrom(refreshFrom).build());
+            entries.add(SaltBuilder.start().lastUpdated(lastUpdated).refreshFrom(refreshFrom).currentSalt().build());
         }
         return this;
     }

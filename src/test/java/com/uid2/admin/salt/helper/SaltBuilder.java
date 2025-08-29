@@ -14,6 +14,8 @@ public class SaltBuilder {
     private Instant refreshFrom = Instant.now();
     private String currentSalt = null;
     private String previousSalt = null;
+    private SaltEntry.KeyMaterial currentKeySalt = null;
+    private SaltEntry.KeyMaterial previousKeySalt = null;
 
     private SaltBuilder() {
     }
@@ -47,6 +49,11 @@ public class SaltBuilder {
         return this;
     }
 
+    public SaltBuilder currentSalt() {
+        this.currentSalt =  "salt " + id;
+        return this;
+    }
+
     public SaltBuilder currentSalt(String currentSalt) {
         this.currentSalt = currentSalt;
         return this;
@@ -57,16 +64,34 @@ public class SaltBuilder {
         return this;
     }
 
+    public SaltBuilder currentKeySalt(int keyId) {
+        return this.currentKeySalt(keyId, "currentKeyKey" + id, "currentKeySalt" + id);
+    }
+
+    public SaltBuilder previousKeySalt(int keyId) {
+        return this.previousKeySalt(keyId, "previousKeyKey" + id, "previousKeySalt" + id);
+    }
+
+    public SaltBuilder currentKeySalt(int keyId, String key, String salt) {
+        this.currentKeySalt = new SaltEntry.KeyMaterial(keyId, key, salt);
+        return this;
+    }
+
+    public SaltBuilder previousKeySalt(int keyId, String key, String salt) {
+        this.previousKeySalt = new SaltEntry.KeyMaterial(keyId, key, salt);
+        return this;
+    }
+
     public SaltEntry build() {
         return new SaltEntry(
                 id,
                 Integer.toString(id),
                 lastUpdated.toEpochMilli(),
-                currentSalt == null ? "salt " + id : currentSalt,
+                currentSalt,
                 refreshFrom.toEpochMilli(),
                 previousSalt,
-                null,
-                null
+                currentKeySalt,
+                previousKeySalt
         );
     }
 }

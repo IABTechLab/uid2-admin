@@ -22,7 +22,7 @@ public final class SaltSerializer {
                 .append(",")
                 .append(lastUpdated % 1000 == 0 ? lastUpdated + 1 : lastUpdated)
                 .append(",")
-                .append(entry.currentSalt());
+                .append(serializeNullable(entry.currentSalt()));
 
         stringBuilder.append(",");
         stringBuilder.append(serializeNullable(entry.refreshFrom()));
@@ -30,8 +30,8 @@ public final class SaltSerializer {
         stringBuilder.append(",");
         stringBuilder.append(serializeNullable(entry.previousSalt()));
 
-        appendKey(stringBuilder, entry.currentKey());
-        appendKey(stringBuilder, entry.previousKey());
+        appendKey(stringBuilder, entry.currentKeySalt());
+        appendKey(stringBuilder, entry.previousKeySalt());
 
         stringBuilder.append("\n");
     }
