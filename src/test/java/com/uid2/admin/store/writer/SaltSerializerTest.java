@@ -25,8 +25,8 @@ class SaltSerializerTest {
 """;
 
         var salts = new SaltEntry[]{
-                new SaltEntry(1, "hashedId1", 100, "salt1", null, null, null, null),
-                new SaltEntry(2, "hashedId2", 200, "salt2", null, null, null, null),
+                new SaltEntry(1, "hashedId1", 100, "salt1", 0, null, null, null),
+                new SaltEntry(2, "hashedId2", 200, "salt2", 0, null, null, null),
         };
         var actual = SaltSerializer.toCsv(salts);
 
