@@ -3,7 +3,8 @@ package com.uid2.admin.store.writer;
 import com.uid2.shared.model.SaltEntry;
 
 public final class SaltSerializer {
-    private SaltSerializer() {}
+    private SaltSerializer() {
+    }
 
     public static String toCsv(SaltEntry[] entries) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -25,7 +26,7 @@ public final class SaltSerializer {
                 .append(serializeNullable(entry.currentSalt()));
 
         stringBuilder.append(",");
-        stringBuilder.append(serializeNullable(entry.refreshFrom()));
+        stringBuilder.append(entry.refreshFrom());
 
         stringBuilder.append(",");
         stringBuilder.append(serializeNullable(entry.previousSalt()));
@@ -45,8 +46,7 @@ public final class SaltSerializer {
                     .append(serializeNullable(key.key()))
                     .append(",")
                     .append(serializeNullable(key.salt()));
-        }
-        else  {
+        } else {
             stringBuilder.append(",,,");
         }
     }

@@ -20,13 +20,13 @@ class SaltSerializerTest {
     @Test
     void toCsv_serializesSaltsWithNoOptionalFields() {
         var expected = """
-1,100,salt1,,,,,,,,
-2,200,salt2,,,,,,,,
+1,100,salt1,1000,,,,,,,
+2,200,salt2,2000,,,,,,,
 """;
 
         var salts = new SaltEntry[]{
-                new SaltEntry(1, "hashedId1", 100, "salt1", null, null, null, null),
-                new SaltEntry(2, "hashedId2", 200, "salt2", null, null, null, null),
+                new SaltEntry(1, "hashedId1", 100, "salt1", 1000L, null, null, null),
+                new SaltEntry(2, "hashedId2", 200, "salt2", 2000L, null, null, null),
         };
         var actual = SaltSerializer.toCsv(salts);
 
@@ -131,10 +131,10 @@ class SaltSerializerTest {
         var previousKey = new KeyMaterial(1, "previousKeyKey", "previousKeySalt");
 
         var salts = new SaltEntry[]{
-            new SaltEntry(1, "hashedId1", 100, null, 1000L, "previousSalt", currentKey, null),
-            new SaltEntry(2, "hashedId2", 200, null, 2000L, null, currentKey, previousKey),
-            new SaltEntry(3, "hashedId3", 300, "salt", 3000L, null, null, previousKey),
-            new SaltEntry(4, "hashedId4", 400, null, 4000L, null, currentKey, null),
+                new SaltEntry(1, "hashedId1", 100, null, 1000L, "previousSalt", currentKey, null),
+                new SaltEntry(2, "hashedId2", 200, null, 2000L, null, currentKey, previousKey),
+                new SaltEntry(3, "hashedId3", 300, "salt", 3000L, null, null, previousKey),
+                new SaltEntry(4, "hashedId4", 400, null, 4000L, null, currentKey, null),
         };
         var actual = SaltSerializer.toCsv(salts);
 
