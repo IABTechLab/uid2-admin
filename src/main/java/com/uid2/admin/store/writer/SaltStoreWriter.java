@@ -4,7 +4,6 @@ import com.uid2.admin.store.FileManager;
 import com.uid2.admin.store.version.VersionGenerator;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.TaggableCloudStorage;
-import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 import io.vertx.core.json.JsonArray;

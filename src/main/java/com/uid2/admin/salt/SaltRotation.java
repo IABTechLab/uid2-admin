@@ -1,10 +1,12 @@
 package com.uid2.admin.salt;
 
+import com.uid2.admin.AdminConst;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 
 import com.uid2.shared.store.salt.ISaltProvider.ISaltSnapshot;
 import com.uid2.shared.store.salt.RotatingSaltProvider.SaltSnapshot;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +19,15 @@ import java.util.stream.Collectors;
 public class SaltRotation {
     private static final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
     private static final double MAX_SALT_PERCENTAGE = 0.8;
+    private final boolean ENABLE_V4_RAW_UID;
 
     private final IKeyGenerator keyGenerator;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltRotation.class);
 
-    public SaltRotation(IKeyGenerator keyGenerator) {
+    public SaltRotation(IKeyGenerator keyGenerator, JsonObject config) {
         this.keyGenerator = keyGenerator;
+        this.ENABLE_V4_RAW_UID = config.getBoolean(AdminConst.ENABLE_V4_RAW_UID, false);
     }
 
     public Result rotateSalts(
@@ -57,6 +62,7 @@ public class SaltRotation {
         logSaltAges("refreshable-salts", targetDate, refreshableSalts);
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
+        logBucketFormatCount(targetDate, postRotationSalts);
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,
@@ -99,45 +105,85 @@ public class SaltRotation {
     }
 
     private SaltEntry[] rotateSalts(SaltEntry[] oldSalts, List<SaltEntry> saltsToRotate, TargetDate targetDate) throws Exception {
+        var keyIdGenerator = new KeyIdGenerator(oldSalts);
         var saltIdsToRotate = saltsToRotate.stream().map(SaltEntry::id).collect(Collectors.toSet());
 
         var updatedSalts = new SaltEntry[oldSalts.length];
         for (int i = 0; i < oldSalts.length; i++) {
             var shouldRotate = saltIdsToRotate.contains(oldSalts[i].id());
-            updatedSalts[i] = updateSalt(oldSalts[i], targetDate, shouldRotate);
+            updatedSalts[i] = updateSalt(oldSalts[i], targetDate, shouldRotate, keyIdGenerator);
         }
         return updatedSalts;
     }
 
-    private SaltEntry updateSalt(SaltEntry oldSalt, TargetDate targetDate, boolean shouldRotate) throws Exception {
-        var currentSalt = shouldRotate ? this.keyGenerator.generateRandomKeyString(32) : oldSalt.currentSalt();
-        var lastUpdated = shouldRotate ? targetDate.asEpochMs() : oldSalt.lastUpdated();
-        var refreshFrom = calculateRefreshFrom(oldSalt, targetDate);
-        var previousSalt = calculatePreviousSalt(oldSalt, shouldRotate, targetDate);
+    private SaltEntry updateSalt(SaltEntry oldBucket, TargetDate targetDate, boolean shouldRotate, KeyIdGenerator keyIdGenerator) throws Exception {
+        var lastUpdated = shouldRotate ? targetDate.asEpochMs() : oldBucket.lastUpdated();
+        var refreshFrom = calculateRefreshFrom(oldBucket, targetDate);
+        var currentSalt = calculateCurrentSalt(oldBucket, shouldRotate);
+        var previousSalt = calculatePreviousSalt(oldBucket, shouldRotate, targetDate);
+        var currentKeySalt = calculateCurrentKeySalt(oldBucket, shouldRotate, keyIdGenerator);
+        var previousKeySalt = calculatePreviousKeySalt(oldBucket,shouldRotate, targetDate);
 
         return new SaltEntry(
-                oldSalt.id(),
-                oldSalt.hashedId(),
+                oldBucket.id(),
+                oldBucket.hashedId(),
                 lastUpdated,
                 currentSalt,
                 refreshFrom,
                 previousSalt,
-                null,
-                null
+                currentKeySalt,
+                previousKeySalt
         );
     }
 
-    private long calculateRefreshFrom(SaltEntry salt, TargetDate targetDate) {
-        long multiplier = targetDate.saltAgeInDays(salt) / 30 + 1;
-        return Instant.ofEpochMilli(salt.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli() + (multiplier * THIRTY_DAYS_IN_MS);
+    private long calculateRefreshFrom(SaltEntry bucket, TargetDate targetDate) {
+        long multiplier = targetDate.saltAgeInDays(bucket) / 30 + 1;
+        return Instant.ofEpochMilli(bucket.lastUpdated()).truncatedTo(ChronoUnit.DAYS).toEpochMilli() + (multiplier * THIRTY_DAYS_IN_MS);
     }
 
-    private String calculatePreviousSalt(SaltEntry salt, boolean shouldRotate, TargetDate targetDate) {
+    private String calculateCurrentSalt(SaltEntry bucket, boolean shouldRotate) throws Exception {
         if (shouldRotate) {
-            return salt.currentSalt();
+            if (ENABLE_V4_RAW_UID) {
+                return null;
+            }
+            else {
+                return this.keyGenerator.generateRandomKeyString(32);
+            }
         }
-        if (targetDate.saltAgeInDays(salt) < 90) {
-            return salt.previousSalt();
+        return bucket.currentSalt();
+    }
+
+    private String calculatePreviousSalt(SaltEntry bucket, boolean shouldRotate, TargetDate targetDate) {
+        if (shouldRotate) {
+            return bucket.currentSalt();
+        }
+        if (targetDate.saltAgeInDays(bucket) < 90) {
+            return bucket.previousSalt();
+        }
+        return null;
+    }
+
+    private SaltEntry.KeyMaterial calculateCurrentKeySalt(SaltEntry bucket, boolean shouldRotate, KeyIdGenerator keyIdGenerator) throws Exception {
+        if (shouldRotate) {
+            if (ENABLE_V4_RAW_UID) {
+                return new SaltEntry.KeyMaterial(
+                        keyIdGenerator.getNextKeyId(),
+                        this.keyGenerator.generateRandomKeyString(32),
+                        this.keyGenerator.generateRandomKeyString(32)
+                );
+            } else {
+                return null;
+            }
+        }
+        return bucket.currentKeySalt();
+    }
+
+    private SaltEntry.KeyMaterial calculatePreviousKeySalt(SaltEntry bucket, boolean shouldRotate, TargetDate targetDate) {
+        if (shouldRotate) {
+            return bucket.currentKeySalt();
+        }
+        if (targetDate.saltAgeInDays(bucket) < 90) {
+            return bucket.previousKeySalt();
         }
         return null;
     }
@@ -205,6 +251,24 @@ public class SaltRotation {
                     entry.getValue()
             );
         }
+    }
+
+
+    /** Logging to monitor migration of buckets from salts (old format - v2/v3) to encryption keys (new format - v4) **/
+    private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] postRotationBuckets) {
+        int totalKeys = 0, totalSalts = 0, totalPreviousKeys = 0, totalPreviousSalts = 0;
+
+        for (SaltEntry bucket : postRotationBuckets) {
+            if (bucket.currentKeySalt() != null) totalKeys++;
+            if (bucket.currentSalt() != null) totalSalts++;
+            if (bucket.previousKeySalt() != null) totalPreviousKeys++;
+            if (bucket.previousSalt() != null) totalPreviousSalts++;
+        }
+
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-current-key-buckets", totalKeys);
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-current-salt-buckets", totalSalts);
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-previous-key-buckets", totalPreviousKeys);
+        LOGGER.info("UID bucket format: target_date={} bucket_format={} bucket_count={}", targetDate, "total-previous-salt-buckets", totalPreviousSalts);
     }
 
     @Getter
