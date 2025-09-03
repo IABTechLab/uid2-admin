@@ -20,8 +20,8 @@ class SaltSerializerTest {
     @Test
     void toCsv_serializesSaltsWithNoOptionalFields() {
         var expected = """
-1,100,salt1,,,,,,,,
-2,200,salt2,,,,,,,,
+1,100,salt1,0,,,,,,,
+2,200,salt2,0,,,,,,,
 """;
 
         var salts = new SaltEntry[]{
