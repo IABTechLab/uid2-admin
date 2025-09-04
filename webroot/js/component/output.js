@@ -17,10 +17,10 @@ function highlightJSON(json) {
   
   return json
     .replace(/("[\w\s_-]+")(\s*:)/g, '<span class="json-key">$1</span>$2')
-    .replace(/:\s*(".*?")/g, ': <span class="json-string">$1</span>')
-    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-    .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
-    .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+    .replace(/(:\s*)("(?:[^"\\]|\\.)*")/g, '$1<span class="json-string">$2</span>')
+    .replace(/(:\s*|[\[\,]\s*)(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(?=\s*[,\]\}\n]|$)/g, '$1<span class="json-number">$2</span>')
+    .replace(/(:\s*|[\[\,]\s*)(true|false)(?=\s*[,\]\}\n]|$)/g, '$1<span class="json-boolean">$2</span>')
+    .replace(/(:\s*|[\[\,]\s*)(null)(?=\s*[,\]\}\n]|$)/g, '$1<span class="json-null">$2</span>');
 }
 
 function formatOutput(data) {
