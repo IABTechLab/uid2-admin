@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-admin</artifactId>
-    <version>6.11.0</version>
+    <version>6.11.1-alpha-216-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -16,7 +16,7 @@
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
         <micrometer.version>1.12.2</micrometer.version>
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
-        <uid2-shared.version>11.0.4</uid2-shared.version>
+        <uid2-shared.version>11.0.5-alpha-291-SNAPSHOT</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
         <image.version>${project.version}</image.version>
     </properties>
