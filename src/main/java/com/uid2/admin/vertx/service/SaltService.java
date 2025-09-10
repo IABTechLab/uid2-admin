@@ -78,6 +78,12 @@ public class SaltService implements IService {
                 this.handleSaltRotate(ctx);
             }
         }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
+
+        router.post("/api/salt/simulate").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSaltSimulate(ctx);
+            }
+        }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {
@@ -154,6 +160,51 @@ public class SaltService implements IService {
             }
 
             storageManager.upload(result.getSnapshot());
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(toJson(result.getSnapshot()).encode());
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSaltSimulate(RoutingContext rc) {
+        try {
+            final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
+            if (fraction.isEmpty()) return;
+            final Optional<Double> iterations = RequestUtil.getDouble(rc, "iterations");
+            if (iterations.isEmpty() || iterations.get() < 1) return;
+
+            TargetDate targetDate =
+                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                            .map(TargetDate::new)
+                            .orElse(TargetDate.now().plusDays(1));
+
+            SaltRotation.Result result = null;
+            for (int i = 0; i < iterations.get(); i++) {
+                LOGGER.info("Iteration {}/{}", i + 1, iterations.get());
+
+                // force refresh
+                this.saltProvider.loadContent();
+
+                // mark all the referenced files as ready to archive
+                storageManager.archiveSaltLocations();
+
+                final List<RotatingSaltProvider.SaltSnapshot> snapshots = this.saltProvider.getSnapshots();
+                final RotatingSaltProvider.SaltSnapshot lastSnapshot = snapshots.getLast();
+
+                result = saltRotation.rotateSalts(lastSnapshot, SALT_ROTATION_AGE_THRESHOLDS, fraction.get(), targetDate);
+                if (!result.hasSnapshot()) {
+                    ResponseUtil.error(rc, 200, result.getReason());
+                    return;
+                }
+
+                storageManager.upload(result.getSnapshot(), i);
+
+                targetDate = targetDate.plusDays(1);
+            }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")

@@ -41,6 +41,14 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: defaultTargetDate
   };
 
+  const iterationsInput = {
+    name: 'iterations',
+    label: 'Iterations',
+    required: true,
+    type: 'number',
+    defaultValue: 1
+  };
+
   const operationConfig = {
     read: [
       {
@@ -63,6 +71,25 @@ document.addEventListener('DOMContentLoaded', function () {
         apiCall: {
           method: 'POST',
           url: '/api/salt/rebuild'
+        }
+      },
+      {
+        id: 'simulateRotation',
+        title: 'Simulate Rotation',
+        role: 'superuser',
+        inputs: [
+          fractionInput,
+          targetDateInput,
+          iterationsInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const fraction = encodeURIComponent(inputs.fraction);
+            const targetDate = encodeURIComponent(inputs.targetDate);
+            const iterations = encodeURIComponent(inputs.iterations);
+            return `/api/salt/simulate?fraction=${fraction}&target_date=${targetDate}&iterations=${iterations}`;
+          }
         }
       }
     ],

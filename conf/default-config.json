@@ -1,3 +1,4 @@
 {
-  "enable_keysets": false
+  "enable_keysets": false,
+  "enable_v4_raw_uid": false
 }
