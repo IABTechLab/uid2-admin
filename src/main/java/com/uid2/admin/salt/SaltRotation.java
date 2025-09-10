@@ -167,7 +167,7 @@ public class SaltRotation {
             if (enableV4RawUid) {
                 return new SaltEntry.KeyMaterial(
                         keyIdGenerator.getNextKeyId(),
-                        this.keyGenerator.generateRandomKeyString(32),
+                        this.keyGenerator.generateRandomKeyString(24),
                         this.keyGenerator.generateRandomKeyString(32)
                 );
             } else {

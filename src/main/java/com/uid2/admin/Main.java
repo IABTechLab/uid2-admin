@@ -260,7 +260,7 @@ public class Main {
                     new ServiceService(auth, writeLock, serviceStoreWriter, serviceProvider, siteProvider, serviceLinkProvider),
                     new ServiceLinkService(auth, writeLock, serviceLinkStoreWriter, serviceLinkProvider, serviceProvider, siteProvider),
                     new OperatorKeyService(config, auth, writeLock, operatorKeyStoreWriter, operatorKeyProvider, siteProvider, keyGenerator, keyHasher, cloudEncryptionKeyManager),
-                    new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation),
+                    new SaltService(auth, writeLock, saltStoreWriter, saltProvider, saltRotation, config, jobDispatcher, rotatingCloudEncryptionKeyProvider),
                     new SiteService(auth, writeLock, siteStoreWriter, siteProvider, clientKeyProvider),
                     new PartnerConfigService(auth, writeLock, partnerStoreWriter, partnerConfigProvider),
                     new PrivateSiteDataRefreshService(auth, jobDispatcher, writeLock, config),
@@ -269,7 +269,6 @@ public class Main {
                     new SearchService(auth, clientKeyProvider, operatorKeyProvider),
                     new CloudEncryptionKeyService(auth, cloudEncryptionKeyManager, jobDispatcher)
             };
-
 
             V2RouterModule v2RouterModule = new V2RouterModule(clientSideKeypairService, auth);
 
@@ -328,7 +327,6 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("partners", partnerConfigProvider);
             DataStoreMetrics.addDataStoreMetrics("service_link", serviceLinkProvider);
             DataStoreMetrics.addDataStoreServiceLinkEntryCount("snowflake", serviceLinkProvider, serviceProvider);
-
 
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);

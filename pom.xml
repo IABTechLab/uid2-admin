@@ -48,6 +48,11 @@
             <version>${uid2-shared.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.uid2</groupId>
+            <artifactId>uid2-client</artifactId>
+            <version>4.8.0</version>
+        </dependency>
+        <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
