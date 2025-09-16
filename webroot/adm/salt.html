@@ -41,12 +41,28 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: defaultTargetDate
   };
 
-  const iterationsInput = {
-    name: 'iterations',
-    label: 'Iterations',
+  const preMigrationIterationsInput = {
+    name: 'preMigrationIterations',
+    label: 'Step 1 - Pre-Migration Iterations',
     required: true,
     type: 'number',
-    defaultValue: 1
+    defaultValue: 0
+  };
+
+  const migrationV4IterationsInput = {
+    name: 'migrationV4Iterations',
+    label: 'Step 2 - Migration Iterations with V4 flag on',
+    required: true,
+    type: 'number',
+    defaultValue: 0
+  };
+
+  const migrationV2V3IterationsInput = {
+    name: 'migrationV2V3Iterations',
+    label: 'Step 3 - Migration Iterations with V4 flag off',
+    required: true,
+    type: 'number',
+    defaultValue: 0
   };
 
   const operationConfig = {
@@ -76,19 +92,23 @@ document.addEventListener('DOMContentLoaded', function () {
       {
         id: 'simulateRotation',
         title: 'Simulate Rotation',
-        role: 'superuser',
+        role: 'maintainer',
         inputs: [
           fractionInput,
           targetDateInput,
-          iterationsInput
+          preMigrationIterationsInput,
+          migrationV4IterationsInput,
+          migrationV2V3IterationsInput
         ],
         apiCall: {
           method: 'POST',
           getUrl: (inputs) => {
             const fraction = encodeURIComponent(inputs.fraction);
             const targetDate = encodeURIComponent(inputs.targetDate);
-            const iterations = encodeURIComponent(inputs.iterations);
-            return `/api/salt/simulate?fraction=${fraction}&target_date=${targetDate}&iterations=${iterations}`;
+            const preMigrationIterations = encodeURIComponent(inputs.preMigrationIterations);
+            const migrationV4Iterations = encodeURIComponent(inputs.migrationV4Iterations);
+            const migrationV2V3Iterations = encodeURIComponent(inputs.migrationV2V3Iterations);
+            return `/api/salt/simulate?fraction=${fraction}&target_date=${targetDate}&preMigrationIterations=${preMigrationIterations}&migrationV4Iterations=${migrationV4Iterations}&migrationV2V3Iterations=${migrationV2V3Iterations}`;
           }
         }
       }
