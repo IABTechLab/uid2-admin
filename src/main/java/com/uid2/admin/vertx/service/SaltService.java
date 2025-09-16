@@ -265,21 +265,21 @@ public class SaltService implements IService {
             saltRotation.setEnableV4RawUid(false);
             for (int i = 0; i < preMigrationIterations; i++) {
                 LOGGER.info("Step 1 - Pre-migration Iteration {}/{}", i + 1, preMigrationIterations);
-                simulationIteration(rc, fraction, targetDate, i, emails, emailToUidMapping);
+                simulationIteration(rc, fraction, targetDate, i, false, emails, emailToUidMapping);
                 targetDate = targetDate.plusDays(1);
             }
 
             saltRotation.setEnableV4RawUid(true);
             for (int i = 0; i < migrationV4Iterations; i++) {
                 LOGGER.info("Step 2 - Migration V4 Iteration {}/{}", i + 1, migrationV4Iterations);
-                simulationIteration(rc, fraction, targetDate, i, emails, emailToUidMapping);
+                simulationIteration(rc, fraction, targetDate, i, true, emails, emailToUidMapping);
                 targetDate = targetDate.plusDays(1);
             }
 
             saltRotation.setEnableV4RawUid(false);
             for (int i = 0; i < migrationV2V3Iterations; i++) {
                 LOGGER.info("Step 3 - Migration V2/V3 Iteration {}/{}", i + 1, migrationV2V3Iterations);
-                simulationIteration(rc, fraction, targetDate, i, emails, emailToUidMapping);
+                simulationIteration(rc, fraction, targetDate, i, false, emails, emailToUidMapping);
                 targetDate = targetDate.plusDays(1);
             }
 
@@ -293,7 +293,7 @@ public class SaltService implements IService {
     }
 
     private void simulationIteration(
-            RoutingContext rc, double fraction, TargetDate targetDate, int iteration,
+            RoutingContext rc, double fraction, TargetDate targetDate, int iteration, boolean enabledV4Uid,
             List<String> emails, Map<String, Map<SaltEntry, String>> emailToUidMapping
     ) throws Exception {
         // Rotate salts
@@ -312,10 +312,10 @@ public class SaltService implements IService {
         Map<SaltEntry, Integer> invalidSaltCount = new HashMap<>();
         int skippedUidCount = 0;
         int inconsistentUidCount = 0;
-        int validUidV2Count = 0;
         int validUidV4Count = 0;
-        int validPrevUidV2Count = 0;
+        int validUidV2Count = 0;
         int validPrevUidV4Count = 0;
+        int validPrevUidV2Count = 0;
         int validNoPrevUidCount = 0;
         int invalidUidCount = 0;
         int invalidPrevUidCount = 0;
@@ -323,27 +323,34 @@ public class SaltService implements IService {
             String email = emails.get(j);
             SaltEntry salt = emailToSaltMap.get(email);
 
-            // Assert salt state
+            // Prepare salt state booleans
             boolean missingSalt = salt.currentSalt() == null;
             boolean missingKey = salt.currentKeySalt() == null || salt.currentKeySalt().key() == null || salt.currentKeySalt().salt() == null;
             boolean missingPrevSalt = salt.previousSalt() == null;
             boolean missingPrevKey = salt.previousKeySalt() == null || salt.previousKeySalt().key() == null || salt.previousKeySalt().salt() == null;
-            if (!assertSaltState(missingSalt, missingKey, missingPrevSalt, missingPrevKey)) {
+
+            // Prepare current UID booleans
+            JsonNode mapping = emailMappings.get(j);
+            String uid = mapping.at("/u").asText(null);
+            byte[] uidBytes = uid == null ? null : Base64.getDecoder().decode(uid);
+            boolean isV4Uid = uidBytes != null && uidBytes.length == 33;
+            boolean isV2Uid = uidBytes != null && uidBytes.length == 32;
+            boolean rotated = emailToUidMapping.get(email).containsKey(salt);
+
+            // Assert salt state + additional assertions on freshly rotated salts with enabledV4Uid flag
+            if (!assertSaltState(missingSalt, missingKey, missingPrevSalt, missingPrevKey, rotated, enabledV4Uid)) {
                 invalidSaltCount.put(salt, invalidSaltCount.getOrDefault(salt, 0) + 1);
                 skippedUidCount++;
                 continue;
             }
             validSaltCount.put(salt, validSaltCount.getOrDefault(salt, 0) + 1);
 
-            // Assert current UID
-            JsonNode mapping = emailMappings.get(j);
-            String uid = mapping.at("/u").asText(null);
-            byte[] uidBytes = uid == null ? null : Base64.getDecoder().decode(uid);
-            boolean isV4Uid = uidBytes != null && uidBytes.length == 33;
-            boolean isV2Uid = uidBytes != null && uidBytes.length == 32;
+            // Assert UID consistency
             if (!assertUidConsistency(uid, email, salt, emailToUidMapping)) {
                 inconsistentUidCount++;
             }
+
+            // Assert that current UID is valid based on salt state
             boolean validCurrentUid = assertCurrentUid(uidBytes, isV4Uid, isV2Uid, missingKey, missingSalt, email, salt, result.getSnapshot());
             if (validCurrentUid) {
                 if (isV4Uid) {
@@ -360,7 +367,10 @@ public class SaltService implements IService {
             byte[] prevUidBytes = prevUid == null ? null : Base64.getDecoder().decode(prevUid);
             boolean isPrevV4Uid = prevUidBytes != null && prevUidBytes.length == 33;
             boolean isPrevV2Uid = prevUidBytes != null && prevUidBytes.length == 32;
-            boolean validPrevUid = assertPrevUid(prevUidBytes, isPrevV4Uid, isPrevV2Uid, missingPrevKey, missingPrevSalt, isV4Uid, isV2Uid, email, salt, result.getSnapshot());
+
+            boolean validPrevUid = assertPrevUid(
+                    prevUidBytes, isPrevV4Uid, isPrevV2Uid, missingPrevKey, missingPrevSalt,
+                    email, salt, result.getSnapshot());
             if (validPrevUid) {
                 if (prevUidBytes != null) {
                     if (isPrevV4Uid) {
@@ -413,7 +423,9 @@ public class SaltService implements IService {
         return result;
     }
 
-    private boolean assertSaltState(boolean missingSalt, boolean missingKey, boolean missingPrevSalt, boolean missingPrevKey) {
+    private boolean assertSaltState(
+            boolean missingSalt, boolean missingKey, boolean missingPrevSalt, boolean missingPrevKey,
+            boolean rotated, boolean enabledV4Uid) {
         if (missingSalt && missingKey) {
             LOGGER.error("Invalid salt state - salt and key are both missing");
             return false;
@@ -422,6 +434,12 @@ public class SaltService implements IService {
             return false;
         } else if (!missingPrevSalt && !missingPrevKey) {
             LOGGER.error("Invalid salt state - previous salt and previous key are both present");
+            return false;
+        } else if (rotated && enabledV4Uid && missingKey) {
+            LOGGER.error("Invalid salt state - V4 UID enabled but missing key on rotated salt");
+            return false;
+        } else if (rotated && !enabledV4Uid && missingSalt) {
+            LOGGER.error("Invalid salt state - V4 UID enabled but missing salt on rotated salt");
             return false;
         }
 
@@ -479,23 +497,15 @@ public class SaltService implements IService {
 
     private boolean assertPrevUid(
             byte[] prevUidBytes, boolean isPrevV4Uid, boolean isPrevV2Uid, boolean missingPrevKey, boolean missingPrevSalt,
-            boolean isV4Uid, boolean isV2Uid,
             String email, SaltEntry salt, RotatingSaltProvider.SaltSnapshot snapshot
     ) {
         if (prevUidBytes != null) {
             if (isPrevV4Uid) {
-                if (isV2Uid) {
-                    LOGGER.error("Invalid previous UID state - v2 UID with v4 prev UID");
-                    return false;
-                } else if (isV4Uid) {
-                    if (assertV4Uid(prevUidBytes, email, salt.previousKeySalt(), snapshot)) {
-                        if (!missingPrevKey) {
-                            return true;
-                        } else {
-                            LOGGER.error("Invalid previous UID state - v4 UID generated with null key");
-                            return false;
-                        }
+                if (assertV4Uid(prevUidBytes, email, salt.previousKeySalt(), snapshot)) {
+                    if (!missingPrevKey) {
+                        return true;
                     } else {
+                        LOGGER.error("Invalid previous UID state - v4 UID generated with null key");
                         return false;
                     }
                 } else {
@@ -514,14 +524,8 @@ public class SaltService implements IService {
                 return false;
             }
         } else {
-            if (!missingPrevKey && !missingPrevSalt) {
-                LOGGER.error("Invalid previous UID state - both previous salt and previous key found");
-                return false;
-            } else if (!missingPrevKey) { // Add rollback assertions
-                LOGGER.error("Expected: v4 prev UID | Actual: null prev UID");
-                return false;
-            } else if (!missingPrevSalt) { // Add rollback assertions
-                LOGGER.error("Expected: v2 prev UID | Actual: null prev UID");
+            if (!missingPrevKey || !missingPrevSalt) {
+                LOGGER.error("Invalid previous UID state - previous salt or previous key found");
                 return false;
             } else {
                 return true;
