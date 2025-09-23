@@ -48,7 +48,9 @@ public class SaltStoreWriter {
     }
 
     public void upload(RotatingSaltProvider.SaltSnapshot data, int iterations) throws Exception {
-        this.buildAndUploadMetadata(this.getSnapshots(data, iterations));
+        List<RotatingSaltProvider.SaltSnapshot> snapshots = this.getSnapshots(data, iterations);
+        this.buildAndUploadMetadata(snapshots);
+        this.deleteOtherSnapshots(snapshots);
         refreshProvider();
     }
 
@@ -103,36 +105,18 @@ public class SaltStoreWriter {
         return filteredSnapshots;
     }
 
-    private List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data){
-        if (provider.getSnapshots() == null) {
-            throw new IllegalStateException("Snapshots cannot be null");
-        }
-        final Instant now = Instant.now();
+    private List<RotatingSaltProvider.SaltSnapshot> getSnapshots(RotatingSaltProvider.SaltSnapshot data) {
+        return getSnapshots(data, 0);
+    }
+
+    private void deleteOtherSnapshots(List<RotatingSaltProvider.SaltSnapshot> filteredSnapshots) {
         List<RotatingSaltProvider.SaltSnapshot> currentSnapshots = provider.getSnapshots();
-        List<RotatingSaltProvider.SaltSnapshot> snapshots = null;
-        snapshots = Stream.concat(currentSnapshots.stream(), Stream.of(data))
-                .sorted(Comparator.comparing(RotatingSaltProvider.SaltSnapshot::getEffective))
-                .toList();
-        RotatingSaltProvider.SaltSnapshot newestEffectiveSnapshot = snapshots.stream()
-                .filter(snapshot -> snapshot.isEffective(now))
-                .reduce((a, b) -> b).orElse(null);
-
-        List<RotatingSaltProvider.SaltSnapshot> filteredSnapshots = new ArrayList<>();
-
-        for (RotatingSaltProvider.SaltSnapshot snapshot : snapshots) {
-            if (!now.isBefore(snapshot.getExpires())) {
-                LOGGER.info("Skipping expired snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires());
-                continue;
-            }
-            if (newestEffectiveSnapshot != null && snapshot != newestEffectiveSnapshot) {
-                        LOGGER.info("Skipping effective snapshot, effective=" + snapshot.getEffective() + ", expires=" + snapshot.getExpires()
-                                + " in favour of newer snapshot, effective=" + newestEffectiveSnapshot.getEffective() + ", expires=" + newestEffectiveSnapshot.getExpires());
-                continue;
-            }
-            filteredSnapshots.add(snapshot);
-            newestEffectiveSnapshot = null;
+        List<RotatingSaltProvider.SaltSnapshot> outdatedSnapshots = currentSnapshots.stream().filter(snapshot -> !filteredSnapshots.contains(snapshot)).toList();
+        try {
+            this.cloudStorage.delete(outdatedSnapshots.stream().map(this::getSaltSnapshotLocation).toList());
+        } catch (Exception e) {
+            LOGGER.error("Error deleting snapshots", e);
         }
-        return filteredSnapshots;
     }
 
     protected JsonObject getMetadata() throws Exception {

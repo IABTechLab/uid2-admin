@@ -3,8 +3,6 @@ package com.uid2.admin.vertx.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uid2.admin.auth.AdminAuthMiddleware;
-import com.uid2.admin.job.JobDispatcher;
-import com.uid2.admin.job.jobsync.PrivateSiteDataSyncJob;
 import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.salt.TargetDate;
 import com.uid2.admin.store.writer.SaltStoreWriter;
@@ -15,21 +13,21 @@ import com.uid2.client.Uid2Helper;
 import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SaltEntry;
-import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.store.salt.RotatingSaltProvider;
 import com.uid2.shared.util.Mapper;
 import com.uid2.shared.util.URLConnectionHttpClient;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.http.HttpResponse;
@@ -37,10 +35,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.time.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
@@ -69,11 +67,6 @@ public class SaltService implements IService {
     private final RotatingSaltProvider saltProvider;
     private final SaltRotation saltRotation;
 
-    private final JsonObject config;
-    private final JobDispatcher jobDispatcher;
-    private final WriteLock jobDispatcherWriteLock;
-    private final RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider;
-
     // Simulation vars
     private static final ObjectMapper OBJECT_MAPPER = Mapper.getInstance();
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -93,29 +86,12 @@ public class SaltService implements IService {
                        WriteLock writeLock,
                        SaltStoreWriter storageManager,
                        RotatingSaltProvider saltProvider,
-                       SaltRotation saltRotation,
-
-                       JsonObject config,
-                       JobDispatcher jobDispatcher,
-                       RotatingCloudEncryptionKeyProvider rotatingCloudEncryptionKeyProvider) {
+                       SaltRotation saltRotation) {
         this.auth = auth;
         this.writeLock = writeLock;
         this.storageManager = storageManager;
         this.saltProvider = saltProvider;
         this.saltRotation = saltRotation;
-
-        this.config = config;
-        this.jobDispatcher = jobDispatcher;
-        this.jobDispatcherWriteLock = new WriteLock();
-        this.rotatingCloudEncryptionKeyProvider = rotatingCloudEncryptionKeyProvider;
-    }
-
-    public SaltService(AdminAuthMiddleware auth,
-                       WriteLock writeLock,
-                       SaltStoreWriter storageManager,
-                       RotatingSaltProvider saltProvider,
-                       SaltRotation saltRotation) {
-        this(auth, writeLock, storageManager, saltProvider, saltRotation, null, null, null);
     }
 
     @Override
@@ -253,13 +229,16 @@ public class SaltService implements IService {
                             .map(TargetDate::new)
                             .orElse(TargetDate.now().plusDays(1));
 
+            RotatingSaltProvider.SaltSnapshot firstSnapshot = saltProvider.getSnapshots().getLast();
             SaltRotation.Result result = null;
             List<String> emails = new ArrayList<>();
-            Map<String, Map<SaltEntry, String>> emailToUidMapping = new HashMap<>();
+            Map<String, Map<Long, Map<String, String>>> emailToUidMapping = new HashMap<>();
             for (int j = 0; j < IDENTITY_COUNT; j++) {
                 String email = randomEmail();
                 emails.add(email);
-                emailToUidMapping.put(email, new HashMap<>());
+
+                SaltEntry salt = getSalt(email, firstSnapshot);
+                emailToUidMapping.put(email, Map.of(salt.id(), new HashMap<>()));
             }
 
             saltRotation.setEnableV4RawUid(false);
@@ -272,14 +251,14 @@ public class SaltService implements IService {
             saltRotation.setEnableV4RawUid(true);
             for (int i = 0; i < migrationV4Iterations; i++) {
                 LOGGER.info("Step 2 - Migration V4 Iteration {}/{}", i + 1, migrationV4Iterations);
-                simulationIteration(rc, fraction, targetDate, i, true, emails, emailToUidMapping);
+                simulationIteration(rc, fraction, targetDate, preMigrationIterations + i, true, emails, emailToUidMapping);
                 targetDate = targetDate.plusDays(1);
             }
 
             saltRotation.setEnableV4RawUid(false);
             for (int i = 0; i < migrationV2V3Iterations; i++) {
                 LOGGER.info("Step 3 - Migration V2/V3 Iteration {}/{}", i + 1, migrationV2V3Iterations);
-                simulationIteration(rc, fraction, targetDate, i, false, emails, emailToUidMapping);
+                simulationIteration(rc, fraction, targetDate, preMigrationIterations + migrationV4Iterations + i, false, emails, emailToUidMapping);
                 targetDate = targetDate.plusDays(1);
             }
 
@@ -294,22 +273,22 @@ public class SaltService implements IService {
 
     private void simulationIteration(
             RoutingContext rc, double fraction, TargetDate targetDate, int iteration, boolean enabledV4Uid,
-            List<String> emails, Map<String, Map<SaltEntry, String>> emailToUidMapping
+            List<String> emails, Map<String, Map<Long, Map<String, String>>> emailToUidMapping
     ) throws Exception {
         // Rotate salts
-        SaltRotation.Result result = rotateSalts(rc, fraction, targetDate, iteration);
+        RotatingSaltProvider.SaltSnapshot snapshot = rotateSalts(rc, fraction, targetDate, iteration);
 
         Map<String, SaltEntry> emailToSaltMap = new LinkedHashMap<>();
         for (String email : emails) {
-            emailToSaltMap.put(email, getSalt(email, result.getSnapshot()));
+            emailToSaltMap.put(email, getSalt(email, snapshot));
         }
 
         // Call /v3/identity/map
         JsonNode operatorResponse = v3IdentityMap(emails);
         JsonNode emailMappings = operatorResponse.at("/body/email");
 
-        Map<SaltEntry, Integer> validSaltCount = new HashMap<>();
-        Map<SaltEntry, Integer> invalidSaltCount = new HashMap<>();
+        Map<Long, Integer> validSaltCount = new HashMap<>();
+        Map<Long, Integer> invalidSaltCount = new HashMap<>();
         int skippedUidCount = 0;
         int inconsistentUidCount = 0;
         int validUidV4Count = 0;
@@ -335,23 +314,26 @@ public class SaltService implements IService {
             byte[] uidBytes = uid == null ? null : Base64.getDecoder().decode(uid);
             boolean isV4Uid = uidBytes != null && uidBytes.length == 33;
             boolean isV2Uid = uidBytes != null && uidBytes.length == 32;
-            boolean rotated = emailToUidMapping.get(email).containsKey(salt);
+
+            Map<String, String> seenSalts = emailToUidMapping.get(email).get(salt.id());
+            String usedSalt = missingSalt ? (missingKey ? null : salt.currentKeySalt().key()) : salt.currentSalt();
+            boolean rotated = iteration > 0 && !seenSalts.containsKey(usedSalt);
 
             // Assert salt state + additional assertions on freshly rotated salts with enabledV4Uid flag
             if (!assertSaltState(missingSalt, missingKey, missingPrevSalt, missingPrevKey, rotated, enabledV4Uid)) {
-                invalidSaltCount.put(salt, invalidSaltCount.getOrDefault(salt, 0) + 1);
+                invalidSaltCount.put(salt.id(), invalidSaltCount.getOrDefault(salt, 0) + 1);
                 skippedUidCount++;
                 continue;
             }
-            validSaltCount.put(salt, validSaltCount.getOrDefault(salt, 0) + 1);
+            validSaltCount.put(salt.id(), validSaltCount.getOrDefault(salt, 0) + 1);
 
             // Assert UID consistency
-            if (!assertUidConsistency(uid, email, salt, emailToUidMapping)) {
+            if (!assertUidConsistency(uid, email, salt.id(), usedSalt, emailToUidMapping)) {
                 inconsistentUidCount++;
             }
 
             // Assert that current UID is valid based on salt state
-            boolean validCurrentUid = assertCurrentUid(uidBytes, isV4Uid, isV2Uid, missingKey, missingSalt, email, salt, result.getSnapshot());
+            boolean validCurrentUid = assertCurrentUid(uidBytes, isV4Uid, isV2Uid, missingKey, missingSalt, email, salt, snapshot);
             if (validCurrentUid) {
                 if (isV4Uid) {
                     validUidV4Count++;
@@ -370,7 +352,7 @@ public class SaltService implements IService {
 
             boolean validPrevUid = assertPrevUid(
                     prevUidBytes, isPrevV4Uid, isPrevV2Uid, missingPrevKey, missingPrevSalt,
-                    email, salt, result.getSnapshot());
+                    email, salt, snapshot);
             if (validPrevUid) {
                 if (prevUidBytes != null) {
                     if (isPrevV4Uid) {
@@ -398,7 +380,7 @@ public class SaltService implements IService {
                 validPrevUidV4Count, validPrevUidV2Count, validNoPrevUidCount, invalidPrevUidCount);
     }
 
-    private SaltRotation.Result rotateSalts(RoutingContext rc, double fraction, TargetDate targetDate, int iteration) throws Exception {
+    private RotatingSaltProvider.SaltSnapshot rotateSalts(RoutingContext rc, double fraction, TargetDate targetDate, int iterations) throws Exception {
         // force refresh
         this.saltProvider.loadContent();
 
@@ -413,14 +395,9 @@ public class SaltService implements IService {
             ResponseUtil.error(rc, 200, result.getReason());
             return null;
         }
-        storageManager.upload(result.getSnapshot(), iteration);
-
-        PrivateSiteDataSyncJob privateSiteDataSyncJob = new PrivateSiteDataSyncJob(config, jobDispatcherWriteLock);
-        jobDispatcher.enqueue(privateSiteDataSyncJob);
-        CompletableFuture<Boolean> privateSiteDataSyncJobFuture = jobDispatcher.executeNextJob();
-        privateSiteDataSyncJobFuture.get();
-
-        return result;
+        RotatingSaltProvider.SaltSnapshot snapshot = result.getSnapshot();
+        storageManager.upload(snapshot, iterations);
+        return snapshot;
     }
 
     private boolean assertSaltState(
@@ -447,17 +424,17 @@ public class SaltService implements IService {
     }
 
     private boolean assertUidConsistency(
-            String uid, String email, SaltEntry salt,
-            Map<String, Map<SaltEntry, String>> emailToUidMapping
+            String uid, String email, long saltId, String salt,
+            Map<String, Map<Long, Map<String, String>>> emailToUidMapping
     ) {
-        String seenUid = emailToUidMapping.get(email).get(salt);
+        String seenUid = emailToUidMapping.get(email).get(saltId).get(salt);
         if (seenUid != null) {
             if (!seenUid.equals(uid)) {
                 LOGGER.error("Invalid UID state - Inconsistent UID");
                 return false;
             }
         } else {
-            emailToUidMapping.get(email).put(salt, uid);
+            emailToUidMapping.get(email).get(saltId).put(salt, uid);
         }
         return true;
     }
@@ -524,7 +501,10 @@ public class SaltService implements IService {
                 return false;
             }
         } else {
-            if (!missingPrevKey || !missingPrevSalt) {
+            Instant now = Instant.now();
+            long age = (now.toEpochMilli() - salt.lastUpdated()) / Duration.ofDays(1).toMillis();
+
+            if (age < 90 && (!missingPrevKey || !missingPrevSalt)) {
                 LOGGER.error("Invalid previous UID state - previous salt or previous key found");
                 return false;
             } else {
@@ -550,7 +530,7 @@ public class SaltService implements IService {
         }
 
         byte[] keyIdBytes = Arrays.copyOfRange(uid, 1, 4);
-        int extractedKeyId = (keyIdBytes[0] & 0xFF) | ((keyIdBytes[1] & 0xFF) << 8) | ((keyIdBytes[2] & 0xFF) << 16);
+        int extractedKeyId = ((keyIdBytes[0] & 0xFF) << 16) | ((keyIdBytes[1] & 0xFF) << 8) | (keyIdBytes[2] & 0xFF);
         if (extractedKeyId != key.id()) {
             LOGGER.error("Invalid key ID");
             return false;
@@ -558,10 +538,16 @@ public class SaltService implements IService {
 
         byte[] firstLevelHash = getFirstLevelHash(identityString, snapshot);
         byte[] firstLevelHashLast16Bytes = Arrays.copyOfRange(firstLevelHash, firstLevelHash.length - 16, firstLevelHash.length);
-        byte[] iv = generateIV(key.salt(), firstLevelHashLast16Bytes, metadata, key.id());
-        byte[] extractedIV = Arrays.copyOfRange(uid, 4, 16);
-        if (!Arrays.equals(iv, extractedIV)) {
-            LOGGER.error("Invalid IV");
+        byte[] iv;
+        try {
+            iv = generateIV(key.salt(), firstLevelHashLast16Bytes, metadata, key.id());
+            byte[] extractedIV = Arrays.copyOfRange(uid, 4, 16);
+            if (!Arrays.equals(iv, extractedIV)) {
+                LOGGER.error("Invalid IV");
+                return false;
+            }
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             return false;
         }
 
@@ -587,12 +573,13 @@ public class SaltService implements IService {
         return true;
     }
 
-    private byte[] generateIV(String salt, byte[] firstLevelHashLast16Bytes, byte metadata, int keyId) {
-        String ivBase = salt
-                .concat(Arrays.toString(firstLevelHashLast16Bytes))
-                .concat(Byte.toString(metadata))
-                .concat(String.valueOf(keyId));
-        return Arrays.copyOfRange(getSha256Bytes(ivBase, null), 0, IV_LENGTH);
+    private byte[] generateIV(String salt, byte[] firstLevelHashLast16Bytes, byte metadata, int keyId) throws Exception {
+        ByteArrayOutputStream ivBase = new ByteArrayOutputStream();
+        ivBase.write(salt.getBytes());
+        ivBase.write(firstLevelHashLast16Bytes);
+        ivBase.write(metadata);
+        ivBase.write(keyId);
+        return Arrays.copyOfRange(getSha256Bytes(ivBase.toByteArray(), null), 0, IV_LENGTH);
     }
 
     private byte[] encryptHash(String encryptionKey, byte[] hash, byte[] iv) throws Exception {
@@ -632,10 +619,10 @@ public class SaltService implements IService {
         return snapshot.getRotatingSalt(getFirstLevelHash(identityString, snapshot));
     }
 
-    private byte[] getSha256Bytes(String input, String salt) {
+    private byte[] getSha256Bytes(byte[] input, String salt) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(input.getBytes());
+            md.update(input);
             if (salt != null) {
                 md.update(salt.getBytes());
             }
@@ -643,6 +630,10 @@ public class SaltService implements IService {
         } catch (Exception e) {
             throw new RuntimeException("Trouble Generating SHA256", e);
         }
+    }
+
+    private byte[] getSha256Bytes(String input, String salt) {
+        return getSha256Bytes(input.getBytes(), salt);
     }
 
     private String toBase64String(byte[] b) {

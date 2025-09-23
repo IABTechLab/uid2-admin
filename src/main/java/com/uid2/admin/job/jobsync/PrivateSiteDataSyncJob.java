@@ -117,7 +117,7 @@ public class PrivateSiteDataSyncJob extends Job {
             clientKeyStoreFactory.getGlobalReader().loadContent();
             encryptionKeyStoreFactory.getGlobalReader().loadContent();
             keyAclStoreFactory.getGlobalReader().loadContent();
-            if(config.getBoolean(enableKeysetConfigProp)) {
+            if (config.getBoolean(enableKeysetConfigProp)) {
                 keysetStoreFactory.getGlobalReader().loadContent();
                 keysetKeyStoreFactory.getGlobalReader().loadContent();
             }
@@ -163,7 +163,7 @@ public class PrivateSiteDataSyncJob extends Job {
         clientSyncJob.execute();
         encryptionKeySyncJob.execute();
         keyAclSyncJob.execute();
-        if(config.getBoolean(enableKeysetConfigProp)) {
+        if (config.getBoolean(enableKeysetConfigProp)) {
             Map<Integer, Keyset> globalKeysets = keysetStoreFactory.getGlobalReader().getSnapshot().getAllKeysets();
             Collection<KeysetKey> globalKeysetKeys = keysetKeyStoreFactory.getGlobalReader().getSnapshot().getAllKeysetKeys();
             Integer globalMaxKeysetKeyId = keysetKeyStoreFactory.getGlobalReader().getMetadata().getInteger("max_key_id");
