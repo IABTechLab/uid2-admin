@@ -41,6 +41,14 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: defaultTargetDate
   };
 
+  const tokenIterationsInput = {
+    name: 'tokenIterations',
+    label: 'Token Iterations',
+    required: true,
+    type: 'number',
+    defaultValue: 0
+  };
+
   const preMigrationIterationsInput = {
     name: 'preMigrationIterations',
     label: 'Step 1 - Pre-Migration Iterations',
@@ -88,6 +96,25 @@ document.addEventListener('DOMContentLoaded', function () {
           method: 'POST',
           url: '/api/salt/rebuild'
         }
+      },
+      {
+        id: 'simulateToken',
+        title: 'Simulate Token',
+        role: 'maintainer',
+        inputs: [
+          fractionInput,
+          targetDateInput,
+          tokenIterationsInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const fraction = encodeURIComponent(inputs.fraction);
+            const targetDate = encodeURIComponent(inputs.targetDate);
+            const iterations = encodeURIComponent(inputs.tokenIterations);
+            return `/api/salt/simulate/token?fraction=${fraction}&target_date=${targetDate}&iterations=${iterations}`;
+          }
+        },
       },
       {
         id: 'simulateRotation',

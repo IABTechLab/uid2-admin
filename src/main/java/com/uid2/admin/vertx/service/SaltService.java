@@ -39,7 +39,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.uid2.admin.vertx.Endpoints.*;
 
@@ -111,11 +110,17 @@ public class SaltService implements IService {
             }
         }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
 
+        router.post("/api/salt/simulate/token").blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handleSaltSimulateToken(ctx);
+            }
+        }, new AuditParams(List.of("target_date"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
         router.post("/api/salt/simulate").blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSaltSimulate(ctx);
             }
-        }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
+        }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
     }
 
     private void handleSaltSnapshots(RoutingContext rc) {
@@ -169,7 +174,7 @@ public class SaltService implements IService {
             final Optional<Double> fraction = RequestUtil.getDouble(rc, "fraction");
             if (fraction.isEmpty()) return;
 
-            LOGGER.info("Salt rotation age thresholds in seconds: {}", Arrays.stream(SALT_ROTATION_AGE_THRESHOLDS).map(Duration::toSeconds).collect(Collectors.toList()));
+            LOGGER.info("Salt rotation age thresholds in seconds: {}", Arrays.stream(SALT_ROTATION_AGE_THRESHOLDS).map(Duration::toSeconds).toList());
 
             final TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
@@ -216,6 +221,77 @@ public class SaltService implements IService {
         return jo;
     }
 
+    private void handleSaltSimulateToken(RoutingContext rc) {
+        try {
+            final double fraction = RequestUtil.getDouble(rc, "fraction").orElse(0.002740);
+            final int iterations = RequestUtil.getDouble(rc, "iterations").orElse(0.0).intValue();
+
+            TargetDate targetDate =
+                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                            .map(TargetDate::new)
+                            .orElse(TargetDate.now().plusDays(1));
+
+            // Step 1. Run /v2/token/generate for 10,000 emails
+            List<String> emails = new ArrayList<>();
+            for (int j = 0; j < IDENTITY_COUNT; j++) {
+                String email = randomEmail();
+                emails.add(email);
+            }
+
+            Map<String, String> emailToRefreshTokenMap = new HashMap<>();
+            Map<String, String> emailToRefreshResponseKeyMap = new HashMap<>();
+            for (String email : emails) {
+                JsonNode tokens = v2TokenGenerate(email);
+                String refreshToken = tokens.at("/body/refresh_token").asText();
+                String refreshResponseKey = tokens.at("/body/refresh_response_key").asText();
+
+                emailToRefreshTokenMap.put(email, refreshToken);
+                emailToRefreshResponseKeyMap.put(email, refreshResponseKey);
+            }
+
+            // Step 2. Rotate salts
+            saltRotation.setEnableV4RawUid(true);
+            RotatingSaltProvider.SaltSnapshot snapshot = null;
+            for (int i = 0; i < iterations; i++) {
+                snapshot = rotateSalts(rc, fraction, targetDate, i);
+            }
+
+            // Step 3. Count how many emails are v2 vs v4 salts
+            Map<String, Boolean> emailToV4TokenMap = new HashMap<>();
+            for (String email : emails) {
+                SaltEntry salt = getSalt(email, snapshot);
+                boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
+                emailToV4TokenMap.put(email, isV4);
+            }
+
+            // Step 4. Run /v2/token/refresh for all emails
+            Map<String, Boolean> emailToRefreshSuccessMap = new HashMap<>();
+            for (String email : emails) {
+                try {
+                    JsonNode response = v2TokenRefresh(emailToRefreshTokenMap.get(email), emailToRefreshResponseKeyMap.get(email));
+                    emailToRefreshSuccessMap.put(email, response != null);
+                } catch (Exception e) {
+                    LOGGER.error(e.getMessage(), e);
+                    emailToRefreshSuccessMap.put(email, false);
+                }
+            }
+
+            LOGGER.info(
+                    "UID token simulation: success_count={}, failure_count={}, v4_count={}, v2_count={}",
+                    emailToRefreshSuccessMap.values().stream().filter(x -> x).count(),
+                    emailToRefreshSuccessMap.values().stream().filter(x -> !x).count(),
+                    emailToV4TokenMap.values().stream().filter(x -> x).count(),
+                    emailToV4TokenMap.values().stream().filter(x -> !x).count());
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
     private void handleSaltSimulate(RoutingContext rc) {
         try {
             final double fraction = RequestUtil.getDouble(rc, "fraction").orElse(0.002740);
@@ -230,7 +306,6 @@ public class SaltService implements IService {
                             .orElse(TargetDate.now().plusDays(1));
 
             RotatingSaltProvider.SaltSnapshot firstSnapshot = saltProvider.getSnapshots().getLast();
-            SaltRotation.Result result = null;
             List<String> emails = new ArrayList<>();
             Map<String, Map<Long, Map<String, String>>> emailToUidMapping = new HashMap<>();
             for (int j = 0; j < IDENTITY_COUNT; j++) {
@@ -264,7 +339,7 @@ public class SaltService implements IService {
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(toJson(result.getSnapshot()).encode());
+                    .end();
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             rc.fail(500, e);
@@ -416,7 +491,7 @@ public class SaltService implements IService {
             LOGGER.error("Invalid salt state - V4 UID enabled but missing key on rotated salt");
             return false;
         } else if (rotated && !enabledV4Uid && missingSalt) {
-            LOGGER.error("Invalid salt state - V4 UID enabled but missing salt on rotated salt");
+            LOGGER.error("Invalid salt state - V4 UID disabled but missing salt on rotated salt");
             return false;
         }
 
@@ -578,8 +653,16 @@ public class SaltService implements IService {
         ivBase.write(salt.getBytes());
         ivBase.write(firstLevelHashLast16Bytes);
         ivBase.write(metadata);
-        ivBase.write(keyId);
+        ivBase.write(getKeyIdBytes(keyId));
         return Arrays.copyOfRange(getSha256Bytes(ivBase.toByteArray(), null), 0, IV_LENGTH);
+    }
+
+    private byte[] getKeyIdBytes(int keyId) {
+        return new byte[] {
+                (byte) ((keyId >> 16) & 0xFF),   // MSB
+                (byte) ((keyId >> 8) & 0xFF),    // Middle
+                (byte) (keyId & 0xFF),           // LSB
+        };
     }
 
     private byte[] encryptHash(String encryptionKey, byte[] hash, byte[] iv) throws Exception {
@@ -655,7 +738,20 @@ public class SaltService implements IService {
         return v2DecryptEncryptedResponse(response.body(), envelope.nonce(), CLIENT_API_SECRET);
     }
 
-    private static String randomEmail() {
+    private JsonNode v2TokenGenerate(String email) throws Exception {
+        String reqBody = String.format("{ \"email\": \"%s\", \"optout_check\": 1}", email);
+
+        V2Envelope envelope = v2CreateEnvelope(reqBody, CLIENT_API_SECRET);
+        HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v2/token/generate", OPERATOR_URL), envelope.envelope(), OPERATOR_HEADERS);
+        return v2DecryptEncryptedResponse(response.body(), envelope.nonce(), CLIENT_API_SECRET);
+    }
+
+    private JsonNode v2TokenRefresh(String refreshToken, String refreshResponseKey) throws Exception {
+        HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v2/token/refresh", OPERATOR_URL), refreshToken, OPERATOR_HEADERS);
+        return v2DecryptRefreshResponse(response.body(), refreshResponseKey);
+    }
+
+    private String randomEmail() {
         return "email_" + Math.abs(SECURE_RANDOM.nextLong()) + "@example.com";
     }
 
@@ -693,6 +789,17 @@ public class SaltService implements IService {
         return OBJECT_MAPPER.readTree(decryptedResponse);
     }
 
+    private JsonNode v2DecryptRefreshResponse(String response, String refreshResponseKey) throws Exception {
+        if (response.contains("client_error")) {
+            return null;
+        }
+
+        byte[] encryptedResponseBytes = base64ToByteArray(response);
+        byte[] refreshResponseKeyBytes = base64ToByteArray(refreshResponseKey);
+        byte[] payload = decryptGCM(encryptedResponseBytes, refreshResponseKeyBytes);
+        return OBJECT_MAPPER.readTree(new String(payload, StandardCharsets.UTF_8));
+    }
+
     private byte[] encryptGDM(byte[] b, byte[] secretBytes) throws Exception {
         Class<?> clazz = Class.forName("com.uid2.client.Uid2Encryption");
         Method encryptGDMMethod = clazz.getDeclaredMethod("encryptGCM", byte[].class, byte[].class, byte[].class);
@@ -700,11 +807,18 @@ public class SaltService implements IService {
         return (byte[]) encryptGDMMethod.invoke(clazz, b, null, secretBytes);
     }
 
-    private static byte[] base64ToByteArray(String str) {
+    private byte[] decryptGCM(byte[] b, byte[] secretBytes) throws Exception {
+        Class<?> clazz = Class.forName("com.uid2.client.Uid2Encryption");
+        Method decryptGCMMethod = clazz.getDeclaredMethod("decryptGCM", byte[].class, int.class, byte[].class);
+        decryptGCMMethod.setAccessible(true);
+        return (byte[]) decryptGCMMethod.invoke(clazz, b, 0, secretBytes);
+    }
+
+    private byte[] base64ToByteArray(String str) {
         return Base64.getDecoder().decode(str);
     }
 
-    private static String byteArrayToBase64(byte[] b) {
+    private String byteArrayToBase64(byte[] b) {
         return Base64.getEncoder().encodeToString(b);
     }
 
