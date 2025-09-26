@@ -20,10 +20,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-public class SaltServiceTest extends ServiceTestBase {
+class SaltServiceTest extends ServiceTestBase {
     private final TargetDate utcTomorrow = TargetDate.now().plusDays(1);
-    @Mock RotatingSaltProvider saltProvider;
-    @Mock SaltRotation saltRotation;
+
+    @Mock
+    private RotatingSaltProvider saltProvider;
+    @Mock
+    private SaltRotation saltRotation;
 
     @Override
     protected IService createService() {
@@ -77,7 +80,7 @@ public class SaltServiceTest extends ServiceTestBase {
         var result = SaltRotation.Result.fromSnapshot(addedSnapshots[0].build());
         when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(utcTomorrow))).thenReturn(result);
 
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+        post(vertx, testContext, "api/salt/rotate?fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
             checkSnapshotsResponse(addedSnapshots, new Object[]{response.bodyAsJsonObject()});
             verify(saltStoreWriter).upload(any());
@@ -100,7 +103,7 @@ public class SaltServiceTest extends ServiceTestBase {
         var result = SaltRotation.Result.noSnapshot("test");
         when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(utcTomorrow))).thenReturn(result);
 
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+        post(vertx, testContext, "api/salt/rotate?fraction=0.2", "", response -> {
             assertEquals(200, response.statusCode());
             JsonObject jo = response.bodyAsJsonObject();
             assertFalse(jo.containsKey("effective"));
@@ -127,7 +130,7 @@ public class SaltServiceTest extends ServiceTestBase {
         var result = SaltRotation.Result.fromSnapshot(addedSnapshots[0].build());
         when(saltRotation.rotateSalts(any(), any(), eq(0.2), eq(targetDate()))).thenReturn(result);
 
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2&target_date=2025-01-01", "", response -> {
+        post(vertx, testContext, "api/salt/rotate?fraction=0.2&target_date=2025-01-01", "", response -> {
             assertEquals(200, response.statusCode());
             testContext.completeNow();
         });
@@ -135,23 +138,23 @@ public class SaltServiceTest extends ServiceTestBase {
 
     @Test
     void rotateSaltsWithDefaultAgeThresholds(Vertx vertx, VertxTestContext testContext) throws Exception {
-        fakeAuth(Role.SUPER_USER);        
+        fakeAuth(Role.SUPER_USER);
 
         final SaltSnapshotBuilder lastSnapshot = SaltSnapshotBuilder.start().effective(daysEarlier(1)).expires(daysLater(6)).entries(1, daysEarlier(1));
         setSnapshots(lastSnapshot);
 
         var result = SaltRotation.Result.fromSnapshot(SaltSnapshotBuilder.start().effective(targetDate()).expires(daysEarlier(7)).entries(1, targetDate()).build());
-        
+
         Duration[] expectedDefaultAgeThresholds = new Duration[]{
-            Duration.ofDays(30), Duration.ofDays(60), Duration.ofDays(90), Duration.ofDays(120),
-            Duration.ofDays(150), Duration.ofDays(180), Duration.ofDays(210), Duration.ofDays(240),
-            Duration.ofDays(270), Duration.ofDays(300), Duration.ofDays(330), Duration.ofDays(360),
-            Duration.ofDays(390)
+                Duration.ofDays(30), Duration.ofDays(60), Duration.ofDays(90), Duration.ofDays(120),
+                Duration.ofDays(150), Duration.ofDays(180), Duration.ofDays(210), Duration.ofDays(240),
+                Duration.ofDays(270), Duration.ofDays(300), Duration.ofDays(330), Duration.ofDays(360),
+                Duration.ofDays(390)
         };
 
         when(saltRotation.rotateSalts(any(), eq(expectedDefaultAgeThresholds), eq(0.2), eq(utcTomorrow))).thenReturn(result);
 
-        post(vertx, testContext, "api/salt/rotate?min_ages_in_seconds=50,60,70&fraction=0.2", "", response -> {
+        post(vertx, testContext, "api/salt/rotate?fraction=0.2", "", response -> {
             verify(saltRotation).rotateSalts(any(), eq(expectedDefaultAgeThresholds), eq(0.2), eq(utcTomorrow));
             assertEquals(200, response.statusCode());
             testContext.completeNow();

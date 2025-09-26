@@ -1,27 +1,23 @@
 package com.uid2.admin.auth;
 
-
 import com.okta.jwt.*;
 import com.uid2.admin.AdminConst;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.audit.Audit;
 
 import java.util.*;
 
 public class AdminAuthMiddleware {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminAuthMiddleware.class);
+    private final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     private final AuthProvider authProvider;
     private final String environment;
     private final boolean isAuthDisabled;
     private final Audit audit;
 
-    final Map<Role, List<OktaGroup>> roleToOktaGroups = new EnumMap<>(Role.class);
     public AdminAuthMiddleware(AuthProvider authProvider, JsonObject config) {
         this.authProvider = authProvider;
         this.environment = config.getString("environment", "local");
@@ -59,7 +55,6 @@ public class AdminAuthMiddleware {
         return this.handle(handler, new AuditParams(), roles);
     }
 
-
     private Handler<RoutingContext> logAndHandle(Handler<RoutingContext> handler, AuditParams params) {
         return ctx -> {
             ctx.addBodyEndHandler(v -> this.audit.log(ctx, params));
@@ -73,6 +68,7 @@ public class AdminAuthMiddleware {
         private final Set<Role> allowedRoles;
         private final Map<Role, List<OktaGroup>> roleToOktaGroups;
         private final AuthProvider authProvider;
+
         private AdminAuthHandler(Handler<RoutingContext> handler, AuthProvider authProvider, Set<Role> allowedRoles,
                                  String environment, Map<Role, List<OktaGroup>> roleToOktaGroups) {
             this.environment = environment;
@@ -96,6 +92,7 @@ public class AdminAuthMiddleware {
                 }
             }
         }
+
         private boolean isAuthorizedUser(List<String> userAssignedGroups) {
             for (Role role : allowedRoles) {
                 if (roleToOktaGroups.containsKey(role)) {
@@ -109,6 +106,7 @@ public class AdminAuthMiddleware {
             }
             return false;
         }
+
         private boolean isAuthorizedService(List<String> scopes) {
             for (String scope : scopes) {
                 if (allowedRoles.contains(OktaCustomScope.fromName(scope).getRole())) {
@@ -117,13 +115,14 @@ public class AdminAuthMiddleware {
             }
             return false;
         }
+
         public void handle(RoutingContext rc) {
             // human user
             String idToken = null;
-            if(rc.user() != null && rc.user().principal() != null) {
+            if (rc.user() != null && rc.user().principal() != null) {
                 idToken = rc.user().principal().getString("id_token");
             }
-            if(idToken != null) {
+            if (idToken != null) {
                 validateIdToken(rc, idToken);
                 return;
             }
@@ -131,7 +130,7 @@ public class AdminAuthMiddleware {
             // machine user
             String authHeaderValue = rc.request().getHeader("Authorization");
             String accessToken = extractBearerToken(authHeaderValue);
-            if(accessToken == null) {
+            if (accessToken == null) {
                 rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
                 return;
             }
@@ -146,7 +145,7 @@ public class AdminAuthMiddleware {
                 rc.response().setStatusCode(401).end();
                 return;
             }
-            if(jwt.getClaims().get("environment") == null || !jwt.getClaims().get("environment").toString().equals(environment)) {
+            if (jwt.getClaims().get("environment") == null || !jwt.getClaims().get("environment").toString().equals(environment)) {
                 rc.response().setStatusCode(401).end();
                 return;
             }
@@ -155,7 +154,7 @@ public class AdminAuthMiddleware {
             serviceAccountDetails.put("scope", scopes);
             serviceAccountDetails.put("client_id", jwt.getClaims().get("client_id"));
             rc.put("user_details", serviceAccountDetails);
-            if(isAuthorizedService(scopes)) {
+            if (isAuthorizedService(scopes)) {
                 innerHandler.handle(rc);
             } else {
                 rc.response().setStatusCode(401).end();
@@ -171,7 +170,7 @@ public class AdminAuthMiddleware {
                 rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
                 return;
             }
-            if(jwt.getClaims().get("environment") == null || !jwt.getClaims().get("environment").toString().equals(environment)) {
+            if (jwt.getClaims().get("environment") == null || !jwt.getClaims().get("environment").toString().equals(environment)) {
                 rc.response().setStatusCode(401).end();
                 return;
             }
@@ -181,7 +180,7 @@ public class AdminAuthMiddleware {
             userDetails.put("email", jwt.getClaims().get("email"));
             userDetails.put("sub", jwt.getClaims().get("sub"));
             rc.put("user_details", userDetails);
-            if(isAuthorizedUser(groups)) {
+            if (isAuthorizedUser(groups)) {
                 innerHandler.handle(rc);
             } else {
                 rc.response().setStatusCode(401).end();

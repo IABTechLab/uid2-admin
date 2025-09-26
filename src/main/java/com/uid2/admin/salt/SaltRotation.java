@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class SaltRotation {
     private static final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
     private static final double MAX_SALT_PERCENTAGE = 0.8;
-    private final boolean ENABLE_V4_RAW_UID;
+    private final boolean enableV4RawUid;
 
     private final IKeyGenerator keyGenerator;
 
@@ -27,7 +27,7 @@ public class SaltRotation {
 
     public SaltRotation(IKeyGenerator keyGenerator, JsonObject config) {
         this.keyGenerator = keyGenerator;
-        this.ENABLE_V4_RAW_UID = config.getBoolean(AdminConst.ENABLE_V4_RAW_UID, false);
+        this.enableV4RawUid = config.getBoolean(AdminConst.ENABLE_V4_RAW_UID, false);
     }
 
     public Result rotateSalts(
@@ -143,10 +143,9 @@ public class SaltRotation {
 
     private String calculateCurrentSalt(SaltEntry bucket, boolean shouldRotate) throws Exception {
         if (shouldRotate) {
-            if (ENABLE_V4_RAW_UID) {
+            if (enableV4RawUid) {
                 return null;
-            }
-            else {
+            } else {
                 return this.keyGenerator.generateRandomKeyString(32);
             }
         }
@@ -165,10 +164,10 @@ public class SaltRotation {
 
     private SaltEntry.KeyMaterial calculateCurrentKeySalt(SaltEntry bucket, boolean shouldRotate, KeyIdGenerator keyIdGenerator) throws Exception {
         if (shouldRotate) {
-            if (ENABLE_V4_RAW_UID) {
+            if (enableV4RawUid) {
                 return new SaltEntry.KeyMaterial(
                         keyIdGenerator.getNextKeyId(),
-                        this.keyGenerator.generateRandomKeyString(32),
+                        this.keyGenerator.generateRandomKeyString(24),
                         this.keyGenerator.generateRandomKeyString(32)
                 );
             } else {
@@ -252,7 +251,6 @@ public class SaltRotation {
             );
         }
     }
-
 
     /** Logging to monitor migration of buckets from salts (old format - v2/v3) to encryption keys (new format - v4) **/
     private void logBucketFormatCount(TargetDate targetDate, SaltEntry[] postRotationBuckets) {
