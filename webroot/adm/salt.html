@@ -41,13 +41,35 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: defaultTargetDate
   };
 
-  const tokenIterationsInput = {
-    name: 'tokenIterations',
-    label: 'Token Iterations',
+  const fastForwardIterationsInput = {
+    name: 'fastForwardIterations',
+    label: 'Iterations',
     required: true,
     type: 'number',
     defaultValue: 0
   };
+
+  const fastForwardWithV4Input = {
+    name: 'fastForwardWithV4',
+    label: 'Enable V4',
+    type: 'checkbox',
+    defaultValue: true
+  }
+
+  const tokenIterationsInput = {
+    name: 'tokenIterations',
+    label: 'Iterations',
+    required: true,
+    type: 'number',
+    defaultValue: 0
+  };
+
+  const tokenWithV4Input = {
+    name: 'tokenWithV4',
+    label: 'Enable V4',
+    type: 'checkbox',
+    defaultValue: true
+  }
 
   const preMigrationIterationsInput = {
     name: 'preMigrationIterations',
@@ -65,8 +87,8 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: 0
   };
 
-  const migrationV2V3IterationsInput = {
-    name: 'migrationV2V3Iterations',
+  const migrationV2IterationsInput = {
+    name: 'migrationV2Iterations',
     label: 'Step 3 - Migration Iterations with V4 flag off',
     required: true,
     type: 'number',
@@ -98,13 +120,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       },
       {
+        id: 'fastForwardSalts',
+        title: 'Fast Forward Salts',
+        role: 'maintainer',
+        inputs: [
+          fractionInput,
+          targetDateInput,
+          fastForwardIterationsInput,
+          fastForwardWithV4Input
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const fraction = encodeURIComponent(inputs.fraction);
+            const targetDate = encodeURIComponent(inputs.targetDate);
+            const iterations = encodeURIComponent(inputs.fastForwardIterations);
+            const enableV4 = encodeURIComponent(inputs.fastForwardWithV4 || false);
+            return `/api/salt/fastForward?fraction=${fraction}&target_date=${targetDate}&fast_forward_iterations=${iterations}&enable_v4=${enableV4}`;
+          }
+        },
+      },
+      {
         id: 'simulateToken',
         title: 'Simulate Token',
         role: 'maintainer',
         inputs: [
           fractionInput,
           targetDateInput,
-          tokenIterationsInput
+          tokenIterationsInput,
+          tokenWithV4Input
         ],
         apiCall: {
           method: 'POST',
@@ -112,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const fraction = encodeURIComponent(inputs.fraction);
             const targetDate = encodeURIComponent(inputs.targetDate);
             const iterations = encodeURIComponent(inputs.tokenIterations);
-            return `/api/salt/simulate/token?fraction=${fraction}&target_date=${targetDate}&iterations=${iterations}`;
+            const enableV4 = encodeURIComponent(inputs.tokenWithV4 || false);
+            return `/api/salt/simulateToken?fraction=${fraction}&target_date=${targetDate}&iterations=${iterations}&enable_v4=${enableV4}`;
           }
         },
       },
@@ -125,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
           targetDateInput,
           preMigrationIterationsInput,
           migrationV4IterationsInput,
-          migrationV2V3IterationsInput
+          migrationV2IterationsInput
         ],
         apiCall: {
           method: 'POST',
@@ -134,8 +179,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const targetDate = encodeURIComponent(inputs.targetDate);
             const preMigrationIterations = encodeURIComponent(inputs.preMigrationIterations);
             const migrationV4Iterations = encodeURIComponent(inputs.migrationV4Iterations);
-            const migrationV2V3Iterations = encodeURIComponent(inputs.migrationV2V3Iterations);
-            return `/api/salt/simulate?fraction=${fraction}&target_date=${targetDate}&preMigrationIterations=${preMigrationIterations}&migrationV4Iterations=${migrationV4Iterations}&migrationV2V3Iterations=${migrationV2V3Iterations}`;
+            const migrationV2Iterations = encodeURIComponent(inputs.migrationV2Iterations);
+            return `/api/salt/simulate?fraction=${fraction}&target_date=${targetDate}&pre_migration_iterations=${preMigrationIterations}&migration_v4_iterations=${migrationV4Iterations}&migration_v2_iterations=${migrationV2Iterations}`;
           }
         }
       }

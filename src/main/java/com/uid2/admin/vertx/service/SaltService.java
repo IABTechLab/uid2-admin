@@ -9,7 +9,6 @@ import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
-import com.uid2.client.Uid2Helper;
 import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SaltEntry;
@@ -77,7 +76,7 @@ public class SaltService implements IService {
     private static final String OPERATOR_URL = "http://proxy:80";
     private static final Map<String, String> OPERATOR_HEADERS = Map.of("Authorization", String.format("Bearer %s", CLIENT_API_KEY));
 
-    private static final int IDENTITY_COUNT = 10_000;
+    private static final int IDENTITY_COUNT = 1_000;
     private static final int TIMESTAMP_LENGTH = 8;
     private static final int IV_LENGTH = 12;
 
@@ -110,13 +109,19 @@ public class SaltService implements IService {
             }
         }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.SUPER_USER, Role.SECRET_ROTATION));
 
-        router.post("/api/salt/simulate/token").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/salt/fastForward").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltFastForward(ctx);
+            }
+        }, new AuditParams(List.of("fraction"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
+        router.post("/api/salt/simulateToken").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSaltSimulateToken(ctx);
             }
-        }, new AuditParams(List.of("target_date"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+        }, new AuditParams(List.of("fraction", "target_date"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
 
-        router.post("/api/salt/simulate").blockingHandler(auth.handle((ctx) -> {
+        router.post("/api/salt/simulate").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSaltSimulate(ctx);
             }
@@ -221,26 +226,70 @@ public class SaltService implements IService {
         return jo;
     }
 
-    private void handleSaltSimulateToken(RoutingContext rc) {
+    private void handleSaltFastForward(RoutingContext rc) {
         try {
             final double fraction = RequestUtil.getDouble(rc, "fraction").orElse(0.002740);
-            final int iterations = RequestUtil.getDouble(rc, "iterations").orElse(0.0).intValue();
+            final int iterations = RequestUtil.getDouble(rc, "fast_forward_iterations").orElse(0.0).intValue();
+            final boolean enableV4 = RequestUtil.getBoolean(rc, "enable_v4", false).orElse(false);
 
             TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
                             .map(TargetDate::new)
                             .orElse(TargetDate.now().plusDays(1));
 
-            // Step 1. Run /v2/token/generate for 10,000 emails
+            saltProvider.loadContent();
+            storageManager.archiveSaltLocations();
+
+            var snapshot = saltProvider.getSnapshots().getLast();
+
+            saltRotation.setEnableV4RawUid(enableV4);
+            var result = saltRotation.rotateSaltsFastForward(snapshot, SALT_ROTATION_AGE_THRESHOLDS, fraction, targetDate, iterations);
+            if (!result.hasSnapshot()) {
+                ResponseUtil.error(rc, 200, result.getReason());
+                return;
+            }
+
+            storageManager.upload(result.getSnapshot());
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(toJson(result.getSnapshot()).encode());
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSaltSimulateToken(RoutingContext rc) {
+        try {
+            final double fraction = RequestUtil.getDouble(rc, "fraction").orElse(0.002740);
+            final int iterations = RequestUtil.getDouble(rc, "iterations").orElse(0.0).intValue();
+            final boolean enableV4 = RequestUtil.getBoolean(rc, "enable_v4", false).orElse(false);
+
+            TargetDate targetDate =
+                    RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
+                            .map(TargetDate::new)
+                            .orElse(TargetDate.now().plusDays(1));
+
+            // Step 1. Run /v2/token/generate for all emails
             List<String> emails = new ArrayList<>();
+            Map<String, Boolean> preRotationEmailToSaltMap = new HashMap<>();
+            RotatingSaltProvider.SaltSnapshot snapshot = saltProvider.getSnapshots().getLast();
             for (int j = 0; j < IDENTITY_COUNT; j++) {
                 String email = randomEmail();
                 emails.add(email);
+
+                SaltEntry salt = getSalt(email, snapshot);
+                boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
+                preRotationEmailToSaltMap.put(email, isV4);
             }
 
             Map<String, String> emailToRefreshTokenMap = new HashMap<>();
             Map<String, String> emailToRefreshResponseKeyMap = new HashMap<>();
-            for (String email : emails) {
+            for (int i = 0; i < emails.size(); i++) {
+                LOGGER.info("Step 1 - Token Generate {}/{}", i + 1, emails.size());
+                String email = emails.get(i);
+
                 JsonNode tokens = v2TokenGenerate(email);
                 String refreshToken = tokens.at("/body/refresh_token").asText();
                 String refreshResponseKey = tokens.at("/body/refresh_response_key").asText();
@@ -250,23 +299,26 @@ public class SaltService implements IService {
             }
 
             // Step 2. Rotate salts
-            saltRotation.setEnableV4RawUid(true);
-            RotatingSaltProvider.SaltSnapshot snapshot = null;
+            saltRotation.setEnableV4RawUid(enableV4);
             for (int i = 0; i < iterations; i++) {
-                snapshot = rotateSalts(rc, fraction, targetDate, i);
+                LOGGER.info("Step 2 - Rotate Salts {}/{}", i + 1, iterations);
+                snapshot = rotateSalts(rc, fraction, targetDate.plusDays(i), i);
             }
 
-            // Step 3. Count how many emails are v2 vs v4 salts
-            Map<String, Boolean> emailToV4TokenMap = new HashMap<>();
+            Map<String, Boolean> postRotationEmailToSaltMap = new HashMap<>();
             for (String email : emails) {
                 SaltEntry salt = getSalt(email, snapshot);
                 boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
-                emailToV4TokenMap.put(email, isV4);
+                postRotationEmailToSaltMap.put(email, isV4);
             }
 
-            // Step 4. Run /v2/token/refresh for all emails
+            // Step 3. Run /v2/token/refresh for all emails
+            v2LoadSalts();
             Map<String, Boolean> emailToRefreshSuccessMap = new HashMap<>();
-            for (String email : emails) {
+            for (int i = 0; i < emails.size(); i++) {
+                LOGGER.info("Step 3 - Token Refresh {}/{}", i + 1, emails.size());
+                String email = emails.get(i);
+
                 try {
                     JsonNode response = v2TokenRefresh(emailToRefreshTokenMap.get(email), emailToRefreshResponseKeyMap.get(email));
                     emailToRefreshSuccessMap.put(email, response != null);
@@ -277,11 +329,14 @@ public class SaltService implements IService {
             }
 
             LOGGER.info(
-                    "UID token simulation: success_count={}, failure_count={}, v4_count={}, v2_count={}",
+                    "UID token simulation: success_count={}, failure_count={}, " +
+                            "v2_to_v4_count={}, v4_to_v4_count={}, v4_to_v2_count={}, v2_to_v2_count={}",
                     emailToRefreshSuccessMap.values().stream().filter(x -> x).count(),
                     emailToRefreshSuccessMap.values().stream().filter(x -> !x).count(),
-                    emailToV4TokenMap.values().stream().filter(x -> x).count(),
-                    emailToV4TokenMap.values().stream().filter(x -> !x).count());
+                    emails.stream().filter(email -> !preRotationEmailToSaltMap.get(email) && postRotationEmailToSaltMap.get(email)).count(),
+                    emails.stream().filter(email -> preRotationEmailToSaltMap.get(email) && postRotationEmailToSaltMap.get(email)).count(),
+                    emails.stream().filter(email -> preRotationEmailToSaltMap.get(email) && !postRotationEmailToSaltMap.get(email)).count(),
+                    emails.stream().filter(email -> !preRotationEmailToSaltMap.get(email) && !postRotationEmailToSaltMap.get(email)).count());
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -296,9 +351,9 @@ public class SaltService implements IService {
         try {
             final double fraction = RequestUtil.getDouble(rc, "fraction").orElse(0.002740);
 
-            final int preMigrationIterations = RequestUtil.getDouble(rc, "preMigrationIterations").orElse(0.0).intValue();
-            final int migrationV4Iterations = RequestUtil.getDouble(rc, "migrationV4Iterations").orElse(0.0).intValue();
-            final int migrationV2V3Iterations = RequestUtil.getDouble(rc, "migrationV2V3Iterations").orElse(0.0).intValue();
+            final int preMigrationIterations = RequestUtil.getDouble(rc, "pre_migration_iterations").orElse(0.0).intValue();
+            final int migrationV4Iterations = RequestUtil.getDouble(rc, "migration_v4_iterations").orElse(0.0).intValue();
+            final int migrationV2Iterations = RequestUtil.getDouble(rc, "migration_v2_iterations").orElse(0.0).intValue();
 
             TargetDate targetDate =
                     RequestUtil.getDate(rc, "target_date", DateTimeFormatter.ISO_LOCAL_DATE)
@@ -331,8 +386,8 @@ public class SaltService implements IService {
             }
 
             saltRotation.setEnableV4RawUid(false);
-            for (int i = 0; i < migrationV2V3Iterations; i++) {
-                LOGGER.info("Step 3 - Migration V2/V3 Iteration {}/{}", i + 1, migrationV2V3Iterations);
+            for (int i = 0; i < migrationV2Iterations; i++) {
+                LOGGER.info("Step 3 - Migration V2 Iteration {}/{}", i + 1, migrationV2Iterations);
                 simulationIteration(rc, fraction, targetDate, preMigrationIterations + migrationV4Iterations + i, false, emails, emailToUidMapping);
                 targetDate = targetDate.plusDays(1);
             }
@@ -721,6 +776,10 @@ public class SaltService implements IService {
 
     private String toBase64String(byte[] b) {
         return Base64.getEncoder().encodeToString(b);
+    }
+
+    private void v2LoadSalts() throws Exception {
+        HTTP_CLIENT.post(String.format("%s/v2/salts/load", OPERATOR_URL), "", OPERATOR_HEADERS);
     }
 
     private JsonNode v3IdentityMap(List<String> emails) throws Exception {

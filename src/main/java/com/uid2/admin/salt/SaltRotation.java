@@ -15,6 +15,7 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SaltRotation {
     private static final long THIRTY_DAYS_IN_MS = Duration.ofDays(30).toMillis();
@@ -76,11 +77,81 @@ public class SaltRotation {
         return Result.fromSnapshot(nextSnapshot);
     }
 
+    public Result rotateSaltsFastForward(
+            SaltSnapshot snapshot,
+            Duration[] minAges,
+            double fraction,
+            TargetDate targetDate,
+            int iterations) throws Exception {
+        var currentSnapshot = snapshot;
+
+        for (int i = 0; i < iterations; i++) {
+            var preRotationSalts = currentSnapshot.getAllRotatingSalts();
+
+            var currentTargetDate = targetDate.plusDays(i);
+            var nextEffective = currentTargetDate.asInstant();
+            var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
+            if (nextEffective.equals(currentSnapshot.getEffective()) || nextEffective.isBefore(currentSnapshot.getEffective())) {
+                return Result.noSnapshot("cannot create a new salt snapshot with effective timestamp equal or prior to that of an existing snapshot");
+            }
+
+            // Salts that can be rotated based on their refreshFrom being at target date
+            var refreshableSalts = findRefreshableSalts(preRotationSalts, currentTargetDate);
+
+            var saltsToRotate = pickSaltsToRotate(
+                    refreshableSalts,
+                    currentTargetDate,
+                    minAges,
+                    getNumSaltsToRotate(preRotationSalts, fraction)
+            );
+
+            if (saltsToRotate.isEmpty()) {
+                return Result.noSnapshot("all refreshable salts are below min rotation age");
+            }
+
+            var postRotationSalts = rotateSalts(preRotationSalts, saltsToRotate, currentTargetDate);
+
+            LOGGER.info("Salt rotation complete target_date={}", currentTargetDate);
+            logSaltAges("refreshable-salts", currentTargetDate, refreshableSalts);
+            logSaltAges("rotated-salts", currentTargetDate, saltsToRotate);
+            logSaltAges("total-salts", currentTargetDate, Arrays.asList(postRotationSalts));
+            logBucketFormatCount(currentTargetDate, postRotationSalts);
+
+            currentSnapshot = new SaltSnapshot(
+                    nextEffective,
+                    nextExpires,
+                    postRotationSalts,
+                    currentSnapshot.getFirstLevelSalt());
+        }
+
+        Map<Long, SaltEntry> originalSalts = Stream.of(snapshot.getAllRotatingSalts()).collect(Collectors.toMap(salt -> salt.id(), salt -> salt));
+        List<SaltEntry> salts = new ArrayList<>();
+        for (SaltEntry salt : currentSnapshot.getAllRotatingSalts()) {
+            SaltEntry originalSalt = originalSalts.get(salt.id());
+
+            salts.add(new SaltEntry(
+                    salt.id(),
+                    salt.hashedId(),
+                    originalSalt.lastUpdated(),
+                    salt.currentSalt(),
+                    originalSalt.refreshFrom(),
+                    salt.previousSalt(),
+                    salt.currentKeySalt(),
+                    salt.previousKeySalt()
+            ));
+        }
+
+        return Result.fromSnapshot(new SaltSnapshot(
+                snapshot.getEffective(),
+                snapshot.getExpires(),
+                salts.toArray(new SaltEntry[salts.size()]),
+                snapshot.getFirstLevelSalt()));
+    }
+
     public Result rotateSaltsZero(
             ISaltSnapshot effectiveSnapshot,
             TargetDate targetDate,
-            Instant nextEffective
-    ) throws Exception {
+            Instant nextEffective) throws Exception {
         var preRotationSalts = effectiveSnapshot.getAllRotatingSalts();
         var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
 

@@ -109,8 +109,12 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void handleUserinfo(RoutingContext rc) {
-        if (isAuthDisabled(config)) rc.response().setStatusCode(200).end(
-                JsonObject.of("groups", JsonArray.of("developer", "developer-elevated", "infra-admin", "admin"), "email", "test.user@unifiedid.com").toString());
+        if (isAuthDisabled(config)) {
+            rc.response().setStatusCode(200).end(
+                    JsonObject.of("groups", JsonArray.of("developer", "developer-elevated", "infra-admin", "admin"), "email", "test.user@unifiedid.com").toString());
+            return;
+        }
+
         try {
             Jwt idJwt = this.authProvider.getIdTokenVerifier().decode(rc.user().principal().getString("id_token"), null);
             JsonObject jo = new JsonObject();
@@ -122,19 +126,18 @@ public class AdminVerticle extends AbstractVerticle {
                 JsonObject userDetails = new JsonObject();
                 userDetails.put("email", idJwt.getClaims().get("email"));
                 userDetails.put("sub", idJwt.getClaims().get("sub"));
-    
-                LOGGER.info("Authenticated user accessing admin page - User: {}", userDetails.toString());
+
+                LOGGER.info("Authenticated user accessing admin page - User: {}", userDetails);
                 rc.put("user_details", userDetails);
                 this.audit.log(rc, new AuditParams());
             }
-        
+
             rc.response().setStatusCode(200).end(jo.toString());
         } catch (Exception e) {
-            if (rc.session() !=  null) {
+            if (rc.session() != null) {
                 rc.session().destroy();
             }
             rc.response().putHeader("REQUIRES_AUTH", "1").setStatusCode(401).end();
         }
     }
-
 }
