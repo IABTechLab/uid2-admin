@@ -9,6 +9,7 @@ import com.uid2.admin.store.writer.SaltStoreWriter;
 import com.uid2.admin.vertx.RequestUtil;
 import com.uid2.admin.vertx.ResponseUtil;
 import com.uid2.admin.vertx.WriteLock;
+import com.uid2.client.Uid2Helper;
 import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.SaltEntry;
@@ -76,7 +77,7 @@ public class SaltService implements IService {
     private static final String OPERATOR_URL = "http://proxy:80";
     private static final Map<String, String> OPERATOR_HEADERS = Map.of("Authorization", String.format("Bearer %s", CLIENT_API_KEY));
 
-    private static final int IDENTITY_COUNT = 1_000;
+    private static final int IDENTITY_COUNT = 10_000;
     private static final int TIMESTAMP_LENGTH = 8;
     private static final int IV_LENGTH = 12;
 
@@ -114,6 +115,12 @@ public class SaltService implements IService {
                 this.handleSaltFastForward(ctx);
             }
         }, new AuditParams(List.of("fraction"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
+        router.post("/api/salt/compare").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltCompare(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
 
         router.post("/api/salt/simulateToken").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
@@ -260,6 +267,99 @@ public class SaltService implements IService {
         }
     }
 
+    private void handleSaltCompare(RoutingContext rc) {
+        try {
+            final String testOperatorUrl = RequestUtil.getString(rc, "test_operator_url").orElse("");
+            final String testApiKey = RequestUtil.getString(rc, "test_api_key").orElse("");
+            final String testApiSecret = RequestUtil.getString(rc, "test_api_secret").orElse("");
+            final String integOperatorUrl = RequestUtil.getString(rc, "integ_operator_url").orElse("");
+            final String integApiKey = RequestUtil.getString(rc, "integ_api_key").orElse("");
+            final String integApiSecret = RequestUtil.getString(rc, "integ_api_secret").orElse("");
+
+            List<String> emails = new ArrayList<>();
+            Map<String, Boolean> emailToSaltMap = new HashMap<>();
+            RotatingSaltProvider.SaltSnapshot snapshot = saltProvider.getSnapshots().getLast();
+            for (int i = 0; i < IDENTITY_COUNT; i++) {
+                String email = randomEmail();
+                emails.add(email);
+
+                SaltEntry salt = getSalt(email, snapshot);
+                boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
+                emailToSaltMap.put(email, isV4);
+            }
+
+            // Construct identity map args
+            JsonNode testResponse = v3IdentityMap(emails, testOperatorUrl, testApiKey, testApiSecret);
+            JsonNode integResponse = v3IdentityMap(emails, integOperatorUrl, integApiKey, integApiSecret);
+
+            JsonNode testMappings = testResponse.at("/body/email");
+            JsonNode integMappings = integResponse.at("/body/email");
+
+            int testV4UidCount = 0;
+            int testV2UidCount = 0;
+            int testInvalidV4UidCount = 0;
+            int testInvalidV2UidCount = 0;
+            int testNullUidCount = 0;
+            int testIntegMatchCount = 0;
+            int testIntegMismatchCount = 0;
+            for (int i = 0; i < IDENTITY_COUNT; i++) {
+                String email = emails.get(i);
+                boolean isV4 = emailToSaltMap.get(email);
+
+                String testUid = testMappings.get(i).at("/u").asText();
+                String integUid = integMappings.get(i).at("/u").asText();
+
+                byte[] testUidBytes = testUid == null ? null : Base64.getDecoder().decode(testUid);
+                byte[] integUidBytes = integUid == null ? null : Base64.getDecoder().decode(integUid);
+
+                // First, check test UID is valid
+                if (testUidBytes == null) {
+                    LOGGER.error("TEST - UID is null");
+                    testNullUidCount++;
+                } else if (isV4) {
+                    if (testUidBytes.length != 33) {
+                        LOGGER.error("TEST - salt is v4 but UID length is {}", testUidBytes.length);
+                        testInvalidV4UidCount++;
+                    } else {
+                        testV4UidCount++;
+                    }
+                } else {
+                    if (testUidBytes.length != 32) {
+                        LOGGER.error("TEST - salt is v2 but UID length is {}", testUidBytes.length);
+                        testInvalidV2UidCount++;
+                    } else {
+                        testV2UidCount++;
+                    }
+                }
+
+                // Then, check if test and integ match
+                if (!isV4) {
+                    if (!Arrays.equals(testUidBytes, integUidBytes)) {
+                        LOGGER.error("TEST and INTEG UIDs do not match for {} - TEST={} | INTEG={}", email, testUid, integUid);
+                        testIntegMismatchCount++;
+                    } else {
+                        testIntegMatchCount++;
+                    }
+                }
+            }
+
+            LOGGER.info("UID Consistency between Test and Integ: " +
+                            "test_v4_uid_count={} test_v2_uid_count={} " +
+                            "test_v4_invalid_uid_count={} test_v2_invalid_uid_count={} test_null_uid_count={} " +
+                            "test_integ_match_count={} test_integ_mismatch_count={}",
+                    testV4UidCount, testV2UidCount,
+                    testInvalidV4UidCount, testInvalidV2UidCount, testNullUidCount,
+                    testIntegMatchCount, testIntegMismatchCount);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
     private void handleSaltSimulateToken(RoutingContext rc) {
         try {
             final double fraction = RequestUtil.getDouble(rc, "fraction").orElse(0.002740);
@@ -329,8 +429,8 @@ public class SaltService implements IService {
             }
 
             LOGGER.info(
-                    "UID token simulation: success_count={}, failure_count={}, " +
-                            "v2_to_v4_count={}, v4_to_v4_count={}, v4_to_v2_count={}, v2_to_v2_count={}",
+                    "UID token simulation: success_count={} failure_count={} " +
+                            "v2_to_v4_count={} v4_to_v4_count={} v4_to_v2_count={} v2_to_v2_count={}",
                     emailToRefreshSuccessMap.values().stream().filter(x -> x).count(),
                     emailToRefreshSuccessMap.values().stream().filter(x -> !x).count(),
                     emails.stream().filter(email -> !preRotationEmailToSaltMap.get(email) && postRotationEmailToSaltMap.get(email)).count(),
@@ -782,7 +882,7 @@ public class SaltService implements IService {
         HTTP_CLIENT.post(String.format("%s/v2/salts/load", OPERATOR_URL), "", OPERATOR_HEADERS);
     }
 
-    private JsonNode v3IdentityMap(List<String> emails) throws Exception {
+    private JsonNode v3IdentityMap(List<String> emails, String baseUrl, String key, String secret) throws Exception {
         StringBuilder reqBody = new StringBuilder("{ \"email\": [");
         for (String email : emails) {
             reqBody.append(String.format("\"%s\"", email));
@@ -792,9 +892,14 @@ public class SaltService implements IService {
         }
         reqBody.append("] }");
 
-        V2Envelope envelope = v2CreateEnvelope(reqBody.toString(), CLIENT_API_SECRET);
-        HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v3/identity/map", OPERATOR_URL), envelope.envelope(), OPERATOR_HEADERS);
-        return v2DecryptEncryptedResponse(response.body(), envelope.nonce(), CLIENT_API_SECRET);
+        V2Envelope envelope = v2CreateEnvelope(reqBody.toString(), secret);
+        Map<String, String> headers = Map.of("Authorization", String.format("Bearer %s", key));
+        HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v3/identity/map", baseUrl), envelope.envelope(), headers);
+        return v2DecryptEncryptedResponse(response.body(), envelope.nonce(), secret);
+    }
+
+    private JsonNode v3IdentityMap(List<String> emails) throws Exception {
+        return v3IdentityMap(emails, OPERATOR_URL, CLIENT_API_KEY, CLIENT_API_SECRET);
     }
 
     private JsonNode v2TokenGenerate(String email) throws Exception {

@@ -56,6 +56,36 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: true
   }
 
+  const testOperatorUrlInput = {
+    name: 'testOperatorUrl',
+    label: 'Test Operator URL'
+  }
+
+  const testApiKeyInput = {
+    name: 'testApiKey',
+    label: 'Test API Key'
+  }
+
+  const testApiSecretInput = {
+    name: 'testApiSecret',
+    label: 'Test API Secret'
+  }
+
+  const integOperatorUrlInput = {
+    name: 'integOperatorUrl',
+    label: 'Integ Operator URL'
+  }
+
+  const integApiKeyInput = {
+    name: 'integApiKey',
+    label: 'Integ API Key'
+  }
+
+  const integApiSecretInput = {
+    name: 'integApiSecret',
+    label: 'Integ API Secret'
+  }
+
   const tokenIterationsInput = {
     name: 'tokenIterations',
     label: 'Iterations',
@@ -137,6 +167,31 @@ document.addEventListener('DOMContentLoaded', function () {
             const iterations = encodeURIComponent(inputs.fastForwardIterations);
             const enableV4 = encodeURIComponent(inputs.fastForwardWithV4 || false);
             return `/api/salt/fastForward?fraction=${fraction}&target_date=${targetDate}&fast_forward_iterations=${iterations}&enable_v4=${enableV4}`;
+          }
+        },
+      },
+      {
+        id: 'compare',
+        title: 'Compare Test and Integ',
+        role: 'maintainer',
+        inputs: [
+          testOperatorUrlInput,
+          testApiKeyInput,
+          testApiSecretInput,
+          integOperatorUrlInput,
+          integApiKeyInput,
+          integApiSecretInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const testOperatorUrl = encodeURIComponent(inputs.testOperatorUrl);
+            const testApiKey = encodeURIComponent(inputs.testApiKey);
+            const testApiSecret = encodeURIComponent(inputs.testApiSecret);
+            const integOperatorUrl = encodeURIComponent(inputs.integOperatorUrl);
+            const integApiKey = encodeURIComponent(inputs.integApiKey);
+            const integApiSecret = encodeURIComponent(inputs.integApiSecret);
+            return `/api/salt/compare?test_operator_url=${testOperatorUrl}&test_api_key=${testApiKey}&test_api_secret=${testApiSecret}&integ_operator_url=${integOperatorUrl}&integ_api_key=${integApiKey}&integ_api_secret=${integApiSecret}`;
           }
         },
       },

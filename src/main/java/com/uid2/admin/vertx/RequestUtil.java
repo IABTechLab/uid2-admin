@@ -207,9 +207,17 @@ public class RequestUtil {
         }
     }
 
+    public static Optional<String> getString(RoutingContext rc, String paramName) {
+        final List<String> values = rc.queryParam(paramName);
+        if (values.isEmpty()) return Optional.empty();
+        return Optional.of(values.get(0));
+    }
+
     public static Optional<Boolean> getBoolean(RoutingContext rc, String paramName, boolean defaultValue) {
         final List<String> values = rc.queryParam(paramName);
-        if (values.isEmpty()) return Optional.of(defaultValue);
+        if (values.isEmpty()) {
+            return Optional.of(defaultValue);
+        }
         try {
             return Optional.of(Boolean.valueOf(values.get(0)));
         } catch (Exception ex) {
