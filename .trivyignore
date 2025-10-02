@@ -2,9 +2,6 @@
 # See https://aquasecurity.github.io/trivy/v0.35/docs/vulnerability/examples/filter/ 
 # for more details
 
-# UID2-5186
-CVE-2024-8176 exp:2025-06-03
-
 # This is a false positive CVE
 # See: UID2-5492
 CVE-2022-37767
@@ -13,5 +10,8 @@ CVE-2022-37767
 # See: UID2-5493
 CVE-2025-1686
 
-# UID2-5864
-CVE-2025-6965 exp:2025-10-01
+# UID2-6097
+CVE-2025-59375 exp:2025-12-15
+
+# UID2-6128
+CVE-2025-55163 exp:2025-10-30
