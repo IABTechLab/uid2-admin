@@ -74,7 +74,7 @@ public class SaltService implements IService {
     private static final String CLIENT_API_KEY = "UID2-C-L-999-fCXrMM.fsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=";
     private static final String CLIENT_API_SECRET = "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=";
 
-    private static final String OPERATOR_URL = "http://proxy:80";
+    private static final String OPERATOR_URL = "http://publicoperator:8080";
     private static final Map<String, String> OPERATOR_HEADERS = Map.of("Authorization", String.format("Bearer %s", CLIENT_API_KEY));
 
     private static final int IDENTITY_COUNT = 10_000;
@@ -277,15 +277,14 @@ public class SaltService implements IService {
             final String integApiSecret = RequestUtil.getString(rc, "integ_api_secret").orElse("");
 
             List<String> emails = new ArrayList<>();
-            Map<String, Boolean> emailToSaltMap = new HashMap<>();
+            Map<String, SaltEntry> emailToSaltMap = new HashMap<>();
             RotatingSaltProvider.SaltSnapshot snapshot = saltProvider.getSnapshots().getLast();
             for (int i = 0; i < IDENTITY_COUNT; i++) {
                 String email = randomEmail();
                 emails.add(email);
 
                 SaltEntry salt = getSalt(email, snapshot);
-                boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
-                emailToSaltMap.put(email, isV4);
+                emailToSaltMap.put(email, salt);
             }
 
             // Construct identity map args
@@ -304,7 +303,8 @@ public class SaltService implements IService {
             int testIntegMismatchCount = 0;
             for (int i = 0; i < IDENTITY_COUNT; i++) {
                 String email = emails.get(i);
-                boolean isV4 = emailToSaltMap.get(email);
+                SaltEntry salt = emailToSaltMap.get(email);
+                boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
 
                 String testUid = testMappings.get(i).at("/u").asText();
                 String integUid = integMappings.get(i).at("/u").asText();
@@ -320,7 +320,7 @@ public class SaltService implements IService {
                     if (testUidBytes.length != 33) {
                         LOGGER.error("TEST - salt is v4 but UID length is {}", testUidBytes.length);
                         testInvalidV4UidCount++;
-                    } else {
+                    } else if (assertV4Uid(testUidBytes, email, salt.currentKeySalt(), snapshot)) {
                         testV4UidCount++;
                     }
                 } else {

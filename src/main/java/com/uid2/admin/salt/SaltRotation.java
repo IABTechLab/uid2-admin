@@ -86,8 +86,9 @@ public class SaltRotation {
         var currentSnapshot = snapshot;
 
         for (int i = 0; i < iterations; i++) {
-            var preRotationSalts = currentSnapshot.getAllRotatingSalts();
+            LOGGER.info("Fast-forwarding salts - {}/{}", i + 1, iterations);
 
+            var preRotationSalts = currentSnapshot.getAllRotatingSalts();
             var currentTargetDate = targetDate.plusDays(i);
             var nextEffective = currentTargetDate.asInstant();
             var nextExpires = nextEffective.plus(7, ChronoUnit.DAYS);
