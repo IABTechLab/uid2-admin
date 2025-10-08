@@ -56,34 +56,34 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: true
   }
 
-  const testOperatorUrlInput = {
-    name: 'testOperatorUrl',
-    label: 'Test Operator URL'
+  const referenceOperatorUrlInput = {
+    name: 'referenceOperatorUrl',
+    label: 'Reference Operator URL'
   }
 
-  const testApiKeyInput = {
-    name: 'testApiKey',
-    label: 'Test API Key'
+  const referenceApiKeyInput = {
+    name: 'referenceApiKey',
+    label: 'Reference API Key'
   }
 
-  const testApiSecretInput = {
-    name: 'testApiSecret',
-    label: 'Test API Secret'
+  const referenceApiSecretInput = {
+    name: 'referenceApiSecret',
+    label: 'Reference API Secret'
   }
 
-  const integOperatorUrlInput = {
-    name: 'integOperatorUrl',
-    label: 'Integ Operator URL'
+  const candidateOperatorUrlInput = {
+    name: 'candidateOperatorUrl',
+    label: 'Candidate Operator URL'
   }
 
-  const integApiKeyInput = {
-    name: 'integApiKey',
-    label: 'Integ API Key'
+  const candidateApiKeyInput = {
+    name: 'candidateApiKey',
+    label: 'Candidate API Key'
   }
 
-  const integApiSecretInput = {
-    name: 'integApiSecret',
-    label: 'Integ API Secret'
+  const candidateApiSecretInput = {
+    name: 'candidateApiSecret',
+    label: 'Candidate API Secret'
   }
 
   const tokenIterationsInput = {
@@ -171,27 +171,46 @@ document.addEventListener('DOMContentLoaded', function () {
         },
       },
       {
-        id: 'compare',
-        title: 'Compare Test and Integ',
+        id: 'benchmark',
+        title: 'Benchmark Identity Map V3',
         role: 'maintainer',
         inputs: [
-          testOperatorUrlInput,
-          testApiKeyInput,
-          testApiSecretInput,
-          integOperatorUrlInput,
-          integApiKeyInput,
-          integApiSecretInput
+          candidateOperatorUrlInput,
+          candidateApiKeyInput,
+          candidateApiSecretInput
         ],
         apiCall: {
           method: 'POST',
           getUrl: (inputs) => {
-            const testOperatorUrl = encodeURIComponent(inputs.testOperatorUrl);
-            const testApiKey = encodeURIComponent(inputs.testApiKey);
-            const testApiSecret = encodeURIComponent(inputs.testApiSecret);
-            const integOperatorUrl = encodeURIComponent(inputs.integOperatorUrl);
-            const integApiKey = encodeURIComponent(inputs.integApiKey);
-            const integApiSecret = encodeURIComponent(inputs.integApiSecret);
-            return `/api/salt/compare?test_operator_url=${testOperatorUrl}&test_api_key=${testApiKey}&test_api_secret=${testApiSecret}&integ_operator_url=${integOperatorUrl}&integ_api_key=${integApiKey}&integ_api_secret=${integApiSecret}`;
+            const candidateOperatorUrl = encodeURIComponent(inputs.candidateOperatorUrl);
+            const candidateApiKey = encodeURIComponent(inputs.candidateApiKey);
+            const candidateApiSecret = encodeURIComponent(inputs.candidateApiSecret);
+            return `/api/salt/benchmark?candidate_operator_url=${candidateOperatorUrl}&candidate_api_key=${candidateApiKey}&candidate_api_secret=${candidateApiSecret}`;
+          }
+        },
+      },
+      {
+        id: 'compare',
+        title: 'Compare Operator Raw UIDs',
+        role: 'maintainer',
+        inputs: [
+          referenceOperatorUrlInput,
+          referenceApiKeyInput,
+          referenceApiSecretInput,
+          candidateOperatorUrlInput,
+          candidateApiKeyInput,
+          candidateApiSecretInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const referenceOperatorUrl = encodeURIComponent(inputs.referenceOperatorUrl);
+            const referenceApiKey = encodeURIComponent(inputs.referenceApiKey);
+            const referenceApiSecret = encodeURIComponent(inputs.referenceApiSecret);
+            const candidateOperatorUrl = encodeURIComponent(inputs.candidateOperatorUrl);
+            const candidateApiKey = encodeURIComponent(inputs.candidateApiKey);
+            const candidateApiSecret = encodeURIComponent(inputs.candidateApiSecret);
+            return `/api/salt/compare?reference_operator_url=${referenceOperatorUrl}&reference_api_key=${referenceApiKey}&reference_api_secret=${referenceApiSecret}&candidate_operator_url=${candidateOperatorUrl}&candidate_api_key=${candidateApiKey}&candidate_api_secret=${candidateApiSecret}`;
           }
         },
       },

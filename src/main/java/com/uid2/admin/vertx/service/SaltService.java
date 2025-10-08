@@ -116,6 +116,12 @@ public class SaltService implements IService {
             }
         }, new AuditParams(List.of("fraction"), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
 
+        router.post("/api/salt/benchmark").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltBenchmark(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
         router.post("/api/salt/compare").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSaltCompare(ctx);
@@ -267,14 +273,49 @@ public class SaltService implements IService {
         }
     }
 
+    private void handleSaltBenchmark(RoutingContext rc) {
+        try {
+            final String candidateOperatorUrl = RequestUtil.getString(rc, "candidate_operator_url").orElse("");
+            final String candidateApiKey = RequestUtil.getString(rc, "candidate_api_key").orElse("");
+            final String candidateApiSecret = RequestUtil.getString(rc, "candidate_api_secret").orElse("");
+
+            List<List<String>> emails = new ArrayList<>();
+
+            for (int i = 0; i < 100; i++) {
+                emails.add(new ArrayList<>());
+
+                for (int j = 0; j < IDENTITY_COUNT; j++) {
+                    String email = randomEmail();
+                    emails.get(i).add(email);
+                }
+            }
+
+            long before = System.currentTimeMillis();
+            for (int i = 0; i < emails.size(); i++) {
+                LOGGER.info("Identity Map V3: {}/{}", i + 1, emails.size());
+                v3IdentityMap(emails.get(i), candidateOperatorUrl, candidateApiKey, candidateApiSecret);
+            }
+            long after = System.currentTimeMillis();
+            long duration = after - before;
+            LOGGER.info("UID Benchmark: duration={}ms", duration);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
     private void handleSaltCompare(RoutingContext rc) {
         try {
-            final String testOperatorUrl = RequestUtil.getString(rc, "test_operator_url").orElse("");
-            final String testApiKey = RequestUtil.getString(rc, "test_api_key").orElse("");
-            final String testApiSecret = RequestUtil.getString(rc, "test_api_secret").orElse("");
-            final String integOperatorUrl = RequestUtil.getString(rc, "integ_operator_url").orElse("");
-            final String integApiKey = RequestUtil.getString(rc, "integ_api_key").orElse("");
-            final String integApiSecret = RequestUtil.getString(rc, "integ_api_secret").orElse("");
+            final String referenceOperatorUrl = RequestUtil.getString(rc, "reference_operator_url").orElse("");
+            final String referenceApiKey = RequestUtil.getString(rc, "reference_api_key").orElse("");
+            final String referenceApiSecret = RequestUtil.getString(rc, "reference_api_secret").orElse("");
+            final String candidateOperatorUrl = RequestUtil.getString(rc, "candidate_operator_url").orElse("");
+            final String candidateApiKey = RequestUtil.getString(rc, "candidate_api_key").orElse("");
+            final String candidateApiSecret = RequestUtil.getString(rc, "candidate_api_secret").orElse("");
 
             List<String> emails = new ArrayList<>();
             Map<String, SaltEntry> emailToSaltMap = new HashMap<>();
@@ -288,68 +329,68 @@ public class SaltService implements IService {
             }
 
             // Construct identity map args
-            JsonNode testResponse = v3IdentityMap(emails, testOperatorUrl, testApiKey, testApiSecret);
-            JsonNode integResponse = v3IdentityMap(emails, integOperatorUrl, integApiKey, integApiSecret);
+            JsonNode referenceResponse = v3IdentityMap(emails, referenceOperatorUrl, referenceApiKey, referenceApiSecret);
+            JsonNode candidateResponse = v3IdentityMap(emails, candidateOperatorUrl, candidateApiKey, candidateApiSecret);
 
-            JsonNode testMappings = testResponse.at("/body/email");
-            JsonNode integMappings = integResponse.at("/body/email");
+            JsonNode referenceMappings = referenceResponse.at("/body/email");
+            JsonNode candidateMappings = candidateResponse.at("/body/email");
 
-            int testV4UidCount = 0;
-            int testV2UidCount = 0;
-            int testInvalidV4UidCount = 0;
-            int testInvalidV2UidCount = 0;
-            int testNullUidCount = 0;
-            int testIntegMatchCount = 0;
-            int testIntegMismatchCount = 0;
+            int candidateV4UidCount = 0;
+            int candidateV2UidCount = 0;
+            int candidateInvalidV4UidCount = 0;
+            int candidateInvalidV2UidCount = 0;
+            int candidateNullUidCount = 0;
+            int matchCount = 0;
+            int mismatchCount = 0;
             for (int i = 0; i < IDENTITY_COUNT; i++) {
                 String email = emails.get(i);
                 SaltEntry salt = emailToSaltMap.get(email);
                 boolean isV4 = salt.currentKeySalt() != null && salt.currentKeySalt().key() != null && salt.currentKeySalt().salt() != null;
 
-                String testUid = testMappings.get(i).at("/u").asText();
-                String integUid = integMappings.get(i).at("/u").asText();
+                String referenceUid = referenceMappings.get(i).at("/u").asText();
+                String candidateUid = candidateMappings.get(i).at("/u").asText();
 
-                byte[] testUidBytes = testUid == null ? null : Base64.getDecoder().decode(testUid);
-                byte[] integUidBytes = integUid == null ? null : Base64.getDecoder().decode(integUid);
+                byte[] referenceUidBytes = referenceUid == null ? null : Base64.getDecoder().decode(referenceUid);
+                byte[] candidateUidBytes = candidateUid == null ? null : Base64.getDecoder().decode(candidateUid);
 
-                // First, check test UID is valid
-                if (testUidBytes == null) {
-                    LOGGER.error("TEST - UID is null");
-                    testNullUidCount++;
+                // First, check candidate UID is valid
+                if (candidateUidBytes == null) {
+                    LOGGER.error("CANDIDATE - UID is null");
+                    candidateNullUidCount++;
                 } else if (isV4) {
-                    if (testUidBytes.length != 33) {
-                        LOGGER.error("TEST - salt is v4 but UID length is {}", testUidBytes.length);
-                        testInvalidV4UidCount++;
-                    } else if (assertV4Uid(testUidBytes, email, salt.currentKeySalt(), snapshot)) {
-                        testV4UidCount++;
+                    if (candidateUidBytes.length != 33) {
+                        LOGGER.error("CANDIDATE - salt is v4 but UID length is {}", candidateUidBytes.length);
+                        candidateInvalidV4UidCount++;
+                    } else if (assertV4Uid(candidateUidBytes, email, salt.currentKeySalt(), snapshot)) {
+                        candidateV4UidCount++;
                     }
                 } else {
-                    if (testUidBytes.length != 32) {
-                        LOGGER.error("TEST - salt is v2 but UID length is {}", testUidBytes.length);
-                        testInvalidV2UidCount++;
+                    if (candidateUidBytes.length != 32) {
+                        LOGGER.error("CANDIDATE - salt is v2 but UID length is {}", candidateUidBytes.length);
+                        candidateInvalidV2UidCount++;
                     } else {
-                        testV2UidCount++;
+                        candidateV2UidCount++;
                     }
                 }
 
-                // Then, check if test and integ match
+                // Then, check if reference and candidate raw UIDs match
                 if (!isV4) {
-                    if (!Arrays.equals(testUidBytes, integUidBytes)) {
-                        LOGGER.error("TEST and INTEG UIDs do not match for {} - TEST={} | INTEG={}", email, testUid, integUid);
-                        testIntegMismatchCount++;
+                    if (!Arrays.equals(referenceUidBytes, candidateUidBytes)) {
+                        LOGGER.error("Reference and candidate UIDs do not match for {} - Reference={} | Candidate={}", email, referenceUid, candidateUid);
+                        mismatchCount++;
                     } else {
-                        testIntegMatchCount++;
+                        matchCount++;
                     }
                 }
             }
 
-            LOGGER.info("UID Consistency between Test and Integ: " +
-                            "test_v4_uid_count={} test_v2_uid_count={} " +
-                            "test_v4_invalid_uid_count={} test_v2_invalid_uid_count={} test_null_uid_count={} " +
-                            "test_integ_match_count={} test_integ_mismatch_count={}",
-                    testV4UidCount, testV2UidCount,
-                    testInvalidV4UidCount, testInvalidV2UidCount, testNullUidCount,
-                    testIntegMatchCount, testIntegMismatchCount);
+            LOGGER.info("UID Consistency between Reference and Candidate operators: " +
+                            "candidate_v4_uid_count={} candidate_v2_uid_count={} " +
+                            "candidate_v4_invalid_uid_count={} candidate_v2_invalid_uid_count={} candidate_null_uid_count={} " +
+                            "match_count={} mismatch_count={}",
+                    candidateV4UidCount, candidateV2UidCount,
+                    candidateInvalidV4UidCount, candidateInvalidV2UidCount, candidateNullUidCount,
+                    matchCount, mismatchCount);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
