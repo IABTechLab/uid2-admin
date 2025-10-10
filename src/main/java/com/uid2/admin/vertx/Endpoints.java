@@ -132,8 +132,6 @@ public enum Endpoints {
     ADM_SALT("/adm/salt.html"),
     ADM_OPERATOR_KEY("/adm/operator-key.html"),
     ADM_ENCLAVE_ID("/adm/enclave-id.html"),
-    ADM_ENCLAVE_GCP("/adm/enclave-gcp.html"),
-    ADM_ENCLAVE_GCP_V2("/adm/enclave-gcp-v2.html"),
     ADM_PARTNER_CONFIG("/adm/partner-config.html"),
     ADM_KEY_ACL("/adm/key-acl.html");
 
