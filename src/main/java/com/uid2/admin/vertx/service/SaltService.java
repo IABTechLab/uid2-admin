@@ -128,6 +128,18 @@ public class SaltService implements IService {
             }
         }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
 
+        router.post("/api/salt/generate").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltGenerate(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
+        router.post("/api/salt/optout").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltOptout(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
         router.post("/api/salt/simulateToken").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSaltSimulateToken(ctx);
@@ -391,6 +403,67 @@ public class SaltService implements IService {
                     candidateV4UidCount, candidateV2UidCount,
                     candidateInvalidV4UidCount, candidateInvalidV2UidCount, candidateNullUidCount,
                     matchCount, mismatchCount);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSaltGenerate(RoutingContext rc) {
+        try {
+            RotatingSaltProvider.SaltSnapshot snapshot = saltProvider.getSnapshots().getLast();
+
+            String v2Email = null;
+            String v4Email = null;
+            while (v2Email == null || v4Email == null) {
+                String email = randomEmail();
+                SaltEntry salt = getSalt(email, snapshot);
+                if (salt.currentSalt() != null) {
+                    v2Email = email;
+                } else {
+                    v4Email = email;
+                }
+            }
+
+            JsonNode v2GenerateResponse = v2TokenGenerate(v2Email);
+            JsonNode v4GenerateResponse = v2TokenGenerate(v4Email);
+
+            JsonNode v2MapResponse = v3IdentityMap(List.of(v2Email));
+            JsonNode v4MapResponse = v3IdentityMap(List.of(v4Email));
+
+            String v2UidToken = v2GenerateResponse.at("/body/advertising_token").asText();
+            String v4UidToken = v4GenerateResponse.at("/body/advertising_token").asText();
+
+            String v2RawUid = v2MapResponse.at("/body/email").get(0).at("/u").asText();
+            String v4RawUid = v4MapResponse.at("/body/email").get(0).at("/u").asText();
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSaltOptout(RoutingContext rc) {
+        try {
+            final String candidateOperatorUrl = RequestUtil.getString(rc, "candidate_operator_url").orElse("");
+            final String candidateApiKey = RequestUtil.getString(rc, "candidate_api_key").orElse("");
+            final String candidateApiSecret = RequestUtil.getString(rc, "candidate_api_secret").orElse("");
+            final String[] optoutEmails = RequestUtil.getString(rc, "emails").orElse("").split(",");
+            final String[] optoutPhones = RequestUtil.getString(rc, "phones").orElse("").split(",");
+
+            for (String email : optoutEmails) {
+                v2TokenLogout("email", email, candidateOperatorUrl, candidateApiKey, candidateApiSecret);
+            }
+            for (String phone : optoutPhones) {
+                v2TokenLogout("phone", phone, candidateOperatorUrl, candidateApiKey, candidateApiSecret);
+            }
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -932,9 +1005,10 @@ public class SaltService implements IService {
             }
         }
         reqBody.append("] }");
-
         V2Envelope envelope = v2CreateEnvelope(reqBody.toString(), secret);
+
         Map<String, String> headers = Map.of("Authorization", String.format("Bearer %s", key));
+
         HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v3/identity/map", baseUrl), envelope.envelope(), headers);
         return v2DecryptEncryptedResponse(response.body(), envelope.nonce(), secret);
     }
@@ -954,6 +1028,16 @@ public class SaltService implements IService {
     private JsonNode v2TokenRefresh(String refreshToken, String refreshResponseKey) throws Exception {
         HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v2/token/refresh", OPERATOR_URL), refreshToken, OPERATOR_HEADERS);
         return v2DecryptRefreshResponse(response.body(), refreshResponseKey);
+    }
+
+    private JsonNode v2TokenLogout(String type, String identity, String baseUrl, String key, String secret) throws Exception {
+        String reqBody = String.format("{\"%s\":\"%s\"}".formatted(type, identity));
+        V2Envelope envelope = v2CreateEnvelope(reqBody, secret);
+
+        Map<String, String> headers = Map.of("Authorization", String.format("Bearer %s", key));
+
+        HttpResponse<String> response = HTTP_CLIENT.post(String.format("%s/v2/token/logout", baseUrl), envelope.envelope(), headers);
+        return v2DecryptEncryptedResponse(response.body(), envelope.nonce(), secret);
     }
 
     private String randomEmail() {

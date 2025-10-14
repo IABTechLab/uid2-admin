@@ -101,6 +101,16 @@ document.addEventListener('DOMContentLoaded', function () {
     defaultValue: true
   }
 
+  const optoutEmailsInput = {
+    name: 'optoutEmails',
+    label: 'Optout Emails'
+  }
+
+  const optoutPhonesInput = {
+    name: 'optoutPhones',
+    label: 'Optout Phones'
+  }
+
   const preMigrationIterationsInput = {
     name: 'preMigrationIterations',
     label: 'Step 1 - Pre-Migration Iterations',
@@ -211,6 +221,42 @@ document.addEventListener('DOMContentLoaded', function () {
             const candidateApiKey = encodeURIComponent(inputs.candidateApiKey);
             const candidateApiSecret = encodeURIComponent(inputs.candidateApiSecret);
             return `/api/salt/compare?reference_operator_url=${referenceOperatorUrl}&reference_api_key=${referenceApiKey}&reference_api_secret=${referenceApiSecret}&candidate_operator_url=${candidateOperatorUrl}&candidate_api_key=${candidateApiKey}&candidate_api_secret=${candidateApiSecret}`;
+          }
+        },
+      },
+      {
+        id: 'generate',
+        title: 'Generate',
+        role: 'maintainer',
+        inputs: [
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            return `/api/salt/generate`;
+          }
+        },
+      },
+      {
+        id: 'optout',
+        title: 'Optout',
+        role: 'maintainer',
+        inputs: [
+          candidateOperatorUrlInput,
+          candidateApiKeyInput,
+          candidateApiSecretInput,
+          optoutEmailsInput,
+          optoutPhonesInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const candidateOperatorUrl = encodeURIComponent(inputs.candidateOperatorUrl);
+            const candidateApiKey = encodeURIComponent(inputs.candidateApiKey);
+            const candidateApiSecret = encodeURIComponent(inputs.candidateApiSecret);
+            const emails = encodeURIComponent(inputs.optoutEmails);
+            const phones = encodeURIComponent(inputs.optoutPhones);
+            return `/api/salt/optout?candidate_operator_url=${candidateOperatorUrl}&candidate_api_key=${candidateApiKey}&candidate_api_secret=${candidateApiSecret}&emails=${emails}&phones=${phones}`;
           }
         },
       },
