@@ -261,6 +261,25 @@ document.addEventListener('DOMContentLoaded', function () {
         },
       },
       {
+        id: 'rollout',
+        title: 'Rollout',
+        role: 'maintainer',
+        inputs: [
+          candidateOperatorUrlInput,
+          candidateApiKeyInput,
+          candidateApiSecretInput
+        ],
+        apiCall: {
+          method: 'POST',
+          getUrl: (inputs) => {
+            const candidateOperatorUrl = encodeURIComponent(inputs.candidateOperatorUrl);
+            const candidateApiKey = encodeURIComponent(inputs.candidateApiKey);
+            const candidateApiSecret = encodeURIComponent(inputs.candidateApiSecret);
+            return `/api/salt/rollout?candidate_operator_url=${candidateOperatorUrl}&candidate_api_key=${candidateApiKey}&candidate_api_secret=${candidateApiSecret}`;
+          }
+        },
+      },
+      {
         id: 'simulateToken',
         title: 'Simulate Token',
         role: 'maintainer',

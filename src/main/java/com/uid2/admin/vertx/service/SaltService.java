@@ -140,6 +140,12 @@ public class SaltService implements IService {
             }
         }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
 
+        router.post("/api/salt/rollout").blockingHandler(auth.handle(ctx -> {
+            synchronized (writeLock) {
+                this.handleSaltRollout(ctx);
+            }
+        }, new AuditParams(List.of(), Collections.emptyList()), Role.MAINTAINER, Role.SECRET_ROTATION));
+
         router.post("/api/salt/simulateToken").blockingHandler(auth.handle(ctx -> {
             synchronized (writeLock) {
                 this.handleSaltSimulateToken(ctx);
@@ -464,6 +470,35 @@ public class SaltService implements IService {
             for (String phone : optoutPhones) {
                 v2TokenLogout("phone", phone, candidateOperatorUrl, candidateApiKey, candidateApiSecret);
             }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            rc.fail(500, e);
+        }
+    }
+
+    private void handleSaltRollout(RoutingContext rc) {
+        try {
+            final String candidateOperatorUrl = RequestUtil.getString(rc, "candidate_operator_url").orElse("");
+            final String candidateApiKey = RequestUtil.getString(rc, "candidate_api_key").orElse("");
+            final String candidateApiSecret = RequestUtil.getString(rc, "candidate_api_secret").orElse("");
+
+            RotatingSaltProvider.SaltSnapshot snapshot = saltProvider.getSnapshots().getLast();
+
+            List<String> emails = new ArrayList<>();
+            while (emails.size() < 10_000) {
+                String email = randomEmail();
+                SaltEntry salt = getSalt(email, snapshot);
+
+                if (salt.currentSalt() == null) {
+                    emails.add(email);
+                }
+            }
+
+            JsonNode response = v3IdentityMap(emails, candidateOperatorUrl, candidateApiKey, candidateApiSecret);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
