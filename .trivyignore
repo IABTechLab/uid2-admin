@@ -19,3 +19,5 @@ CVE-2025-64720 exp:2026-06-05
 # UID2-6340
 CVE-2025-65018 exp:2026-06-05
 
+# libpng vulnerability in base image - accepted risk
+CVE-2025-66293
