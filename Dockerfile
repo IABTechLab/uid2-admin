@@ -17,7 +17,7 @@ COPY ./conf/default-config.json /app/conf/
 COPY ./conf/*.xml /app/conf/
 COPY ./webroot/ /app/webroot/
 
-RUN adduser -D uid2-admin && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads
+RUN apk add --no-cache --upgrade libpng && adduser -D uid2-admin && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads
 USER uid2-admin
 
 CMD java \
