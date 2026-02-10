@@ -15,7 +15,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.Collections;
 import java.util.List;
 
-import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_LIST;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
 
 public class PartnerConfigService implements IService {
@@ -36,8 +36,8 @@ public class PartnerConfigService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get(API_PARTNER_CONFIG_GET.toString()).handler(
-            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
+        router.get(API_PARTNER_CONFIG_LIST.toString()).handler(
+            auth.handle(this::handlePartnerConfigList, Role.MAINTAINER));
         router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
@@ -45,7 +45,7 @@ public class PartnerConfigService implements IService {
         }, new AuditParams(Collections.emptyList(), List.of("partner_id", "config")), Role.PRIVILEGED));
     }
 
-    private void handlePartnerConfigGet(RoutingContext rc) {
+    private void handlePartnerConfigList(RoutingContext rc) {
         try {
             String config = this.partnerConfigProvider.getConfig();
             rc.response()
