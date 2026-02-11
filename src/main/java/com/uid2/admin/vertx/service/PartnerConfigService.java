@@ -43,13 +43,17 @@ public class PartnerConfigService implements IService {
             auth.handle(this::handlePartnerConfigList, Role.MAINTAINER));
         router.get(API_PARTNER_CONFIG_GET.toString()).handler(
             auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
-        router.post(API_PARTNER_CONFIG_ADD.toString()).handler(
-                auth.handle(this::handlePartnerConfigAdd, Role.MAINTAINER));
+
+        router.post(API_PARTNER_CONFIG_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handlePartnerConfigAdd(ctx);
+            }
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
         router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("partner_id", "config")), Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
     }
 
     private void handlePartnerConfigList(RoutingContext rc) {
@@ -130,15 +134,37 @@ public class PartnerConfigService implements IService {
 
     private void handlePartnerConfigUpdate(RoutingContext rc) {
         try {
-            // refresh manually
-            this.partnerConfigProvider.loadContent();
-            JsonArray partners = rc.body().asJsonArray();
-            if (partners == null) {
-                ResponseUtil.error(rc, 400, "Body must be none empty");
+
+            JsonObject newConfig = rc.body().asJsonObject();
+            if (newConfig == null) {
+                ResponseUtil.error(rc, 400, "Body must include Partner config");
                 return;
             }
 
-            storageManager.upload(partners);
+            // TODO: Validate JSON config structure
+
+            String newPartnerName = newConfig.getString("name");
+
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+
+            // Validate partner exists
+            int existingPartnerIdx = -1;
+            for (int i = 0; i < allPartnerConfigs.size(); i++) {
+                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
+                if (newPartnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
+                    existingPartnerIdx = i;
+                    break;
+                }
+            }
+
+            if (existingPartnerIdx == -1) {
+                ResponseUtil.error(rc, 404, "Partner '" + newPartnerName + "' not found");
+                return;
+            }
+
+            // Upload
+            allPartnerConfigs.set(existingPartnerIdx, newConfig);
+            storageManager.upload(allPartnerConfigs);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -147,4 +173,24 @@ public class PartnerConfigService implements IService {
             rc.fail(500, e);
         }
     }
+
+//    private void handlePartnerConfigBulkUpdate(RoutingContext rc) {
+//        try {
+//            // refresh manually
+//            this.partnerConfigProvider.loadContent();
+//            JsonArray partners = rc.body().asJsonArray();
+//            if (partners == null) {
+//                ResponseUtil.error(rc, 400, "Body must be none empty");
+//                return;
+//            }
+//
+//            storageManager.upload(partners);
+//
+//            rc.response()
+//                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+//                    .end("\"success\"");
+//        } catch (Exception e) {
+//            rc.fail(500, e);
+//        }
+//    }
 }
