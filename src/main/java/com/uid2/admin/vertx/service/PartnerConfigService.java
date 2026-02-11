@@ -69,20 +69,21 @@ public class PartnerConfigService implements IService {
             }
 
             String config = this.partnerConfigProvider.getConfig();
-            JsonObject allPartnerConfigs = new JsonObject(config);
+            JsonArray allPartnerConfigs = new JsonArray(config);
 
             // Look for the specific partner
-            if (allPartnerConfigs.containsKey(partnerName)) {
-                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(partnerName);
-
-                rc.response()
-                        .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                        .end(partnerConfig.encode());
-
-            } else {
-                // Partner not found
-                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+            for (int i = 0; i < allPartnerConfigs.size(); i++) {
+                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
+                if (partnerName.equals(partnerConfig.getString("name"))) {
+                    rc.response()
+                            .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .end(partnerConfig.encode());
+                    return;
+                }
             }
+
+            // Partner not found
+            ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
         } catch (Exception e) {
             rc.fail(500, e);
         }
