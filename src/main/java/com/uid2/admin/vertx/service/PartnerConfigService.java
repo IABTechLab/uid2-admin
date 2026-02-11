@@ -74,7 +74,7 @@ public class PartnerConfigService implements IService {
             // Look for the specific partner
             for (int i = 0; i < allPartnerConfigs.size(); i++) {
                 JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
-                if (partnerName.equals(partnerConfig.getString("name"))) {
+                if (partnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
                     rc.response()
                             .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                             .end(partnerConfig.encode());
