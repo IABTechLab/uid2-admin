@@ -18,6 +18,7 @@ import java.util.List;
 
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_LIST;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_ADD;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
 
 public class PartnerConfigService implements IService {
@@ -42,6 +43,8 @@ public class PartnerConfigService implements IService {
             auth.handle(this::handlePartnerConfigList, Role.MAINTAINER));
         router.get(API_PARTNER_CONFIG_GET.toString()).handler(
             auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
+        router.post(API_PARTNER_CONFIG_ADD.toString()).handler(
+                auth.handle(this::handlePartnerConfigAdd, Role.MAINTAINER));
         router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
@@ -84,6 +87,42 @@ public class PartnerConfigService implements IService {
 
             // Partner not found
             ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePartnerConfigAdd(RoutingContext rc) {
+        try {
+
+            JsonObject newConfig = rc.body().asJsonObject();
+            if (newConfig == null) {
+                ResponseUtil.error(rc, 400, "Body must include Partner config");
+                return;
+            }
+
+            // TODO: Validate JSON config structure
+
+            String newPartnerName = newConfig.getString("name");
+
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+
+            // Validate partner doesn't exist
+            for (int i = 0; i < allPartnerConfigs.size(); i++) {
+                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
+                if (newPartnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
+                    ResponseUtil.error(rc, 400, "Partner '" + newPartnerName + "' already exists");
+                    return;
+                }
+            }
+
+            // Upload
+            allPartnerConfigs.add(newConfig);
+            storageManager.upload(allPartnerConfigs);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end("\"success\"");
         } catch (Exception e) {
             rc.fail(500, e);
         }

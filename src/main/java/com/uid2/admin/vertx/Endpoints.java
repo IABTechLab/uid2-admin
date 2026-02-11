@@ -62,6 +62,7 @@ public enum Endpoints {
 
     API_PARTNER_CONFIG_LIST("/api/partner_config/list"),
     API_PARTNER_CONFIG_GET("/api/partner_config/get/:partner_name"),
+    API_PARTNER_CONFIG_ADD("/api/partner_config/add"),
     API_PARTNER_CONFIG_UPDATE("/api/partner_config/update"),
 
     API_PRIVATE_SITES_REFRESH("/api/private-sites/refresh"),
