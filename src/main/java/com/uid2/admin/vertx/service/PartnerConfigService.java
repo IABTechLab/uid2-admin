@@ -9,6 +9,7 @@ import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_LIST;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
 
 public class PartnerConfigService implements IService {
@@ -38,6 +40,8 @@ public class PartnerConfigService implements IService {
     public void setupRoutes(Router router) {
         router.get(API_PARTNER_CONFIG_LIST.toString()).handler(
             auth.handle(this::handlePartnerConfigList, Role.MAINTAINER));
+        router.get(API_PARTNER_CONFIG_GET.toString()).handler(
+            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
         router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
@@ -51,6 +55,34 @@ public class PartnerConfigService implements IService {
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(config);
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePartnerConfigGet(RoutingContext rc) {
+        try {
+            final String partnerName = rc.pathParam("partner_name");
+            if (partnerName == null) {
+                ResponseUtil.error(rc, 400, "Partner name is required");
+                return;
+            }
+
+            String config = this.partnerConfigProvider.getConfig();
+            JsonObject allPartnerConfigs = new JsonObject(config);
+
+            // Look for the specific partner
+            if (allPartnerConfigs.containsKey(partnerName)) {
+                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(partnerName);
+
+                rc.response()
+                        .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .end(partnerConfig.encode());
+
+            } else {
+                // Partner not found
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+            }
         } catch (Exception e) {
             rc.fail(500, e);
         }
