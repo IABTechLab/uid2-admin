@@ -236,8 +236,8 @@ public class PartnerConfigService implements IService {
             this.partnerConfigProvider.loadContent();
             JsonArray partners = rc.body().asJsonArray();
 
-            if (partners == null || partners.isEmpty()) {
-                ResponseUtil.error(rc, 400, "Body must be a non-empty array");
+            if (partners == null) {
+                ResponseUtil.error(rc, 400, "Body must be non-empty");
                 return;
             }
 
