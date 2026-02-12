@@ -21,6 +21,7 @@ import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_ADD;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_DELETE;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_BULK_REPLACE;
 
 public class PartnerConfigService implements IService {
     private final AdminAuthMiddleware auth;
@@ -60,6 +61,11 @@ public class PartnerConfigService implements IService {
                 this.handlePartnerConfigDelete(ctx);
             }
         }, new AuditParams(List.of("partner_name"), Collections.emptyList()), Role.MAINTAINER));
+        router.post(API_PARTNER_CONFIG_BULK_REPLACE.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handlePartnerConfigBulkReplace(ctx);
+            }
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.PRIVILEGED));
     }
 
     private void handlePartnerConfigList(RoutingContext rc) {
@@ -218,23 +224,24 @@ public class PartnerConfigService implements IService {
         }
     }
 
-//    private void handlePartnerConfigBulkUpdate(RoutingContext rc) {
-//        try {
-//            // refresh manually
-//            this.partnerConfigProvider.loadContent();
-//            JsonArray partners = rc.body().asJsonArray();
-//            if (partners == null) {
-//                ResponseUtil.error(rc, 400, "Body must be none empty");
-//                return;
-//            }
-//
-//            storageManager.upload(partners);
-//
-//            rc.response()
-//                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-//                    .end("\"success\"");
-//        } catch (Exception e) {
-//            rc.fail(500, e);
-//        }
-//    }
+    private void handlePartnerConfigBulkReplace(RoutingContext rc) {
+        try {
+            // refresh manually
+            this.partnerConfigProvider.loadContent();
+            JsonArray partners = rc.body().asJsonArray();
+            // TODO: Validate configs
+            if (partners == null) {
+                ResponseUtil.error(rc, 400, "Body must be non empty");
+                return;
+            }
+
+            storageManager.upload(partners);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end("\"success\"");
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
 }
