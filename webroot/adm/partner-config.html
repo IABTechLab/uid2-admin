@@ -20,43 +20,151 @@ import { initializeOperations } from '/js/component/operations.js';
 import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const configDataMultilineInput = {
-    name: 'configData',
+  const searchPartnerNameInput = {
+    name: 'searchPartnerName',
+    label: 'Partner Name',
+    required: true
+  };
+
+  const deletePartnerNameInput = {
+    name: 'deletePartnerName',
+    label: 'Partner Name',
+    required: true
+  };
+
+  const addConfigInput = {
+    name: 'addConfigData',
     label: 'Configuration Data',
     required: true,
     type: 'multi-line',
-    placeholder: 'Enter JSON configuration data...'
+    placeholder: 'Enter JSON configuration data (single partner object)...'
+  };
+
+  const updateConfigInput = {
+    name: 'updateConfigData',
+    label: 'Configuration Data',
+    required: true,
+    type: 'multi-line',
+    placeholder: 'Enter JSON configuration data (single partner object)...'
+  };
+
+  const bulkReplaceConfigInput = {
+    name: 'bulkReplaceConfigData',
+    label: 'Configuration Data',
+    required: true,
+    type: 'multi-line',
+    placeholder: 'Enter JSON array of all partner configurations...'
   };
 
   const operationConfig = {
     read: [
       {
-        id: 'getPartnerConfig',
-        title: 'Get Partner Config',
+        id: 'listPartnerConfigs',
+        title: 'List Partner Configs',
         role: 'maintainer',
         inputs: [],
         apiCall: {
           method: 'GET',
-          url: '/api/partner_config/get'
+          url: '/api/partner_config/list'
         },
-        postProcess: (response) => JSON.parse(JSON.stringify(response, null, 2))
+        postProcess: (response) => JSON.stringify(response, null, 2)
+      },
+      {
+        id: 'searchPartnerConfig',
+        title: 'Search Partner Config',
+        role: 'maintainer',
+        inputs: [searchPartnerNameInput],
+        apiCall: {
+          method: 'GET',
+          getUrl: (inputs) => `/api/partner_config/get/${encodeURIComponent(inputs.searchPartnerName)}`
+        },
+        postProcess: (response) => JSON.stringify(response, null, 2)
       }
     ],
     write: [
       {
-        id: 'updatePartnerConfig',
-        title: 'Update Partner Config',
-        role: 'elevated',
+        id: 'addPartnerConfig',
+        title: 'Add Partner Config',
+        role: 'maintainer',
+        description: 'This will add a new partner config.',
         inputs: [
-          configDataMultilineInput
+          addConfigInput
         ],
         apiCall: {
           method: 'POST',
+          url: '/api/partner_config/add',
+          getPayload: (inputs) => {
+            // Validate and parse JSON
+            try {
+              const config = JSON.parse(inputs.addConfigData);
+              if (!config.name) {
+                throw new Error('Partner config must include "name" field');
+              }
+              return config;
+            } catch (e) {
+              throw new Error('Invalid JSON format: ' + e.message);
+            }
+          }
+        }
+      },
+      {
+        id: 'updatePartnerConfig',
+        title: 'Update Partner Config',
+        role: 'maintainer',
+        description: 'This will replace an existing partner config.',
+        inputs: [
+          updateConfigInput
+        ],
+        apiCall: {
+          method: 'PUT',
           url: '/api/partner_config/update',
           getPayload: (inputs) => {
             // Validate and parse JSON
             try {
-              return JSON.parse(inputs.configData);
+              const config = JSON.parse(inputs.updateConfigData);
+              if (!config.name) {
+                throw new Error('Partner config must include "name" field');
+              }
+              return config;
+            } catch (e) {
+              throw new Error('Invalid JSON format: ' + e.message);
+            }
+          }
+        }
+      },
+      {
+        id: 'deletePartnerConfig',
+        title: 'Delete Partner Config',
+        role: 'maintainer',
+        description: 'This will remove the partner configuration.',
+        inputs: [deletePartnerNameInput],
+        apiCall: {
+          method: 'DELETE',
+          getUrl: (inputs) => `/api/partner_config/delete?partner_name=${encodeURIComponent(inputs.deletePartnerName)}`
+        }
+      }
+    ],
+    danger: [
+      {
+        id: 'bulkReplacePartnerConfigs',
+        title: 'Replace ALL Partner Configs',
+        role: 'privileged',
+        description: 'This will completely replace ALL partner configurations.',
+        confirmationText: 'You are about to replace ALL partner configurations. This will delete all existing partner configs and replace them with the provided configuration.',
+        inputs: [
+          bulkReplaceConfigInput
+        ],
+        apiCall: {
+          method: 'POST',
+          url: '/api/partner_config/bulk_replace',
+          getPayload: (inputs) => {
+            // Validate and parse JSON array
+            try {
+              const configs = JSON.parse(inputs.bulkReplaceConfigData);
+              if (!Array.isArray(configs)) {
+                throw new Error('Configuration must be a JSON array');
+              }
+              return configs;
             } catch (e) {
               throw new Error('Invalid JSON format: ' + e.message);
             }
