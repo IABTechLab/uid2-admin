@@ -130,7 +130,7 @@ public class PartnerConfigService implements IService {
             for (int i = 0; i < allPartnerConfigs.size(); i++) {
                 JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
                 if (newPartnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
-                    ResponseUtil.error(rc, 400, "Partner '" + newPartnerName + "' already exists");
+                    ResponseUtil.error(rc, 409, "Partner '" + newPartnerName + "' already exists");
                     return;
                 }
             }
