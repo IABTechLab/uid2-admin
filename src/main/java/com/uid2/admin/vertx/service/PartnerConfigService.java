@@ -117,7 +117,10 @@ public class PartnerConfigService implements IService {
                 return;
             }
 
-            // TODO: Validate JSON config structure
+            // Validate required fields
+            if (!validatePartnerConfig(rc, newConfig)) {
+                return;
+            }
 
             String newPartnerName = newConfig.getString("name");
 
@@ -153,7 +156,10 @@ public class PartnerConfigService implements IService {
                 return;
             }
 
-            // TODO: Validate JSON config structure
+            // Validate required fields
+            if (!validatePartnerConfig(rc, newConfig)) {
+                return;
+            }
 
             String newPartnerName = newConfig.getString("name");
 
@@ -229,10 +235,23 @@ public class PartnerConfigService implements IService {
             // refresh manually
             this.partnerConfigProvider.loadContent();
             JsonArray partners = rc.body().asJsonArray();
-            // TODO: Validate configs
-            if (partners == null) {
-                ResponseUtil.error(rc, 400, "Body must be non empty");
+
+            if (partners == null || partners.isEmpty()) {
+                ResponseUtil.error(rc, 400, "Body must be a non-empty array");
                 return;
+            }
+
+            // Validate each config
+            for (int i = 0; i < partners.size(); i++) {
+                JsonObject config = partners.getJsonObject(i);
+                if (config == null) {
+                    ResponseUtil.error(rc, 400, "Could not parse config at index " + i);
+                    return;
+                }
+
+                if (!validatePartnerConfig(rc, config)) {
+                    return;
+                }
             }
 
             storageManager.upload(partners);
@@ -243,5 +262,36 @@ public class PartnerConfigService implements IService {
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private boolean validatePartnerConfig(RoutingContext rc, JsonObject config) {
+        String name = config.getString("name");
+        String url = config.getString("url");
+        String method = config.getString("method");
+        Integer retryCount = config.getInteger("retry_count");
+        Integer retryBackoffMs = config.getInteger("retry_backoff_ms");
+
+        if (name == null || name.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'name' is required");
+            return false;
+        }
+        if (url == null || url.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'url' is required");
+            return false;
+        }
+        if (method == null || method.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'method' is required");
+            return false;
+        }
+        if (retryCount == null || retryCount < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_count' is required and must be >= 0");
+            return false;
+        }
+        if (retryBackoffMs == null || retryBackoffMs < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_backoff_ms' is required and must be >= 0");
+            return false;
+        }
+
+        return true;
     }
 }
