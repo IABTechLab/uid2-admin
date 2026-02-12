@@ -20,6 +20,7 @@ import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_LIST;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_ADD;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_DELETE;
 
 public class PartnerConfigService implements IService {
     private final AdminAuthMiddleware auth;
@@ -49,11 +50,16 @@ public class PartnerConfigService implements IService {
                 this.handlePartnerConfigAdd(ctx);
             }
         }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
-        router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+        router.put(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
             }
         }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
+        router.delete(API_PARTNER_CONFIG_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handlePartnerConfigDelete(ctx);
+            }
+        }, new AuditParams(List.of("partner_name"), Collections.emptyList()), Role.MAINTAINER));
     }
 
     private void handlePartnerConfigList(RoutingContext rc) {
@@ -166,6 +172,44 @@ public class PartnerConfigService implements IService {
             allPartnerConfigs.set(existingPartnerIdx, newConfig);
             storageManager.upload(allPartnerConfigs);
 
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end("\"success\"");
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePartnerConfigDelete(RoutingContext rc) {
+        try {
+
+            final List<String> partnerNames = rc.queryParam("partner_name");
+            if (partnerNames.isEmpty()) {
+                ResponseUtil.error(rc, 400, "Partner name is required");
+                return;
+            }
+            final String partnerName = partnerNames.getFirst();
+
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+
+            // Find partner config
+            int existingPartnerIdx = -1;
+            for (int i = 0; i < allPartnerConfigs.size(); i++) {
+                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
+                if (partnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
+                    existingPartnerIdx = i;
+                    break;
+                }
+            }
+
+            if (existingPartnerIdx == -1) {
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+                return;
+            }
+
+            // Remove
+            allPartnerConfigs.remove(existingPartnerIdx);
+            storageManager.upload(allPartnerConfigs);
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end("\"success\"");
