@@ -252,6 +252,11 @@ public class PartnerConfigService implements IService {
     }
 
     private boolean validatePartnerConfig(RoutingContext rc, JsonObject config) {
+        if (config == null) {
+            ResponseUtil.error(rc, 400, "Partner config is required");
+            return false;
+        }
+
         String name = config.getString("name");
         String url = config.getString("url");
         String method = config.getString("method");
