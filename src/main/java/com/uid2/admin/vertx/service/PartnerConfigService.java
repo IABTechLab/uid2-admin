@@ -72,6 +72,7 @@ public class PartnerConfigService implements IService {
 
     private void handlePartnerConfigList(RoutingContext rc) {
         try {
+            this.partnerConfigProvider.loadContent();
             String config = this.partnerConfigProvider.getConfig();
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -89,6 +90,7 @@ public class PartnerConfigService implements IService {
                 return;
             }
 
+            this.partnerConfigProvider.loadContent();
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
             int index = findPartnerIndex(allPartnerConfigs, partnerName);
 
@@ -119,6 +121,7 @@ public class PartnerConfigService implements IService {
             }
 
             String newPartnerName = newConfig.getString("name");
+            this.partnerConfigProvider.loadContent();
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Validate partner doesn't exist
@@ -153,6 +156,7 @@ public class PartnerConfigService implements IService {
             }
 
             String newPartnerName = newConfig.getString("name");
+            this.partnerConfigProvider.loadContent();
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Validate partner exists
@@ -183,6 +187,7 @@ public class PartnerConfigService implements IService {
             }
             final String partnerName = partnerNames.getFirst();
 
+            this.partnerConfigProvider.loadContent();
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Find partner config
