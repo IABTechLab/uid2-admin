@@ -1,26 +1,17 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.store.reader.RotatingPartnerStore;
-import com.uid2.admin.store.writer.PartnerStoreWriter;
 import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.service.PartnerConfigService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
-import com.uid2.admin.vertx.test.TestHandler;
-import com.uid2.shared.Const;
-import com.uid2.shared.Utils;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 
 import static org.junit.jupiter.api.Assertions.*;
