@@ -131,24 +131,24 @@ document.addEventListener('DOMContentLoaded', function () {
             }
           }
         }
-      },
+      }
+    ],
+    danger: [
       {
         id: 'deletePartnerConfig',
         title: 'Delete Partner Config',
-        role: 'maintainer',
+        role: 'privileged',
         description: 'This will remove the partner configuration.',
         inputs: [deletePartnerNameInput],
         apiCall: {
           method: 'DELETE',
           getUrl: (inputs) => `/api/partner_config/delete?partner_name=${encodeURIComponent(inputs.deletePartnerName)}`
         }
-      }
-    ],
-    danger: [
+      },
       {
         id: 'bulkReplacePartnerConfigs',
         title: 'Replace ALL Partner Configs',
-        role: 'privileged',
+        role: 'superuser',
         description: 'This will completely replace ALL partner configurations.',
         confirmationText: 'You are about to replace ALL partner configurations. This will delete all existing partner configs and replace them with the provided configuration.',
         inputs: [

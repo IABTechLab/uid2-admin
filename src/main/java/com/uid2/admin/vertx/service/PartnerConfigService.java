@@ -58,16 +58,17 @@ public class PartnerConfigService implements IService {
                 this.handlePartnerConfigUpdate(ctx);
             }
         }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
+
         router.delete(API_PARTNER_CONFIG_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigDelete(ctx);
             }
-        }, new AuditParams(List.of("partner_name"), Collections.emptyList()), Role.MAINTAINER));
+        }, new AuditParams(List.of("partner_name"), Collections.emptyList()), Role.PRIVILEGED));
         router.post(API_PARTNER_CONFIG_BULK_REPLACE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigBulkReplace(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.SUPER_USER));
     }
 
     private void handlePartnerConfigList(RoutingContext rc) {
