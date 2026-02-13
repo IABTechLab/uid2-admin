@@ -413,6 +413,22 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
     }
 
     @Test
+    void bulkReplacePartnerConfigsDuplicateNames(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.PRIVILEGED);
+        setPartnerConfigs();
+
+        JsonArray configs = new JsonArray();
+        configs.add(createPartnerConfig("partner1", "https://p1.com/webhook"));
+        configs.add(createPartnerConfig("partner1", "https://p2.com/webhook")); // Duplicate name
+
+        post(vertx, testContext, "api/partner_config/bulk_replace", configs.encode(), response -> {
+            assertEquals(400, response.statusCode());
+            verify(partnerStoreWriter, never()).upload(any());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
     void bulkReplacePartnerConfigsUnauthorized(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER); // Bulk replace requires PRIVILEGED
 

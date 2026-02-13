@@ -14,7 +14,9 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_LIST;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
@@ -241,6 +243,9 @@ public class PartnerConfigService implements IService {
                 return;
             }
 
+            // Keep track of names to check for duplicates
+            Set<String> partnerNames = new HashSet<>();
+
             // Validate each config
             for (int i = 0; i < partners.size(); i++) {
                 JsonObject config = partners.getJsonObject(i);
@@ -250,6 +255,12 @@ public class PartnerConfigService implements IService {
                 }
 
                 if (!validatePartnerConfig(rc, config)) {
+                    return;
+                }
+
+                String name = partners.getJsonObject(i).getString("name");
+                if (name != null && !partnerNames.add(name.toLowerCase())) {
+                    ResponseUtil.error(rc, 400, "Duplicate partner name: " + name);
                     return;
                 }
             }
