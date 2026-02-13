@@ -84,13 +84,12 @@ public class PartnerConfigService implements IService {
     private void handlePartnerConfigGet(RoutingContext rc) {
         try {
             final String partnerName = rc.pathParam("partner_name");
-            if (partnerName == null) {
+            if (partnerName == null || partnerName.isEmpty()) {
                 ResponseUtil.error(rc, 400, "Partner name is required");
                 return;
             }
 
-            String config = this.partnerConfigProvider.getConfig();
-            JsonArray allPartnerConfigs = new JsonArray(config);
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Look for the specific partner
             for (int i = 0; i < allPartnerConfigs.size(); i++) {
@@ -112,7 +111,6 @@ public class PartnerConfigService implements IService {
 
     private void handlePartnerConfigAdd(RoutingContext rc) {
         try {
-
             JsonObject newConfig = rc.body().asJsonObject();
             if (newConfig == null) {
                 ResponseUtil.error(rc, 400, "Body must include Partner config");
