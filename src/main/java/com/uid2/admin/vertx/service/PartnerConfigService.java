@@ -246,7 +246,7 @@ public class PartnerConfigService implements IService {
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end("\"success\"");
+                    .end(partners.encode());
         } catch (Exception e) {
             rc.fail(500, e);
         }
