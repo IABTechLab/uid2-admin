@@ -286,7 +286,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
     // DELETE endpoint tests
     @Test
     void deletePartnerConfigSuccess(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         JsonObject config1 = createPartnerConfig("partner1", "https://p1.com/webhook");
         JsonObject config2 = createPartnerConfig("partner2", "https://p2.com/webhook");
@@ -305,7 +305,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void deletePartnerConfigNotFound(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         JsonObject config = createPartnerConfig("partner1", "https://example.com/webhook");
         setPartnerConfigs(config);
@@ -319,7 +319,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void deletePartnerConfigCaseInsensitive(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
 
         JsonObject config = createPartnerConfig("Partner1", "https://example.com/webhook");
         setPartnerConfigs(config);
@@ -333,7 +333,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void deletePartnerConfigNoPartnerName(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER);
+        fakeAuth(Role.PRIVILEGED);
         setPartnerConfigs();
 
         delete(vertx, testContext, "api/partner_config/delete", response -> {
@@ -346,7 +346,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
     // BULK_REPLACE endpoint tests
     @Test
     void bulkReplacePartnerConfigsSuccess(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.PRIVILEGED);
+        fakeAuth(Role.SUPER_USER);
 
         JsonObject existingConfig = createPartnerConfig("old-partner", "https://old.com/webhook");
         setPartnerConfigs(existingConfig);
@@ -369,7 +369,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void bulkReplacePartnerConfigsEmptyArray(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.PRIVILEGED);
+        fakeAuth(Role.SUPER_USER);
         setPartnerConfigs();
 
         JsonArray emptyConfigs = new JsonArray();
@@ -386,7 +386,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void bulkReplacePartnerConfigsNullBody(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.PRIVILEGED);
+        fakeAuth(Role.SUPER_USER);
         setPartnerConfigs();
 
         post(vertx, testContext, "api/partner_config/bulk_replace", "", response -> {
@@ -398,7 +398,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void bulkReplacePartnerConfigsInvalidConfig(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.PRIVILEGED);
+        fakeAuth(Role.SUPER_USER);
         setPartnerConfigs();
 
         JsonArray configs = new JsonArray();
@@ -414,7 +414,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void bulkReplacePartnerConfigsDuplicateNames(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.PRIVILEGED);
+        fakeAuth(Role.SUPER_USER);
         setPartnerConfigs();
 
         JsonArray configs = new JsonArray();
@@ -430,7 +430,7 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
 
     @Test
     void bulkReplacePartnerConfigsUnauthorized(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.MAINTAINER); // Bulk replace requires PRIVILEGED
+        fakeAuth(Role.PRIVILEGED); // Bulk replace requires SUPER_USER
 
         JsonArray newConfigs = new JsonArray();
         newConfigs.add(createPartnerConfig("partner1", "https://p1.com/webhook"));
