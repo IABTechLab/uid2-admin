@@ -197,12 +197,13 @@ public class PartnerConfigService implements IService {
                 return;
             }
 
-            // Remove
+            // Remove and return the deleted config
+            JsonObject deletedConfig = allPartnerConfigs.getJsonObject(existingPartnerIdx);
             allPartnerConfigs.remove(existingPartnerIdx);
             storageManager.upload(allPartnerConfigs);
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end("\"success\"");
+                    .end(deletedConfig.encode());
         } catch (Exception e) {
             rc.fail(500, e);
         }
