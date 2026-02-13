@@ -90,20 +90,16 @@ public class PartnerConfigService implements IService {
             }
 
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+            int index = findPartnerIndex(allPartnerConfigs, partnerName);
 
-            // Look for the specific partner
-            for (int i = 0; i < allPartnerConfigs.size(); i++) {
-                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
-                if (partnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
-                    rc.response()
-                            .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .end(partnerConfig.encode());
-                    return;
-                }
+            if (index == -1) {
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+                return;
             }
 
-            // Partner not found
-            ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(allPartnerConfigs.getJsonObject(index).encode());
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -123,16 +119,12 @@ public class PartnerConfigService implements IService {
             }
 
             String newPartnerName = newConfig.getString("name");
-
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Validate partner doesn't exist
-            for (int i = 0; i < allPartnerConfigs.size(); i++) {
-                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
-                if (newPartnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
-                    ResponseUtil.error(rc, 409, "Partner '" + newPartnerName + "' already exists");
-                    return;
-                }
+            if (findPartnerIndex(allPartnerConfigs, newPartnerName) != -1) {
+                ResponseUtil.error(rc, 409, "Partner '" + newPartnerName + "' already exists");
+                return;
             }
 
             // Upload
@@ -149,7 +141,6 @@ public class PartnerConfigService implements IService {
 
     private void handlePartnerConfigUpdate(RoutingContext rc) {
         try {
-
             JsonObject newConfig = rc.body().asJsonObject();
             if (newConfig == null) {
                 ResponseUtil.error(rc, 400, "Body must include Partner config");
@@ -162,19 +153,10 @@ public class PartnerConfigService implements IService {
             }
 
             String newPartnerName = newConfig.getString("name");
-
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Validate partner exists
-            int existingPartnerIdx = -1;
-            for (int i = 0; i < allPartnerConfigs.size(); i++) {
-                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
-                if (newPartnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
-                    existingPartnerIdx = i;
-                    break;
-                }
-            }
-
+            int existingPartnerIdx = findPartnerIndex(allPartnerConfigs, newPartnerName);
             if (existingPartnerIdx == -1) {
                 ResponseUtil.error(rc, 404, "Partner '" + newPartnerName + "' not found");
                 return;
@@ -194,7 +176,6 @@ public class PartnerConfigService implements IService {
 
     private void handlePartnerConfigDelete(RoutingContext rc) {
         try {
-
             final List<String> partnerNames = rc.queryParam("partner_name");
             if (partnerNames.isEmpty()) {
                 ResponseUtil.error(rc, 400, "Partner name is required");
@@ -205,15 +186,7 @@ public class PartnerConfigService implements IService {
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
             // Find partner config
-            int existingPartnerIdx = -1;
-            for (int i = 0; i < allPartnerConfigs.size(); i++) {
-                JsonObject partnerConfig = allPartnerConfigs.getJsonObject(i);
-                if (partnerName.equalsIgnoreCase(partnerConfig.getString("name"))) {
-                    existingPartnerIdx = i;
-                    break;
-                }
-            }
-
+            int existingPartnerIdx = findPartnerIndex(allPartnerConfigs, partnerName);
             if (existingPartnerIdx == -1) {
                 ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
                 return;
@@ -302,5 +275,17 @@ public class PartnerConfigService implements IService {
         }
 
         return true;
+    }
+
+    private int findPartnerIndex(JsonArray configs, String partnerName) {
+        if (partnerName == null) return -1;
+        for (int i = 0; i < configs.size(); i++) {
+            JsonObject config = configs.getJsonObject(i);
+            String name = config.getString("name");
+            if (partnerName.equalsIgnoreCase(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
