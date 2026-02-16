@@ -145,35 +145,48 @@ public class PartnerConfigService implements IService {
 
     private void handlePartnerConfigUpdate(RoutingContext rc) {
         try {
-            JsonObject newConfig = rc.body().asJsonObject();
-            if (newConfig == null) {
+            JsonObject partialConfig = rc.body().asJsonObject();
+            if (partialConfig == null) {
                 ResponseUtil.error(rc, 400, "Body must include Partner config");
                 return;
             }
 
-            // Validate required fields
-            if (!validatePartnerConfig(rc, newConfig)) {
+            String partnerName = partialConfig.getString("name");
+            if (partnerName == null || partnerName.trim().isEmpty()) {
+                ResponseUtil.error(rc, 400, "Partner config 'name' is required");
                 return;
             }
 
-            String newPartnerName = newConfig.getString("name");
             this.partnerConfigProvider.loadContent();
             JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
 
-            // Validate partner exists
-            int existingPartnerIdx = findPartnerIndex(allPartnerConfigs, newPartnerName);
+            // Find existing partner config
+            int existingPartnerIdx = findPartnerIndex(allPartnerConfigs, partnerName);
             if (existingPartnerIdx == -1) {
-                ResponseUtil.error(rc, 404, "Partner '" + newPartnerName + "' not found");
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
                 return;
             }
 
-            // Upload
-            allPartnerConfigs.set(existingPartnerIdx, newConfig);
+            JsonObject existingConfig = allPartnerConfigs.getJsonObject(existingPartnerIdx);
+
+            // Validate partial config
+            if (!validatePartnerConfigForUpdate(rc, partialConfig)) {
+                return;
+            }
+
+            // Merge: start with existing config, overlay with new fields
+            JsonObject mergedConfig = existingConfig.copy();
+            partialConfig.forEach(entry -> {
+                mergedConfig.put(entry.getKey(), entry.getValue());
+            });
+
+            // Replace with merged config
+            allPartnerConfigs.set(existingPartnerIdx, mergedConfig);
             storageManager.upload(allPartnerConfigs);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(newConfig.encode());
+                    .end(mergedConfig.encode());
         } catch (Exception e) {
             rc.fail(500, e);
         }
@@ -283,6 +296,77 @@ public class PartnerConfigService implements IService {
         }
         if (retryBackoffMs == null || retryBackoffMs < 0) {
             ResponseUtil.error(rc, 400, "Partner config 'retry_backoff_ms' is required and must be >= 0");
+            return false;
+        }
+
+        // Validate optional array fields
+        if (!validateArrayField(rc, config, "query_params")) {
+            return false;
+        }
+        if (!validateArrayField(rc, config, "additional_headers")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validatePartnerConfigForUpdate(RoutingContext rc, JsonObject config) {
+        if (config == null) {
+            ResponseUtil.error(rc, 400, "Partner config is required");
+            return false;
+        }
+
+        // Name is always required to identify the partner (already checked in handlePartnerConfigUpdate)
+        // Validate fields that are present (not null)
+        String url = config.getString("url");
+        if (url != null && url.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'url' cannot be empty");
+            return false;
+        }
+
+        String method = config.getString("method");
+        if (method != null && method.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'method' cannot be empty");
+            return false;
+        }
+
+        Integer retryCount = config.getInteger("retry_count");
+        if (retryCount != null && retryCount < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_count' must be >= 0");
+            return false;
+        }
+
+        Integer retryBackoffMs = config.getInteger("retry_backoff_ms");
+        if (retryBackoffMs != null && retryBackoffMs < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_backoff_ms' must be >= 0");
+            return false;
+        }
+
+        // Validate optional array fields
+        if (!validateArrayField(rc, config, "query_params")) {
+            return false;
+        }
+        if (!validateArrayField(rc, config, "additional_headers")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateArrayField(RoutingContext rc, JsonObject config, String fieldName) {
+        // Field is optional, so null is acceptable
+        if (!config.containsKey(fieldName)) {
+            return true;
+        }
+
+        Object value = config.getValue(fieldName);
+        if (value == null) {
+            return true; // null is acceptable
+        }
+
+        // If present, must be a JsonArray
+        if (!(value instanceof JsonArray)) {
+            ResponseUtil.error(rc, 400, "Partner config '" + fieldName + "' must be an array");
             return false;
         }
 

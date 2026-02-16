@@ -44,6 +44,17 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
         return config;
     }
 
+    private JsonObject createPartnerConfigWithArrays(String name, String url, JsonArray queryParams, JsonArray additionalHeaders) {
+        JsonObject config = createPartnerConfig(name, url);
+        if (queryParams != null) {
+            config.put("query_params", queryParams);
+        }
+        if (additionalHeaders != null) {
+            config.put("additional_headers", additionalHeaders);
+        }
+        return config;
+    }
+
     // LIST endpoint tests
     @Test
     void listPartnerConfigsWithConfigs(Vertx vertx, VertxTestContext testContext) {
@@ -265,19 +276,189 @@ public class PartnerConfigServiceTest extends ServiceTestBase {
         });
     }
 
-    @ParameterizedTest
-    @CsvSource(value = {
-            "''",
-            "'{\"name\":\"partner1\",\"url\":\"https://new.com\"}'"
-    })
-    void updatePartnerConfigMissingRequiredFields(String body, Vertx vertx, VertxTestContext testContext) {
+    @Test
+    void updatePartnerConfigMissingName(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         JsonObject existingConfig = createPartnerConfig("partner1", "https://old.com/webhook");
         setPartnerConfigs(existingConfig);
 
-        put(vertx, testContext, "api/partner_config/update", body, response -> {
+        put(vertx, testContext, "api/partner_config/update", "", response -> {
             assertEquals(400, response.statusCode());
+            verify(partnerStoreWriter, never()).upload(any());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updatePartnerConfigPartialUrlOnly(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject existingConfig = createPartnerConfig("partner1", "https://old.com/webhook");
+        setPartnerConfigs(existingConfig);
+
+        JsonObject partialUpdate = new JsonObject()
+                .put("name", "partner1")
+                .put("url", "https://new-url.com/webhook");
+
+        put(vertx, testContext, "api/partner_config/update", partialUpdate.encode(), response -> {
+            assertAll(
+                    "updatePartnerConfigPartialUrlOnly",
+                    () -> assertEquals(200, response.statusCode()));
+            verify(partnerStoreWriter).upload(argThat(array -> {
+                JsonArray arr = (JsonArray) array;
+                if (arr.size() != 1) return false;
+                JsonObject updated = arr.getJsonObject(0);
+                return "partner1".equals(updated.getString("name")) &&
+                       "https://new-url.com/webhook".equals(updated.getString("url")) &&
+                       "GET".equals(updated.getString("method")) &&
+                       600 == updated.getInteger("retry_count") &&
+                       6000 == updated.getInteger("retry_backoff_ms");
+            }));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updatePartnerConfigPartialMultipleFields(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject existingConfig = createPartnerConfig("partner2", "https://old.com/webhook");
+        existingConfig.put("method", "POST");
+        existingConfig.put("retry_count", 300);
+        setPartnerConfigs(existingConfig);
+
+        JsonObject partialUpdate = new JsonObject()
+                .put("name", "partner2")
+                .put("retry_count", 1000)
+                .put("retry_backoff_ms", 10000);
+
+        put(vertx, testContext, "api/partner_config/update", partialUpdate.encode(), response -> {
+            assertAll(
+                    "updatePartnerConfigPartialMultipleFields",
+                    () -> assertEquals(200, response.statusCode()));
+            verify(partnerStoreWriter).upload(argThat(array -> {
+                JsonArray arr = (JsonArray) array;
+                if (arr.size() != 1) return false;
+                JsonObject updated = arr.getJsonObject(0);
+                return "partner2".equals(updated.getString("name")) &&
+                       "https://old.com/webhook".equals(updated.getString("url")) &&
+                       "POST".equals(updated.getString("method")) &&
+                       1000 == updated.getInteger("retry_count") &&
+                       10000 == updated.getInteger("retry_backoff_ms");
+            }));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updatePartnerConfigPartialInvalidValue(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject existingConfig = createPartnerConfig("partner1", "https://old.com/webhook");
+        setPartnerConfigs(existingConfig);
+
+        JsonObject partialUpdate = new JsonObject()
+                .put("name", "partner1")
+                .put("retry_count", -5);
+
+        put(vertx, testContext, "api/partner_config/update", partialUpdate.encode(), response -> {
+            assertAll(
+                    "updatePartnerConfigPartialInvalidValue",
+                    () -> assertEquals(400, response.statusCode()),
+                    () -> assertTrue(response.bodyAsJsonObject().getString("message").contains("retry_count")));
+            verify(partnerStoreWriter, never()).upload(any());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updatePartnerConfigPartialEmptyString(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject existingConfig = createPartnerConfig("partner1", "https://old.com/webhook");
+        setPartnerConfigs(existingConfig);
+
+        JsonObject partialUpdate = new JsonObject()
+                .put("name", "partner1")
+                .put("url", "");
+
+        put(vertx, testContext, "api/partner_config/update", partialUpdate.encode(), response -> {
+            assertAll(
+                    "updatePartnerConfigPartialEmptyString",
+                    () -> assertEquals(400, response.statusCode()),
+                    () -> assertTrue(response.bodyAsJsonObject().getString("message").contains("url")));
+            verify(partnerStoreWriter, never()).upload(any());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addPartnerConfigWithOptionalArrays(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setPartnerConfigs();
+
+        JsonArray queryParams = new JsonArray().add("action=dooptout").add("uid2=${ADVERTISING_ID}");
+        JsonArray headers = new JsonArray().add("Authorization: Bearer token");
+        JsonObject newConfig = createPartnerConfigWithArrays("partner1", "https://example.com/webhook", queryParams, headers);
+
+        post(vertx, testContext, "api/partner_config/add", newConfig.encode(), response -> {
+            assertAll(
+                    "addPartnerConfigWithOptionalArrays",
+                    () -> assertEquals(200, response.statusCode()));
+            verify(partnerStoreWriter).upload(argThat(array -> {
+                JsonArray arr = (JsonArray) array;
+                if (arr.size() != 1) return false;
+                JsonObject added = arr.getJsonObject(0);
+                return "partner1".equals(added.getString("name")) &&
+                       added.getJsonArray("query_params").size() == 2 &&
+                       added.getJsonArray("additional_headers").size() == 1;
+            }));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void updatePartnerConfigWithArrays(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        JsonObject existingConfig = createPartnerConfig("partner1", "https://old.com/webhook");
+        setPartnerConfigs(existingConfig);
+
+        JsonArray newQueryParams = new JsonArray().add("param1=value1");
+        JsonObject partialUpdate = new JsonObject()
+                .put("name", "partner1")
+                .put("query_params", newQueryParams);
+
+        put(vertx, testContext, "api/partner_config/update", partialUpdate.encode(), response -> {
+            assertAll(
+                    "updatePartnerConfigWithArrays",
+                    () -> assertEquals(200, response.statusCode()));
+            verify(partnerStoreWriter).upload(argThat(array -> {
+                JsonArray arr = (JsonArray) array;
+                if (arr.size() != 1) return false;
+                JsonObject updated = arr.getJsonObject(0);
+                return "partner1".equals(updated.getString("name")) &&
+                       updated.getJsonArray("query_params").size() == 1 &&
+                       "param1=value1".equals(updated.getJsonArray("query_params").getString(0));
+            }));
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addPartnerConfigInvalidArrayField(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setPartnerConfigs();
+
+        JsonObject invalidConfig = createPartnerConfig("partner1", "https://example.com/webhook");
+        invalidConfig.put("query_params", "not an array"); // Invalid - should be array
+
+        post(vertx, testContext, "api/partner_config/add", invalidConfig.encode(), response -> {
+            assertAll(
+                    "addPartnerConfigInvalidArrayField",
+                    () -> assertEquals(400, response.statusCode()),
+                    () -> assertTrue(response.bodyAsJsonObject().getString("message").contains("query_params")));
             verify(partnerStoreWriter, never()).upload(any());
             testContext.completeNow();
         });
