@@ -522,27 +522,6 @@ h3 {
   color: #495057;
 }
 
-.json-key {
-  color: #0066cc;
-  font-weight: bold;
-}
-
-.json-string {
-  color: #d14;
-}
-
-.json-number {
-  color: #905;
-}
-
-.json-boolean {
-  color: #1e90ff;
-}
-
-.json-null {
-  color: #999;
-}
-
 .required-asterisk {
   color: #f44336;
   margin-left: 2px;

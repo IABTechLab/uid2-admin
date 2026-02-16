@@ -10,18 +10,6 @@ function createOutputSection() {
   `;
 }
 
-function highlightJSON(json) {
-  if (typeof json !== 'string') {
-    json = JSON.stringify(json, null, 2);
-  }
-  
-  return json
-    .replace(/("[\w\s_-]+")(\s*:)/g, '<span class="json-key">$1</span>$2')
-    .replace(/:\s*(".*?")/g, ': <span class="json-string">$1</span>')
-    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-    .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
-    .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
-}
 
 function formatOutput(data) {
   if (typeof data === 'string') {
@@ -40,7 +28,7 @@ function formatOutput(data) {
 function displayOutput(output) {
   const target = document.querySelector('#standardOutput');
   if (!target) return;
-  target.innerHTML = highlightJSON(formatOutput(output));
+  target.textContent = formatOutput(output);
 }
 
 function clearOutput() {
@@ -74,14 +62,13 @@ function initializeOutput() {
   if (standardOutput) {
     const initialJSON = standardOutput.textContent;
     if (initialJSON.trim()) {
-      standardOutput.innerHTML = highlightJSON(initialJSON);
+      standardOutput.textContent = initialJSON;
     }
   }
 }
 
 export { 
   createOutputSection, 
-  highlightJSON, 
   displayOutput, 
   displayError, 
   clearError,
