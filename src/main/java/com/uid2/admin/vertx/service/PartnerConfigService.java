@@ -9,14 +9,21 @@ import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_LIST;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_GET;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_ADD;
 import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_UPDATE;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_DELETE;
+import static com.uid2.admin.vertx.Endpoints.API_PARTNER_CONFIG_BULK_REPLACE;
 
 public class PartnerConfigService implements IService {
     private final AdminAuthMiddleware auth;
@@ -36,17 +43,37 @@ public class PartnerConfigService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
+        router.get(API_PARTNER_CONFIG_LIST.toString()).handler(
+            auth.handle(this::handlePartnerConfigList, Role.MAINTAINER));
         router.get(API_PARTNER_CONFIG_GET.toString()).handler(
             auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER));
-        router.post(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
+
+        router.post(API_PARTNER_CONFIG_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handlePartnerConfigAdd(ctx);
+            }
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
+        router.put(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("partner_id", "config")), Role.PRIVILEGED));
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
+
+        router.delete(API_PARTNER_CONFIG_DELETE.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handlePartnerConfigDelete(ctx);
+            }
+        }, new AuditParams(List.of("partner_name"), Collections.emptyList()), Role.PRIVILEGED));
+        router.post(API_PARTNER_CONFIG_BULK_REPLACE.toString()).blockingHandler(auth.handle((ctx) -> {
+            synchronized (writeLock) {
+                this.handlePartnerConfigBulkReplace(ctx);
+            }
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.SUPER_USER));
     }
 
-    private void handlePartnerConfigGet(RoutingContext rc) {
+    private void handlePartnerConfigList(RoutingContext rc) {
         try {
+            this.partnerConfigProvider.loadContent();
             String config = this.partnerConfigProvider.getConfig();
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -56,23 +83,305 @@ public class PartnerConfigService implements IService {
         }
     }
 
+    private void handlePartnerConfigGet(RoutingContext rc) {
+        try {
+            final String partnerName = rc.pathParam("partner_name");
+            if (partnerName == null || partnerName.isEmpty()) {
+                ResponseUtil.error(rc, 400, "Partner name is required");
+                return;
+            }
+
+            this.partnerConfigProvider.loadContent();
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+            int index = findPartnerIndex(allPartnerConfigs, partnerName);
+
+            if (index == -1) {
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+                return;
+            }
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(allPartnerConfigs.getJsonObject(index).encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePartnerConfigAdd(RoutingContext rc) {
+        try {
+            JsonObject newConfig = rc.body().asJsonObject();
+            if (newConfig == null) {
+                ResponseUtil.error(rc, 400, "Body must include Partner config");
+                return;
+            }
+
+            // Validate required fields
+            if (!validatePartnerConfig(rc, newConfig)) {
+                return;
+            }
+
+            String newPartnerName = newConfig.getString("name");
+            this.partnerConfigProvider.loadContent();
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+
+            // Validate partner doesn't exist
+            if (findPartnerIndex(allPartnerConfigs, newPartnerName) != -1) {
+                ResponseUtil.error(rc, 409, "Partner '" + newPartnerName + "' already exists");
+                return;
+            }
+
+            // Upload
+            allPartnerConfigs.add(newConfig);
+            storageManager.upload(allPartnerConfigs);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(newConfig.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
     private void handlePartnerConfigUpdate(RoutingContext rc) {
+        try {
+            JsonObject partialConfig = rc.body().asJsonObject();
+            if (partialConfig == null) {
+                ResponseUtil.error(rc, 400, "Body must include Partner config");
+                return;
+            }
+
+            String partnerName = partialConfig.getString("name");
+            if (partnerName == null || partnerName.trim().isEmpty()) {
+                ResponseUtil.error(rc, 400, "Partner config 'name' is required");
+                return;
+            }
+
+            this.partnerConfigProvider.loadContent();
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+
+            // Find existing partner config
+            int existingPartnerIdx = findPartnerIndex(allPartnerConfigs, partnerName);
+            if (existingPartnerIdx == -1) {
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+                return;
+            }
+
+            JsonObject existingConfig = allPartnerConfigs.getJsonObject(existingPartnerIdx);
+
+            // Validate partial config
+            if (!validatePartnerConfigForUpdate(rc, partialConfig)) {
+                return;
+            }
+
+            // Merge: start with existing config, overlay with new fields
+            JsonObject mergedConfig = existingConfig.copy();
+            partialConfig.forEach(entry -> {
+                mergedConfig.put(entry.getKey(), entry.getValue());
+            });
+
+            // Replace with merged config
+            allPartnerConfigs.set(existingPartnerIdx, mergedConfig);
+            storageManager.upload(allPartnerConfigs);
+
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(mergedConfig.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePartnerConfigDelete(RoutingContext rc) {
+        try {
+            final List<String> partnerNames = rc.queryParam("partner_name");
+            if (partnerNames.isEmpty()) {
+                ResponseUtil.error(rc, 400, "Partner name is required");
+                return;
+            }
+            final String partnerName = partnerNames.getFirst();
+
+            this.partnerConfigProvider.loadContent();
+            JsonArray allPartnerConfigs = new JsonArray(this.partnerConfigProvider.getConfig());
+
+            // Find partner config
+            int existingPartnerIdx = findPartnerIndex(allPartnerConfigs, partnerName);
+            if (existingPartnerIdx == -1) {
+                ResponseUtil.error(rc, 404, "Partner '" + partnerName + "' not found");
+                return;
+            }
+
+            // Remove and return the deleted config
+            JsonObject deletedConfig = allPartnerConfigs.getJsonObject(existingPartnerIdx);
+            allPartnerConfigs.remove(existingPartnerIdx);
+            storageManager.upload(allPartnerConfigs);
+            rc.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(deletedConfig.encode());
+        } catch (Exception e) {
+            rc.fail(500, e);
+        }
+    }
+
+    private void handlePartnerConfigBulkReplace(RoutingContext rc) {
         try {
             // refresh manually
             this.partnerConfigProvider.loadContent();
             JsonArray partners = rc.body().asJsonArray();
+
             if (partners == null) {
-                ResponseUtil.error(rc, 400, "Body must be none empty");
+                ResponseUtil.error(rc, 400, "Body must be non-empty");
                 return;
+            }
+
+            // Keep track of names to check for duplicates
+            Set<String> partnerNames = new HashSet<>();
+
+            // Validate each config
+            for (int i = 0; i < partners.size(); i++) {
+                JsonObject config = partners.getJsonObject(i);
+                if (config == null) {
+                    ResponseUtil.error(rc, 400, "Could not parse config at index " + i);
+                    return;
+                }
+
+                if (!validatePartnerConfig(rc, config)) {
+                    return;
+                }
+
+                String name = partners.getJsonObject(i).getString("name");
+                if (name != null && !partnerNames.add(name.toLowerCase())) {
+                    ResponseUtil.error(rc, 400, "Duplicate partner name: " + name);
+                    return;
+                }
             }
 
             storageManager.upload(partners);
 
             rc.response()
                     .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end("\"success\"");
+                    .end(partners.encode());
         } catch (Exception e) {
             rc.fail(500, e);
         }
+    }
+
+    private boolean validatePartnerConfig(RoutingContext rc, JsonObject config) {
+        if (config == null) {
+            ResponseUtil.error(rc, 400, "Partner config is required");
+            return false;
+        }
+
+        String name = config.getString("name");
+        String url = config.getString("url");
+        String method = config.getString("method");
+        Integer retryCount = config.getInteger("retry_count");
+        Integer retryBackoffMs = config.getInteger("retry_backoff_ms");
+
+        if (name == null || name.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'name' is required");
+            return false;
+        }
+        if (url == null || url.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'url' is required");
+            return false;
+        }
+        if (method == null || method.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'method' is required");
+            return false;
+        }
+        if (retryCount == null || retryCount < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_count' is required and must be >= 0");
+            return false;
+        }
+        if (retryBackoffMs == null || retryBackoffMs < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_backoff_ms' is required and must be >= 0");
+            return false;
+        }
+
+        // Validate optional array fields
+        if (!validateArrayField(rc, config, "query_params")) {
+            return false;
+        }
+        if (!validateArrayField(rc, config, "additional_headers")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validatePartnerConfigForUpdate(RoutingContext rc, JsonObject config) {
+        if (config == null) {
+            ResponseUtil.error(rc, 400, "Partner config is required");
+            return false;
+        }
+
+        // Name is always required to identify the partner (already checked in handlePartnerConfigUpdate)
+        // Validate fields that are present (not null)
+        String url = config.getString("url");
+        if (url != null && url.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'url' cannot be empty");
+            return false;
+        }
+
+        String method = config.getString("method");
+        if (method != null && method.trim().isEmpty()) {
+            ResponseUtil.error(rc, 400, "Partner config 'method' cannot be empty");
+            return false;
+        }
+
+        Integer retryCount = config.getInteger("retry_count");
+        if (retryCount != null && retryCount < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_count' must be >= 0");
+            return false;
+        }
+
+        Integer retryBackoffMs = config.getInteger("retry_backoff_ms");
+        if (retryBackoffMs != null && retryBackoffMs < 0) {
+            ResponseUtil.error(rc, 400, "Partner config 'retry_backoff_ms' must be >= 0");
+            return false;
+        }
+
+        // Validate optional array fields
+        if (!validateArrayField(rc, config, "query_params")) {
+            return false;
+        }
+        if (!validateArrayField(rc, config, "additional_headers")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateArrayField(RoutingContext rc, JsonObject config, String fieldName) {
+        // Field is optional, so null is acceptable
+        if (!config.containsKey(fieldName)) {
+            return true;
+        }
+
+        Object value = config.getValue(fieldName);
+        if (value == null) {
+            return true; // null is acceptable
+        }
+
+        // If present, must be a JsonArray
+        if (!(value instanceof JsonArray)) {
+            ResponseUtil.error(rc, 400, "Partner config '" + fieldName + "' must be an array");
+            return false;
+        }
+
+        return true;
+    }
+
+    private int findPartnerIndex(JsonArray configs, String partnerName) {
+        if (partnerName == null) return -1;
+        for (int i = 0; i < configs.size(); i++) {
+            JsonObject config = configs.getJsonObject(i);
+            String name = config.getString("name");
+            if (partnerName.equalsIgnoreCase(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

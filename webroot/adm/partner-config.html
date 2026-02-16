@@ -20,43 +20,269 @@ import { initializeOperations } from '/js/component/operations.js';
 import { initializeOutput } from '/js/component/output.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  const configDataMultilineInput = {
-    name: 'configData',
+  const searchPartnerNameInput = {
+    name: 'searchPartnerName',
+    label: 'Partner Name',
+    required: true
+  };
+
+  const deletePartnerNameInput = {
+    name: 'deletePartnerName',
+    label: 'Partner Name',
+    required: true
+  };
+
+  // 'Add' operation inputs
+  const addPartnerNameInput = {
+    name: 'addPartnerName',
+    label: 'Partner Name',
+    required: true,
+    size: 2
+  };
+
+  const addUrlInput = {
+    name: 'addUrl',
+    label: 'Webhook URL',
+    required: true,
+    size: 3,
+    placeholder: 'https://example.com/webhook'
+  };
+
+  const addMethodInput = {
+    name: 'addMethod',
+    label: 'HTTP Method',
+    required: true,
+    placeholder: 'GET'
+  };
+
+  const addRetryCountInput = {
+    name: 'addRetryCount',
+    label: 'Retry Count',
+    required: true,
+    type: 'number',
+    placeholder: '600'
+  };
+
+  const addRetryBackoffMsInput = {
+    name: 'addRetryBackoffMs',
+    label: 'Retry Backoff (ms)',
+    required: true,
+    type: 'number',
+    placeholder: '6000'
+  };
+
+  const addQueryParamsInput = {
+    name: 'addQueryParams',
+    label: 'Query Parameters (comma-separated)',
+    required: false,
+    type: 'multi-line',
+    placeholder: 'action=dooptout,\nuid2=${ADVERTISING_ID},\ntimestamp=${OPTOUT_EPOCH}'
+  };
+
+  const addAdditionalHeadersInput = {
+    name: 'addAdditionalHeaders',
+    label: 'Additional Headers (comma-separated)',
+    required: false,
+    type: 'multi-line',
+    placeholder: 'Authorization: Bearer token,\nX-Custom-Header: value'
+  };
+
+  // 'Update' operation inputs
+  const updatePartnerNameInput = {
+    name: 'updatePartnerName',
+    label: 'Partner Name',
+    required: true,
+    size: 2
+  };
+
+  const updateUrlInput = {
+    name: 'updateUrl',
+    label: 'Webhook URL',
+    required: false,
+    size: 3,
+    placeholder: 'https://example.com/webhook'
+  };
+
+  const updateMethodInput = {
+    name: 'updateMethod',
+    label: 'HTTP Method',
+    required: false,
+    placeholder: 'GET'
+  };
+
+  const updateRetryCountInput = {
+    name: 'updateRetryCount',
+    label: 'Retry Count',
+    required: false,
+    type: 'number',
+    placeholder: '600'
+  };
+
+  const updateRetryBackoffMsInput = {
+    name: 'updateRetryBackoffMs',
+    label: 'Retry Backoff (ms)',
+    required: false,
+    type: 'number',
+    placeholder: '6000'
+  };
+
+  const updateQueryParamsInput = {
+    name: 'updateQueryParams',
+    label: 'Query Parameters (comma-separated)',
+    required: false,
+    type: 'multi-line',
+    placeholder: 'action=dooptout,\nuid2=${ADVERTISING_ID},\ntimestamp=${OPTOUT_EPOCH}'
+  };
+
+  const updateAdditionalHeadersInput = {
+    name: 'updateAdditionalHeaders',
+    label: 'Additional Headers (comma-separated)',
+    required: false,
+    type: 'multi-line',
+    placeholder: 'Authorization: Bearer token,\nX-Custom-Header: value'
+  };
+
+  const bulkReplaceConfigInput = {
+    name: 'bulkReplaceConfigData',
     label: 'Configuration Data',
     required: true,
     type: 'multi-line',
-    placeholder: 'Enter JSON configuration data...'
+    placeholder: 'Enter JSON array of all partner configurations...'
   };
 
   const operationConfig = {
     read: [
       {
-        id: 'getPartnerConfig',
-        title: 'Get Partner Config',
+        id: 'listPartnerConfigs',
+        title: 'List Partner Configs',
         role: 'maintainer',
         inputs: [],
         apiCall: {
           method: 'GET',
-          url: '/api/partner_config/get'
+          url: '/api/partner_config/list'
         },
-        postProcess: (response) => JSON.parse(JSON.stringify(response, null, 2))
+        postProcess: (response) => JSON.stringify(response, null, 2)
+      },
+      {
+        id: 'searchPartnerConfig',
+        title: 'Search Partner Config',
+        role: 'maintainer',
+        inputs: [searchPartnerNameInput],
+        apiCall: {
+          method: 'GET',
+          getUrl: (inputs) => `/api/partner_config/get/${encodeURIComponent(inputs.searchPartnerName)}`
+        },
+        postProcess: (response) => JSON.stringify(response, null, 2)
       }
     ],
     write: [
       {
-        id: 'updatePartnerConfig',
-        title: 'Update Partner Config',
-        role: 'elevated',
+        id: 'addPartnerConfig',
+        title: 'Add Partner Config',
+        role: 'maintainer',
+        description: 'This will add a new partner config.',
         inputs: [
-          configDataMultilineInput
+          addPartnerNameInput,
+          addUrlInput,
+          addMethodInput,
+          addQueryParamsInput,
+          addAdditionalHeadersInput,
+          addRetryCountInput,
+          addRetryBackoffMsInput
         ],
         apiCall: {
           method: 'POST',
+          url: '/api/partner_config/add',
+          getPayload: (inputs) => {
+            const payload = {
+              name: inputs.addPartnerName,
+              url: inputs.addUrl,
+              method: inputs.addMethod,
+              retry_count: parseInt(inputs.addRetryCount),
+              retry_backoff_ms: parseInt(inputs.addRetryBackoffMs)
+            };
+
+            // Parse comma-separated inputs into arrays
+            if (inputs.addQueryParams && inputs.addQueryParams.trim()) {
+              payload.query_params = inputs.addQueryParams.split(',').map(s => s.trim()).filter(s => s);
+            }
+            if (inputs.addAdditionalHeaders && inputs.addAdditionalHeaders.trim()) {
+              payload.additional_headers = inputs.addAdditionalHeaders.split(',').map(s => s.trim()).filter(s => s);
+            }
+
+            return payload;
+          }
+        }
+      },
+      {
+        id: 'updatePartnerConfig',
+        title: 'Update Partner Config',
+        role: 'maintainer',
+        description: 'This will update an existing partner config. Only fill in the fields you want to change.',
+        inputs: [
+          updatePartnerNameInput,
+          updateUrlInput,
+          updateMethodInput,
+          updateQueryParamsInput,
+          updateAdditionalHeadersInput,
+          updateRetryCountInput,
+          updateRetryBackoffMsInput
+        ],
+        apiCall: {
+          method: 'PUT',
           url: '/api/partner_config/update',
           getPayload: (inputs) => {
-            // Validate and parse JSON
+            const payload = { name: inputs.updatePartnerName };
+            if (inputs.updateUrl) payload.url = inputs.updateUrl;
+            if (inputs.updateMethod) payload.method = inputs.updateMethod;
+            if (inputs.updateRetryCount) payload.retry_count = parseInt(inputs.updateRetryCount);
+            if (inputs.updateRetryBackoffMs) payload.retry_backoff_ms = parseInt(inputs.updateRetryBackoffMs);
+
+            // Parse comma-separated inputs into arrays (only if provided)
+            if (inputs.updateQueryParams && inputs.updateQueryParams.trim()) {
+              payload.query_params = inputs.updateQueryParams.split(',').map(s => s.trim()).filter(s => s);
+            }
+            if (inputs.updateAdditionalHeaders && inputs.updateAdditionalHeaders.trim()) {
+              payload.additional_headers = inputs.updateAdditionalHeaders.split(',').map(s => s.trim()).filter(s => s);
+            }
+
+            return payload;
+          }
+        }
+      }
+    ],
+    danger: [
+      {
+        id: 'deletePartnerConfig',
+        title: 'Delete Partner Config',
+        role: 'elevated',
+        description: 'This will remove the partner configuration.',
+        inputs: [deletePartnerNameInput],
+        apiCall: {
+          method: 'DELETE',
+          getUrl: (inputs) => `/api/partner_config/delete?partner_name=${encodeURIComponent(inputs.deletePartnerName)}`
+        }
+      },
+      {
+        id: 'bulkReplacePartnerConfigs',
+        title: 'Replace ALL Partner Configs',
+        role: 'superuser',
+        description: 'This will completely replace ALL partner configurations.',
+        confirmationText: 'You are about to replace ALL partner configurations. This will delete all existing partner configs and replace them with the provided configuration.',
+        inputs: [
+          bulkReplaceConfigInput
+        ],
+        apiCall: {
+          method: 'POST',
+          url: '/api/partner_config/bulk_replace',
+          getPayload: (inputs) => {
+            // Validate and parse JSON array
             try {
-              return JSON.parse(inputs.configData);
+              const configs = JSON.parse(inputs.bulkReplaceConfigData);
+              if (!Array.isArray(configs)) {
+                throw new Error('Configuration must be a JSON array');
+              }
+              return configs;
             } catch (e) {
               throw new Error('Invalid JSON format: ' + e.message);
             }
