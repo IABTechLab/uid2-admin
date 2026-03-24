@@ -26,8 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.uid2.admin.vertx.Endpoints.API_SHARING_KEYSETS_RELATED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SharingServiceTest extends ServiceTestBase {
@@ -1193,9 +1192,10 @@ public class SharingServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            AdminKeyset expected = new AdminKeyset(1, 5, "test", Set.of(), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
             compareKeysetTypeListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_types"));
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
 
             testContext.completeNow();
         });
@@ -1221,9 +1221,10 @@ public class SharingServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            AdminKeyset expected = new AdminKeyset(1, 5, "test", Set.of(), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
             compareKeysetTypeListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_types"));
+            assertEquals(expected.getAllowedSites(), keysets.get(1).getAllowedSites());
 
             testContext.completeNow();
         });
