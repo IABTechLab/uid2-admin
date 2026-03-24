@@ -1131,8 +1131,13 @@ public class SharingServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            // Next keyset id is max(existing ids, 3) + 1 => 4 when only keyset 1 exists
+            int newKeysetId = 4;
+            AdminKeyset expected = new AdminKeyset(newKeysetId, 3, "", new HashSet<>(), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_types"));
+            assertEquals(expected.getAllowedSites(), keysets.get(newKeysetId).getAllowedSites());
+            assertEquals(expected.getAllowedTypes(), keysets.get(newKeysetId).getAllowedTypes());
 
             testContext.completeNow();
         });
@@ -1158,8 +1163,12 @@ public class SharingServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(2, 1, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
-            assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            int newKeysetId = 4;
+            AdminKeyset expected = new AdminKeyset(newKeysetId, 3, "", new HashSet<>(), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
+            compareKeysetListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_types"));
+            assertEquals(expected.getAllowedSites(), keysets.get(newKeysetId).getAllowedSites());
+            assertEquals(expected.getAllowedTypes(), keysets.get(newKeysetId).getAllowedTypes());
 
             testContext.completeNow();
         });
@@ -1184,8 +1193,9 @@ public class SharingServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
+            AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
             assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_types"));
 
             testContext.completeNow();
         });
@@ -1211,8 +1221,9 @@ public class SharingServiceTest extends ServiceTestBase {
         post(vertx, testContext, "api/sharing/keyset", body, response -> {
             assertEquals(200, response.statusCode());
 
-            AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
+            AdminKeyset expected = new AdminKeyset(1, 5, "test", null, Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
             assertEquals(null, response.bodyAsJsonObject().getJsonArray("allowed_sites"));
+            compareKeysetTypeListToResult(expected, response.bodyAsJsonObject().getJsonArray("allowed_types"));
 
             testContext.completeNow();
         });

@@ -149,12 +149,13 @@ public class KeysetManagerTest {
         assertTrue(sharerKeyset.equals(returnedKeyset));
         assertEquals(sharerKeyset.getAllowedSites(), Set.of());
 
-        // Generator makes a null list
+        // Generator makes an empty allowed_sites list with default allowed_types [DSP]
         ClientKey generator = new ClientKey("", "",  "", "", "", Instant.now(), Set.of(Role.GENERATOR), 8, false, "key-id-8");
         returnedKeyset = keysetManager.createKeysetForClient(generator);
         AdminKeyset generatorKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(generatorKeyset.equals(returnedKeyset));
-        assertNull(generatorKeyset.getAllowedSites());
+        assertEquals(Set.of(), generatorKeyset.getAllowedSites());
+        assertEquals(Set.of(ClientType.DSP), generatorKeyset.getAllowedTypes());
 
         // Generator takes priority of sharer
         ClientKey sharerGenerator = new ClientKey("", "",  "", "", "", Instant.now(), Set.of(Role.SHARER, Role.GENERATOR), 9, false, "key-id-9");
@@ -162,7 +163,8 @@ public class KeysetManagerTest {
         returnedKeyset = keysetManager.createKeysetForClient(sharerGenerator);
         AdminKeyset bothKeyset = keysets.get(returnedKeyset.getKeysetId());
         assertTrue(bothKeyset.equals(returnedKeyset));
-        assertNull(bothKeyset.getAllowedSites());
+        assertEquals(Set.of(), bothKeyset.getAllowedSites());
+        assertEquals(Set.of(ClientType.DSP), bothKeyset.getAllowedTypes());
 
         // If keyset already exists none gets added
         returnedKeyset = keysetManager.createKeysetForClient(sharer);

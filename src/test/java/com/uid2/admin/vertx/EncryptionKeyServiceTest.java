@@ -7,6 +7,7 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.EncryptionKey;
 import com.uid2.shared.model.KeysetKey;
 import io.vertx.core.Vertx;
@@ -150,7 +151,7 @@ public class EncryptionKeyServiceTest extends ServiceTestBase {
         setKeysetKeys(123);
         final EncryptionKey key = keyService.addSiteKey(5);
 
-        AdminKeyset expected = new AdminKeyset(4, 5, "", null, Instant.now().getEpochSecond(), true, true, new HashSet<>());
+        AdminKeyset expected = new AdminKeyset(4, 5, "", new HashSet<>(), Instant.now().getEpochSecond(), true, true, Set.of(ClientType.DSP));
         assertNotNull(keysets.get(4));
         assertEquals(expected, keysets.get(4));
         verify(keysetKeyStoreWriter).upload(collectionOfSize(1), eq(124));

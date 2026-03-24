@@ -380,7 +380,7 @@ public class SharingService implements IService {
                 AdminKeyset newKeyset = setAdminKeyset(rc, allowedSites, allowedTypes,  siteId,  keysetId, name);
                 if(newKeyset == null) return;
                 JsonObject jo = new JsonObject();
-                jo.put("allowed_sites", allowedSites);
+                jo.put("allowed_sites", newKeyset.getAllowedSites());
                 jo.put("allowed_types", newKeyset.getAllowedTypes());
                 jo.put("hash", newKeyset.hashCode());
 
@@ -430,7 +430,7 @@ public class SharingService implements IService {
                     .boxed()
                     .collect(Collectors.toSet());
         } else {
-            newlist = null;
+            newlist = new HashSet<>();
         }
 
         Set<ClientType> newAllowedTypes = null;
@@ -445,6 +445,10 @@ public class SharingService implements IService {
                 ResponseUtil.error(rc, 400, "Invalid Client Type");
                 return null;
             }
+        }
+
+        if (allowedSites == null) {
+            newAllowedTypes.add(ClientType.DSP);
         }
 
         final AdminKeyset newKeyset = new AdminKeyset(keysetId, siteId, name,
