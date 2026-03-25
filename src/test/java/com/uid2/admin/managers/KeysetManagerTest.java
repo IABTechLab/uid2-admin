@@ -174,6 +174,54 @@ public class KeysetManagerTest {
         assertEquals(7, keysets.keySet().size());
     }
 
+    @Test
+    public void createAndAddKeyset_nullAllowedSites_storesEmptySetNotNullAndAddsDspWhenTypesNull() throws Exception {
+        setKeysets(new HashMap<>());
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+        AdminKeyset created = keysetManager.createAndAddKeyset(42, null, null);
+
+        assertNotNull(created.getAllowedSites());
+        assertTrue(created.getAllowedSites().isEmpty());
+        assertEquals(Set.of(ClientType.DSP), created.getAllowedTypes());
+    }
+
+    @Test
+    public void createAndAddKeyset_nullAllowedSites_preservesOtherTypesAndAddsDsp() throws Exception {
+        setKeysets(new HashMap<>());
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+        AdminKeyset created = keysetManager.createAndAddKeyset(42, null, new HashSet<>(Set.of(ClientType.ADVERTISER)));
+
+        assertNotNull(created.getAllowedSites());
+        assertTrue(created.getAllowedSites().isEmpty());
+        assertTrue(created.getAllowedTypes().contains(ClientType.DSP));
+        assertTrue(created.getAllowedTypes().contains(ClientType.ADVERTISER));
+    }
+
+    @Test
+    public void createKeysetForSite_newKeyset_hasNonNullEmptyAllowedSitesAndDspType() throws Exception {
+        setKeysets(new HashMap<>());
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+        AdminKeyset created = keysetManager.createKeysetForSite(99);
+
+        assertNotNull(created.getAllowedSites());
+        assertTrue(created.getAllowedSites().isEmpty());
+        assertTrue(created.getAllowedTypes().contains(ClientType.DSP));
+    }
+
+    @Test
+    public void createKeysetForSite_newKeyset_hasEmptyAllowedSitesAndNullType() throws Exception {
+        setKeysets(new HashMap<>());
+        KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
+
+        AdminKeyset created = keysetManager.createAndAddKeyset(42, new HashSet<>(), null);
+
+        assertNotNull(created.getAllowedSites());
+        assertTrue(created.getAllowedSites().isEmpty());
+        assertNull(created.getAllowedTypes());
+    }
 
     @Test
     public void testLookUpKeyset() {
