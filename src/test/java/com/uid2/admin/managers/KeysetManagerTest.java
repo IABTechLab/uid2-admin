@@ -212,7 +212,8 @@ public class KeysetManagerTest {
     }
 
     @Test
-    public void createKeysetForSite_newKeyset_hasEmptyAllowedSitesAndNullType() throws Exception {
+    public void createAndAddKeyset_emptyAllowedSites_nullAllowedTypes_hasEmptySitesAndNullAllowedTypes()
+            throws Exception {
         setKeysets(new HashMap<>());
         KeysetManager keysetManager = new KeysetManager(keysetProvider, keysetStoreWriter, keysetKeyManager, true);
 
