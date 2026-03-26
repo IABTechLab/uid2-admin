@@ -202,20 +202,6 @@ document.addEventListener('DOMContentLoaded', function () {
               keyset_id: parseInt(inputs.keysetId)
             })
           }
-        },
-        {
-          id: 'resetAllowedSitesToNull',
-          title: 'Reset Allowed Sites To Null',
-          role: 'maintainer',
-          inputs: [keysetIdInput],
-          apiCall: {
-            method: 'POST',
-            url: '/api/sharing/keyset',
-            getPayload: (inputs) => ({
-              allowed_sites: null,
-              keyset_id: parseInt(inputs.keysetId)
-            })
-          }
         }
       ]
   };
