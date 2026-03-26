@@ -548,7 +548,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             else if(siteId == Const.Data.AdvertisingTokenSiteId) {
                 newKeysetId = Const.Data.FallbackPublisherKeysetId;
             }
-            keyset = createDefaultKeyset(siteId, newKeysetId);
+            keyset = createKeysetSharedWithDsps(siteId, newKeysetId);
             currentKeysets.put(newKeysetId, keyset);
             keysetStoreWriter.upload(currentKeysets, null);
         }

@@ -58,16 +58,16 @@ public class KeysetManagerTest {
                 keysetKeyManager, true);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, KeysetManager.createDefaultKeyset(3, 1));
-            put(2, KeysetManager.createDefaultKeyset(4, 2));
-            put(3, KeysetManager.createDefaultKeyset(5, 3));
-            put(4, KeysetManager.createDefaultKeyset(6, 4));
+            put(1, KeysetManager.createKeysetSharedWithDsps(3, 1));
+            put(2, KeysetManager.createKeysetSharedWithDsps(4, 2));
+            put(3, KeysetManager.createKeysetSharedWithDsps(5, 3));
+            put(4, KeysetManager.createKeysetSharedWithDsps(6, 4));
         }};
 
         setKeysets(keysets);
         final int keysetId = 5;
         // add new keyset
-        AdminKeyset keyset1 = KeysetManager.createDefaultKeyset(7, keysetId);
+        AdminKeyset keyset1 = KeysetManager.createKeysetSharedWithDsps(7, keysetId);
         keysetManager.addOrReplaceKeyset(keyset1);
         assertTrue(keysets.containsKey(5));
         assertTrue(keyset1.equals(keysets.get(5)));
@@ -102,7 +102,7 @@ public class KeysetManagerTest {
 
         @Test
         public void doesNotCreateKeysetWhenOneExists() throws Exception {
-            final AdminKeyset keyset = KeysetManager.createDefaultKeyset(1, 1);
+            final AdminKeyset keyset = KeysetManager.createKeysetSharedWithDsps(1, 1);
             final HashMap<Integer, AdminKeyset> keysets = new HashMap<>();
             keysets.put(1, keyset);
 
@@ -135,10 +135,10 @@ public class KeysetManagerTest {
                 keysetKeyManager, true);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
-            put(1, KeysetManager.createDefaultKeyset(3, 1));
-            put(2, KeysetManager.createDefaultKeyset(4, 2));
-            put(3, KeysetManager.createDefaultKeyset(5, 3));
-            put(4, KeysetManager.createDefaultKeyset(6, 4));
+            put(1, KeysetManager.createKeysetSharedWithDsps(3, 1));
+            put(2, KeysetManager.createKeysetSharedWithDsps(4, 2));
+            put(3, KeysetManager.createKeysetSharedWithDsps(5, 3));
+            put(4, KeysetManager.createKeysetSharedWithDsps(6, 4));
         }};
 
         setKeysets(keysets);
@@ -254,33 +254,33 @@ public class KeysetManagerTest {
     public void testKeysetNameCreation() {
 
         //expected cases of special keysets when site id and keyset id match our expectations
-        AdminKeyset keyset = createDefaultKeyset(-1, -1);
+        AdminKeyset keyset = createKeysetSharedWithDsps(-1, -1);
         assertEquals(keyset.getName(), KeysetManager.MasterKeysetName);
-        keyset = createDefaultKeyset(-2, -2);
+        keyset = createKeysetSharedWithDsps(-2, -2);
         assertEquals(keyset.getName(), KeysetManager.RefreshKeysetName);
-        keyset = createDefaultKeyset(2, 2);
+        keyset = createKeysetSharedWithDsps(2, 2);
         assertEquals(keyset.getName(), KeysetManager.FallbackPublisherKeysetName);
 
         //only site id matches but keyset id aren't the same as what we expected
-        keyset = createDefaultKeyset(-1, 3);
+        keyset = createKeysetSharedWithDsps(-1, 3);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(-2, 34);
+        keyset = createKeysetSharedWithDsps(-2, 34);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(2, 56);
+        keyset = createKeysetSharedWithDsps(2, 56);
         assertEquals(keyset.getName(), "");
 
         //only keyset id matches but site Id aren't the same as what we expected
-        keyset = createDefaultKeyset(-5, 1);
+        keyset = createKeysetSharedWithDsps(-5, 1);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(-3, 2);
+        keyset = createKeysetSharedWithDsps(-3, 2);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(20, 3);
+        keyset = createKeysetSharedWithDsps(20, 3);
         assertEquals(keyset.getName(), "");
 
         //for any other normal keyset creation
-        keyset = createDefaultKeyset(6, 7);
+        keyset = createKeysetSharedWithDsps(6, 7);
         assertEquals(keyset.getName(), "");
-        keyset = createDefaultKeyset(9, 23);
+        keyset = createKeysetSharedWithDsps(9, 23);
         assertEquals(keyset.getName(), "");
     }
 

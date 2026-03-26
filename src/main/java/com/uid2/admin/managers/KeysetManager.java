@@ -53,7 +53,7 @@ public class KeysetManager {
         return max(Collections.max(keysets.keySet()), 3);
     }
 
-    public static AdminKeyset createDefaultKeyset(int siteId, int keysetId) {
+    public static AdminKeyset createKeysetSharedWithDsps(int siteId, int keysetId) {
         String name = "";
 
         //only set if both siteId and keysetId match our expectation according to the requirements
@@ -138,7 +138,7 @@ public class KeysetManager {
 
         this.keysetProvider.loadContent();
         int newKeysetId = getNextKeysetId();
-        AdminKeyset newKeyset = KeysetManager.createDefaultKeyset(siteId, newKeysetId);
+        AdminKeyset newKeyset = KeysetManager.createKeysetSharedWithDsps(siteId, newKeysetId);
         addOrReplaceKeyset(newKeyset);
         return newKeyset;
     }
