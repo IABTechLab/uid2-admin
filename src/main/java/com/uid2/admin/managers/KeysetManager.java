@@ -122,14 +122,6 @@ public class KeysetManager {
 
     public AdminKeyset createAndAddKeyset(Integer siteId, Set<Integer> allowedSites, Set<ClientType> allowedTypes) throws Exception{
         if(!enableKeysets) return null;
-        if (allowedSites == null) {
-            allowedSites = new HashSet<>();
-            Set<ClientType> typesWithDsp = (allowedTypes == null)
-                    ? new HashSet<>()
-                    : new HashSet<>(allowedTypes);
-            typesWithDsp.add(ClientType.DSP);
-            allowedTypes = typesWithDsp;
-        }
         int newKeysetId = getNextKeysetId();
         AdminKeyset keyset = new AdminKeyset(newKeysetId, siteId, "", allowedSites,
                 Instant.now().getEpochSecond(), true, true, allowedTypes);

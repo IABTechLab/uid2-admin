@@ -447,10 +447,6 @@ public class SharingService implements IService {
             }
         }
 
-        if (allowedSites == null) {
-            newAllowedTypes.add(ClientType.DSP);
-        }
-
         final AdminKeyset newKeyset = new AdminKeyset(keysetId, siteId, name,
                 newlist, Instant.now().getEpochSecond(), true, true, newAllowedTypes);
 
