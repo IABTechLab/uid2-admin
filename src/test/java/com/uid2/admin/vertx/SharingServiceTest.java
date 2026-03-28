@@ -250,7 +250,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void listSiteSetNewOmittedAllowedSites_emptyAllowedSitesNotNullWithDsp(Vertx vertx, VertxTestContext testContext) {
+    void listSiteSetNewAllowedSitesMissingInRequest(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.SHARING_PORTAL);
 
         Map<Integer, AdminKeyset> keysets = new HashMap<Integer, AdminKeyset>() {{
@@ -1142,8 +1142,9 @@ public class SharingServiceTest extends ServiceTestBase {
         });
     }
 
+    // `allowed_sites = null` is no longer allowed in the admin UI. This test is retained to verify normalization: if `allowed_sites` is null or missing, it should be converted to an empty set.`
     @Test
-    void KeysetSetNewNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetNewAllowedSitesMissingInRequest(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 3);
@@ -1174,7 +1175,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetNewExplicitlyNullAllowedSites(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetUsingNewExplicitlyNullAllowedSitesInput(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 3);
@@ -1205,7 +1206,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetNewNullAllowedSitesNonEmptyAllowedTypes(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetAllowedSitesMissingWithNonEmptyAllowedTypesInput(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 3);
@@ -1237,7 +1238,7 @@ public class SharingServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void KeysetSetNewExplicitlyNullAllowedSitesNonEmptyAllowedTypes(Vertx vertx, VertxTestContext testContext) {
+    void KeysetSetWithExplicitNullAllowedSitesAndNonEmptyAllowedTypesInput(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.MAINTAINER);
 
         mockSiteExistence(5, 3);
