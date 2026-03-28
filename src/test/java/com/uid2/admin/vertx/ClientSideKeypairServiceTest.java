@@ -1,6 +1,7 @@
 package com.uid2.admin.vertx;
 
 import com.uid2.admin.auth.AdminKeyset;
+import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.secret.SecureKeypairGenerator;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
@@ -48,7 +49,9 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
     protected IService createService() {
         config.put("client_side_keypair_public_prefix", "UID2-X-L-");
         config.put("client_side_keypair_private_prefix", "UID2-Y-L-");
-        return new ClientSideKeypairService(config, auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, keysetManager, new SecureKeypairGenerator(), clock);
+        KeysetManager keysetManager = new KeysetManager(adminKeysetProvider, adminKeysetWriter, keysetKeyManager, true);
+        return new ClientSideKeypairService(
+                config, auth, writeLock, keypairStoreWriter, keypairProvider, siteProvider, keysetManager, new SecureKeypairGenerator(), clock);
     }
     @BeforeEach
     void setUp() {
