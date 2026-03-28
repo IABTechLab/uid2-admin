@@ -1,5 +1,6 @@
 package com.uid2.admin.vertx;
 
+import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.secret.SecureKeypairGenerator;
 import com.uid2.admin.store.Clock;
 import com.uid2.admin.vertx.service.ClientSideKeypairService;
@@ -7,6 +8,7 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.model.ClientSideKeypair;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.Site;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -17,13 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentCaptor;
-
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 public class ClientSideKeypairServiceTest extends ServiceTestBase {
@@ -253,18 +254,14 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
         setKeypairs(new ArrayList<>(expectedKeypairs.values()));
         setSites(new Site(123, "test", true));
 
+        Map<Integer, AdminKeyset> adminKeysets = new HashMap<>();
+        setAdminKeysets(adminKeysets);
+
         JsonObject jo = new JsonObject();
         jo.put("site_id", 123);
         jo.put("contact", "email@email.com");
 
         post(vertx, testContext, "api/client_side_keypairs/add", jo.encode(), response -> {
-            final ArgumentCaptor<Integer> siteId = ArgumentCaptor.forClass(Integer.class);
-            try {
-                verify(this.keysetManager).createKeysetForSite(siteId.capture());
-            } catch (Exception e) {
-                fail(e);
-            }
-            assertEquals(123, siteId.getValue());
             assertEquals(200, response.statusCode());
             JsonObject resp = response.bodyAsJsonObject();
             assertEquals(123, resp.getInteger("site_id"));
@@ -276,6 +273,46 @@ public class ClientSideKeypairServiceTest extends ServiceTestBase {
             assertEquals("UID2-X-L-", resp.getString("public_key").substring(0, 9));
             assertEquals(KEY_CREATE_TIME_IN_SECONDS, resp.getLong("created"));
             assertEquals(false, resp.getBoolean("disabled"));
+            AdminKeyset keyset = adminKeysets.values().stream()
+                    .filter(k -> k.getSiteId() == 123)
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(keyset.getAllowedSites().isEmpty());
+            assertEquals(Set.of(ClientType.DSP), keyset.getAllowedTypes());
+            assertTrue(keyset.isDefault());
+            verify(keysetKeyManager).addKeysetKey(keyset.getKeysetId());
+            verify(adminKeysetWriter).upload(any(), isNull());
+            verify(keypairStoreWriter, times(1)).upload(any(), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void addKeypair_createsKeysetForSiteWhenNoneExists(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(Role.MAINTAINER);
+        setSites(new Site(456, "csp_keyset_site", true));
+        setKeypairs(new ArrayList<>());
+
+        Map<Integer, AdminKeyset> adminKeysets = new HashMap<>();
+        setAdminKeysets(adminKeysets);
+
+        JsonObject jo = new JsonObject();
+        jo.put("site_id", 456);
+        jo.put("contact", "keyset-check@example.com");
+
+        post(vertx, testContext, "api/client_side_keypairs/add", jo.encode(), response -> {
+            assertEquals(200, response.statusCode());
+
+            AdminKeyset keyset = adminKeysets.values().stream()
+                    .filter(k -> k.getSiteId() == 456)
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(keyset.getAllowedSites().isEmpty());
+            assertEquals(Set.of(ClientType.DSP), keyset.getAllowedTypes());
+            assertTrue(keyset.isDefault());
+
+            verify(keysetKeyManager).addKeysetKey(keyset.getKeysetId());
+            verify(adminKeysetWriter).upload(any(), isNull());
             verify(keypairStoreWriter, times(1)).upload(any(), isNull());
             testContext.completeNow();
         });
