@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -1554,6 +1555,66 @@ public class SharingServiceTest extends ServiceTestBase {
                 actualKeysetIds.add(keysetId);
             }
             assertEquals(false, actualKeysetIds.containsAll(expectedKeysetIds));
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ClientType.class, names = {"ADVERTISER", "DATA_PROVIDER"})
+    void keysetSetNewViaHttp_forAdvertiserOrDataProvider_neverCallsCreateKeysetSharedWithDsps(
+            ClientType sharingType, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Map<Integer, AdminKeyset> keysets = new HashMap<>() {{
+            put(3, new AdminKeyset(3, 5, "test", Set.of(4, 6, 7), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+            put(4, new AdminKeyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+            put(5, new AdminKeyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+        }};
+        setAdminKeysets(keysets);
+        mockSiteExistence(5, 7, 4, 8);
+
+        String body = "{\n"
+                + "  \"site_id\": 8,\n"
+                + "  \"allowed_types\": [\"" + sharingType.name() + "\"]\n"
+                + "}";
+
+        post(vertx, testContext, "api/sharing/keyset", body, response -> {
+            assertEquals(200, response.statusCode());
+            JsonArray allowedTypesJson = response.bodyAsJsonObject().getJsonArray("allowed_types");
+            compareKeysetTypeListToResult(
+                    new AdminKeyset(6, 8, "", Set.of(), Instant.now().getEpochSecond(), true, true, Set.of(sharingType)),
+                    allowedTypesJson);
+            assertEquals(1, allowedTypesJson.size());
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ClientType.class, names = {"ADVERTISER", "DATA_PROVIDER"})
+    void listSiteSetNewViaHttp_forAdvertiserOrDataProvider_neverCallsCreateKeysetSharedWithDsps(
+            ClientType sharingType, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.SHARING_PORTAL);
+
+        Map<Integer, AdminKeyset> keysets = new HashMap<>() {{
+            put(3, new AdminKeyset(3, 5, "test", Set.of(4, 6, 7), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+            put(4, new AdminKeyset(4, 7, "test", Set.of(12), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+            put(5, new AdminKeyset(5, 4, "test", Set.of(5), Instant.now().getEpochSecond(), true, true, new HashSet<>()));
+        }};
+        setAdminKeysets(keysets);
+        mockSiteExistence(5, 7, 4, 8);
+
+        String body = "{\n"
+                + "  \"allowed_types\": [\"" + sharingType.name() + "\"],\n"
+                + "  \"hash\": 0\n"
+                + "}";
+
+        post(vertx, testContext, "api/sharing/list/8", body, response -> {
+            assertEquals(200, response.statusCode());
+            JsonArray allowedTypesJson = response.bodyAsJsonObject().getJsonArray("allowed_types");
+            compareKeysetTypeListToResult(
+                    new AdminKeyset(6, 8, "", Set.of(), Instant.now().getEpochSecond(), true, true, Set.of(sharingType)),
+                    allowedTypesJson);
+            assertEquals(1, allowedTypesJson.size());
             testContext.completeNow();
         });
     }
