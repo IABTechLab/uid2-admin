@@ -2,6 +2,7 @@ package com.uid2.admin.vertx;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.uid2.admin.auth.AdminKeyset;
 import com.uid2.admin.auth.RevealedKey;
 import com.uid2.admin.legacy.LegacyClientKey;
 import com.uid2.admin.managers.KeysetManager;
@@ -10,6 +11,7 @@ import com.uid2.admin.vertx.service.IService;
 import com.uid2.admin.vertx.test.ServiceTestBase;
 import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.Role;
+import com.uid2.shared.model.ClientType;
 import com.uid2.shared.model.Site;
 import com.uid2.shared.util.Mapper;
 import io.vertx.core.Vertx;
@@ -21,6 +23,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -93,6 +99,94 @@ public class ClientKeyServiceTest extends ServiceTestBase {
                     () -> assertNotNull(revealedClient.getPlaintextKey()),
                     () -> verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull())
             );
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    public void clientAddWithSharer_createsKeysetWithEmptyAllowedSitesAndTypes(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Map<Integer, AdminKeyset> keysetsById = new HashMap<>();
+        setAdminKeysets(keysetsById);
+
+        post(vertx, testContext, "api/client/add?name=test_sharer&roles=sharer&site_id=999", "", response -> {
+            assertEquals(200, response.statusCode());
+
+            Optional<AdminKeyset> keysetForSite =
+                    keysetsById.values().stream().filter(k -> k.getSiteId() == 999).findFirst();
+            assertTrue(keysetForSite.isPresent());
+            AdminKeyset keyset = keysetForSite.get();
+            assertTrue(keyset.getAllowedSites().isEmpty());
+            assertTrue(keyset.getAllowedTypes().isEmpty());
+
+            verify(keysetKeyManager).addKeysetKey(keyset.getKeysetId());
+            verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    public void clientAddWithGenerator_createsKeysetWithEmptyAllowedSitesAndDspAllowedType(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+
+        Map<Integer, AdminKeyset> keysetsById = new HashMap<>();
+        setAdminKeysets(keysetsById);
+
+        post(vertx, testContext, "api/client/add?name=test_generator&roles=generator&site_id=999", "", response -> {
+            assertEquals(200, response.statusCode());
+
+            Optional<AdminKeyset> keysetForSite =
+                    keysetsById.values().stream().filter(k -> k.getSiteId() == 999).findFirst();
+            assertTrue(keysetForSite.isPresent());
+            AdminKeyset keyset = keysetForSite.get();
+            assertTrue(keyset.getAllowedSites().isEmpty());
+            assertEquals(Set.of(ClientType.DSP), keyset.getAllowedTypes());
+
+            verify(keysetKeyManager).addKeysetKey(keyset.getKeysetId());
+            verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    public void clientAddWithMapper_onAdvertiserTypedSite_doesNotCreateKeyset(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites(new Site(999, "test_site", true, Set.of(ClientType.ADVERTISER), Collections.emptySet()));
+
+        Map<Integer, AdminKeyset> keysetsById = new HashMap<>();
+        setAdminKeysets(keysetsById);
+
+        post(vertx, testContext, "api/client/add?name=test_mapper_adv&roles=mapper&site_id=999", "", response -> {
+            assertEquals(200, response.statusCode());
+
+            assertTrue(
+                    keysetsById.values().stream().noneMatch(k -> k.getSiteId() == 999),
+                    "KeysetManager.createKeysetForClient returns null for MAPPER-only keys");
+
+            verifyNoInteractions(keysetKeyManager);
+            verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    public void clientAddWithMapper_onDataProviderTypedSite_doesNotCreateKeyset(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.MAINTAINER);
+        setSites(new Site(999, "test_site", true, Set.of(ClientType.DATA_PROVIDER), Collections.emptySet()));
+
+        Map<Integer, AdminKeyset> keysetsById = new HashMap<>();
+        setAdminKeysets(keysetsById);
+
+        post(vertx, testContext, "api/client/add?name=test_mapper_dp&roles=mapper&site_id=999", "", response -> {
+            assertEquals(200, response.statusCode());
+
+            assertTrue(
+                    keysetsById.values().stream().noneMatch(k -> k.getSiteId() == 999),
+                    "KeysetManager.createKeysetForClient returns null for MAPPER-only keys");
+
+            verifyNoInteractions(keysetKeyManager);
+            verify(clientKeyStoreWriter).upload(collectionOfSize(1), isNull());
             testContext.completeNow();
         });
     }
