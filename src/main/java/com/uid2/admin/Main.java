@@ -355,7 +355,7 @@ public class Main {
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {
-            LOGGER.info("Running CUSTOM CONFIG mode, config: {}", vertxConfigPath);
+            LOGGER.info("hello there Running CUSTOM CONFIG mode, config: {}", vertxConfigPath);
         } else if (!Utils.isProductionEnvironment()) {
             LOGGER.info("Running LOCAL DEBUG mode, config: {}", Const.Config.LOCAL_CONFIG_PATH);
             System.setProperty(Const.Config.VERTX_CONFIG_PATH_PROP, Const.Config.LOCAL_CONFIG_PATH);
