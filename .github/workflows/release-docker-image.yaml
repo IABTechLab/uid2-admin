@@ -21,8 +21,15 @@ on:
 
 jobs:
   Image:
-    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@v3
-    with: 
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@bmz-UID2-6764-artifact-attestation
+    permissions:
+      contents: write
+      security-events: write
+      packages: write
+      pull-requests: write
+      id-token: write
+      attestations: write
+    with:
       release_type: ${{ inputs.release_type }}
       vulnerability_severity: ${{ inputs.vulnerability_severity }}
       java_version: 21
