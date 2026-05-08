@@ -46,6 +46,23 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Force bouncycastle to 1.84 to fix CVE-2026-5598 (private key leakage via non-constant-time comparisons). -->
+            <!-- Pulled in transitively via okta-jwt-verifier → sslcontext-kickstart-for-pem. -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.84</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>1.84</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>1.84</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
