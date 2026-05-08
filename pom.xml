@@ -18,7 +18,7 @@
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
         <uid2-shared.version>11.4.16</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
-        <netty.version>4.1.132.Final</netty.version>
+        <netty.version>4.1.133.Final</netty.version>
         <image.version>${project.version}</image.version>
     </properties>
 
