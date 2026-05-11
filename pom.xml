@@ -18,7 +18,7 @@
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
         <uid2-shared.version>11.4.16</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
-        <netty.version>4.1.132.Final</netty.version>
+        <netty.version>4.1.133.Final</netty.version>
         <image.version>${project.version}</image.version>
     </properties>
 
@@ -45,6 +45,23 @@
                 <version>${netty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Force bouncycastle to 1.84 to fix CVE-2026-5598 (private key leakage via non-constant-time comparisons). -->
+            <!-- Pulled in transitively via okta-jwt-verifier → sslcontext-kickstart-for-pem. -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.84</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>1.84</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>1.84</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
