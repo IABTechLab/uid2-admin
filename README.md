@@ -8,7 +8,7 @@
 2. Wait for localstack to start up and initialize. If it's not ready, the app will crash on boot. 
 3. Start the application on CLI or IntelliJ Maven configuration via `mvn clean compile exec:java -Dvertx-config-path=conf/local-config.json -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -Dlogback.configurationFile=conf/logback.xml`
 4. Once started, admin service runs on http://localhost:8089/
-
+ 
 ### Test data
 
 The data in Localstack is ephemeral so any changes you make to it will disappear on container restart. If you want
