@@ -1,6 +1,7 @@
 package com.uid2.admin.salt;
 
 import com.uid2.admin.AdminConst;
+import com.uid2.admin.monitoring.SaltRotationMetrics;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
 
@@ -63,6 +64,7 @@ public class SaltRotation {
         logSaltAges("rotated-salts", targetDate, saltsToRotate);
         logSaltAges("total-salts", targetDate, Arrays.asList(postRotationSalts));
         logBucketFormatCount(targetDate, postRotationSalts);
+        SaltRotationMetrics.recordRotated(saltsToRotate.size());
 
         var nextSnapshot = new SaltSnapshot(
                 nextEffective,

@@ -3,10 +3,12 @@ package com.uid2.admin.salt;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.uid2.admin.AdminConst;
+import com.uid2.admin.monitoring.SaltRotationMetrics;
 import com.uid2.admin.salt.helper.SaltBuilder;
 import com.uid2.admin.salt.helper.SaltSnapshotBuilder;
 import com.uid2.shared.model.SaltEntry;
 import com.uid2.shared.secret.IKeyGenerator;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -438,6 +440,61 @@ class SaltRotationTest {
 
     private int countEntriesWithLastUpdated(SaltEntry[] entries, Instant lastUpdated) {
         return (int) Arrays.stream(entries).filter(e -> e.lastUpdated() == lastUpdated.toEpochMilli()).count();
+    }
+
+    @Test
+    void testRotateSaltsRecordsLastCycleMetric() throws Exception {
+        var registry = new SimpleMeterRegistry();
+        SaltRotationMetrics.register(registry);
+        SaltRotationMetrics.recordRotated(-1);
+
+        final Duration[] minAges = {
+                Duration.ofDays(1),
+                Duration.ofDays(2),
+        };
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(10, daysEarlier(10), targetDate())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate());
+        assertTrue(result.hasSnapshot());
+
+        var rotatedCount = countEntriesWithLastUpdated(result.getSnapshot().getAllRotatingSalts(), result.getSnapshot().getEffective());
+        var gauge = registry.find("uid2_salts_rotated_last_cycle").gauge();
+        assertThat(gauge).isNotNull();
+        assertThat(gauge.value()).isEqualTo((double) rotatedCount);
+    }
+
+    @Test
+    void testRotateSaltsNoSnapshotLeavesMetricUnchanged() throws Exception {
+        var registry = new SimpleMeterRegistry();
+        SaltRotationMetrics.register(registry);
+        SaltRotationMetrics.recordRotated(42);
+
+        final Duration[] minAges = {
+                Duration.ofDays(1),
+                Duration.ofDays(2),
+        };
+        var lastSnapshot = SaltSnapshotBuilder.start()
+                .entries(10, targetDate(), targetDate())
+                .build();
+
+        var result = saltRotation.rotateSalts(lastSnapshot, minAges, 0.2, targetDate());
+        assertFalse(result.hasSnapshot());
+
+        var gauge = registry.find("uid2_salts_rotated_last_cycle").gauge();
+        assertThat(gauge.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void testSaltRotationMetricReportsNaNBeforeFirstRotation() {
+        var registry = new SimpleMeterRegistry();
+        SaltRotationMetrics.register(registry);
+        SaltRotationMetrics.recordRotated(-1);
+
+        var gauge = registry.find("uid2_salts_rotated_last_cycle").gauge();
+        assertThat(gauge).isNotNull();
+        assertThat(Double.isNaN(gauge.value())).isTrue();
     }
 
     @Test

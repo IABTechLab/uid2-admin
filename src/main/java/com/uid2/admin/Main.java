@@ -14,6 +14,7 @@ import com.uid2.admin.legacy.LegacyClientKeyStoreWriter;
 import com.uid2.admin.legacy.RotatingLegacyClientKeyProvider;
 import com.uid2.admin.managers.KeysetManager;
 import com.uid2.admin.monitoring.DataStoreMetrics;
+import com.uid2.admin.monitoring.SaltRotationMetrics;
 import com.uid2.admin.salt.SaltRotation;
 import com.uid2.admin.secret.*;
 import com.uid2.admin.store.*;
@@ -329,6 +330,7 @@ public class Main {
             DataStoreMetrics.addDataStoreMetrics("service_link", serviceLinkProvider);
             DataStoreMetrics.addDataStoreServiceLinkEntryCount("snowflake", serviceLinkProvider, serviceProvider);
 
+            SaltRotationMetrics.register(Metrics.globalRegistry);
 
             ReplaceSharingTypesWithSitesJob replaceSharingTypesWithSitesJob = new ReplaceSharingTypesWithSitesJob(config, writeLock, adminKeysetProvider, keysetProvider, keysetStoreWriter, siteProvider);
             jobDispatcher.enqueue(replaceSharingTypesWithSitesJob);
