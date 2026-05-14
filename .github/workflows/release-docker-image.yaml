@@ -21,7 +21,7 @@ on:
 
 jobs:
   Image:
-    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@4c13fd28cc7ae0134ec6933d470c3921cf28eb1e
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@27c970841277019284c95bc33f5709c63ae594e5
     permissions:
       contents: write
       security-events: write
