@@ -6,11 +6,11 @@
 
 **Architecture:** Two thin deliverables, two repos.
 1. `uid2-admin` (Java/Vert.x): add one entry to `OktaCustomScope` so `uid2.admin.client-key-issuance` → `Role.MAINTAINER`, plus parameterised tests mirroring the existing `SS_PORTAL`/`SECRET_ROTATION` pattern. No other backend code changes.
-2. `uid2-claude-skills` (Markdown skill): new `skills/uid2-client-key/SKILL.md` that drives the runbook — parses a Jira ticket, ensures site exists, calls `POST /api/client/add`, packages the plaintext key+secret into a 1Password ephemeral share, and posts the metadata-only response back to the Jira ticket.
+2. `uid2-claude-skills` (Markdown skill): new `skills/uid2-client-key/SKILL.md` that drives the runbook — parses a Jira ticket, ensures site exists (halt-and-confirm if missing), calls `POST /api/client/add`, prints the plaintext key+secret to the terminal for one-time copy, and posts the metadata-only response back to the Jira ticket. Three envs (`test` / `integ` / `prod`); credentials live in shell env vars, **not** in 1Password (no `op` CLI dependency).
 
 **Tech Stack:**
 - Backend: Java 17, Vert.x, JUnit 5 (parameterised), Mockito, Okta JWT verifier.
-- Skill: Markdown frontmatter, Atlassian MCP, 1Password CLI (`op`), `curl`, shell.
+- Skill: Markdown frontmatter, Atlassian MCP, `curl`, shell. No 1Password CLI.
 
 **Spec:** [`docs/superpowers/specs/2026-05-21-claude-client-key-issuance-design.md`](../specs/2026-05-21-claude-client-key-issuance-design.md) (commit `80bddd2d`).
 
@@ -36,7 +36,8 @@
 
 | Item | Owner | Responsibility |
 |---|---|---|
-| Okta service accounts `uid2-admin-claude-automation` (one per env) with scope `uid2.admin.client-key-issuance`; credentials stored in 1Password | Okta admin (manual) | One-time provisioning so the skill can obtain access tokens. |
+| Okta service accounts `uid2-admin-claude-automation-{test,integ,prod}` with scope `uid2.admin.client-key-issuance` (same Okta tenant, but the per-env `environment` claim must match the target admin deployment's config) | Okta admin (manual) | One-time provisioning so the skill can obtain access tokens. |
+| Shell env vars on the engineer's machine: `UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER`, `UID2_ADMIN_CLAUDE_{TEST,INTEG,PROD}_OKTA_CLIENT_ID`, `_OKTA_CLIENT_SECRET` | Engineer (one-time) | Provisioned credentials live here — not in 1Password. |
 
 ---
 
@@ -267,9 +268,9 @@ name: uid2-client-key
 description: >
   Issue a UID2 client API key + secret for a partner from a Jira ticket. Reads
   the ticket, ensures the site exists, calls the admin service to create the
-  key, packages the plaintext key+secret into a 1Password ephemeral share, and
-  comments the metadata back on the ticket. Usage: /uid2-client-key UID2-1234
-  [--env integ|prod]
+  key, prints the plaintext key + secret once to the terminal, and comments
+  metadata-only back on the ticket. Usage: /uid2-client-key UID2-1234
+  [--env test|integ|prod]
 ---
 
 # UID2 Client Key Issuance
@@ -287,8 +288,8 @@ and Databricks Cleanroom access are explicitly out of scope — separate skills.
 | Position / flag | Required? | Default | Description |
 |---|---|---|---|
 | `$1` ticket key | yes | — | Jira ticket key, e.g. `UID2-1234`. |
-| `--env integ\|prod` | no | `prod` | Admin service environment. |
-| `--dry-run` | no | off | Perform steps 1-6 (everything up to `/api/client/add`) and print the planned call without executing. |
+| `--env test\|integ\|prod` | no | `prod` | Admin service environment. `test` → `https://admin.test.uidapi.com`; `integ` → `https://admin-integ.uidapi.com`; `prod` → `https://admin-prod.uidapi.com`. |
+| `--dry-run` | no | off | Perform steps 1-7 (preflight, ticket read, plan confirm, token, site resolve, existing-key check) and print the planned `/api/client/add` call without executing. |
 | `--name-suffix=<n>` | no | empty | Append ` <n>` to the participant name when an existing key with the same role exists (per runbook: "Acme Corp" → "Acme Corp 2"). |
 ```
 
@@ -305,12 +306,12 @@ Append to `skills/uid2-client-key/SKILL.md`:
 ## Prerequisites
 
 - UID2 Tailscale connected. Confirm with: `tailscale status | head -1`. If not connected, halt with: "Connect to UID2 Tailscale (https://thetradedesk.atlassian.net/wiki/spaces/UID2/pages/520881958), then re-run."
-- `op` CLI signed in (`op whoami` returns an email, not an error).
 - Atlassian MCP available (the `mcp__claude_ai_Atlassian__*` tools).
-- 1Password item present for the chosen env. Item naming convention:
-  - integ: `uid2-admin-claude-automation - integ` in the `UID2` vault
-  - prod:  `uid2-admin-claude-automation - prod` in the `UID2` vault
-  Each item must carry fields: `okta_client_id`, `okta_client_secret`, `okta_auth_server`, `okta_audience`, `admin_base_url`.
+- Required shell environment variables for the chosen `--env`:
+  - `UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER` (shared across envs; e.g. `https://uid2.okta.com/oauth2/aus...`)
+  - `UID2_ADMIN_CLAUDE_<ENV>_OKTA_CLIENT_ID` where `<ENV>` is `TEST`, `INTEG`, or `PROD`
+  - `UID2_ADMIN_CLAUDE_<ENV>_OKTA_CLIENT_SECRET`
+- Service accounts must already be provisioned in the UID2 Okta tenant with the `uid2.admin.client-key-issuance` scope granted, one per env (see Phase 3 / Task 21).
 ```
 
 ### Task 9: Add Step 1 — preflight and Jira ticket read
@@ -330,8 +331,19 @@ Append to `skills/uid2-client-key/SKILL.md`:
 Run the preflight commands in order. Halt with a specific message on first failure.
 
 ```bash
+# Tailscale
 tailscale status >/dev/null 2>&1 || { echo "Tailscale not connected"; exit 1; }
-op whoami >/dev/null 2>&1 || { echo "1Password CLI not signed in — run 'op signin'"; exit 1; }
+
+# Required env vars for the chosen --env
+ENV_UC=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')   # test → TEST, etc.
+CLIENT_ID_VAR="UID2_ADMIN_CLAUDE_${ENV_UC}_OKTA_CLIENT_ID"
+CLIENT_SECRET_VAR="UID2_ADMIN_CLAUDE_${ENV_UC}_OKTA_CLIENT_SECRET"
+for v in UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER "$CLIENT_ID_VAR" "$CLIENT_SECRET_VAR"; do
+  if [ -z "${!v}" ]; then
+    echo "Required env var not set: $v"
+    exit 1
+  fi
+done
 ```
 
 ### 1b. Resolve Atlassian cloudId
@@ -407,14 +419,19 @@ test/integ requests, the ticket must explicitly say so.
 ````markdown
 ## Step 3 — Acquire admin-service access token
 
-Read the service-account credentials from 1Password (choose the item per `--env`):
+Resolve credentials from env vars and the admin base URL from the `--env` flag:
 
 ```bash
-ITEM="uid2-admin-claude-automation - ${ENV}"
-CLIENT_ID=$(op item get "$ITEM" --vault UID2 --fields label=okta_client_id --reveal)
-CLIENT_SECRET=$(op item get "$ITEM" --vault UID2 --fields label=okta_client_secret --reveal)
-AUTH_SERVER=$(op item get "$ITEM" --vault UID2 --fields label=okta_auth_server --reveal)
-ADMIN_BASE_URL=$(op item get "$ITEM" --vault UID2 --fields label=admin_base_url --reveal)
+CLIENT_ID="${!CLIENT_ID_VAR}"
+CLIENT_SECRET="${!CLIENT_SECRET_VAR}"
+AUTH_SERVER="${UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER}"
+
+case "$ENV" in
+  test)  ADMIN_BASE_URL="https://admin.test.uidapi.com" ;;
+  integ) ADMIN_BASE_URL="https://admin-integ.uidapi.com" ;;
+  prod)  ADMIN_BASE_URL="https://admin-prod.uidapi.com" ;;
+  *)     echo "Unknown --env: $ENV (expected test|integ|prod)"; exit 1 ;;
+esac
 ```
 
 Request the token (client_credentials grant):
@@ -428,11 +445,11 @@ TOKEN=$(curl -fsS -X POST "${AUTH_SERVER}/v1/token" \
 ```
 
 On `curl` failure: print the HTTP error, do not retry. The most common causes
-are: wrong credentials in 1Password (401), wrong scope name (400), wrong auth
+are: wrong credentials in env vars (401), wrong scope name (400), wrong auth
 server URL (404). Surface these explicitly — do not paper over with a retry.
 
 The token is held in shell variable scope for this skill invocation only.
-Never write it to disk.
+Never write it to disk, and don't `echo` it.
 ````
 
 ### Task 12: Add Step 4 — resolve or create the site
@@ -443,34 +460,57 @@ Never write it to disk.
 - [ ] **Step 1: Append the Step 4 section**
 
 ````markdown
-## Step 4 — Resolve or create the site
+## Step 4 — Resolve the site (or authorise creating one)
 
 ```bash
 SITES_JSON=$(curl -fsS "${ADMIN_BASE_URL}/api/site/list" \
   -H "Authorization: Bearer ${TOKEN}")
 ```
 
-Search the response for an exact `name` match against the extracted participant
-name (case-insensitive trimmed comparison). Three branches:
+Search the response for a case-insensitive trimmed `name` match against the
+extracted participant name. Three branches:
 
 1. **Exact match.** Record `site_id` and move on.
-2. **No match.** Confirm with the engineer: "No existing site named '<name>'.
-   Create a new one? [y/N]". On `y`:
 
-   ```bash
-   curl -fsS -X POST "${ADMIN_BASE_URL}/api/site/add?name=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$NAME")&types=${TYPES_CSV}" \
-     -H "Authorization: Bearer ${TOKEN}"
+2. **No match.** Print up to five similar names from `/api/site/list` (entries
+   whose `name` contains the participant-name tokens, case-insensitive), then
+   prompt the engineer with two options:
+
+   ```
+   No site found named "<name>".
+
+   Closest existing sites:
+     - <name_a> (id=<id_a>)
+     - <name_b> (id=<id_b>)
+     ...
+
+   Choose one:
+     (a) Re-check with a corrected name (type the exact name)
+     (b) Create a new site named "<name>"
+     (q) Quit
+
+   >
    ```
 
-   Record the `id` from the response as `site_id`. `${TYPES_CSV}` is the
-   uppercase comma-separated participant type list (e.g. `ADVERTISER`,
-   `PUBLISHER,ADVERTISER`).
+   - On **(a)**: read the engineer's typed name, set `$NAME` to it, and **loop
+     back to the `/api/site/list` lookup at the top of Step 4**. The skill
+     keeps looping until match, until engineer picks (b), or until engineer
+     quits.
+   - On **(b)**: confirm participant types from the ticket, then call:
 
-3. **Multiple similar matches** (case-insensitive substring). Print all matches
-   with their `id`s and halt. Engineer picks the right `site_id` and re-runs
-   with `--site-id=<id>` (out of scope for the initial skill; tell the
-   engineer to use the Admin UI for this case and report which site_id to
-   re-run against).
+     ```bash
+     curl -fsS -X POST "${ADMIN_BASE_URL}/api/site/add?name=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$NAME")&types=${TYPES_CSV}" \
+       -H "Authorization: Bearer ${TOKEN}"
+     ```
+
+     Record the `id` from the response as `site_id`. `${TYPES_CSV}` is the
+     uppercase comma-separated participant-type list (e.g. `ADVERTISER`,
+     `PUBLISHER,ADVERTISER`).
+   - On **(q)**: exit 0 with a clean message.
+
+3. **Multiple exact matches** (rare; would indicate prior duplicates). Print
+   all matches with their `id`s and halt. Engineer resolves in the Admin UI
+   and re-runs with a more specific name.
 ````
 
 ### Task 13: Add Step 5 — check for existing key with the requested role
@@ -550,7 +590,7 @@ available. From this point onward, treat the response as sensitive. Capture
 two views:
 
 ```bash
-# Sensitive — for the 1Password share only
+# Sensitive — printed to terminal in Step 7, then unset
 KEY=$(echo "$RESPONSE" | python3 -c "import json,sys;print(json.load(sys.stdin)['plaintext_key'])")
 SECRET=$(echo "$RESPONSE" | python3 -c "import json,sys;print(json.load(sys.stdin)['authorizable']['secret'])")
 
@@ -564,7 +604,7 @@ mode 0600 and tell the engineer the path. The plaintext key is **not**
 retrievable from the admin service again.
 ````
 
-### Task 15: Add Step 7 — package secrets into a 1Password ephemeral share
+### Task 15: Add Step 7 — print plaintext key + secret to terminal (one-time)
 
 **Files:**
 - Modify: `skills/uid2-client-key/SKILL.md`
@@ -572,39 +612,46 @@ retrievable from the admin service again.
 - [ ] **Step 1: Append the Step 7 section**
 
 ````markdown
-## Step 7 — Share via 1Password ephemeral link
+## Step 7 — Print plaintext key + secret to the terminal (one-time)
 
-Create a transient 1Password item containing the key and secret as plain text
-fields (no quotes — the runbook specifies this), then share it with a 7-day
-expiry:
-
-```bash
-ITEM_TITLE="UID2 client key — ${PARTICIPANT_NAME} — ${TICKET}"
-op item create \
-  --category="Secure Note" \
-  --title="$ITEM_TITLE" \
-  --vault=UID2 \
-  "client_key=${KEY}" \
-  "client_secret=${SECRET}" \
-  "site_id=${SITE_ID}" \
-  "ticket=${TICKET}"
-SHARE_URL=$(op item share "$ITEM_TITLE" --vault=UID2 --expires-in 7d --emails "${CONTACT_EMAIL}" 2>&1 | grep -Eo 'https://share\.1password\.[a-z]+/[^ ]+')
-```
-
-If `op item share` fails (it requires a paid 1Password plan with sharing
-enabled and may not be available on every account), fall back to:
+Print the plaintext key and secret to the terminal in a clearly-marked block.
+This is the **only** time they appear in skill output; the admin service does
+not allow retrieval again.
 
 ```bash
-echo "1Password share failed. Plaintext key + secret are in the 1Password
-item titled '${ITEM_TITLE}' in the UID2 vault. Share it manually following
-https://thetradedesk.atlassian.net/wiki/spaces/UID2/pages/403835076."
+cat <<EOF
+
+═══════════════════════════════════════════════════════════════════════
+  PLAINTEXT CREDENTIALS — copy now, then share with the partner via
+  the Confluence-documented ephemeral-secret flow:
+  https://thetradedesk.atlassian.net/wiki/spaces/UID2/pages/403835076
+
+  Participant: ${PARTICIPANT_NAME}
+  Ticket:      ${TICKET}
+  Env:         ${ENV}
+
+  plaintext_key:  ${KEY}
+  secret:         ${SECRET}
+═══════════════════════════════════════════════════════════════════════
+
+EOF
 ```
 
-Clear `$KEY` and `$SECRET` from shell variables after this point:
+Prompt the engineer to confirm they've copied the values before continuing:
+
+```bash
+read -p "Press ENTER once you have copied the key + secret out of the terminal..." _
+```
+
+Then clear `$KEY` and `$SECRET` from shell variable scope:
 
 ```bash
 unset KEY SECRET
 ```
+
+Do **not** write `$KEY` or `$SECRET` to disk under any circumstance, and do
+not call any external tool (1Password CLI, paste services, etc.) with these
+values. The engineer is responsible for the secret-share step.
 ````
 
 ### Task 16: Add Step 8 — post the Jira comment
@@ -617,13 +664,14 @@ unset KEY SECRET
 ````markdown
 ## Step 8 — Comment back on the Jira ticket
 
-The runbook requires posting the JSON metadata (with key/secret removed) plus
-the 1Password share link as a comment. Example final comment body:
+The runbook requires posting the JSON metadata (with key/secret removed) as a
+comment. Example final comment body:
 
 ```
-Issued via /uid2-client-key skill.
+Issued via /uid2-client-key skill (env=${ENV}).
 
-Share link (expires in 7 days): ${SHARE_URL}
+Plaintext key + secret were printed once to the issuing engineer's terminal
+and shared with the partner out-of-band per the standard process.
 
 Metadata:
 ${SAFE_JSON}
@@ -658,12 +706,15 @@ Print a final summary block:
 
 ```
 ✓ Client key issued for ${PARTICIPANT_NAME} (site_id=${SITE_ID})
+  Env:          ${ENV}
   Role:         ${ROLE}
   key_id:       <SAFE_JSON.authorizable.key_id>
   Ticket:       ${TICKET}  (comment posted)
-  Share link:   ${SHARE_URL}
 
 Remaining manual steps (per runbook):
+  [ ] Share the plaintext key + secret with the partner via the
+      Confluence-documented flow
+      (https://thetradedesk.atlassian.net/wiki/spaces/UID2/pages/403835076)
   [ ] Reply in the Slack thread with the :approved-check: emoji
   [ ] Update the UID2 Participant Information tracker spreadsheet
       (https://ttdcorp-my.sharepoint.com/:x:/g/personal/luis_chelala_thetradedesk_com/EYkD4Z_1AZJCg_nj3gweFVwBKShBtyjl-jq-fHeY-l7-zQ)
@@ -685,47 +736,59 @@ Remaining manual steps (per runbook):
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| `401` from `${ADMIN_BASE_URL}/api/*` | The `client-key-issuance` scope→`MAINTAINER` mapping is not deployed yet in the target env. | Confirm release tag of uid2-admin in the env contains [the auth change](../specs/2026-05-21-claude-client-key-issuance-design.md). |
-| `400 bad scope` from Okta | Service account does not have `uid2.admin.client-key-issuance` granted. | Ask Okta admin to grant the scope to the service-account application in the correct Okta tenant (integ vs prod). |
-| `op item share` errors with "sharing not enabled" | 1Password plan does not support item sharing. | Use the manual Confluence-documented ephemeral-share flow. |
-| Skill halts at "No existing site named X" but engineer knows the site exists | Name mismatch (whitespace, capitalisation). | Run `curl ${ADMIN_BASE_URL}/api/site/list -H "Authorization: Bearer ${TOKEN}" | jq '.[] | select(.name | test("X"; "i"))'`, then re-run with the exact name from the response. |
-| Skill writes a recovery file | Something failed between key creation and share. | The recovery file holds the only copy of the plaintext key. Share it manually via 1Password, then delete the file. |
+| `401` from `${ADMIN_BASE_URL}/api/*` | Either the `client-key-issuance` scope→`MAINTAINER` mapping is not deployed in the target env, **or** the JWT's `environment` claim doesn't match (e.g. running `--env test` with the integ service account's credentials). | Confirm the uid2-admin release tag in the target env contains [the auth change](../specs/2026-05-21-claude-client-key-issuance-design.md). Confirm `UID2_ADMIN_CLAUDE_<ENV>_OKTA_CLIENT_ID` matches the chosen `--env`. |
+| `400 bad scope` from Okta | The service account does not have `uid2.admin.client-key-issuance` granted. | Ask Okta admin to grant the scope to the per-env service-account application. |
+| `Required env var not set` | Missing or unexported variable. | `echo $UID2_ADMIN_CLAUDE_TEST_OKTA_CLIENT_ID` (or the relevant var); if empty, source the engineer's credentials file / direnv. |
+| Skill halts at "No site found" but engineer knows the site exists | Name mismatch (whitespace, capitalisation, EUID vs UID2 confusion). | Pick option **(a)** at the prompt and re-type the exact name from the Admin UI; the skill loops and re-checks. |
+| Site list query returns the same name twice | Pre-existing duplicate sites; rare. | Resolve in the Admin UI; the skill cannot disambiguate. |
 ```
 
-### Task 19: Integration test against the integ environment
+### Task 19: Integration test against the test environment
 
-> **Blocker:** Phase 1 must be merged and deployed to the integ admin service before this task can succeed. The Okta service account must also be provisioned (see operational handoff below).
+> **Blocker:** Phase 1 must be merged and deployed to the **test** admin service (`https://admin.test.uidapi.com`) before this task can succeed. The Okta service account for `--env test` must also be provisioned (see Task 21).
 
 **Files:** none (manual verification).
 
 - [ ] **Step 1: Set up a test Jira ticket**
 
-In the UID2 Jira project, create a Task titled "Test client key request — Acme Test" with a description that names a participant type (`advertiser`), explicitly says "for integ", and notes "paperwork signed (test)". Note the ticket key.
+In the UID2 Jira project, create a Task titled "Test client key request — Acme Test" with a description that names a participant type (`advertiser`), explicitly says "for test environment", and notes "paperwork signed (test)". Note the ticket key.
 
-- [ ] **Step 2: Dry run**
+- [ ] **Step 2: Confirm env vars are set**
+
+```bash
+echo "${UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER:?missing}" >/dev/null
+echo "${UID2_ADMIN_CLAUDE_TEST_OKTA_CLIENT_ID:?missing}" >/dev/null
+echo "${UID2_ADMIN_CLAUDE_TEST_OKTA_CLIENT_SECRET:?missing}" >/dev/null
+echo "All test-env credentials present."
+```
+
+Expected: prints `All test-env credentials present.` If any error, source the credentials before continuing.
+
+- [ ] **Step 3: Dry run**
 
 ```text
-/uid2-client-key <TEST-TICKET> --env integ --dry-run
+/uid2-client-key <TEST-TICKET> --env test --dry-run
 ```
 
 Expected: skill prints the resolved plan, the `POST /api/client/add` URL that *would* be called, and stops without writing anything. Confirm:
-- Tailscale + 1Password preflight passes.
+- Tailscale + env-var preflight passes.
 - Ticket fields parsed correctly.
-- Site list call succeeds (returns JSON array).
+- Okta token acquired (no error printed).
+- `GET /api/site/list` against `admin.test.uidapi.com` succeeds (returns JSON array).
 - Existing-key check runs.
 - Skill stops before `/api/client/add`.
 
-- [ ] **Step 3: Real run against integ**
+- [ ] **Step 4: Real run against test**
 
 ```text
-/uid2-client-key <TEST-TICKET> --env integ
+/uid2-client-key <TEST-TICKET> --env test
 ```
 
-Expected: skill creates the key, creates the 1Password share, posts the comment. Manually verify in the integ Admin UI (`https://admin-integ.uidapi.com/`) that the client key exists with the right role and site.
+Expected: skill creates the key, prints plaintext key+secret to terminal, posts the metadata-only comment. Manually verify in the test Admin UI (`https://admin.test.uidapi.com/`) that the client key exists with the right role and site.
 
-- [ ] **Step 4: Clean up**
+- [ ] **Step 5: Clean up**
 
-Disable the test client key via the integ Admin UI to avoid noise in future test runs. Delete the 1Password item.
+Disable the test client key via the test Admin UI to avoid noise in future test runs.
 
 ### Task 20: Commit and open MR for the skill
 
@@ -739,14 +802,16 @@ feat(uid2-client-key): add skill to issue UID2 client API keys
 
 End-to-end automation of the client-API-key issuance runbook:
 - reads the Jira ticket
-- resolves or creates the participant's site
+- resolves the participant's site (halt-and-confirm if missing; only
+  creates a new site with explicit engineer authorisation)
 - calls POST /api/client/add against the admin service
-- packages the plaintext key+secret into a 1Password ephemeral share
-- posts the metadata (key/secret removed) back to the ticket
+- prints the plaintext key + secret once to the engineer's terminal
+  for out-of-band sharing with the partner
+- posts the metadata (plaintext_key / secret removed) back to the ticket
 
 Requires uid2-admin to have the client-key-issuance Okta scope deployed
-(IABTechLab/uid2-admin PR <link>) and a service-account credentials
-1Password item per env.
+(IABTechLab/uid2-admin PR <link>) and service-account credentials in shell
+env vars on the engineer's machine, one set per env (test/integ/prod).
 
 Refs: UID2-6903
 EOF
@@ -771,31 +836,35 @@ Open the MR via GitLab UI (or `glab mr create` if available). Title: `feat(uid2-
 
 - [ ] **Step 1: File a Jira ticket against the Okta admin team**
 
-Create a UID2 ticket (or whatever channel the Okta admin team uses) requesting:
+Create a UID2 ticket (or whatever channel the Okta admin team uses) requesting **three** new Okta service-account applications in the UID2 Okta tenant, one per env. Each is granted the custom scope `uid2.admin.client-key-issuance` and issues tokens carrying the matching `environment` claim:
 
-1. New Okta service-account application in the **integ** UID2 Okta tenant named `uid2-admin-claude-automation`, granted the custom scope `uid2.admin.client-key-issuance`.
-2. Same in the **prod** UID2 Okta tenant.
-3. For each: provide `client_id`, `client_secret`, the OAuth `/v1/token` URL, and the audience to the requester via a 1Password share.
+1. `uid2-admin-claude-automation-test` → tokens with `environment=test`
+2. `uid2-admin-claude-automation-integ` → tokens with `environment=integ`
+3. `uid2-admin-claude-automation-prod` → tokens with `environment=prod`
 
-Block on this ticket before Phase 2 Task 19 (integ test).
+For each, request: `client_id`, `client_secret`, the OAuth `/v1/token` URL (shared across all three), and the audience. Hand these to the requester via the existing secure-share process (Confluence-documented ephemeral-secret flow).
 
-- [ ] **Step 2: Store credentials in 1Password**
+Block Phase 2 Task 19 on the `test` service account credentials being available. The integ/prod accounts can be provisioned later if needed.
 
-Once the Okta admin returns the credentials, create the two 1Password items in the UID2 vault using the names from Phase 2 Task 8 (`uid2-admin-claude-automation - integ` and `uid2-admin-claude-automation - prod`), with fields:
+- [ ] **Step 2: Set credentials as shell env vars**
 
-| Field | Value |
+Once the Okta admin returns the credentials, set them as exported env vars (e.g. in `~/.zshrc`, `~/.bashrc`, a `direnv` `.envrc`, or whatever the engineer uses). Do **not** put them in 1Password and read them back via the CLI — the skill reads env vars directly. Convention:
+
+| Variable | Value |
 |---|---|
-| `okta_client_id` | as provided |
-| `okta_client_secret` | as provided |
-| `okta_auth_server` | as provided, e.g. `https://uid2.okta.com/oauth2/aus...` |
-| `okta_audience` | as provided |
-| `admin_base_url` | `https://admin-integ.uidapi.com` (integ) or `https://admin-prod.uidapi.com` (prod) |
+| `UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER` | as provided by Okta admin, e.g. `https://uid2.okta.com/oauth2/aus...` |
+| `UID2_ADMIN_CLAUDE_TEST_OKTA_CLIENT_ID` | client_id of the `-test` service account |
+| `UID2_ADMIN_CLAUDE_TEST_OKTA_CLIENT_SECRET` | client_secret of the `-test` service account |
+| `UID2_ADMIN_CLAUDE_INTEG_OKTA_CLIENT_ID` | client_id of the `-integ` service account |
+| `UID2_ADMIN_CLAUDE_INTEG_OKTA_CLIENT_SECRET` | client_secret of the `-integ` service account |
+| `UID2_ADMIN_CLAUDE_PROD_OKTA_CLIENT_ID` | client_id of the `-prod` service account |
+| `UID2_ADMIN_CLAUDE_PROD_OKTA_CLIENT_SECRET` | client_secret of the `-prod` service account |
 
 ---
 
 ## Sequencing
 
-- Phase 1 (Tasks 1-6) can be developed standalone. Merge and ship to integ before starting Phase 2 Task 19.
+- Phase 1 (Tasks 1-6) can be developed standalone. Merge and ship to **test** (then integ, then prod) before Phase 2 Task 19 against each respective env.
 - Phase 2 Tasks 7-18 (writing the skill content) can run in parallel with Phase 1 review.
-- Phase 2 Task 19 is blocked on both Phase 1 deploy and Phase 3.
-- Phase 3 is operational; kick it off as soon as Phase 1 PR opens so the credentials are ready when the skill is.
+- Phase 2 Task 19 is blocked on (a) Phase 1 deployed to **test**, and (b) Phase 3 Step 1+2 completed for the **test** env.
+- Phase 3 is operational; kick it off as soon as the Phase 1 PR opens so the test-env credentials are ready when the skill is. Integ/prod service-account provisioning can follow once the test-env happy path is validated.

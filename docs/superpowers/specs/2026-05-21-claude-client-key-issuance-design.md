@@ -13,12 +13,15 @@ UID2-6903 proposes exposing the relevant admin operations as documented, authent
 
 ## Goal
 
-A Claude skill (`/uid2-client-key`) that, given a Jira ticket key, drives the entire client-key-issuance workflow against the admin service and returns a 1Password ephemeral share link the engineer can paste into the ticket reply. The skill is invokable by an on-call engineer; the underlying auth model is machine-auth so the same plumbing can later support fully autonomous (cron) execution.
+A Claude skill (`/uid2-client-key`) that, given a Jira ticket key, drives the entire client-key-issuance workflow against the admin service. The skill prints the plaintext key+secret to the terminal once (the engineer then shares them via the Confluence-documented secret-sharing flow), and posts the metadata-only response back to the Jira ticket. The skill is invokable by an on-call engineer; the underlying auth model is machine-auth so the same plumbing can later support fully autonomous (cron) execution.
 
 ## Non-goals
 
 - Replacing the engineer's judgment on whether paperwork is signed or which roles to grant. The skill surfaces the decision; a human still confirms.
 - Removing the engineer from the loop on Slack reply, spreadsheet update, or marking the Jira ticket Done. The skill produces the artifacts; the engineer pastes/clicks.
+- Automating the partner-facing secret share. The plaintext key+secret are printed to terminal once; the engineer shares them with the partner via the existing Confluence-documented ephemeral-secret flow (the 1Password web UI is fine — we just don't use the 1Password CLI from the skill).
+- Auto-creating sites without engineer authorisation. If the site lookup misses, the skill halts and asks whether the participant name is correct (re-check) or whether to create a new site.
+- 1Password CLI integration. Credentials live in shell environment variables; secret distribution is manual.
 - Operator-key creation, CSTG keypair creation, Databricks Cleanroom provisioning, EUID issuance, key rotation/disable. Each is a separate skill (see [Out of scope](#out-of-scope)).
 
 ## Architecture
@@ -26,22 +29,36 @@ A Claude skill (`/uid2-client-key`) that, given a Jira ticket key, drives the en
 Two deliverables, in two repos:
 
 ```
-┌─────────────────────────┐         ┌──────────────────────────────┐
-│  uid2 plugin (skills)   │         │  uid2-admin (Java/Vert.x)    │
-│                         │         │                              │
-│  skills/                │         │  OktaCustomScope.java        │
-│    uid2-client-key/     │ ──HTTP──▶   + CLIENT_KEY_ISSUANCE      │
-│      SKILL.md           │ Bearer  │     → Role.MAINTAINER        │
-│                         │  token  │                              │
-└─────────────────────────┘         │  (existing endpoints,        │
-         │                          │   no other code changes)     │
-         │ op CLI                   │                              │
-         ▼                          │  POST /api/client/add        │
-┌─────────────────────────┐         │  POST /api/site/add          │
-│  1Password ephemeral    │         │  GET  /api/site/list         │
-│  share + Jira comment   │         │  GET  /api/client/list/...   │
-└─────────────────────────┘         └──────────────────────────────┘
+   shell env vars                    ┌──────────────────────────────┐
+   UID2_ADMIN_CLAUDE_OKTA_*          │  uid2-admin (Java/Vert.x)    │
+   per-env CLIENT_ID/SECRET          │                              │
+        │                            │  OktaCustomScope.java        │
+        ▼                            │   + CLIENT_KEY_ISSUANCE      │
+┌─────────────────────────┐          │     → Role.MAINTAINER        │
+│  uid2 plugin (skills)   │ ──HTTP──▶│                              │
+│  skills/uid2-client-key/│ Bearer   │  (existing endpoints, no     │
+│    SKILL.md             │  token   │   other code changes)        │
+└─────────────────────────┘          │                              │
+        │                            │  POST /api/client/add        │
+        │ terminal output            │  GET  /api/site/list         │
+        ▼                            │  GET  /api/client/list/...   │
+┌─────────────────────────┐          └──────────────────────────────┘
+│  Terminal: plaintext    │
+│  key+secret (one-time); │
+│  Jira comment with      │
+│  metadata only          │
+└─────────────────────────┘
 ```
+
+The three target admin deployments share one Okta tenant but each validates the JWT's `environment` claim against its own config (`AdminAuthMiddleware.java:148`), so a separate service account is provisioned per env:
+
+| `--env` | Admin base URL | Service-account env vars |
+|---|---|---|
+| `test` | `https://admin.test.uidapi.com` | `UID2_ADMIN_CLAUDE_TEST_OKTA_CLIENT_ID` / `_SECRET` |
+| `integ` | `https://admin-integ.uidapi.com` | `UID2_ADMIN_CLAUDE_INTEG_OKTA_CLIENT_ID` / `_SECRET` |
+| `prod` | `https://admin-prod.uidapi.com` | `UID2_ADMIN_CLAUDE_PROD_OKTA_CLIENT_ID` / `_SECRET` |
+
+Plus one shared variable: `UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER` (single Okta tenant URL, e.g. `https://uid2.okta.com/oauth2/aus...`).
 
 ### Backend change (uid2-admin)
 
@@ -57,9 +74,11 @@ We deliberately do **not** grant `SUPER_USER` or `PRIVILEGED` via this scope. De
 
 ### Okta service account (one-time setup, outside this repo)
 
-A new Okta service account (suggested name: `uid2-admin-claude-automation`) is created in the UID2 Okta tenant by an Okta admin, with the `uid2.admin.client-key-issuance` scope granted. Its client_id and client_secret are stored in 1Password under a well-known item name. Two such accounts are needed — one for the integ Okta tenant, one for prod — matching the two admin environments (`admin-integ.uidapi.com`, `admin-prod.uidapi.com`).
+The UID2 Okta tenant is the single source for service-account auth across all three admin deployments. Because the admin service validates the JWT's `environment` claim against its own configured `environment` value (`AdminAuthMiddleware.java:148`), one service account is provisioned **per env**: `uid2-admin-claude-automation-test`, `-integ`, `-prod`. Each is granted the `uid2.admin.client-key-issuance` scope, and each issues tokens carrying the matching `environment` claim.
 
-This is a one-time operational task; the spec documents the requirement and the 1Password item name convention, but the setup itself is a manual provisioning step.
+Credentials are handed to the engineer who installs the skill and stored as shell environment variables (e.g. via `direnv`, a gitignored `.envrc`, or the engineer's password manager of choice — but **not** the 1Password CLI; see [Non-goals](#non-goals)). The convention is documented in [Architecture](#architecture).
+
+This is a one-time operational task per env; the spec documents the requirement and the env-var convention, but the setup itself is a manual provisioning step.
 
 ### Skill (uid2 plugin)
 
@@ -71,13 +90,13 @@ name: uid2-client-key
 description: >
   Issue a UID2 client API key + secret for a partner from a Jira ticket. Reads
   the ticket, ensures the site exists, calls the admin service to create the
-  key, packages the plaintext key+secret into a 1Password ephemeral share, and
-  comments the metadata back on the ticket. Usage: /uid2-client-key UID2-1234
-  [--env integ|prod]
+  key, prints the plaintext key + secret once to the terminal, and comments
+  metadata-only back on the ticket. Usage: /uid2-client-key UID2-1234
+  [--env test|integ|prod]
 ---
 ```
 
-Invocation: `/uid2-client-key UID2-1234` (defaults to prod per the runbook's "if not specified and paperwork is signed, assume prod" convention) or `/uid2-client-key UID2-1234 --env integ`.
+Invocation: `/uid2-client-key UID2-1234` (defaults to prod per the runbook's "if not specified and paperwork is signed, assume prod" convention), `/uid2-client-key UID2-1234 --env integ`, or `/uid2-client-key UID2-1234 --env test`.
 
 ## Data flow
 
@@ -87,9 +106,11 @@ engineer types /uid2-client-key UID2-1234
         ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. Preflight checks                                             │
-│    - Tailscale reachable? (curl admin-{env}.uidapi.com)         │
-│    - op CLI signed in? (op whoami)                              │
-│    - 1Password item exists for env's service account?           │
+│    - Tailscale reachable? (admin host responds)                 │
+│    - Required env vars set for chosen --env?                    │
+│      UID2_ADMIN_CLAUDE_<ENV>_OKTA_CLIENT_ID                     │
+│      UID2_ADMIN_CLAUDE_<ENV>_OKTA_CLIENT_SECRET                 │
+│      UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER                         │
 └─────────────────────────────────────────────────────────────────┘
         │
         ▼
@@ -114,22 +135,25 @@ engineer types /uid2-client-key UID2-1234
         ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 4. Acquire admin-service access token                           │
-│    a. op read 1password://...service-account...client-id        │
-│    b. op read 1password://...service-account...client-secret    │
-│    c. POST {okta_auth_server}/v1/token                          │
+│    a. Read CLIENT_ID/CLIENT_SECRET from env vars for chosen env │
+│    b. POST $UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER/v1/token         │
 │       grant_type=client_credentials                             │
 │       scope=uid2.admin.client-key-issuance                      │
-│    → bearer token, cached in-memory for the skill run only      │
+│    → bearer token, held in shell variable for this run only;    │
+│       never written to disk                                     │
 └─────────────────────────────────────────────────────────────────┘
         │
         ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 5. Resolve site                                                 │
 │    GET /api/site/list                                           │
-│    Match by exact name. If found → site_id.                     │
-│    If not found:                                                │
-│      Confirm "no existing site named X — create new?"           │
-│      POST /api/site/add?name=...&types=...                      │
+│    Match by case-insensitive trimmed name. If found → site_id.  │
+│    If not found, prompt the engineer with two options:          │
+│      (a) Confirm a corrected name (or paste exact name from     │
+│          ticket); skill re-checks against /api/site/list        │
+│      (b) Authorise creating a new site                          │
+│          → POST /api/site/add?name=...&types=...                │
+│    Loop on (a) until match, halt, or engineer picks (b).        │
 └─────────────────────────────────────────────────────────────────┘
         │
         ▼
@@ -150,18 +174,20 @@ engineer types /uid2-client-key UID2-1234
         │
         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 8. Package secrets                                              │
-│    Write key + secret to a transient 1Password item, then       │
-│    `op item share --expires-in 7d` to get the ephemeral link.   │
-│    (No quotes in the share content — matches runbook step.)     │
+│ 8. Print plaintext key + secret to terminal (one-time)          │
+│    Surfaced in a clearly-marked block. Engineer copies them     │
+│    and shares with the partner via the existing Confluence-     │
+│    documented ephemeral-secret flow (1Password web share or     │
+│    whatever the runbook currently prescribes).                  │
 └─────────────────────────────────────────────────────────────────┘
         │
         ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 9. Comment back on the Jira ticket                              │
 │    Body = JSON metadata from RevealedKey response with          │
-│    `key` and `secret` fields removed (matches runbook step      │
-│    20 exactly), plus the 1Password share URL.                   │
+│    `plaintext_key` and `authorizable.secret` removed            │
+│    (matches runbook step 20 exactly). No share URL — sharing    │
+│    happens out-of-band.                                         │
 └─────────────────────────────────────────────────────────────────┘
         │
         ▼
@@ -188,12 +214,13 @@ Multi-role keys are uncommon and explicitly cautioned against in the runbook ("a
 ## Error handling
 
 - **Tailscale not reachable.** Fail before touching credentials. Exit code 1, message says "Connect to UID2 Tailscale, then re-run."
-- **Okta token request fails.** Surface the Okta error (401 = bad credentials, 400 = bad scope). Do not retry — credentials in 1Password are the most likely culprit and silent retry hides that.
-- **Admin endpoint returns 401.** Almost certainly means the scope→role mapping isn't deployed yet. Surface explicitly and link to this design doc.
+- **Required env vars missing for the chosen `--env`.** List the missing variable names. Do not attempt to fall back to a different env.
+- **Okta token request fails.** Surface the Okta error (401 = bad credentials, 400 = bad scope). Do not retry — wrong values in env vars are the most likely culprit and silent retry hides that.
+- **Admin endpoint returns 401.** Almost certainly means the scope→role mapping isn't deployed yet in the target env, **or** the JWT's `environment` claim doesn't match the admin service (e.g. using the test service account against integ). Surface both possibilities and link to this design doc.
 - **Site already exists with same name but different type.** Don't auto-update. Block and surface mismatch for engineer.
-- **Client key already exists with the requested role on the site.** Block per runbook. Engineer either renames the new key or invokes a (future) rotate flow.
-- **`/api/client/add` succeeds but 1Password share fails.** The plaintext key is not retrievable again. Skill writes the response to a local file at `~/uid2-client-key-recovery-<ticket>-<ts>.json` (chmod 600), tells the engineer where it is, and instructs them to share manually. Do not delete this file automatically — engineer cleans up after confirming the share.
-- **Jira comment post fails.** Treat as warning, not failure. Key is already issued; print the comment body to terminal so the engineer can paste it manually.
+- **Client key already exists with the requested role on the site.** Block per runbook. Engineer either renames the new key (via `--name-suffix`) or invokes a (future) rotate flow.
+- **`/api/client/add` succeeds but the Jira comment fails.** The plaintext key is not retrievable from the admin service again, but it was already printed to the terminal in step 8 — the engineer has it. Print the would-be comment body to the terminal so the engineer can paste it manually. Treat as warning, not failure.
+- **`/api/client/add` returns a non-2xx status.** Print the response body and exit. Do not retry — admin write operations are not idempotent and a retry may create a duplicate key on the second attempt.
 
 ## Testing
 
@@ -203,9 +230,9 @@ Multi-role keys are uncommon and explicitly cautioned against in the runbook ("a
 - No new tests needed for `ClientKeyService` itself — that code is unchanged.
 
 **Skill:**
-- Manual run against integ: invoke `/uid2-client-key <test-ticket> --env integ` end-to-end against a real `ttd_dev_demo` participant. Validates the full happy path including 1Password share creation and Jira comment posting.
-- Dry-run flag (`--dry-run`): performs steps 1–6 (preflight, ticket read, site resolution, existing-key check) and prints the planned `/api/client/add` call without executing it. Used for the first prod run.
-- No prod smoke test until a real ticket comes in; the dry-run flag is the proxy for that.
+- Manual run against the **test** admin deployment (`https://admin.test.uidapi.com`): invoke `/uid2-client-key <test-ticket> --env test` end-to-end against a real `ttd_dev_demo`-style participant. Validates the full happy path including the terminal-output secret print and Jira comment posting. The test env runs the same code path as integ/prod (real Okta auth, real scope check) so this is a faithful smoke test of the auth wiring.
+- Dry-run flag (`--dry-run`): performs steps 1–7 (preflight, ticket read, plan confirm, token, site resolve, existing-key check) and prints the planned `/api/client/add` call without executing it. Used for the first integ/prod run on a new participant pattern.
+- No integ or prod smoke test until a real ticket comes in; the test-env happy path plus the dry-run flag are the proxies for that.
 
 ## Out of scope
 
@@ -222,5 +249,5 @@ The following are intentionally excluded from this spec. Each is a candidate fol
 
 ## Open questions
 
-- **1Password share automation.** `op item share` exists; need to verify it supports plaintext-content shares (not just file shares) and that the resulting URL is the same shape the runbook expects (the "ephemeral UID2 secrets" Confluence page should clarify). Implementation phase: confirm via `op item share --help` before committing to this path; fallback is to print the secret to terminal and instruct manual share.
-- **Service-account credentials storage convention.** Suggested 1Password item path: `uid2-admin-claude-automation/{integ,prod}` with fields `okta_client_id`, `okta_client_secret`, `okta_auth_server`. Confirm with the Okta admin who provisions the accounts.
+- **Test env auth state.** This spec assumes `https://admin.test.uidapi.com` enforces Okta auth (same tenant as integ/prod, validates the JWT `environment=test` claim). Confirm with whoever owns the test deployment before the implementation phase — if test is in fact `is_auth_disabled=true`, the skill needs a no-token short-circuit for `--env test` and Phase 3 only provisions integ/prod service accounts.
+- **Existing convention for storing service-account credentials locally.** This spec proposes shell env vars (`UID2_ADMIN_CLAUDE_<ENV>_OKTA_CLIENT_ID/_SECRET`, plus shared `UID2_ADMIN_CLAUDE_OKTA_AUTH_SERVER`). If the team already has a different convention for skill credentials (e.g. a shared `~/.config/uid2/` dir), follow that instead.
