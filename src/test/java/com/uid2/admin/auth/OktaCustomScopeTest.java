@@ -14,6 +14,7 @@ public class OktaCustomScopeTest {
             Arguments.of("uid2.admin.ss-portal", OktaCustomScope.SS_PORTAL),
             Arguments.of("uid2.admin.secret-rotation", OktaCustomScope.SECRET_ROTATION),
             Arguments.of("uid2.admin.site-sync", OktaCustomScope.SITE_SYNC),
+            Arguments.of("uid2.admin.client-key-issuance", OktaCustomScope.CLIENT_KEY_ISSUANCE),
             Arguments.of("dummy", OktaCustomScope.INVALID)
         );
     }
