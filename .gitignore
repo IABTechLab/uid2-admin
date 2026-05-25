@@ -5,4 +5,5 @@ target/*
 .idea/*
 .idea/
 *.iml
-.DS_Store
+.DS_Storewebroot/node_modules/
+webroot/package-lock.json
