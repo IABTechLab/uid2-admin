@@ -128,5 +128,21 @@
     "key_hash": "rx3SYxt2PdnIIbhGMc0Cue3/JTk9WwyDiMMOp5WiU6pXbdkhjZ+BxgIChzMMZeLqAi/E4G5XZHMFnOe8Zzx3jg==",
     "key_salt": "0L8h9CSPfDFEHurZZ33OOogd26zSjApBTWLmYHtauC8=",
     "key_id": "UID2-O-L-127-pDqph"
+  },
+  {
+    "key": "UID2-O-L-998-d1sabledKeyForE2ETestOnly00000000000000000000=",
+    "name": "Disabled Operator (E2E)",
+    "contact": "Disabled Operator (E2E)",
+    "protocol": "trusted",
+    "created": 1618873215,
+    "disabled": true,
+    "roles": [
+      "OPERATOR"
+    ],
+    "site_id": 998,
+    "operator_type": "PRIVATE",
+    "key_hash": "PyhHif4ptfrwvk6tFo7da/OR4TeQlejhUKvIvseMD1F9Wz0jTaWt0DfrKNEmdYvl7C0CxmEWbIT2wY+2kXoQOw==",
+    "key_salt": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+    "key_id": "UID2-O-L-998-d1sab"
   }
 ]
