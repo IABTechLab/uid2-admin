@@ -203,3 +203,25 @@ const myMultiSelect = {
   defaultValue: ['OPTION_1']     // Array or comma-separated string
 }
 ```
+
+## Verifying image provenance
+
+Every non-snapshot image published by this repo's release workflow ships with a [SLSA v1.0](https://slsa.dev/spec/v1.0/) build-provenance attestation, signed by GitHub's [Sigstore](https://www.sigstore.dev/) instance via the OIDC identity of the [shared publish workflow](https://github.com/IABTechLab/uid2-shared-actions). The attestation cryptographically binds the image digest to the source commit, the signing workflow, and the runner that built it.
+
+To verify an image, install [`gh`](https://cli.github.com/) (≥ 2.49) and run:
+
+```bash
+gh attestation verify oci://ghcr.io/iabtechlab/uid2-admin:<tag> --owner IABTechLab --signer-repo IABTechLab/uid2-shared-actions
+```
+
+`<tag>` refers to the **Docker image tag** — bare semantic version, no `v` prefix (e.g. `6.13.35`). Note that the corresponding GitHub release and git tag for the same build are named with a `v` (e.g. `v6.13.35`); the registry tag drops it by OCI convention.
+
+**Where to find a tag:**
+
+- **GitHub Packages** for this repo — [`uid2-admin` package](https://github.com/IABTechLab/uid2-admin/pkgs/container/uid2-admin) lists every published image tag and its digest.
+- Or take a [release](https://github.com/IABTechLab/uid2-admin/releases) name (e.g. `v6.13.35`) and drop the leading `v`.
+- To pin to an exact manifest instead of a mutable tag, use the digest form: `oci://ghcr.io/iabtechlab/uid2-admin@sha256:<digest>` (visible on the Packages page, or via `gh api /orgs/IABTechLab/packages/container/uid2-admin/versions`).
+
+A successful run prints `✓ Verification succeeded!` followed by the SLSA provenance fields — including `sourceRepositoryDigest` (the source commit), `workflow.path` (the signing workflow), and the runner identity.
+
+Snapshot tags (`-SNAPSHOT` suffix) deliberately skip attestation. `gh attestation verify` returns `no attestations found` against a snapshot — that's expected.

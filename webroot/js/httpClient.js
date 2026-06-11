@@ -1,11 +1,24 @@
 class HttpClient {
   async makeRequest(url, options = {}) {
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Try to parse error response body for detailed error message
+      let errorMessage = response.statusText || 'Error';
+      try {
+        const errorBody = await response.text();
+        if (errorBody) {
+          const errorJson = JSON.parse(errorBody);
+          if (errorJson.message) {
+            errorMessage = errorJson.message;
+          }
+        }
+      } catch (e) {
+        // If parsing fails, fall back to statusText
+      }
+      throw new Error(`HTTP ${response.status}: ${errorMessage}`);
     }
-    
+
     return this.parseResponse(response);
   }
 

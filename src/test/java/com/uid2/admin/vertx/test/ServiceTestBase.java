@@ -243,6 +243,16 @@ public abstract class ServiceTestBase {
         post(vertx, testContext, endpoint, null, handler);
     }
 
+    protected void put(Vertx vertx, VertxTestContext testContext, String endpoint, String body, TestHandler<HttpResponse<Buffer>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.putAbs(getUrlForEndpoint(endpoint)).sendBuffer(body != null ? Buffer.buffer(body) : null).onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
+    }
+
+    protected void delete(Vertx vertx, VertxTestContext testContext, String endpoint, TestHandler<HttpResponse<Buffer>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.deleteAbs(getUrlForEndpoint(endpoint)).send().onComplete(testContext.succeeding(response -> testContext.verify(() -> handler.handle(response))));
+    }
+
     protected void setServices(Service... services) {
         when(serviceProvider.getAllServices()).thenReturn(Arrays.asList(services));
         for (Service s : services) {

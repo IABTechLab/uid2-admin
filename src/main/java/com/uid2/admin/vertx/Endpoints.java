@@ -60,8 +60,12 @@ public enum Endpoints {
     API_OPERATOR_UPDATE("/api/operator/update"),
     API_OPERATOR_ROLES("/api/operator/roles"),
 
-    API_PARTNER_CONFIG_GET("/api/partner_config/get"),
+    API_PARTNER_CONFIG_LIST("/api/partner_config/list"),
+    API_PARTNER_CONFIG_GET("/api/partner_config/get/:partner_name"),
+    API_PARTNER_CONFIG_ADD("/api/partner_config/add"),
     API_PARTNER_CONFIG_UPDATE("/api/partner_config/update"),
+    API_PARTNER_CONFIG_DELETE("/api/partner_config/delete"),
+    API_PARTNER_CONFIG_BULK_REPLACE("/api/partner_config/bulk_replace"),
 
     API_PRIVATE_SITES_REFRESH("/api/private-sites/refresh"),
     API_PRIVATE_SITES_REFRESH_NOW("/api/private-sites/refreshNow"),
