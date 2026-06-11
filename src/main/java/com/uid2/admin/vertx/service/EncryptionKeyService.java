@@ -148,7 +148,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             synchronized (writeLock) {
                 this.handleAddSiteKey(ctx);
             }
-        }, new AuditParams(List.of("site_id", "activates_in_seconds"), Collections.emptyList()), Role.MAINTAINER, Role.CLAUDE_ACCESS));
+        }, new AuditParams(List.of("site_id", "activates_in_seconds"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_KEY_ROTATE_SITE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

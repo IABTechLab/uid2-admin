@@ -85,7 +85,7 @@ public class OperatorKeyService implements IService {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
-        }, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList()), Role.MAINTAINER, Role.CLAUDE_ACCESS));
+        }, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList()), Role.MAINTAINER));
 
         router.post(API_OPERATOR_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
