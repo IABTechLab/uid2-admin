@@ -82,9 +82,9 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             }
         }, new AuditParams(Collections.emptyList(), List.of("subscription_id")), Role.PRIVILEGED, Role.SHARING_PORTAL));
         router.get(API_CLIENT_SIDE_KEYPAIRS_LIST.toString()).handler(
-            auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT, Role.CLAUDE_ACCESS));
+            auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT, Role.READ_ONLY));
         router.get(API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID.toString()).handler(
-            auth.handle(this::handleListKeypair, Role.MAINTAINER, Role.CLAUDE_ACCESS)
+            auth.handle(this::handleListKeypair, Role.MAINTAINER, Role.READ_ONLY)
         );
     }
 

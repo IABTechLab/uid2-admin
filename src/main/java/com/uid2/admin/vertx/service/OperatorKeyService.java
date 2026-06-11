@@ -75,9 +75,9 @@ public class OperatorKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_OPERATOR_METADATA.toString()).handler(
-            auth.handle(this::handleOperatorMetadata, Role.MAINTAINER, Role.CLAUDE_ACCESS));
+            auth.handle(this::handleOperatorMetadata, Role.MAINTAINER, Role.READ_ONLY));
         router.get(API_OPERATOR_LIST.toString()).handler(
-            auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.CLAUDE_ACCESS));
+            auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.READ_ONLY));
         router.get(API_OPERATOR_REVEAL.toString()).handler(
             auth.handle(this::handleOperatorReveal, new AuditParams(List.of("name"), Collections.emptyList()), Role.MAINTAINER));
 

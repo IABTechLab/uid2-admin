@@ -50,7 +50,7 @@ public class ServiceLinkService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get(API_SERVICE_LINK_LIST.toString()).handler(auth.handle(this::handleServiceLinkList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.CLAUDE_ACCESS));
+        router.get(API_SERVICE_LINK_LIST.toString()).handler(auth.handle(this::handleServiceLinkList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.READ_ONLY));
         router.post(API_SERVICE_LINK_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkAdd(ctx);

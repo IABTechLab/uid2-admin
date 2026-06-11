@@ -125,11 +125,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     @Override
     public void setupRoutes(Router router) {
         router.get(API_KEY_LIST.toString()).handler(
-            auth.handle(this::handleKeyList, Role.MAINTAINER, Role.CLAUDE_ACCESS));
+            auth.handle(this::handleKeyList, Role.MAINTAINER, Role.READ_ONLY));
 
         if(enableKeysets) {
             router.get(API_KEY_LIST_KEYSET_KEYS.toString()).handler(
-                auth.handle(this::handleKeysetKeyList, Role.MAINTAINER, Role.CLAUDE_ACCESS));
+                auth.handle(this::handleKeysetKeyList, Role.MAINTAINER, Role.READ_ONLY));
         }
 
         router.post(API_KEY_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {

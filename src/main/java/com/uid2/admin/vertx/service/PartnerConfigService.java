@@ -46,7 +46,7 @@ public class PartnerConfigService implements IService {
         router.get(API_PARTNER_CONFIG_LIST.toString()).handler(
             auth.handle(this::handlePartnerConfigList, Role.MAINTAINER));
         router.get(API_PARTNER_CONFIG_GET.toString()).handler(
-            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER, Role.CLAUDE_ACCESS));
+            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER, Role.READ_ONLY));
 
         router.post(API_PARTNER_CONFIG_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
