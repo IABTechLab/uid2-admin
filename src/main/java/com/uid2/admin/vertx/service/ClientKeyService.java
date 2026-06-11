@@ -69,7 +69,7 @@ public class ClientKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_CLIENT_METADATA.toString()).handler(
-            auth.handle(this::handleClientMetadata, Role.MAINTAINER));
+            auth.handle(this::handleClientMetadata, Role.MAINTAINER, Role.CLAUDE_ACCESS));
         router.post(API_CLIENT_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleRewriteMetadata(ctx);
@@ -77,16 +77,16 @@ public class ClientKeyService implements IService {
         }, Role.PRIVILEGED));
 
         router.get(API_CLIENT_LIST.toString()).handler(
-            auth.handle(this::handleClientList, Role.MAINTAINER, Role.METRICS_EXPORT));
+            auth.handle(this::handleClientList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.CLAUDE_ACCESS));
 
         router.get(API_CLIENT_LIST_SITEID.toString()).handler(
-            auth.handle(this::handleClientListBySite, Role.MAINTAINER, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientListBySite, Role.MAINTAINER, Role.SHARING_PORTAL, Role.CLAUDE_ACCESS));
 
         router.get(API_CLIENT_KEYID.toString()).handler(
-            auth.handle(this::handleClientByKeyId, Role.MAINTAINER, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientByKeyId, Role.MAINTAINER, Role.SHARING_PORTAL, Role.CLAUDE_ACCESS));
 
         router.get(API_CLIENT_CONTACT.toString()).handler(
-            auth.handle(this::handleClientByContact, Role.MAINTAINER, Role.SHARING_PORTAL));
+            auth.handle(this::handleClientByContact, Role.MAINTAINER, Role.SHARING_PORTAL, Role.CLAUDE_ACCESS));
 
         router.get(API_CLIENT_REVEAL.toString()).handler(
             auth.handle(this::handleClientReveal, Role.PRIVILEGED));
@@ -95,7 +95,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
-        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL, Role.CLAUDE_ACCESS));
 
         router.post(API_CLIENT_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

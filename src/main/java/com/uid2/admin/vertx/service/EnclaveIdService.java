@@ -49,9 +49,9 @@ public class EnclaveIdService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_ENCLAVE_METADATA.toString()).handler(
-            auth.handle(this::handleEnclaveMetadata, Role.MAINTAINER));
+            auth.handle(this::handleEnclaveMetadata, Role.MAINTAINER, Role.CLAUDE_ACCESS));
         router.get(API_ENCLAVE_LIST.toString()).handler(
-            auth.handle(this::handleEnclaveList, Role.MAINTAINER));
+            auth.handle(this::handleEnclaveList, Role.MAINTAINER, Role.CLAUDE_ACCESS));
 
         router.post(API_ENCLAVE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

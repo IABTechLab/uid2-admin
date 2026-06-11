@@ -16,7 +16,7 @@
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
         <micrometer.version>1.12.2</micrometer.version>
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
-        <uid2-shared.version>11.1.91</uid2-shared.version>
+        <uid2-shared.version>11.4.21-alpha-349-SNAPSHOT</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
         <image.version>${project.version}</image.version>
     </properties>
@@ -150,6 +150,18 @@
             <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.12.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.34</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
@@ -162,6 +174,13 @@
                     <source>21</source>
                     <target>21</target>
                     <release>21</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.34</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

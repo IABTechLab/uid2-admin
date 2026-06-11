@@ -125,11 +125,11 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
     @Override
     public void setupRoutes(Router router) {
         router.get(API_KEY_LIST.toString()).handler(
-            auth.handle(this::handleKeyList, Role.MAINTAINER));
+            auth.handle(this::handleKeyList, Role.MAINTAINER, Role.CLAUDE_ACCESS));
 
         if(enableKeysets) {
             router.get(API_KEY_LIST_KEYSET_KEYS.toString()).handler(
-                auth.handle(this::handleKeysetKeyList, Role.MAINTAINER));
+                auth.handle(this::handleKeysetKeyList, Role.MAINTAINER, Role.CLAUDE_ACCESS));
         }
 
         router.post(API_KEY_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
@@ -148,7 +148,7 @@ public class EncryptionKeyService implements IService, IEncryptionKeyManager, IK
             synchronized (writeLock) {
                 this.handleAddSiteKey(ctx);
             }
-        }, new AuditParams(List.of("site_id", "activates_in_seconds"), Collections.emptyList()), Role.MAINTAINER));
+        }, new AuditParams(List.of("site_id", "activates_in_seconds"), Collections.emptyList()), Role.MAINTAINER, Role.CLAUDE_ACCESS));
 
         router.post(API_KEY_ROTATE_SITE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

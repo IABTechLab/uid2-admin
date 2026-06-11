@@ -70,7 +70,7 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             synchronized (writeLock) {
                 this.handleAddKeypair(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(Collections.emptyList(), List.of("site_id", "name", "contact", "disabled")), Role.MAINTAINER, Role.SHARING_PORTAL, Role.CLAUDE_ACCESS));
         router.post(API_CLIENT_SIDE_KEYPAIRS_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleUpdateKeypair(ctx);
@@ -82,9 +82,9 @@ public class ClientSideKeypairService implements IService, IKeypairManager {
             }
         }, new AuditParams(Collections.emptyList(), List.of("subscription_id")), Role.PRIVILEGED, Role.SHARING_PORTAL));
         router.get(API_CLIENT_SIDE_KEYPAIRS_LIST.toString()).handler(
-            auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT));
+            auth.handle(this::handleListAllKeypairs, Role.MAINTAINER, Role.METRICS_EXPORT, Role.CLAUDE_ACCESS));
         router.get(API_CLIENT_SIDE_KEYPAIRS_SUBSCRIPTIONID.toString()).handler(
-            auth.handle(this::handleListKeypair, Role.MAINTAINER)
+            auth.handle(this::handleListKeypair, Role.MAINTAINER, Role.CLAUDE_ACCESS)
         );
     }
 
