@@ -52,7 +52,7 @@ public class PartnerConfigService implements IService {
             synchronized (writeLock) {
                 this.handlePartnerConfigAdd(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER, Role.CLAUDE_ACCESS));
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
         router.put(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);
