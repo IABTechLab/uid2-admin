@@ -258,7 +258,8 @@ public class AdminAuthMiddlewareTest {
             Arguments.of(OktaCustomScope.SITE_SYNC.getName(), new Role[] {Role.SECRET_ROTATION}),
             Arguments.of(OktaCustomScope.SITE_SYNC.getName(), new Role[] {Role.SHARING_PORTAL}),
             Arguments.of(OktaCustomScope.CLIENT_KEY_ISSUANCE.getName(), new Role[] {Role.SUPER_USER}),
-            Arguments.of(OktaCustomScope.CLIENT_KEY_ISSUANCE.getName(), new Role[] {Role.PRIVILEGED})
+            Arguments.of(OktaCustomScope.CLIENT_KEY_ISSUANCE.getName(), new Role[] {Role.PRIVILEGED}),
+            Arguments.of(OktaCustomScope.CLIENT_KEY_ISSUANCE.getName(), new Role[] {Role.MAINTAINER})
         );
     }
 
