@@ -30,7 +30,7 @@ public class JobDispatcherService implements IService {
                     }
                 },
                 //can be other role
-            Role.MAINTAINER));
+            Role.MAINTAINER, Role.READ_ONLY));
 
         router.get(API_JOB_DISPATCHER_JOB_QUEUE.toString()).blockingHandler(auth.handle((ctx) -> {
                     try {
@@ -40,6 +40,6 @@ public class JobDispatcherService implements IService {
                     }
                 },
                 //can be other role
-            Role.MAINTAINER));
+            Role.MAINTAINER, Role.READ_ONLY));
     }
 }

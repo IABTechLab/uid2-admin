@@ -62,9 +62,9 @@ public class SiteService implements IService {
         }, Role.PRIVILEGED));
 
         router.get(API_SITE_LIST.toString()).handler(
-            auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT));
+            auth.handle(this::handleSiteList, Role.MAINTAINER, Role.SHARING_PORTAL, Role.METRICS_EXPORT, Role.READ_ONLY));
         router.get(API_SITE_SITEID.toString()).handler(
-            auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL));
+            auth.handle(this::handleSiteById, Role.MAINTAINER, Role.SHARING_PORTAL, Role.READ_ONLY));
         router.post(API_SITE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
