@@ -1,6 +1,8 @@
 package com.uid2.admin.auth;
 
+import com.uid2.shared.auth.Role;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,5 +25,12 @@ public class OktaCustomScopeTest {
     @MethodSource("testFromNameData")
     public void testFromName(final String name, final OktaCustomScope scope) {
         Assertions.assertEquals(scope, OktaCustomScope.fromName(name));
+    }
+
+    @Test
+    void euidSsPortalScopeIsRecognised() {
+        OktaCustomScope scope = OktaCustomScope.fromName("euid.admin.ss-portal");
+        Assertions.assertNotNull(scope);
+        Assertions.assertEquals(Role.SHARING_PORTAL, scope.getRole());
     }
 }

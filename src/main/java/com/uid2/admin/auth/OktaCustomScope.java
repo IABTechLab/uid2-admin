@@ -8,6 +8,7 @@ import java.util.Arrays;
 @Getter
 public enum OktaCustomScope {
     SS_PORTAL("uid2.admin.ss-portal", Role.SHARING_PORTAL),
+    EUID_SS_PORTAL("euid.admin.ss-portal", Role.SHARING_PORTAL),
     SECRET_ROTATION("uid2.admin.secret-rotation", Role.SECRET_ROTATION),
     SITE_SYNC("uid2.admin.site-sync", Role.PRIVATE_OPERATOR_SYNC),
     METRICS_EXPORT("uid2.admin.metrics-export", Role.METRICS_EXPORT),

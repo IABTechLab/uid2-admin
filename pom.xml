@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-admin</artifactId>
-    <version>6.13.39-alpha-247-SNAPSHOT</version>
+    <version>6.13.39-alpha-248-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,7 +18,7 @@
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
         <uid2-shared.version>11.4.21-alpha-349-SNAPSHOT</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
-        <netty.version>4.1.133.Final</netty.version>
+        <netty.version>4.1.135.Final</netty.version>
         <image.version>${project.version}</image.version>
     </properties>
 
