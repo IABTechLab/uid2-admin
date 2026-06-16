@@ -95,7 +95,7 @@ public class ClientKeyService implements IService {
             synchronized (writeLock) {
                 this.handleClientAdd(ctx);
             }
-        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("name", "roles", "site_id"), Collections.emptyList()), Role.MAINTAINER, Role.SHARING_PORTAL, Role.CREATE));
 
         router.post(API_CLIENT_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

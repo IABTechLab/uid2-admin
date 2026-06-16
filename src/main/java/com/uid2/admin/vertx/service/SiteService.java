@@ -69,7 +69,7 @@ public class SiteService implements IService {
             synchronized (writeLock) {
                 this.handleSiteAdd(ctx);
             }
-        }, new AuditParams(List.of("name", "enable", "types", "description"), List.of("domain_names", "app_names")), Role.MAINTAINER, Role.SHARING_PORTAL));
+        }, new AuditParams(List.of("name", "enable", "types", "description"), List.of("domain_names", "app_names")), Role.MAINTAINER, Role.SHARING_PORTAL, Role.CREATE));
         router.post(API_SITE_ENABLE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleSiteEnable(ctx);

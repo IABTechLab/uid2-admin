@@ -55,7 +55,7 @@ public class ServiceLinkService implements IService {
             synchronized (writeLock) {
                 this.handleServiceLinkAdd(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER));
+        }, new AuditParams(Collections.emptyList(), List.of("link_id", "service_id", "site_id", "name", "roles")), Role.MAINTAINER, Role.CREATE));
         router.post(API_SERVICE_LINK_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceLinkUpdate(ctx);

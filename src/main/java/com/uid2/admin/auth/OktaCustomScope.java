@@ -14,6 +14,7 @@ public enum OktaCustomScope {
     METRICS_EXPORT("uid2.admin.metrics-export", Role.METRICS_EXPORT),
     ENCLAVE_REGISTRAR("uid2.admin.enclave-registrar", Role.ENCLAVE_REGISTRAR),
     READ_ONLY("uid2.admin.read-only", Role.READ_ONLY),
+    CREATE("uid2.admin.create", Role.CREATE),
     INVALID("invalid", Role.UNKNOWN);
     private final String name;
     private final Role role;
