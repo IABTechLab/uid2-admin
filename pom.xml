@@ -16,7 +16,7 @@
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
         <micrometer.version>1.12.2</micrometer.version>
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
-        <uid2-shared.version>11.6.0</uid2-shared.version>
+        <uid2-shared.version>11.6.1-alpha-357-SNAPSHOT</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
         <netty.version>4.1.135.Final</netty.version>
         <image.version>${project.version}</image.version>
