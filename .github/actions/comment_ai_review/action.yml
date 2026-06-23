@@ -1,0 +1,89 @@
+name: Comment AI Review
+description: Create or update a single PR comment with the Azure OpenAI code review, keyed by a header marker.
+
+inputs:
+  has_review:
+    description: Whether a review was produced (True/False). If False, any existing AI review comment is deleted.
+    required: true
+  comment:
+    description: The base64-encoded markdown comment body
+    required: false
+  marker:
+    description: The header marker used to find an existing comment to update
+    required: true
+  pr:
+    description: ID of the PR to comment on
+    required: true
+  github_token:
+    description: Token used to read/write PR comments
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - id: comment-ai-review
+      name: Comment AI Review
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+      with:
+        github-token: ${{ inputs.github_token }}
+        script: |
+          const prNumber = "${{ inputs.pr }}";
+          const hasReview = "${{ inputs.has_review }}" === 'True';
+          const marker = `${{ inputs.marker }}`;
+
+          if (!prNumber || prNumber === 'null' || prNumber === 'undefined' || prNumber.trim() === '') {
+            console.log('No PR number provided, skipping');
+            return;
+          }
+
+          // Paginate through PR comments to find any prior review comment for this marker.
+          let page = 1; const per_page = 100; const comments = [];
+          while (true) {
+            const { data: pageComments } = await github.rest.issues.listComments({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page,
+              page,
+            });
+            comments.push(...pageComments);
+            if (!pageComments || pageComments.length < per_page) break;
+            page += 1; if (page > 50) break;
+          }
+
+          const existing = comments.find(c => c.body && c.body.includes(marker));
+
+          if (!hasReview) {
+            if (existing) {
+              console.log(`No review produced; deleting prior AI review comment ${existing.id}`);
+              await github.rest.issues.deleteComment({
+                comment_id: existing.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+            } else {
+              console.log('No review produced and no prior comment to delete');
+            }
+            return;
+          }
+
+          const commentEncoded = `${{ inputs.comment }}`;
+          const body = Buffer.from(commentEncoded, 'base64').toString('utf-8');
+
+          if (existing) {
+            console.log(`Updating existing AI review comment ${existing.id}`);
+            await github.rest.issues.updateComment({
+              comment_id: existing.id,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+          } else {
+            console.log('Creating new AI review comment');
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+          }
