@@ -75,9 +75,9 @@ public class OperatorKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_OPERATOR_METADATA.toString()).handler(
-            auth.handle(this::handleOperatorMetadata, Role.MAINTAINER, Role.READ_ONLY));
+            auth.handle(this::handleOperatorMetadata, Role.MAINTAINER, Role.ADMIN_READ_ONLY));
         router.get(API_OPERATOR_LIST.toString()).handler(
-            auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.READ_ONLY));
+            auth.handle(this::handleOperatorList, Role.MAINTAINER, Role.METRICS_EXPORT, Role.ADMIN_READ_ONLY));
         router.get(API_OPERATOR_REVEAL.toString()).handler(
             auth.handle(this::handleOperatorReveal, new AuditParams(List.of("name"), Collections.emptyList()), Role.MAINTAINER));
 
@@ -85,7 +85,7 @@ public class OperatorKeyService implements IService {
             synchronized (writeLock) {
                 this.handleOperatorAdd(ctx);
             }
-        }, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList()), Role.MAINTAINER, Role.CREATE));
+        }, new AuditParams(List.of("name", "protocol", "site_id", "operator_type", "roles"), Collections.emptyList()), Role.MAINTAINER, Role.ADMIN_CREATE));
 
         router.post(API_OPERATOR_DEL.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {

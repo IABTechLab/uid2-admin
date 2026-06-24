@@ -51,7 +51,7 @@ public class KeyAclService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_KEYS_ACL_LIST.toString()).handler(
-            auth.handle(this::handleKeyAclList, Role.MAINTAINER, Role.READ_ONLY));
+            auth.handle(this::handleKeyAclList, Role.MAINTAINER, Role.ADMIN_READ_ONLY));
 
         router.post(API_KEYS_ACL_REWRITE_METADATA.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
