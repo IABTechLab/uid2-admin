@@ -44,15 +44,15 @@ public class PartnerConfigService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(API_PARTNER_CONFIG_LIST.toString()).handler(
-            auth.handle(this::handlePartnerConfigList, Role.MAINTAINER, Role.READ_ONLY));
+            auth.handle(this::handlePartnerConfigList, Role.MAINTAINER, Role.ADMIN_READ_ONLY));
         router.get(API_PARTNER_CONFIG_GET.toString()).handler(
-            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER, Role.READ_ONLY));
+            auth.handle(this::handlePartnerConfigGet, Role.MAINTAINER, Role.ADMIN_READ_ONLY));
 
         router.post(API_PARTNER_CONFIG_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigAdd(ctx);
             }
-        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER));
+        }, new AuditParams(Collections.emptyList(), List.of("name")), Role.MAINTAINER, Role.ADMIN_CREATE));
         router.put(API_PARTNER_CONFIG_UPDATE.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handlePartnerConfigUpdate(ctx);

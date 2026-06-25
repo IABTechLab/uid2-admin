@@ -36,10 +36,10 @@ public class CloudEncryptionKeyService implements IService {
     @Override
     public void setupRoutes(Router router) {
         router.get(Endpoints.CLOUD_ENCRYPTION_KEY_METADATA.toString()).handler(
-                auth.handle(this::handleMetadata, Role.MAINTAINER, Role.READ_ONLY));
+                auth.handle(this::handleMetadata, Role.MAINTAINER, Role.ADMIN_READ_ONLY));
 
         router.get(Endpoints.CLOUD_ENCRYPTION_KEY_LIST.toString()).handler(
-                auth.handle(this::handleList, Role.MAINTAINER, Role.READ_ONLY)
+                auth.handle(this::handleList, Role.MAINTAINER, Role.ADMIN_READ_ONLY)
         );
 
         router.post(Endpoints.CLOUD_ENCRYPTION_KEY_ROTATE.toString()).handler(

@@ -52,8 +52,8 @@ public class ServiceService implements IService {
 
     @Override
     public void setupRoutes(Router router) {
-        router.get(API_SERVICE_LIST.toString()).handler(auth.handle(this::handleServiceListAll, Role.MAINTAINER, Role.METRICS_EXPORT, Role.READ_ONLY));
-        router.get(API_SERVICE_LIST_SERVICE_ID.toString()).handler(auth.handle(this::handleServiceList, Role.MAINTAINER, Role.READ_ONLY));
+        router.get(API_SERVICE_LIST.toString()).handler(auth.handle(this::handleServiceListAll, Role.MAINTAINER, Role.METRICS_EXPORT, Role.ADMIN_READ_ONLY));
+        router.get(API_SERVICE_LIST_SERVICE_ID.toString()).handler(auth.handle(this::handleServiceList, Role.MAINTAINER, Role.ADMIN_READ_ONLY));
         router.post(API_SERVICE_ADD.toString()).blockingHandler(auth.handle((ctx) -> {
             synchronized (writeLock) {
                 this.handleServiceAdd(ctx);
