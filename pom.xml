@@ -18,7 +18,8 @@
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
         <uid2-shared.version>11.7.4</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
-        <netty.version>4.1.135.Final</netty.version>
+        <netty.version>4.1.136.Final</netty.version>
+        <jackson.version>2.21.4</jackson.version>
         <image.version>${project.version}</image.version>
     </properties>
 
@@ -39,6 +40,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Force jackson to a fixed version to resolve CVE-2026-54512, CVE-2026-54513 (UID2-7569, UID2-7570). -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
