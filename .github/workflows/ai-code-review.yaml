@@ -1,0 +1,85 @@
+name: AI Code Review
+
+# Posts an Azure OpenAI–generated code review as a single PR comment, keyed by
+# a header marker so subsequent pushes update (rather than append to) the same
+# comment.
+#
+# Prerequisites: AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT must be
+# available to this workflow, either as org-level secrets on IABTechLab
+# (scoped to uid2-admin) or as repo-level secrets. If either is absent,
+# the script logs and exits cleanly without posting a comment.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to (re-)review
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-code-review-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    # Skip drafts and forks (forks don't get the secret anyway).
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir 'openai>=1.40,<2'
+
+      - name: Resolve PR number
+        id: pr
+        env:
+          EVENT_PR: ${{ github.event.pull_request.number }}
+          INPUT_PR: ${{ github.event.inputs.pr_number }}
+        run: echo "number=${EVENT_PR:-$INPUT_PR}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch PR diff
+        id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          gh api \
+            -H "Accept: application/vnd.github.v3.diff" \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" \
+            > pr.diff
+          echo "size=$(wc -c < pr.diff)" >> "$GITHUB_OUTPUT"
+
+      - name: Generate AI review
+        id: review
+        env:
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        run: |
+          python ./.github/scripts/review_pr_diff.py \
+            "${GITHUB_REPOSITORY}" \
+            "${{ steps.pr.outputs.number }}" \
+            "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            < pr.diff
+
+      - name: Post, update, or delete review comment
+        uses: ./.github/actions/comment_ai_review
+        with:
+          has_review: ${{ steps.review.outputs.has_review }}
+          comment: ${{ steps.review.outputs.comment_result }}
+          marker: '## Azure OpenAI Code Review'
+          pr: ${{ steps.pr.outputs.number }}
+          github_token: ${{ github.token }}
