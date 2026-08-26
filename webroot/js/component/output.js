@@ -14,13 +14,33 @@ function highlightJSON(json) {
   if (typeof json !== 'string') {
     json = JSON.stringify(json, null, 2);
   }
-  
-  return json
-    .replace(/("[\w\s_-]+")(\s*:)/g, '<span class="json-key">$1</span>$2')
-    .replace(/:\s*(".*?")/g, ': <span class="json-string">$1</span>')
-    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-    .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
-    .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+
+  // Single-pass tokeniser: quoted-string-followed-by-colon must be tested before
+  // bare quoted-string so that keys are distinguished from string values.
+  // This prevents colons inside string values (e.g. "azure:eastus2:uuid") from
+  // being mis-tokenised by subsequent passes, which was the root cause of a
+  // spurious space appearing in link_id values on the service-link admin page.
+  return json.replace(
+    /("(?:\\.|[^"\\])*")\s*:|(true|false|null)|(-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)|("(?:\\.|[^"\\])*")/g,
+    (match, key, keyword, number, string) => {
+      if (key !== undefined) {
+        return '<span class="json-key">' + key + '</span>' + match.slice(key.length);
+      }
+      if (keyword === 'true' || keyword === 'false') {
+        return '<span class="json-boolean">' + keyword + '</span>';
+      }
+      if (keyword === 'null') {
+        return '<span class="json-null">' + keyword + '</span>';
+      }
+      if (number !== undefined) {
+        return '<span class="json-number">' + number + '</span>';
+      }
+      if (string !== undefined) {
+        return '<span class="json-string">' + string + '</span>';
+      }
+      return match;
+    }
+  );
 }
 
 function formatOutput(data) {
