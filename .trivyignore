@@ -23,22 +23,6 @@ GHSA-72hv-8253-57qq exp:2026-09-01
 # Availability only (C:N/I:N/A:H). Tracking via UID2-7035; revisit on vert.x 5 migration.
 CVE-2026-42577 exp:2026-09-11
 
-# CVE-2026-2100 — p11-kit NULL dereference via C_DeriveKey in the Alpine base image.
-# uid2-admin is a pure Java service; the JVM uses JSSE for TLS and the bundled Java cacerts keystore for trust — it does
-# not load the native p11-kit PKCS#11 module loader and never calls C_DeriveKey, so the
-# vulnerable code path is not reachable. Fixed in Alpine v3.23 >= 0.26.2-r0 but the pinned
-# eclipse-temurin base image has not yet been rebuilt with it.
-# See: UID2-7376
-CVE-2026-2100 exp:2026-09-01
-
-# CVE-2026-56408 — libexpat (Alpine base image, transitive via eclipse-temurin:21-jre-
-# alpine-3.23) (HIGH).
-# Not exploitable here: Dockerfile FROM eclipse-temurin:21-jre-alpine-3.23; libexpat not apk-
-# added, only libpng/libcrypto3/libssl3/gnutls. Pure-Java Vert.x jar; no expat/JNI/loadLibrary
-# refs in any *.java. XML (logback.xml/conf) parsed by JVM JAXP, not native libexpat.
-# See: UID2-7656
-CVE-2026-56408 exp:2026-11-11
-
 # CVE-2026-40984 — io.micrometer:micrometer-core (transitive via micrometer-registry-
 # prometheus/-jmx); micrometer-jetty11/12 not present (HIGH).
 # Not exploitable here: pom.xml:112/126/132 vertx-micrometer + micrometer-registry-
@@ -46,12 +30,3 @@ CVE-2026-56408 exp:2026-11-11
 # /metrics; HTTP instrumentation via Vert.x, not micrometer-jetty/servlet binders
 # See: UID2-7662
 CVE-2026-40984 exp:2026-11-11
-
-# CVE-2026-11822 / CVE-2026-11824 — sqlite-libs arbitrary code execution/crash via crafted
-# FTS5 input, in the Alpine base image (transitive via eclipse-temurin:21-jre-alpine-3.23).
-# Not exploitable here: sqlite-libs is not apk-added in the Dockerfile (only libpng/libcrypto3/
-# libssl3/musl/musl-utils/gnutls are); uid2-admin is a pure Java/Vert.x service with no SQLite/
-# JDBC dependency and no JNI bindings, so the FTS5 query engine is never invoked.
-# See: UID2-7748
-CVE-2026-11822 exp:2026-11-26
-CVE-2026-11824 exp:2026-11-26
