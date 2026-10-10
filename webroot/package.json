@@ -1,0 +1,15 @@
+{
+  "name": "uid2-admin-webroot",
+  "version": "1.0.0",
+  "description": "Frontend JS for uid2-admin",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
+  },
+  "devDependencies": {
+    "jest": "^30.4.2"
+  }
+}
