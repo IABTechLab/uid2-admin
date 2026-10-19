@@ -62,3 +62,7 @@ CVE-2026-76957 exp:2026-10-10
 # See the ticket below for the assessment.
 # See: UID2-7962
 CVE-2026-93990 exp:2026-12-25
+
+# CVE-2026-77214 — libexpat (HIGH). Not vulnerable.
+# See: UID2-8106
+CVE-2026-77214 exp:2027-01-19
