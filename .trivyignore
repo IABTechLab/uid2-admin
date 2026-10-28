@@ -70,3 +70,11 @@ CVE-2026-77214 exp:2027-01-19
 # CVE-2026-102554 — guava (HIGH). Not vulnerable.
 # See: UID2-8213
 CVE-2026-102554
+
+# CVE-2026-8763 — bcprov-jdk18on (CRITICAL). Not vulnerable.
+# See: UID2-8214
+CVE-2026-8763 exp:2027-04-28
+
+# CVE-2026-13506 — bcprov-jdk18on (HIGH). Not vulnerable.
+# See: UID2-8214
+CVE-2026-13506 exp:2027-04-28
