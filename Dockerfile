@@ -1,6 +1,9 @@
 # sha from https://hub.docker.com/layers/library/eclipse-temurin/21.0.13_9-jre-alpine-3.23/images/sha256-5583e3116cba3393e885b70a4498fc961556fa42afa2d892ecffcd4f689e2107
 FROM eclipse-temurin@sha256:5583e3116cba3393e885b70a4498fc961556fa42afa2d892ecffcd4f689e2107
 
+# Headless service: remove the unused font support (fontconfig brings libexpat, libpng and freetype)
+RUN apk del --no-cache fontconfig ttf-dejavu
+
 WORKDIR /app
 EXPOSE 8089
 
@@ -17,7 +20,7 @@ COPY ./conf/default-config.json /app/conf/
 COPY ./conf/*.xml /app/conf/
 COPY ./webroot/ /app/webroot/
 
-RUN apk add --no-cache --upgrade libpng libcrypto3 libssl3 musl musl-utils gnutls && adduser -D uid2-admin && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads
+RUN apk add --no-cache --upgrade libcrypto3 libssl3 musl musl-utils gnutls && adduser -D uid2-admin && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads
 USER uid2-admin
 
 CMD java \
