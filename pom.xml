@@ -10,15 +10,15 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vertx.version>4.5.21</vertx.version>
+        <vertx.version>4.5.36</vertx.version>
         <vertx-maven-plugin.version>1.0.22</vertx-maven-plugin.version>
         <vertx.verticle>com.uid2.admin.vertx.AdminVerticle</vertx.verticle>
         <!-- check micrometer.version vertx-micrometer-metrics consumes before bumping up -->
-        <micrometer.version>1.12.2</micrometer.version>
+        <micrometer.version>1.12.13</micrometer.version>
         <junit-jupiter.version>5.11.2</junit-jupiter.version>
         <uid2-shared.version>11.7.4</uid2-shared.version>
         <okta-jwt.version>0.5.10</okta-jwt.version>
-        <netty.version>4.1.137.Final</netty.version>
+        <netty.version>4.1.140.Final</netty.version>
         <jackson.version>2.21.7</jackson.version>
         <image.version>${project.version}</image.version>
     </properties>
@@ -54,6 +54,12 @@
                 <version>${netty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Pulled in transitively via uid2-shared; keep it on the same Vert.x version as vertx-core. -->
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-config</artifactId>
+                <version>${vertx.version}</version>
             </dependency>
             <!-- Force bouncycastle to 1.84 to fix CVE-2026-5598 (private key leakage via non-constant-time comparisons). -->
             <!-- Pulled in transitively via okta-jwt-verifier → sslcontext-kickstart-for-pem. -->
