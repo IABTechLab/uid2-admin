@@ -28,7 +28,7 @@ CVE-2026-42577 exp:2026-09-11
 # Not exploitable here: pom.xml:118/133/138 vertx-micrometer + micrometer-registry-
 # jmx/-prometheus 1.12.13; Main.java:396 VertxPrometheusOptions.setStartEmbeddedServer for
 # /metrics; HTTP instrumentation via Vert.x, not micrometer-jetty/servlet binders
-# See: UID2-7662
+# See: UID2-7662. Fix (micrometer 1.15.12 on Vert.x 4.5) tracked in UID2-8398.
 CVE-2026-40984 exp:2027-01-13
 
 # CVE-2026-102554 — guava (HIGH). Not vulnerable.
